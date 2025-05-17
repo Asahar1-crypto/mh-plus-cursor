@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -41,9 +42,7 @@ const AcceptInvitation = () => {
               id,
               name,
               owner_id,
-              profiles:owner_id (
-                name
-              )
+              profiles(name)
             )
           `)
           .eq('invitation_id', invitationId)
@@ -77,7 +76,10 @@ const AcceptInvitation = () => {
           const account = invitation.accounts;
           
           setInvitationDetails({
-            ownerName: account?.profiles?.name || 'בעל החשבון',
+            // Access the owner's name safely from the profiles array
+            ownerName: account?.profiles && account.profiles.length > 0 
+              ? account.profiles[0].name 
+              : 'בעל החשבון',
             accountName: account?.name || 'חשבון משותף',
             email: invitation.email || '',
           });

@@ -197,7 +197,7 @@ export const authService = {
         }));
         
         // Notify the user about the pending invitation using a string-based message
-        toast.info(`יש לך הזמנה לחשבון משותף! לצפייה לחץ: /invitation/${invitations[0].invitation_id}`, 
+        toast.info(`יש לך הזמנה לחשבון משותף! לצפייה בהזמנה: /invitation/${invitations[0].invitation_id}`, 
           { duration: 10000 }
         );
       }
@@ -501,7 +501,7 @@ export const authService = {
       
       if (hasInvitations) {
         // Notify the user about pending invitations using a string-based message
-        toast.info(`יש לך הזמנות לחשבונות משותפים! לצפייה לחץ: /account-settings`,
+        toast.info(`יש לך הזמנות לחשבונות משותפים! לצפייה: /account-settings`, 
           { duration: 10000 }
         );
       }
