@@ -97,7 +97,7 @@ const Dashboard = () => {
   
   return (
     <div className="container mx-auto animate-fade-in">
-      {/* Add the PendingInvitationAlert at the top of the dashboard */}
+      {/* מעדכן את רכיב ההתראה לשלוח את האימייל של המשתמש הנוכחי */}
       <PendingInvitationAlert />
       
       <div className="flex flex-col md:flex-row items-start justify-between mb-6">

@@ -21,14 +21,25 @@ export const showPendingInvitationsNotification = () => {
   );
 };
 
-// Helper to check if we have pending invitations
-export const hasPendingInvitations = (): boolean => {
+// Helper to check if we have pending invitations for the current user
+export const hasPendingInvitations = (currentUserEmail?: string): boolean => {
   const pendingInvitationsData = localStorage.getItem('pendingInvitations');
   if (!pendingInvitationsData) return false;
   
   try {
     const pendingInvitations = JSON.parse(pendingInvitationsData);
-    return Object.keys(pendingInvitations).length > 0;
+    
+    // אם לא סופק אימייל משתמש, נבדוק רק אם יש הזמנות כלשהן
+    if (!currentUserEmail) {
+      return Object.keys(pendingInvitations).length > 0;
+    }
+    
+    // בדיקה אם יש הזמנה שמתאימה לאימייל המשתמש הנוכחי
+    return Object.values(pendingInvitations).some(
+      (invitation: any) => 
+        invitation.sharedWithEmail && 
+        invitation.sharedWithEmail.toLowerCase() === currentUserEmail.toLowerCase()
+    );
   } catch (error) {
     console.error('Failed to parse pending invitations:', error);
     return false;
@@ -49,5 +60,32 @@ export const removePendingInvitation = (invitationId: string): void => {
     }
   } catch (error) {
     console.error('Failed to remove pending invitation:', error);
+  }
+};
+
+// Clear all pending invitations that don't match the current user's email
+export const clearInvalidInvitations = (currentUserEmail: string): void => {
+  const pendingInvitationsData = localStorage.getItem('pendingInvitations');
+  if (!pendingInvitationsData) return;
+  
+  try {
+    const pendingInvitations = JSON.parse(pendingInvitationsData);
+    let hasChanges = false;
+    
+    Object.entries(pendingInvitations).forEach(([invitationId, invitation]) => {
+      // אם ההזמנה שייכת למשתמש אחר, מוחקים אותה
+      if (invitation.sharedWithEmail && 
+          invitation.sharedWithEmail.toLowerCase() !== currentUserEmail.toLowerCase()) {
+        delete pendingInvitations[invitationId];
+        hasChanges = true;
+      }
+    });
+    
+    if (hasChanges) {
+      localStorage.setItem('pendingInvitations', JSON.stringify(pendingInvitations));
+      console.log(`Cleared invalid invitations for user ${currentUserEmail}`);
+    }
+  } catch (error) {
+    console.error('Failed to clear invalid invitations:', error);
   }
 };

@@ -5,6 +5,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Bell } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { hasPendingInvitations } from '@/utils/notifications';
+import { useAuth } from '@/contexts/auth';
 
 interface PendingInvitation {
   invitationId: string;
@@ -21,13 +22,14 @@ interface PendingInvitations {
 const PendingInvitationAlert = () => {
   const [dismissed, setDismissed] = useState(false);
   const navigate = useNavigate();
+  const { user } = useAuth();
   
-  // Get invitations from localStorage and check if we have any
-  if (!hasPendingInvitations() || dismissed) {
+  // אם המשתמש לא מחובר או אין הזמנות או שהמשתמש סגר את ההתראה, אין מה להציג
+  if (!user || !hasPendingInvitations() || dismissed) {
     return null;
   }
   
-  // Get invitations from localStorage
+  // קבלת ההזמנות מאחסון מקומי
   const pendingInvitationsData = localStorage.getItem('pendingInvitations');
   
   if (!pendingInvitationsData) {
@@ -43,14 +45,28 @@ const PendingInvitationAlert = () => {
     return null;
   }
   
-  // If there are no invitations in the parsed data, don't show anything
-  if (!pendingInvitations || Object.keys(pendingInvitations).length === 0) {
+  // בדיקה אם יש הזמנות ששייכות למשתמש הנוכחי
+  const currentUserInvitations: Record<string, any> = {};
+  let hasInvitationsForCurrentUser = false;
+  
+  Object.entries(pendingInvitations).forEach(([invitationId, invitation]) => {
+    // בודקים אם האימייל בהזמנה תואם לאימייל של המשתמש המחובר (ללא תלות ברישיות)
+    if (invitation.sharedWithEmail && 
+        user.email && 
+        invitation.sharedWithEmail.toLowerCase() === user.email.toLowerCase()) {
+      currentUserInvitations[invitationId] = invitation;
+      hasInvitationsForCurrentUser = true;
+    }
+  });
+  
+  // אם אין הזמנות למשתמש הנוכחי, לא מציגים כלום
+  if (!hasInvitationsForCurrentUser) {
     return null;
   }
   
-  // Get the first invitation to display
-  const firstInvitationId = Object.keys(pendingInvitations)[0];
-  const firstInvitation = pendingInvitations[firstInvitationId];
+  // מקבלים את ההזמנה הראשונה להצגה
+  const firstInvitationId = Object.keys(currentUserInvitations)[0];
+  const firstInvitation = currentUserInvitations[firstInvitationId];
   
   if (!firstInvitationId || !firstInvitation) {
     return null;

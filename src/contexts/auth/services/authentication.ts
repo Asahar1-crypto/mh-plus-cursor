@@ -2,12 +2,15 @@
 import { User, Account } from '../types';
 import { userService } from './user';
 import { accountService } from './accountService';
-import { showInvitationNotification } from '@/utils/notifications';
+import { showInvitationNotification, clearInvalidInvitations } from '@/utils/notifications';
 
 export async function login(email: string, password: string) {
   try {
     // Sign in with Supabase
     const user = await userService.login(email, password);
+    
+    // ניקוי הזמנות לא רלוונטיות מהאחסון המקומי
+    clearInvalidInvitations(email);
     
     // Get default account
     const account = await accountService.getDefaultAccount(user.id, user.name);
