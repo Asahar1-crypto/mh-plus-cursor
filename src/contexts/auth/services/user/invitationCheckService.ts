@@ -32,18 +32,10 @@ export const invitationCheckService = {
       console.log(`Checking pending invitations for ${email}`);
       
       // Modified query to ensure data integrity and better error handling
-      // FIX: Use the proper join relationship syntax with explicit column specification
+      // Using simple select query format for better compatibility
       const { data: invitations, error } = await supabase
         .from('invitations')
-        .select(`
-          *,
-          accounts:account_id (
-            id, name, owner_id,
-            profiles!owner_id (
-              name
-            )
-          )
-        `)
+        .select('*, accounts(*)')
         .eq('email', email)
         .is('accepted_at', null)
         .gt('expires_at', 'now()');
@@ -111,7 +103,7 @@ export const invitationCheckService = {
             accountId: inv.account_id  // Store the account_id in localStorage
           };
         } else {
-          // Fallback for missing account data
+          // Fallback if we can't get the account information
           pendingInvitations[inv.invitation_id] = {
             name: 'חשבון משותף',
             ownerName: 'בעל החשבון',

@@ -12,17 +12,10 @@ export async function acceptInvitation(invitationId: string, user: User): Promis
   try {
     console.log(`User ${user.id} (${user.email}) attempting to accept invitation ${invitationId}`);
     
-    // CRITICAL FIX: Improved query to ensure we get complete account information
+    // CRITICAL FIX: Modified query to properly join accounts data
     const { data: invitations, error: findError } = await supabase
       .from('invitations')
-      .select(`
-        *,
-        accounts:account_id (
-          id,
-          name,
-          owner_id
-        )
-      `)
+      .select('*, accounts(id, name, owner_id)')
       .eq('invitation_id', invitationId)
       .is('accepted_at', null)
       .gt('expires_at', 'now()');
@@ -64,7 +57,7 @@ export async function acceptInvitation(invitationId: string, user: User): Promis
         throw new Error(`ההזמנה מיועדת ל-${localInvitation.sharedWithEmail} אך אתה מחובר כ-${user.email}`);
       }
       
-      // CRITICAL FIX: Get accountId and ownerId from localStorage or sessionStorage
+      // Get accountId and ownerId from localStorage or sessionStorage
       accountId = localInvitation.accountId;
       ownerId = localInvitation.ownerId;
       accountName = localInvitation.name || 'חשבון משותף';
@@ -80,8 +73,8 @@ export async function acceptInvitation(invitationId: string, user: User): Promis
       
       console.log("Looking for account using accountId:", accountId, "ownerId:", ownerId);
       
-      if (!accountId || !ownerId) {
-        console.error("Missing critical account information (accountId or ownerId)");
+      if (!accountId) {
+        console.error("Missing critical account information (accountId)");
         throw new Error('חסר מידע חיוני להצטרפות לחשבון, אנא בקש הזמנה חדשה');
       }
     } else {
@@ -89,17 +82,41 @@ export async function acceptInvitation(invitationId: string, user: User): Promis
       const invitation = invitations[0];
       console.log("Found invitation in database:", invitation);
       
-      // Get the account from the joined data
+      // CRITICAL FIX: Access accounts data directly from the joined data
       const account = invitation.accounts;
+      console.log("Retrieved account data:", account);
       
-      if (!account) {
+      if (!account || !account.id) {
         console.error("Account information not found in invitation");
         
-        // CRITICAL FIX: Try to get account information from sessionStorage as fallback
-        accountId = sessionStorage.getItem('pendingInvitationAccountId');
-        ownerId = sessionStorage.getItem('pendingInvitationOwnerId');
+        // Try with account_id directly from invitation as fallback
+        accountId = invitation.account_id;
+        console.log("Falling back to invitation.account_id:", accountId);
         
-        if (!accountId || !ownerId) {
+        // Fetch the account separately
+        if (accountId) {
+          const { data: accountData, error: accountError } = await supabase
+            .from('accounts')
+            .select('*')
+            .eq('id', accountId)
+            .single();
+            
+          if (!accountError && accountData) {
+            console.log("Successfully retrieved account data:", accountData);
+            ownerId = accountData.owner_id;
+            accountName = accountData.name;
+          } else {
+            console.error("Failed to retrieve account data:", accountError);
+            // Try sessionStorage as last resort
+            ownerId = sessionStorage.getItem('pendingInvitationOwnerId');
+          }
+        } else {
+          // As last resort, try sessionStorage
+          accountId = sessionStorage.getItem('pendingInvitationAccountId');
+          ownerId = sessionStorage.getItem('pendingInvitationOwnerId');
+        }
+        
+        if (!accountId) {
           throw new Error('מידע החשבון לא נמצא בהזמנה');
         }
       } else {
@@ -116,7 +133,7 @@ export async function acceptInvitation(invitationId: string, user: User): Promis
       }
     }
     
-    // CRITICAL FIX: Check if this account already belongs to the current user
+    // Check if this account already belongs to the current user
     if (ownerId === user.id) {
       console.error("Cannot share account with yourself");
       throw new Error('לא ניתן לשתף חשבון עם עצמך');

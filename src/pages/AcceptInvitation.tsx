@@ -27,20 +27,10 @@ const AcceptInvitation = () => {
       try {
         console.log(`Fetching invitation details for ID: ${invitationId}`);
         
-        // FIX: Modified query to correctly specify the relationship between tables
+        // Simplified query using standard format for better compatibility
         const { data: invitations, error } = await supabase
           .from('invitations')
-          .select(`
-            *,
-            accounts:account_id (
-              id,
-              name,
-              owner_id,
-              profiles!owner_id (
-                name
-              )
-            )
-          `)
+          .select('*, accounts(*)')
           .eq('invitation_id', invitationId)
           .is('accepted_at', null)
           .gt('expires_at', 'now()');
@@ -99,13 +89,10 @@ const AcceptInvitation = () => {
           console.log("Processing Supabase invitation:", { invitation, account });
           
           if (account) {
-            // FIX: Use the correct property path to access the owner name
+            // For account owner name, we need to fetch profile data separately
             let ownerName = 'בעל החשבון';
             
-            if (account.profiles && account.profiles.name) {
-              ownerName = account.profiles.name;
-            } else if (account.owner_id) {
-              // Fallback to separate query if nested join didn't work
+            if (account.owner_id) {
               const { data: ownerData } = await supabase
                 .from('profiles')
                 .select('name')
