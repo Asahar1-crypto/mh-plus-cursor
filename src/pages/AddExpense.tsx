@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -26,7 +25,7 @@ const expenseSchema = z.object({
 });
 
 const AddExpense = () => {
-  const { addExpense, children } = useExpense();
+  const { addExpense, childrenList } = useExpense();
   const navigate = useNavigate();
   const [isPending, setIsPending] = React.useState(false);
   
@@ -48,7 +47,7 @@ const AddExpense = () => {
     setIsPending(true);
     try {
       const childInfo = data.childId ? 
-        children.find(c => c.id === data.childId) : undefined;
+        childrenList.find(c => c.id === data.childId) : undefined;
       
       await addExpense({
         amount: Number(data.amount),
@@ -169,8 +168,8 @@ const AddExpense = () => {
                       </FormControl>
                       <SelectContent>
                         <SelectItem value="">כללי - ללא שיוך לילד/ה</SelectItem>
-                        {children.length > 0 ? (
-                          children.map((child) => (
+                        {childrenList.length > 0 ? (
+                          childrenList.map((child) => (
                             <SelectItem key={child.id} value={child.id}>
                               {child.name}
                             </SelectItem>

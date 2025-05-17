@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -24,7 +23,7 @@ const childSchema = z.object({
 });
 
 const Children = () => {
-  const { children, addChild } = useExpense();
+  const { childrenList, addChild } = useExpense(); // Updated from children to childrenList
   const { user, sendInvitation } = useAuth();
   const [open, setOpen] = useState(false);
   const [isPending, setIsPending] = useState(false);
@@ -151,11 +150,11 @@ const Children = () => {
       </div>
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {children.map((child) => (
+        {childrenList.map((child) => (
           <ChildCard key={child.id} child={child} />
         ))}
         
-        {children.length === 0 && (
+        {childrenList.length === 0 && (
           <div className="col-span-full text-center py-12">
             <div className="mx-auto w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4">
               <User className="h-8 w-8 text-muted-foreground" />
