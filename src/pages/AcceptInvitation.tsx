@@ -27,7 +27,7 @@ const AcceptInvitation = () => {
       try {
         console.log(`Fetching invitation details for ID: ${invitationId}`);
         
-        // CRITICAL FIX: Improved query to ensure we get complete account information
+        // FIX: Modified query to correctly specify the relationship between tables
         const { data: invitations, error } = await supabase
           .from('invitations')
           .select(`
@@ -36,7 +36,7 @@ const AcceptInvitation = () => {
               id,
               name,
               owner_id,
-              profiles:owner_id (
+              profiles!owner_id (
                 name
               )
             )
@@ -87,7 +87,7 @@ const AcceptInvitation = () => {
             sessionStorage.setItem('pendingInvitationAccountId', invitation.accountId);
           }
           
-          // CRITICAL FIX: Also store the owner ID to ensure proper account linking
+          // Also store the owner ID to ensure proper account linking
           if (invitation.ownerId) {
             console.log("Storing owner ID in sessionStorage:", invitation.ownerId);
             sessionStorage.setItem('pendingInvitationOwnerId', invitation.ownerId);
@@ -99,7 +99,7 @@ const AcceptInvitation = () => {
           console.log("Processing Supabase invitation:", { invitation, account });
           
           if (account) {
-            // CRITICAL FIX: Get owner name from nested profiles or fetch separately if needed
+            // FIX: Use the correct property path to access the owner name
             let ownerName = 'בעל החשבון';
             
             if (account.profiles && account.profiles.name) {
@@ -127,7 +127,7 @@ const AcceptInvitation = () => {
             console.log("Storing account ID in sessionStorage:", invitation.account_id);
             sessionStorage.setItem('pendingInvitationAccountId', invitation.account_id);
             
-            // CRITICAL FIX: Also store the owner ID to ensure proper account linking
+            // Also store the owner ID to ensure proper account linking
             if (account.owner_id) {
               console.log("Storing owner ID in sessionStorage:", account.owner_id);
               sessionStorage.setItem('pendingInvitationOwnerId', account.owner_id);

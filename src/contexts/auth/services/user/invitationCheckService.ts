@@ -13,10 +13,10 @@ interface InvitationData {
     name: string;
     id: string;
     owner_id: string;
+    profiles?: {
+      name?: string;
+    };
   };
-  owner_profile?: {
-    name?: string;
-  } | null;
 }
 
 /**
@@ -29,13 +29,16 @@ export const invitationCheckService = {
       console.log(`Checking pending invitations for ${email}`);
       
       // Modified query to ensure data integrity and better error handling
-      // CRITICAL FIX: Added explicit selection of accounts fields and fixed join relationship
+      // FIX: Use the proper join relationship syntax with explicit column specification
       const { data: invitations, error } = await supabase
         .from('invitations')
         .select(`
           *,
           accounts:account_id (
-            id, name, owner_id
+            id, name, owner_id,
+            profiles!owner_id (
+              name
+            )
           )
         `)
         .eq('email', email)
@@ -92,13 +95,13 @@ export const invitationCheckService = {
 
       console.log(`Found and processed ${enrichedInvitations.length} pending invitations for ${email}`);
       
-      // CRITICAL FIX: Store invitations in localStorage with complete account information
+      // Store invitations in localStorage with complete account information
       const pendingInvitations = {};
       enrichedInvitations.forEach(inv => {
         if (inv.accounts) {
           pendingInvitations[inv.invitation_id] = {
             name: inv.accounts.name || 'חשבון משותף',
-            ownerName: inv.owner_profile?.name || 'בעל החשבון',
+            ownerName: inv.accounts.profiles?.name || inv.owner_profile?.name || 'בעל החשבון',
             ownerId: inv.accounts.owner_id, // Store the owner ID properly
             sharedWithEmail: inv.email,
             invitationId: inv.invitation_id,
