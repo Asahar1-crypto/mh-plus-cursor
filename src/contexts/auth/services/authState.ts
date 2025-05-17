@@ -1,16 +1,14 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { User, Account } from '../types';
-import { toast } from 'sonner';
-import { userService } from './user';
 import { accountService } from './accountService';
-import { invitationService } from './invitationService';
-import { showInvitationNotification } from '@/utils/notifications';
+import { userService } from './user';
+import { showInvitationNotification } from "@/utils/notifications";
 
-// Hebrew text constants to avoid JSX parsing issues
-const INVITATION_SUCCESS_MESSAGE = 'התחברת אוטומטית לחשבון שהוזמנת אליו!';
-
-export const checkAuth = async () => {
+/**
+ * Checks the current auth state and returns user and account if authenticated
+ */
+export async function checkAuth(): Promise<{ user: User | null, account: Account | null }> {
   try {
     const { data: { session } } = await supabase.auth.getSession();
     
@@ -43,25 +41,29 @@ export const checkAuth = async () => {
           // Try to accept the first invitation
           const invitation = invitations[0];
           try {
-            await invitationService.acceptInvitation(invitation.invitationId, user);
+            const acceptInvitationModule = await import('./invitation');
+            await acceptInvitationModule.invitationService.acceptInvitation(invitation.invitationId, user);
             
             // Remove the pending invitation data
             localStorage.removeItem('pendingInvitationsAfterRegistration');
             console.log("Removed pending invitations data after processing");
             
-            toast.success(INVITATION_SUCCESS_MESSAGE);
+            toast.success('התחברת אוטומטית לחשבון שהוזמנת אליו!');
             
             // Get the account after accepting the invitation
             const { sharedAccounts } = await accountService.getUserAccounts(user.id);
             if (sharedAccounts && sharedAccounts.length > 0) {
               console.log("Returning shared account after auto-linking:", sharedAccounts[0]);
-              return { user, account: {
-                id: sharedAccounts[0].id,
-                name: sharedAccounts[0].name,
-                ownerId: sharedAccounts[0].owner_id,
-                sharedWithId: user.id,
-                sharedWithEmail: user.email
-              }};
+              return { 
+                user, 
+                account: {
+                  id: sharedAccounts[0].id,
+                  name: sharedAccounts[0].name,
+                  ownerId: sharedAccounts[0].owner_id,
+                  sharedWithId: user.id,
+                  sharedWithEmail: user.email
+                }
+              };
             }
           } catch (error) {
             console.error('Error accepting invitation after registration:', error);
@@ -89,7 +91,7 @@ export const checkAuth = async () => {
       // Store the invitation in localStorage so we can access it later
       const pendingInvitations = {};
       invitations.forEach(inv => {
-        // Safely access properties using optional chaining
+        // Use optional chaining to safely access properties
         const accountName = inv.accounts ? inv.accounts.name : 'חשבון משותף';
         const ownerName = inv.owner_profile ? inv.owner_profile.name : 'בעל החשבון';
         
@@ -103,7 +105,7 @@ export const checkAuth = async () => {
       
       localStorage.setItem('pendingInvitations', JSON.stringify(pendingInvitations));
       
-      // Notify the user about the pending invitation - use the utility function instead of JSX
+      // Notify the user about the pending invitation
       showInvitationNotification(invitations[0].invitation_id);
     }
     
@@ -112,4 +114,4 @@ export const checkAuth = async () => {
     console.error('Error checking authentication:', error);
     return { user: null, account: null };
   }
-};
+}
