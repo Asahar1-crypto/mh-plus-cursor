@@ -14,7 +14,7 @@ export const registrationService = {
       // Check if email has pending invitations
       const { data: invitations, error: invitationsError } = await supabase
         .from('invitations')
-        .select('invitation_id, account_id')
+        .select('invitation_id, account_id, accounts:account_id(name, owner_id)')
         .eq('email', email)
         .is('accepted_at', null)
         .gt('expires_at', 'now()');
@@ -49,16 +49,20 @@ export const registrationService = {
         if (invitations && invitations.length > 0) {
           console.log(`Found ${invitations.length} pending invitations for ${email} during registration`);
           
-          // Save more complete invitation data to localStorage
-          localStorage.setItem('pendingInvitationsAfterRegistration', JSON.stringify({
+          // Save more complete invitation data to localStorage, includig the account details
+          const pendingInvitations = {
             email,
             invitations: invitations.map(inv => ({
               invitationId: inv.invitation_id,
-              accountId: inv.account_id
+              accountId: inv.account_id,
+              accountName: inv.accounts?.name || 'חשבון משותף',
+              ownerId: inv.accounts?.owner_id
             }))
-          }));
+          };
           
-          console.log('Stored pending invitations with account IDs:', invitations);
+          localStorage.setItem('pendingInvitationsAfterRegistration', JSON.stringify(pendingInvitations));
+          
+          console.log('Stored pending invitations with complete data:', pendingInvitations);
         }
         
         // Create typed User object

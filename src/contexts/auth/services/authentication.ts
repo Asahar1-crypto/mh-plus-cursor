@@ -13,38 +13,42 @@ export async function login(email: string, password: string) {
     const account = await accountService.getDefaultAccount(user.id, user.name);
     
     // Check for valid invitations by email that haven't been accepted yet
-    const invitations = await userService.checkPendingInvitations(email);
-    
-    // If there's a pending invitation, notify the user
-    if (invitations && invitations.length > 0) {
-      console.log(`Found ${invitations.length} pending invitations after login for ${email}`);
+    try {
+      const invitations = await userService.checkPendingInvitations(email);
       
-      // Store the invitation in localStorage so we can access it later
-      const pendingInvitations = {};
-      invitations.forEach(inv => {
-        // Safety checks to ensure we're dealing with valid data
-        if (typeof inv === 'object' && inv !== null && !('error' in inv)) {
-          // Safely access properties using optional chaining and nullish coalescing
-          const accountName = inv.accounts?.name || 'חשבון משותף';
-          const ownerName = inv.owner_profile?.name || 'בעל החשבון';
-          
-          pendingInvitations[inv.invitation_id] = {
-            name: accountName,
-            ownerName,
-            sharedWithEmail: inv.email,
-            invitationId: inv.invitation_id
-          };
-        } else {
-          console.error("Invalid invitation data:", inv);
+      // If there's a pending invitation, notify the user
+      if (invitations && invitations.length > 0) {
+        console.log(`Found ${invitations.length} pending invitations after login for ${email}`);
+        
+        // Store the invitation in localStorage so we can access it later
+        const pendingInvitations = {};
+        invitations.forEach(inv => {
+          // Safety checks to ensure we're dealing with valid data
+          if (typeof inv === 'object' && inv !== null && !('error' in inv)) {
+            // Safely access properties using optional chaining and nullish coalescing
+            const accountName = inv.accounts?.name || 'חשבון משותף';
+            const ownerName = inv.owner_profile?.name || 'בעל החשבון';
+            
+            pendingInvitations[inv.invitation_id] = {
+              name: accountName,
+              ownerName,
+              sharedWithEmail: inv.email,
+              invitationId: inv.invitation_id
+            };
+          } else {
+            console.error("Invalid invitation data:", inv);
+          }
+        });
+        
+        localStorage.setItem('pendingInvitations', JSON.stringify(pendingInvitations));
+        
+        // Notify the user about the pending invitation
+        if (invitations[0] && invitations[0].invitation_id) {
+          showInvitationNotification(invitations[0].invitation_id);
         }
-      });
-      
-      localStorage.setItem('pendingInvitations', JSON.stringify(pendingInvitations));
-      
-      // Notify the user about the pending invitation
-      if (invitations[0] && invitations[0].invitation_id) {
-        showInvitationNotification(invitations[0].invitation_id);
       }
+    } catch (error) {
+      console.error('Error checking invitations after login:', error);
     }
     
     // Check if there's a pendingInvitationId in sessionStorage

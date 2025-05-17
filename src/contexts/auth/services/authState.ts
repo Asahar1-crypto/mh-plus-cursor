@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { User, Account } from '../types';
 import { accountService } from './accountService';
 import { userService } from './user';
-import { showInvitationNotification } from "@/utils/notifications";
+import { showInvitationNotification } from '@/utils/notifications';
 import { toast } from 'sonner';
 
 /**
@@ -33,7 +33,9 @@ export async function checkAuth(): Promise<{ user: User | null, account: Account
       console.log("Found pending invitations after registration:", pendingInvitationsData);
       
       try {
-        const { email, invitations } = JSON.parse(pendingInvitationsData);
+        const pendingData = JSON.parse(pendingInvitationsData);
+        const email = pendingData.email;
+        const invitations = pendingData.invitations;
         
         // Check if this is the right user for these invitations
         if (email === user.email && invitations && invitations.length > 0) {
@@ -45,11 +47,12 @@ export async function checkAuth(): Promise<{ user: User | null, account: Account
           if (!invitation.invitationId) {
             console.error("Invitation is missing invitationId");
             localStorage.removeItem('pendingInvitationsAfterRegistration');
+            toast.error('אירעה שגיאה בקבלת ההזמנה האוטומטית');
             return { user, account: await accountService.getDefaultAccount(user.id, user.name) };
           }
           
           try {
-            // Import and use acceptInvitation directly
+            // Import and use acceptInvitation directly to avoid circular dependencies
             const { acceptInvitation } = await import('./invitation/acceptInvitation');
             
             // Accept the invitation with the current user
@@ -66,6 +69,7 @@ export async function checkAuth(): Promise<{ user: User | null, account: Account
             
           } catch (error) {
             console.error('Error accepting invitation after registration:', error);
+            toast.error('אירעה שגיאה בקבלת ההזמנה האוטומטית, מתחבר לחשבון ברירת מחדל');
             localStorage.removeItem('pendingInvitationsAfterRegistration');
           }
         } else {
@@ -83,36 +87,43 @@ export async function checkAuth(): Promise<{ user: User | null, account: Account
     console.log("Default account retrieved:", account);
     
     // Check for valid invitations by email
-    const invitations = await userService.checkPendingInvitations(user.email);
-    
-    // If there's a pending invitation, notify the user
-    if (invitations && invitations.length > 0) {
-      console.log(`Found ${invitations.length} pending invitations for ${user.email}`);
+    try {
+      const invitations = await userService.checkPendingInvitations(user.email);
       
-      // Store the invitation in localStorage so we can access it later
-      const pendingInvitations = {};
-      invitations.forEach(inv => {
-        // Safety checks to ensure we're dealing with valid data
-        if (typeof inv === 'object' && inv !== null && !('error' in inv)) {
-          // Safely access properties using optional chaining and nullish coalescing
-          const accountName = inv.accounts?.name || 'חשבון משותף';
-          const ownerName = inv.owner_profile?.name || 'בעל החשבון';
-          
-          pendingInvitations[inv.invitation_id] = {
-            name: accountName,
-            ownerName,
-            sharedWithEmail: inv.email,
-            invitationId: inv.invitation_id
-          };
-        } else {
-          console.error("Invalid invitation data:", inv);
+      // If there's a pending invitation, notify the user
+      if (invitations && invitations.length > 0) {
+        console.log(`Found ${invitations.length} pending invitations for ${user.email}`);
+        
+        // Store the invitation in localStorage so we can access it later
+        const pendingInvitations = {};
+        invitations.forEach(inv => {
+          // Safety checks to ensure we're dealing with valid data
+          if (typeof inv === 'object' && inv !== null && !('error' in inv)) {
+            // Safely access properties using optional chaining and nullish coalescing
+            const accountName = inv.accounts?.name || 'חשבון משותף';
+            // Owner name might be null if we couldn't get the profile
+            const ownerName = inv.owner_profile?.name || 'בעל החשבון';
+            
+            pendingInvitations[inv.invitation_id] = {
+              name: accountName,
+              ownerName,
+              sharedWithEmail: inv.email,
+              invitationId: inv.invitation_id
+            };
+          } else {
+            console.error("Invalid invitation data:", inv);
+          }
+        });
+        
+        localStorage.setItem('pendingInvitations', JSON.stringify(pendingInvitations));
+        
+        // Notify the user about the pending invitation
+        if (invitations[0] && invitations[0].invitation_id) {
+          showInvitationNotification(invitations[0].invitation_id);
         }
-      });
-      
-      localStorage.setItem('pendingInvitations', JSON.stringify(pendingInvitations));
-      
-      // Notify the user about the pending invitation
-      showInvitationNotification(invitations[0].invitation_id);
+      }
+    } catch (error) {
+      console.error('Error checking pending invitations:', error);
     }
     
     return { user, account };

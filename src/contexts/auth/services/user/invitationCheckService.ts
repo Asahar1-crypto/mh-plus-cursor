@@ -1,7 +1,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
 
-// Define interface for the invitation data
+// Define interface for the invitation data that correctly handles profile errors
 interface InvitationData {
   id: string;
   account_id: string;
@@ -28,9 +28,15 @@ export const invitationCheckService = {
     try {
       console.log(`Checking pending invitations for ${email}`);
       
+      // Modified query to ensure data integrity and better error handling
       const { data: invitations, error } = await supabase
         .from('invitations')
-        .select('*, accounts(*), owner_profile:profiles!accounts(name)')
+        .select(`
+          *,
+          accounts:account_id (
+            id, name, owner_id
+          )
+        `)
         .eq('email', email)
         .is('accepted_at', null)
         .gt('expires_at', 'now()');
@@ -40,8 +46,47 @@ export const invitationCheckService = {
         throw error;
       }
 
-      console.log(`Found ${invitations?.length || 0} pending invitations for ${email}`);
-      return invitations as unknown as InvitationData[] || [];
+      if (!invitations || invitations.length === 0) {
+        console.log(`No pending invitations found for ${email}`);
+        return [];
+      }
+
+      // Now let's get the owner profiles for these invitations in a separate query
+      // This avoids the issues with the relationship between invitations and profiles
+      const ownerIds = invitations
+        .map(inv => inv.accounts?.owner_id)
+        .filter(id => id) as string[];
+
+      let ownerProfiles = {};
+      
+      if (ownerIds.length > 0) {
+        const { data: profiles, error: profileError } = await supabase
+          .from('profiles')
+          .select('id, name')
+          .in('id', ownerIds);
+          
+        if (!profileError && profiles) {
+          // Create a map of owner_id to profile data
+          ownerProfiles = profiles.reduce((acc, profile) => {
+            acc[profile.id] = { name: profile.name };
+            return acc;
+          }, {});
+        } else {
+          console.error("Error fetching owner profiles:", profileError);
+        }
+      }
+
+      // Combine the data
+      const enrichedInvitations = invitations.map(inv => {
+        const ownerId = inv.accounts?.owner_id;
+        return {
+          ...inv,
+          owner_profile: ownerId ? (ownerProfiles[ownerId] || null) : null
+        };
+      });
+
+      console.log(`Found and processed ${enrichedInvitations.length} pending invitations for ${email}`);
+      return enrichedInvitations as InvitationData[];
     } catch (error) {
       console.error('Failed to check pending invitations:', error);
       return [];
