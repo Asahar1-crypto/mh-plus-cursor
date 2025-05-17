@@ -8,6 +8,7 @@ import { User } from '@/contexts/auth/types';
 import InvitationDetailsCard from './InvitationDetailsCard';
 import LoginRequiredAlert from './LoginRequiredAlert';
 import EmailMismatchAlert from './EmailMismatchAlert';
+import ClearInvitationsButton from './ClearInvitationsButton';
 
 interface SuccessStateProps {
   invitationDetails: {
@@ -102,6 +103,12 @@ const SuccessState = ({
               userEmail={user.email} 
             />
           )}
+          
+          {/* Add button to clear invitations if there's an error */}
+          <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-md">
+            <p className="mb-2 text-sm text-red-800">נתקלת בבעיה עם ההזמנות? נקה את רשימת ההזמנות ובקש הזמנה חדשה:</p>
+            <ClearInvitationsButton redirectAfterClear={true} variant="outline" className="w-full border-red-300 text-red-700 hover:bg-red-100" />
+          </div>
         </div>
       </CardContent>
       <CardFooter className="flex justify-between pt-2">

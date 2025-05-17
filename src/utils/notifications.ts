@@ -89,3 +89,18 @@ export const clearInvalidInvitations = (currentUserEmail: string): void => {
     console.error('Failed to clear invalid invitations:', error);
   }
 };
+
+// Clear all pending invitations from localStorage
+export const clearAllPendingInvitations = (): void => {
+  try {
+    localStorage.removeItem('pendingInvitations');
+    localStorage.removeItem('pendingInvitationsAfterRegistration');
+    sessionStorage.removeItem('pendingInvitationId');
+    sessionStorage.removeItem('pendingInvitationAccountId');
+    console.log('All pending invitations cleared from storage');
+    toast.success('רשימת ההזמנות נוקתה בהצלחה');
+  } catch (error) {
+    console.error('Failed to clear pending invitations:', error);
+    toast.error('אירעה שגיאה בניקוי רשימת ההזמנות');
+  }
+};
