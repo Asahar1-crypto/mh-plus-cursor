@@ -1,6 +1,7 @@
 import { toast } from 'sonner';
 import { User, Account } from './types';
 import { supabase } from "@/integrations/supabase/client";
+import { sendInvitationEmail } from '@/utils/emailService';
 
 export const authService = {
   // Check for saved session
@@ -308,43 +309,49 @@ export const authService = {
         
       if (checkError) throw checkError;
       
+      let invitationId;
+      
       if (existingInvitations && existingInvitations.length > 0) {
-        // Return the existing invitation
+        // Use the existing invitation
         console.log(`Invitation already exists for ${email}, reusing: ${existingInvitations[0].invitation_id}`);
+        invitationId = existingInvitations[0].invitation_id;
+      } else {
+        // Generate a unique invitation ID
+        invitationId = `inv-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
         
-        // Update the account object
-        const updatedAccount: Account = {
-          ...account,
-          sharedWithEmail: email,
-          invitationId: existingInvitations[0].invitation_id
-        };
-        
-        return updatedAccount;
+        // Insert the invitation into Supabase
+        const { error: insertError } = await supabase
+          .from('invitations')
+          .insert({
+            account_id: account.id,
+            email: email,
+            invitation_id: invitationId
+          });
+          
+        if (insertError) throw insertError;
       }
       
-      // Generate a unique invitation ID
-      const invitationId = `inv-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+      // Build the invitation link
+      const invitationLink = `${window.location.origin}/invitation/${invitationId}`;
       
-      // Insert the invitation into Supabase
-      const { error: insertError } = await supabase
-        .from('invitations')
-        .insert({
-          account_id: account.id,
-          email: email,
-          invitation_id: invitationId
-        });
+      // Send email using our new email service (imported at the top of the file)
+      try {
+        // Import the email service
+        const { sendInvitationEmail } = await import('@/utils/emailService');
         
-      if (insertError) throw insertError;
-      
-      // Simulate sending an email
-      console.log(`Email would be sent to ${email} with invitation link: /invitation/${invitationId}`);
-      
-      // In a real implementation, this would update the database
-      const updatedAccount: Account = {
-        ...account,
-        sharedWithEmail: email,
-        invitationId: invitationId
-      };
+        // Send the invitation email
+        await sendInvitationEmail(
+          email,
+          invitationLink,
+          user.name,
+          account.name
+        );
+        
+        console.log(`Invitation email sent to ${email}`);
+      } catch (emailError) {
+        console.error('Failed to send invitation email:', emailError);
+        // We continue even if email fails, as the invitation was created
+      }
       
       // Store the invitation in localStorage for the demo
       const pendingInvitations = JSON.parse(localStorage.getItem('pendingInvitations') || '{}');
@@ -355,6 +362,13 @@ export const authService = {
         invitationId: invitationId
       };
       localStorage.setItem('pendingInvitations', JSON.stringify(pendingInvitations));
+      
+      // Update the account object
+      const updatedAccount: Account = {
+        ...account,
+        sharedWithEmail: email,
+        invitationId: invitationId
+      };
       
       return updatedAccount;
     } catch (error) {

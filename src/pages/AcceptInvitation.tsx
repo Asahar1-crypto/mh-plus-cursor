@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -14,22 +15,20 @@ interface InvitationDetails {
 }
 
 // Define the shape of the data returned by Supabase when fetching invitation details
-interface ProfileData {
-  name: string;
-}
-
-interface AccountData {
-  id: string;
-  name: string;
-  owner_id: string;
-  profiles: ProfileData[];
-}
-
 interface InvitationData {
   id: string;
   email: string;
   invitation_id: string;
-  accounts: AccountData;
+  account_id: string;
+  accounts: {
+    id: string;
+    name: string;
+    owner_id: string;
+  };
+  // Instead of nesting profiles under accounts, we'll fetch the owner's profile separately
+  owner_profile?: {
+    name: string;
+  };
 }
 
 const AcceptInvitation = () => {
@@ -56,11 +55,11 @@ const AcceptInvitation = () => {
             id,
             email,
             invitation_id,
+            account_id,
             accounts:account_id (
               id,
               name,
-              owner_id,
-              profiles(name)
+              owner_id
             )
           `)
           .eq('invitation_id', invitationId)
@@ -93,14 +92,29 @@ const AcceptInvitation = () => {
           const invitation = invitations[0] as InvitationData;
           const account = invitation.accounts;
           
-          setInvitationDetails({
-            // Access the owner's name safely from the profiles array
-            ownerName: account?.profiles && account.profiles.length > 0 
-              ? account.profiles[0].name 
-              : 'בעל החשבון',
-            accountName: account?.name || 'חשבון משותף',
-            email: invitation.email || '',
-          });
+          // If we have account data, fetch the owner's profile separately
+          if (account && account.owner_id) {
+            const { data: ownerData } = await supabase
+              .from('profiles')
+              .select('name')
+              .eq('id', account.owner_id)
+              .single();
+              
+            const ownerName = ownerData?.name || 'בעל החשבון';
+            
+            setInvitationDetails({
+              ownerName: ownerName,
+              accountName: account?.name || 'חשבון משותף',
+              email: invitation.email || '',
+            });
+          } else {
+            // Fallback if we can't get the owner's profile
+            setInvitationDetails({
+              ownerName: 'בעל החשבון',
+              accountName: account?.name || 'חשבון משותף',
+              email: invitation.email || '',
+            });
+          }
         }
         
         setStatus('success');
