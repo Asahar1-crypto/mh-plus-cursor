@@ -28,11 +28,10 @@ export const invitationCheckService = {
     try {
       console.log(`Checking pending invitations for ${email}`);
       
-      // Modified query to ensure data integrity and better error handling
-      // Using simple select query format for better compatibility
+      // Get basic invitation data first
       const { data: invitations, error } = await supabase
         .from('invitations')
-        .select('*, accounts(*)')
+        .select('id, account_id, email, invitation_id, expires_at, accepted_at')
         .eq('email', email)
         .is('accepted_at', null)
         .gt('expires_at', 'now()');
@@ -47,45 +46,57 @@ export const invitationCheckService = {
         return [];
       }
 
-      console.log(`Found invitations:`, invitations);
-
-      // Now let's get the owner profiles for these invitations in a separate query
-      // This avoids the issues with the relationship between invitations and profiles
-      const ownerIds = invitations
-        .map(inv => inv.accounts?.owner_id)
-        .filter(id => id) as string[];
-
-      let ownerProfiles = {};
+      console.log(`Found ${invitations.length} invitations:`, invitations);
       
-      if (ownerIds.length > 0) {
-        const { data: profiles, error: profileError } = await supabase
+      // Get account information for each invitation
+      const enrichedInvitations = [];
+      
+      for (const invitation of invitations) {
+        // Get account information
+        const { data: account, error: accountError } = await supabase
+          .from('accounts')
+          .select('*')
+          .eq('id', invitation.account_id)
+          .single();
+          
+        if (accountError) {
+          console.error(`Error fetching account for invitation ${invitation.invitation_id}:`, accountError);
+          continue;
+        }
+        
+        if (!account) {
+          console.warn(`No account found for invitation ${invitation.invitation_id}`);
+          continue;
+        }
+        
+        console.log(`Found account for invitation ${invitation.invitation_id}:`, account);
+        
+        // Get owner profile
+        const { data: ownerProfile, error: profileError } = await supabase
           .from('profiles')
           .select('id, name')
-          .in('id', ownerIds);
+          .eq('id', account.owner_id)
+          .single();
           
-        if (!profileError && profiles) {
-          // Create a map of owner_id to profile data
-          ownerProfiles = profiles.reduce((acc, profile) => {
-            acc[profile.id] = { name: profile.name };
-            return acc;
-          }, {});
-          
-          console.log("Owner profiles:", ownerProfiles);
-        } else {
-          console.error("Error fetching owner profiles:", profileError);
+        if (profileError) {
+          console.warn(`Error fetching owner profile for account ${account.id}:`, profileError);
         }
+        
+        console.log(`Owner profile for account ${account.id}:`, ownerProfile);
+        
+        // Combine the data
+        enrichedInvitations.push({
+          ...invitation,
+          accounts: {
+            name: account.name,
+            id: account.id,
+            owner_id: account.owner_id
+          },
+          owner_profile: ownerProfile || { name: 'בעל החשבון' }
+        });
       }
 
-      // Combine the data
-      const enrichedInvitations = invitations.map(inv => {
-        const ownerId = inv.accounts?.owner_id;
-        return {
-          ...inv,
-          owner_profile: ownerId ? (ownerProfiles[ownerId] || null) : null
-        };
-      });
-
-      console.log(`Found and processed ${enrichedInvitations.length} pending invitations for ${email}`);
+      console.log(`Processed ${enrichedInvitations.length} pending invitations for ${email}`);
       
       // Store invitations in localStorage with complete account information
       const pendingInvitations = {};
@@ -94,10 +105,10 @@ export const invitationCheckService = {
           pendingInvitations[inv.invitation_id] = {
             name: inv.accounts.name || 'חשבון משותף',
             ownerName: inv.owner_profile?.name || 'בעל החשבון',
-            ownerId: inv.accounts.owner_id, // Store the owner ID properly
+            ownerId: inv.accounts.owner_id,
             sharedWithEmail: inv.email,
             invitationId: inv.invitation_id,
-            accountId: inv.account_id  // Store the account_id in localStorage
+            accountId: inv.account_id
           };
         } else {
           // Fallback if we can't get the account information
