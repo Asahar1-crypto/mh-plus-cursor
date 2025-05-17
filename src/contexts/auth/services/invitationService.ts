@@ -3,7 +3,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { User, Account } from '../types';
 import { toast } from 'sonner';
 import { sendInvitationEmail } from '@/utils/emailService';
-import { Tables } from "@/integrations/supabase/types";
 
 // Define local interfaces for data structures to avoid circular references
 interface InvitationData {
@@ -22,6 +21,13 @@ type InvitationRecord = {
   accepted_at: string | null;
   expires_at: string;
   created_at: string;
+};
+
+// Define the accounts data structure separately to avoid deep type references
+type AccountRecord = {
+  id: string;
+  name: string;
+  owner_id: string;
 };
 
 /**
