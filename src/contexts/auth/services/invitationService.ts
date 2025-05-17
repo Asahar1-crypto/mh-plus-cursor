@@ -31,13 +31,13 @@ interface AccountRecord {
   invitation_id?: string;
 }
 
-// Define a simple type for pending invitations stored in localStorage
-interface PendingInvitation {
+// Define a simple standalone type for pending invitations stored in localStorage
+type PendingInvitationRecord = {
   name: string;
   ownerName: string;
   sharedWithEmail: string;
   invitationId: string;
-}
+};
 
 /**
  * Service for invitation-related operations
@@ -124,7 +124,7 @@ export const invitationService = {
       
       // Store in localStorage for the demo
       try {
-        const pendingInvitations: Record<string, PendingInvitation> = JSON.parse(localStorage.getItem('pendingInvitations') || '{}');
+        const pendingInvitations = JSON.parse(localStorage.getItem('pendingInvitations') || '{}') as Record<string, PendingInvitationRecord>;
         pendingInvitations[invitationId] = {
           name: account.name,
           ownerName: user.name,
@@ -191,7 +191,7 @@ export const invitationService = {
         
         // Remove from localStorage for the demo
         try {
-          const pendingInvitations: Record<string, PendingInvitation> = JSON.parse(localStorage.getItem('pendingInvitations') || '{}');
+          const pendingInvitations = JSON.parse(localStorage.getItem('pendingInvitations') || '{}') as Record<string, PendingInvitationRecord>;
           delete pendingInvitations[account.invitationId];
           localStorage.setItem('pendingInvitations', JSON.stringify(pendingInvitations));
           console.log("Removed invitation from localStorage");
@@ -322,7 +322,7 @@ export const invitationService = {
       
       // Remove from localStorage for the demo
       try {
-        const pendingInvitations: Record<string, PendingInvitation> = JSON.parse(localStorage.getItem('pendingInvitations') || '{}');
+        const pendingInvitations = JSON.parse(localStorage.getItem('pendingInvitations') || '{}') as Record<string, PendingInvitationRecord>;
         delete pendingInvitations[invitationId];
         localStorage.setItem('pendingInvitations', JSON.stringify(pendingInvitations));
         console.log("Removed accepted invitation from localStorage");
