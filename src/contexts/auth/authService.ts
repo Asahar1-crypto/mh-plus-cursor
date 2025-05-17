@@ -1,3 +1,4 @@
+
 import { toast } from 'sonner';
 import { User, Account } from './types';
 import { supabase } from "@/integrations/supabase/client";
@@ -39,24 +40,29 @@ export const authService = {
             
             // Try to accept the first invitation
             const invitation = invitations[0];
-            await invitationService.acceptInvitation(invitation.invitationId, user);
-            
-            // Remove the pending invitation data
-            localStorage.removeItem('pendingInvitationsAfterRegistration');
-            console.log("Removed pending invitations data after processing");
-            
-            toast.success('התחברת אוטומטית לחשבון שהוזמנת אליו!');
-            
-            // Get the account after accepting the invitation
-            const account = await accountService.getUserAccounts(user.id);
-            if (account.sharedAccounts && account.sharedAccounts.length > 0) {
-              console.log("Returning shared account after auto-linking:", account.sharedAccounts[0]);
-              return { user, account: {
-                id: account.sharedAccounts[0].id,
-                name: account.sharedAccounts[0].name,
-                ownerId: account.sharedAccounts[0].owner_id,
-                sharedWithId: user.id
-              }};
+            try {
+              await invitationService.acceptInvitation(invitation.invitationId, user);
+              
+              // Remove the pending invitation data
+              localStorage.removeItem('pendingInvitationsAfterRegistration');
+              console.log("Removed pending invitations data after processing");
+              
+              toast.success('התחברת אוטומטית לחשבון שהוזמנת אליו!');
+              
+              // Get the account after accepting the invitation
+              const { sharedAccounts } = await accountService.getUserAccounts(user.id);
+              if (sharedAccounts && sharedAccounts.length > 0) {
+                console.log("Returning shared account after auto-linking:", sharedAccounts[0]);
+                return { user, account: {
+                  id: sharedAccounts[0].id,
+                  name: sharedAccounts[0].name,
+                  ownerId: sharedAccounts[0].owner_id,
+                  sharedWithId: user.id,
+                  sharedWithEmail: user.email
+                }};
+              }
+            } catch (error) {
+              console.error('Error accepting invitation after registration:', error);
             }
           } else {
             console.log("User email doesn't match invitation or no invitations found");
@@ -79,18 +85,27 @@ export const authService = {
         console.log(`Found ${invitations.length} pending invitations for ${user.email}`);
         
         // Store the invitation in localStorage so we can access it later
-        localStorage.setItem('pendingInvitations', JSON.stringify({
-          [invitations[0].invitation_id]: {
-            id: invitations[0].id,
-            accountId: invitations[0].account_id,
-            email: invitations[0].email,
-            invitationId: invitations[0].invitation_id
+        const pendingInvitations = {};
+        invitations.forEach(inv => {
+          pendingInvitations[inv.invitation_id] = {
+            name: inv.accounts?.name || 'חשבון משותף',
+            ownerName: inv.owner_profile?.name || 'בעל החשבון',
+            sharedWithEmail: inv.email,
+            invitationId: inv.invitation_id
           }
-        }));
+        });
         
-        // Notify the user about the pending invitation using a string-based message
-        toast.info(`יש לך הזמנה לחשבון משותף! לצפייה בהזמנה: /invitation/${invitations[0].invitation_id}`, 
-          { duration: 10000 }
+        localStorage.setItem('pendingInvitations', JSON.stringify(pendingInvitations));
+        
+        // Notify the user about the pending invitation
+        toast.info(
+          <div>
+            יש לך הזמנה לחשבון משותף!{' '}
+            <a href={`/invitation/${invitations[0].invitation_id}`} className="underline font-bold">
+              לצפייה בהזמנה
+            </a>
+          </div>, 
+          { duration: 15000 }
         );
       }
       
@@ -118,18 +133,27 @@ export const authService = {
         console.log(`Found ${invitations.length} pending invitations after login for ${email}`);
         
         // Store the invitation in localStorage so we can access it later
-        localStorage.setItem('pendingInvitations', JSON.stringify({
-          [invitations[0].invitation_id]: {
-            id: invitations[0].id,
-            accountId: invitations[0].account_id,
-            email: invitations[0].email,
-            invitationId: invitations[0].invitation_id
+        const pendingInvitations = {};
+        invitations.forEach(inv => {
+          pendingInvitations[inv.invitation_id] = {
+            name: inv.accounts?.name || 'חשבון משותף',
+            ownerName: inv.owner_profile?.name || 'בעל החשבון',
+            sharedWithEmail: inv.email,
+            invitationId: inv.invitation_id
           }
-        }));
+        });
         
-        // Notify the user about the pending invitation using a string-based message
-        toast.info(`יש לך הזמנה לחשבון משותף! לצפייה בהזמנה: /invitation/${invitations[0].invitation_id}`, 
-          { duration: 10000 }
+        localStorage.setItem('pendingInvitations', JSON.stringify(pendingInvitations));
+        
+        // Notify the user about the pending invitation
+        toast.info(
+          <div>
+            יש לך הזמנה לחשבון משותף!{' '}
+            <a href={`/invitation/${invitations[0].invitation_id}`} className="underline font-bold">
+              לצפייה בהזמנה
+            </a>
+          </div>, 
+          { duration: 15000 }
         );
       }
       

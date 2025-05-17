@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { User, Account } from '../types';
 import { toast } from 'sonner';
@@ -80,7 +79,7 @@ export const userService = {
       // Check for pending invitations for this email
       const { data: invitations, error: invitationError } = await supabase
         .from('invitations')
-        .select('*')
+        .select('*, accounts(*), accounts:accounts(owner_id, profiles:profiles(name))')
         .eq('email', email)
         .is('accepted_at', null)
         .gt('expires_at', 'now()');
@@ -91,7 +90,7 @@ export const userService = {
 
       // If there are pending invitations, store them for processing after email verification
       if (invitations && invitations.length > 0) {
-        console.log(`Found ${invitations.length} pending invitations for ${email}`);
+        console.log(`Found ${invitations.length} pending invitations for ${email}:`, invitations);
         
         // Get any existing data
         const existingData = localStorage.getItem('pendingInvitationsAfterRegistration');
@@ -114,7 +113,9 @@ export const userService = {
               id: inv.id,
               accountId: inv.account_id,
               email: inv.email,
-              invitationId: inv.invitation_id
+              invitationId: inv.invitation_id,
+              accountName: inv.accounts?.name || 'חשבון משותף',
+              ownerName: inv.accounts?.profiles?.name || 'בעל החשבון'
             }))
           ]
         }));
@@ -216,7 +217,7 @@ export const userService = {
       
       const { data: invitations, error } = await supabase
         .from('invitations')
-        .select('*')
+        .select('*, accounts(*), owner_profile:profiles!accounts(name)')
         .eq('email', email)
         .is('accepted_at', null)
         .gt('expires_at', 'now()');
