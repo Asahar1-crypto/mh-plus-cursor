@@ -1,27 +1,55 @@
 
 import { toast } from 'sonner';
 import { User, Account } from './types';
+import { supabase } from "@/integrations/supabase/client";
 
 export const authService = {
   // Check for saved session
   checkAuth: async () => {
     try {
-      // In a real app, this would verify the token with a server
-      const savedUser = localStorage.getItem('user');
-      const savedAccount = localStorage.getItem('account');
+      const { data: { session } } = await supabase.auth.getSession();
       
-      if (savedUser && savedAccount) {
-        return {
-          user: JSON.parse(savedUser),
-          account: JSON.parse(savedAccount)
+      if (!session) {
+        return { user: null, account: null };
+      }
+      
+      // Get the user profile from the profile table
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', session.user.id)
+        .single();
+      
+      // Get account associated with this user
+      const { data: accountData } = await supabase
+        .from('accounts')
+        .select('*')
+        .or(`ownerId.eq.${session.user.id},sharedWithId.eq.${session.user.id}`)
+        .single();
+        
+      // Create user object based on Supabase session and profile data
+      const user: User = {
+        id: session.user.id,
+        email: session.user.email || '',
+        name: profile?.name || session.user.email?.split('@')[0] || 'User'
+      };
+      
+      // Create account object based on account data
+      let account: Account | null = null;
+      if (accountData) {
+        account = {
+          id: accountData.id,
+          name: accountData.name,
+          ownerId: accountData.owner_id,
+          sharedWithId: accountData.shared_with_id,
+          sharedWithEmail: accountData.shared_with_email,
+          invitationId: accountData.invitation_id
         };
       }
-      return { user: null, account: null };
+      
+      return { user, account };
     } catch (error) {
       console.error('Error checking authentication:', error);
-      // Clear potentially corrupted data
-      localStorage.removeItem('user');
-      localStorage.removeItem('account');
       return { user: null, account: null };
     }
   },
@@ -29,72 +57,93 @@ export const authService = {
   // Login function
   login: async (email: string, password: string) => {
     try {
-      // Mock login - in a real app, this would be an API call
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Sign in with Supabase
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
       
-      // Generate a unique user ID based on email to ensure each user gets their own data
-      const userId = `user-${btoa(email).replace(/[^a-zA-Z0-9]/g, '')}`;
-      
-      // Simulate successful login with unique user data
-      const mockUser: User = {
-        id: userId,
-        email: email,
-        name: email.split('@')[0]
-      };
-      
-      const accountId = `acc-${btoa(email).replace(/[^a-zA-Z0-9]/g, '')}`;
-      
-      const mockAccount: Account = {
-        id: accountId,
-        name: 'משפחת ' + mockUser.name,
-        ownerId: mockUser.id
-      };
-      
-      // Check if there's a pending invitation for this email
-      const pendingAccounts = JSON.parse(localStorage.getItem('pendingInvitations') || '{}');
-      const invitationForUser = Object.values(pendingAccounts).find(
-        (inv: any) => inv.sharedWithEmail === email
-      ) as Account | undefined;
-      
-      if (invitationForUser) {
-        // User is logging in and has a pending invitation
-        mockAccount.sharedWithId = mockUser.id;
-        mockAccount.id = invitationForUser.id;
-        mockAccount.name = invitationForUser.name;
-        mockAccount.ownerId = invitationForUser.ownerId;
-        
-        // Update the pending invitation in storage
-        const updatedPending = { ...pendingAccounts };
-        delete updatedPending[invitationForUser.invitationId!];
-        localStorage.setItem('pendingInvitations', JSON.stringify(updatedPending));
-        
-        // Update the main account in storage
-        const allAccounts = JSON.parse(localStorage.getItem('accounts') || '{}');
-        allAccounts[mockAccount.id] = {
-          ...allAccounts[mockAccount.id],
-          sharedWithId: mockUser.id
-        };
-        localStorage.setItem('accounts', JSON.stringify(allAccounts));
-        
-        toast.success('התחברת בהצלחה והצטרפת לחשבון משותף!');
-      } else {
-        toast.success('התחברת בהצלחה!');
+      if (error) {
+        throw error;
       }
       
-      // Save to localStorage for persistence - with a namespace based on the user's email
-      // This ensures that each user's data is kept separate in localStorage
-      localStorage.setItem(`user_${email}`, JSON.stringify(mockUser));
-      localStorage.setItem(`account_${email}`, JSON.stringify(mockAccount));
+      if (!data.session) {
+        throw new Error('No session returned after login');
+      }
       
-      // Also save to the general keys for the current session
-      localStorage.setItem('user', JSON.stringify(mockUser));
-      localStorage.setItem('account', JSON.stringify(mockAccount));
+      // Get the user profile
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', data.user.id)
+        .single();
       
-      return { user: mockUser, account: mockAccount };
-    } catch (error) {
+      // Get account associated with this user
+      const { data: accountData } = await supabase
+        .from('accounts')
+        .select('*')
+        .or(`owner_id.eq.${data.user.id},shared_with_id.eq.${data.user.id}`)
+        .single();
+      
+      // Create user object
+      const user: User = {
+        id: data.user.id,
+        email: data.user.email || '',
+        name: profile?.name || data.user.email?.split('@')[0] || 'User'
+      };
+      
+      // Create account object
+      let account: Account | null = null;
+      if (accountData) {
+        account = {
+          id: accountData.id,
+          name: accountData.name,
+          ownerId: accountData.owner_id,
+          sharedWithId: accountData.shared_with_id,
+          sharedWithEmail: accountData.shared_with_email,
+          invitationId: accountData.invitation_id
+        };
+      } else {
+        // Create a new account for this user if none exists
+        const { data: newAccount, error: accountError } = await supabase
+          .from('accounts')
+          .insert({
+            name: 'משפחת ' + user.name,
+            owner_id: user.id
+          })
+          .select('*')
+          .single();
+        
+        if (accountError) {
+          console.error('Error creating account:', accountError);
+        }
+        
+        if (newAccount) {
+          account = {
+            id: newAccount.id,
+            name: newAccount.name,
+            ownerId: newAccount.owner_id,
+            sharedWithId: newAccount.shared_with_id,
+            sharedWithEmail: newAccount.shared_with_email,
+            invitationId: newAccount.invitation_id
+          };
+        }
+      }
+      
+      toast.success('התחברת בהצלחה!');
+      return { user, account };
+    } catch (error: any) {
       console.error('Login failed:', error);
-      toast.error('ההתחברות נכשלה, אנא נסה שוב.');
+      
+      // Handle specific error codes
+      if (error.code === 'auth/invalid-email' || error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
+        toast.error('שם המשתמש או הסיסמה אינם נכונים');
+      } else if (error.code === 'auth/too-many-requests') {
+        toast.error('יותר מדי נסיונות התחברות, נסה שוב מאוחר יותר');
+      } else {
+        toast.error('ההתחברות נכשלה, אנא נסה שוב');
+      }
+      
       throw error;
     }
   },
@@ -102,101 +151,105 @@ export const authService = {
   // Register function
   register: async (name: string, email: string, password: string) => {
     try {
-      // Mock registration - in a real app, this would be an API call
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Register with Supabase
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            name: name
+          }
+        }
+      });
       
-      // Check if there's a pending invitation for this email
-      const pendingAccounts = JSON.parse(localStorage.getItem('pendingInvitations') || '{}');
-      const invitationForUser = Object.values(pendingAccounts).find(
-        (inv: any) => inv.sharedWithEmail === email
-      );
+      if (error) {
+        throw error;
+      }
       
-      if (invitationForUser) {
-        toast.info('יש לך הזמנה לחשבון משותף! התחבר כדי לקבל אותה.');
+      // Create a profile for the user
+      if (data.user) {
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .insert({
+            id: data.user.id,
+            name: name
+          });
+        
+        if (profileError) {
+          console.error('Error creating profile:', profileError);
+        }
       }
       
       toast.success('הרשמה בוצעה בהצלחה! אנא אמת את כתובת האימייל שלך.');
-      
-      // In a real app, we would not log in the user until they verify their email
-    } catch (error) {
+    } catch (error: any) {
       console.error('Registration failed:', error);
-      toast.error('ההרשמה נכשלה, אנא נסה שוב.');
+      
+      // Handle specific error codes
+      if (error.message?.includes('already registered')) {
+        toast.error('כתובת האימייל כבר רשומה במערכת');
+      } else {
+        toast.error('ההרשמה נכשלה, אנא נסה שוב');
+      }
+      
       throw error;
     }
   },
 
   // Logout function
-  logout: () => {
-    // Get current user email before removing data
-    const currentUser = localStorage.getItem('user');
-    let email = '';
-    
-    if (currentUser) {
-      try {
-        const userData = JSON.parse(currentUser);
-        email = userData.email || '';
-      } catch (e) {
-        console.error('Error parsing user data during logout:', e);
+  logout: async () => {
+    try {
+      const { error } = await supabase.auth.signOut();
+      
+      if (error) {
+        throw error;
       }
+      
+      toast.info('התנתקת בהצלחה');
+    } catch (error) {
+      console.error('Logout failed:', error);
+      toast.error('ההתנתקות נכשלה, אנא נסה שוב');
     }
-    
-    // Clear session data
-    localStorage.removeItem('user');
-    localStorage.removeItem('account');
-    
-    // Also clear user-specific data if email is available
-    if (email) {
-      localStorage.removeItem(`user_${email}`);
-      localStorage.removeItem(`account_${email}`);
-    }
-    
-    toast.info('התנתקת בהצלחה');
   },
 
   // Send invitation function
   sendInvitation: async (email: string, user: User, account: Account) => {
     try {
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
       // Generate a unique invitation ID
       const invitationId = `inv-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
       
-      // Create an updated account with the invited email
-      const updatedAccount: Account = {
-        ...account,
-        sharedWithEmail: email,
-        invitationId
-      };
+      // Update the account with the invited email
+      const { data: updatedAccount, error } = await supabase
+        .from('accounts')
+        .update({
+          shared_with_email: email,
+          invitation_id: invitationId
+        })
+        .eq('id', account.id)
+        .select('*')
+        .single();
       
-      // Create a pending invitation object
-      const pendingInvitation = {
-        ...updatedAccount,
-        sharedWithEmail: email,
-        invitationId
-      };
+      if (error) {
+        throw error;
+      }
       
-      // Store the pending invitation
-      const pendingInvitations = JSON.parse(localStorage.getItem('pendingInvitations') || '{}');
-      pendingInvitations[invitationId] = pendingInvitation;
-      localStorage.setItem('pendingInvitations', JSON.stringify(pendingInvitations));
-      
-      // Update accounts storage
-      const accounts = JSON.parse(localStorage.getItem('accounts') || '{}');
-      accounts[account.id] = updatedAccount;
-      localStorage.setItem('accounts', JSON.stringify(accounts));
-      
-      // Update local storage for current account
-      localStorage.setItem('account', JSON.stringify(updatedAccount));
+      if (!updatedAccount) {
+        throw new Error('Failed to update account');
+      }
       
       // In a real app, send an email to the invited user with a link to accept the invitation
       console.log(`Email would be sent to ${email} with invitation link: /invitation/${invitationId}`);
       
-      return updatedAccount;
+      return {
+        id: updatedAccount.id,
+        name: updatedAccount.name,
+        ownerId: updatedAccount.owner_id,
+        sharedWithId: updatedAccount.shared_with_id,
+        sharedWithEmail: updatedAccount.shared_with_email,
+        invitationId: updatedAccount.invitation_id
+      } as Account;
     } catch (error) {
       console.error('Failed to send invitation:', error);
-      toast.error('שליחת ההזמנה נכשלה, אנא נסה שוב.');
+      toast.error('שליחת ההזמנה נכשלה, אנא נסה שוב');
       throw error;
     }
   },
@@ -204,36 +257,37 @@ export const authService = {
   // Remove invitation function
   removeInvitation: async (account: Account) => {
     try {
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Update the account to remove the shared user
+      const { data: updatedAccount, error } = await supabase
+        .from('accounts')
+        .update({
+          shared_with_id: null,
+          shared_with_email: null,
+          invitation_id: null
+        })
+        .eq('id', account.id)
+        .select('*')
+        .single();
       
-      // Create an updated account without the shared user
-      const updatedAccount: Account = {
-        ...account,
-        sharedWithId: undefined,
-        sharedWithEmail: undefined,
-        invitationId: undefined
-      };
-      
-      // Remove from pending invitations if it exists
-      if (account.invitationId) {
-        const pendingInvitations = JSON.parse(localStorage.getItem('pendingInvitations') || '{}');
-        delete pendingInvitations[account.invitationId];
-        localStorage.setItem('pendingInvitations', JSON.stringify(pendingInvitations));
+      if (error) {
+        throw error;
       }
       
-      // Update accounts storage
-      const accounts = JSON.parse(localStorage.getItem('accounts') || '{}');
-      accounts[account.id] = updatedAccount;
-      localStorage.setItem('accounts', JSON.stringify(accounts));
+      if (!updatedAccount) {
+        throw new Error('Failed to update account');
+      }
       
-      // Update local storage for current account
-      localStorage.setItem('account', JSON.stringify(updatedAccount));
-      
-      return updatedAccount;
+      return {
+        id: updatedAccount.id,
+        name: updatedAccount.name,
+        ownerId: updatedAccount.owner_id,
+        sharedWithId: updatedAccount.shared_with_id,
+        sharedWithEmail: updatedAccount.shared_with_email,
+        invitationId: updatedAccount.invitation_id
+      } as Account;
     } catch (error) {
       console.error('Failed to remove invitation:', error);
-      toast.error('הסרת השותף נכשלה, אנא נסה שוב.');
+      toast.error('הסרת השותף נכשלה, אנא נסה שוב');
       throw error;
     }
   },
@@ -241,45 +295,52 @@ export const authService = {
   // Accept invitation function
   acceptInvitation: async (invitationId: string, user: User) => {
     try {
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Find the invitation by ID
+      const { data: invitation, error: invitationError } = await supabase
+        .from('accounts')
+        .select('*')
+        .eq('invitation_id', invitationId)
+        .single();
       
-      // Fetch the pending invitation
-      const pendingInvitations = JSON.parse(localStorage.getItem('pendingInvitations') || '{}');
-      const invitation = pendingInvitations[invitationId];
-      
-      if (!invitation) {
+      if (invitationError || !invitation) {
         throw new Error('ההזמנה אינה קיימת או שפג תוקפה');
       }
       
-      if (invitation.sharedWithEmail !== user.email) {
+      if (invitation.shared_with_email !== user.email) {
         throw new Error('ההזמנה אינה מיועדת לחשבון זה');
       }
       
-      // Update the invitation to include the user's ID
-      const updatedInvitation = {
-        ...invitation,
-        sharedWithId: user.id
-      };
+      // Update the invitation with the user's ID
+      const { data: updatedAccount, error } = await supabase
+        .from('accounts')
+        .update({
+          shared_with_id: user.id
+        })
+        .eq('id', invitation.id)
+        .select('*')
+        .single();
       
-      // Remove from pending invitations
-      delete pendingInvitations[invitationId];
-      localStorage.setItem('pendingInvitations', JSON.stringify(pendingInvitations));
+      if (error) {
+        throw error;
+      }
       
-      // Update accounts storage
-      const accounts = JSON.parse(localStorage.getItem('accounts') || '{}');
-      accounts[invitation.id] = updatedInvitation;
-      localStorage.setItem('accounts', JSON.stringify(accounts));
-      
-      // Update local storage for current account
-      localStorage.setItem('account', JSON.stringify(updatedInvitation));
+      if (!updatedAccount) {
+        throw new Error('Failed to update account');
+      }
       
       toast.success('הצטרפת לחשבון בהצלחה!');
       
-      return updatedInvitation;
-    } catch (error) {
+      return {
+        id: updatedAccount.id,
+        name: updatedAccount.name,
+        ownerId: updatedAccount.owner_id,
+        sharedWithId: updatedAccount.shared_with_id,
+        sharedWithEmail: updatedAccount.shared_with_email,
+        invitationId: updatedAccount.invitation_id
+      } as Account;
+    } catch (error: any) {
       console.error('Failed to accept invitation:', error);
-      toast.error(error instanceof Error ? error.message : 'קבלת ההזמנה נכשלה, אנא נסה שוב.');
+      toast.error(error.message || 'קבלת ההזמנה נכשלה, אנא נסה שוב');
       throw error;
     }
   },
@@ -287,15 +348,20 @@ export const authService = {
   // Verify email function
   verifyEmail: async (token: string) => {
     try {
-      // Mock email verification - in a real app, this would be an API call
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const { error } = await supabase.auth.verifyOtp({
+        token_hash: token,
+        type: 'email'
+      });
+      
+      if (error) {
+        throw error;
+      }
       
       toast.success('האימייל אומת בהצלחה!');
       return true;
     } catch (error) {
       console.error('Failed to verify email:', error);
-      toast.error('אימות האימייל נכשל, אנא נסה שוב.');
+      toast.error('אימות האימייל נכשל, אנא נסה שוב');
       return false;
     }
   },
@@ -303,14 +369,18 @@ export const authService = {
   // Reset password function
   resetPassword: async (email: string) => {
     try {
-      // Mock password reset - in a real app, this would be an API call
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: window.location.origin + '/reset-password'
+      });
+      
+      if (error) {
+        throw error;
+      }
       
       toast.success('הוראות לאיפוס סיסמה נשלחו לאימייל שלך');
     } catch (error) {
       console.error('Failed to reset password:', error);
-      toast.error('איפוס הסיסמה נכשל, אנא נסה שוב.');
+      toast.error('איפוס הסיסמה נכשל, אנא נסה שוב');
       throw error;
     }
   }

@@ -2,6 +2,7 @@
 import React, { createContext, useState, useEffect, ReactNode } from 'react';
 import { User, Account, AuthContextType } from './types';
 import { authService } from './authService';
+import { supabase } from "@/integrations/supabase/client";
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -14,20 +15,42 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [account, setAccount] = useState<Account | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Check for saved session on mount
+  // Set up auth state listener and check for saved session
   useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        const { user, account } = await authService.checkAuth();
-        setUser(user);
-        setAccount(account);
-      } finally {
-        setIsLoading(false);
+    // First set up the auth state listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        // Handle auth state changes
+        if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+          // User signed in or token refreshed, update session
+          checkAndSetUserData();
+        } else if (event === 'SIGNED_OUT') {
+          // User signed out, clear session
+          setUser(null);
+          setAccount(null);
+        }
       }
-    };
+    );
 
-    checkAuth();
+    // Check for an existing session
+    checkAndSetUserData();
+
+    // Cleanup subscription
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
+
+  const checkAndSetUserData = async () => {
+    setIsLoading(true);
+    try {
+      const { user, account } = await authService.checkAuth();
+      setUser(user);
+      setAccount(account);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const login = async (email: string, password: string) => {
     setIsLoading(true);
@@ -49,10 +72,15 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     }
   };
 
-  const logout = () => {
-    authService.logout();
-    setUser(null);
-    setAccount(null);
+  const logout = async () => {
+    setIsLoading(true);
+    try {
+      await authService.logout();
+      setUser(null);
+      setAccount(null);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const sendInvitation = async (email: string) => {
