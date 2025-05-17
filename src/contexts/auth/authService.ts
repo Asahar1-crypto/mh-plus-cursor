@@ -196,12 +196,8 @@ export const authService = {
           }
         }));
         
-        // Notify the user about the pending invitation - fixed Hebrew text in JSX
-        toast.info(
-          <div>
-            {"יש לך הזמנה לחשבון משותף!"} 
-            <a href={`/invitation/${invitations[0].invitation_id}`} className="underline ml-1">{"לחץ כאן לצפייה"}</a>
-          </div>, 
+        // Notify the user about the pending invitation using a string-based message
+        toast.info(`יש לך הזמנה לחשבון משותף! לצפייה לחץ: /invitation/${invitations[0].invitation_id}`, 
           { duration: 10000 }
         );
       }
@@ -504,12 +500,8 @@ export const authService = {
       const hasInvitations = Object.keys(pendingInvitations).length > 0;
       
       if (hasInvitations) {
-        // Notify the user about pending invitations - fixed Hebrew text in JSX
-        toast.info(
-          <div>
-            {"יש לך הזמנות לחשבונות משותפים!"} 
-            <a href="/account-settings" className="underline ml-1">{"צפה בהזמנות"}</a>
-          </div>,
+        // Notify the user about pending invitations using a string-based message
+        toast.info(`יש לך הזמנות לחשבונות משותפים! לצפייה לחץ: /account-settings`,
           { duration: 10000 }
         );
       }
