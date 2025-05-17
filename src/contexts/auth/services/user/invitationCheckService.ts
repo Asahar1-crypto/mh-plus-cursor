@@ -97,6 +97,7 @@ export const invitationCheckService = {
         pendingInvitations[inv.invitation_id] = {
           name: inv.accounts?.name || 'חשבון משותף',
           ownerName: inv.owner_profile?.name || 'בעל החשבון',
+          ownerId: inv.accounts?.owner_id, // Store the owner ID
           sharedWithEmail: inv.email,
           invitationId: inv.invitation_id,
           accountId: inv.account_id  // Store the account_id in localStorage

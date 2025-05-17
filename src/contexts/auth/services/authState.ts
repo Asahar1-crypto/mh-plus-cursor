@@ -105,12 +105,15 @@ export async function checkAuth(): Promise<{ user: User | null, account: Account
             const accountName = inv.accounts?.name || 'חשבון משותף';
             // Owner name might be null if we couldn't get the profile
             const ownerName = inv.owner_profile?.name || 'בעל החשבון';
+            const ownerId = inv.accounts?.owner_id; // Store the owner ID for later use
             
             pendingInvitations[inv.invitation_id] = {
               name: accountName,
               ownerName,
+              ownerId, // Add the owner ID to the localStorage data
               sharedWithEmail: inv.email,
-              invitationId: inv.invitation_id
+              invitationId: inv.invitation_id,
+              accountId: inv.account_id // Store the account ID
             };
           } else {
             console.error("Invalid invitation data:", inv);
@@ -126,6 +129,20 @@ export async function checkAuth(): Promise<{ user: User | null, account: Account
       }
     } catch (error) {
       console.error('Error checking pending invitations:', error);
+    }
+    
+    // Check if there's a pendingInvitationId in sessionStorage
+    const pendingInvitationId = sessionStorage.getItem('pendingInvitationId');
+    if (pendingInvitationId) {
+      console.log(`Found pendingInvitationId ${pendingInvitationId} in sessionStorage after login`);
+      
+      // Clear the pending invitation ID
+      sessionStorage.removeItem('pendingInvitationId');
+      
+      // Redirect to the invitation page
+      setTimeout(() => {
+        window.location.href = `/invitation/${pendingInvitationId}`;
+      }, 1000);
     }
     
     return { user, account };

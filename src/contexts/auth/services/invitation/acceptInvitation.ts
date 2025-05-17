@@ -15,7 +15,14 @@ export async function acceptInvitation(invitationId: string, user: User): Promis
     // Find the invitation in Supabase
     const { data: invitations, error: findError } = await supabase
       .from('invitations')
-      .select('*')
+      .select(`
+        *,
+        accounts:account_id (
+          id,
+          name,
+          owner_id
+        )
+      `)
       .eq('invitation_id', invitationId)
       .is('accepted_at', null)
       .gt('expires_at', 'now()');
@@ -71,6 +78,13 @@ export async function acceptInvitation(invitationId: string, user: User): Promis
         if (!accountError && existingAccount) {
           console.log("Found existing account:", existingAccount);
           
+          // UPDATE: Check if this account already belongs to the current user
+          // If it does, we don't want to update it to point to itself
+          if (existingAccount.owner_id === user.id) {
+            console.error("Cannot share account with yourself");
+            throw new Error('לא ניתן לשתף חשבון עם עצמך');
+          }
+          
           // Update the existing account to add the user
           const { error: updateError } = await supabase
             .from('accounts')
@@ -102,7 +116,8 @@ export async function acceptInvitation(invitationId: string, user: User): Promis
               ownerId: existingAccount.owner_id,
               sharedWithId: user.id,
               sharedWithEmail: user.email,
-              invitationId: invitationId
+              invitationId: invitationId,
+              isSharedAccount: true // Mark this as a shared account for the current user
             };
           }
         } else {
@@ -117,7 +132,7 @@ export async function acceptInvitation(invitationId: string, user: User): Promis
         .from('accounts')
         .insert({
           name: localInvitation.name || 'חשבון משותף',
-          owner_id: user.id, // Use current user as owner since we don't have the original owner ID
+          owner_id: localInvitation.ownerId || user.id, // Use the original owner ID if available
           shared_with_id: user.id,
           shared_with_email: user.email,
           invitation_id: invitationId
@@ -146,13 +161,22 @@ export async function acceptInvitation(invitationId: string, user: User): Promis
         ownerId: newAccount.owner_id,
         sharedWithId: user.id,
         sharedWithEmail: user.email,
-        invitationId: invitationId
+        invitationId: invitationId,
+        isSharedAccount: true // Mark this as a shared account for the current user
       };
     }
     
     // If we reach here, we found the invitation in the database
-    const invitation = invitations[0] as unknown as InvitationRecord;
+    const invitation = invitations[0];
     console.log("Found invitation in database:", invitation);
+    
+    // Get the account from the joined data
+    const account = invitation.accounts;
+    
+    if (!account) {
+      console.error("Account information not found in invitation");
+      throw new Error('מידע החשבון לא נמצא בהזמנה');
+    }
     
     // Validate that the invitation is for this user - Case insensitive email comparison
     if (invitation.email.toLowerCase() !== user.email.toLowerCase()) {
@@ -160,70 +184,12 @@ export async function acceptInvitation(invitationId: string, user: User): Promis
       throw new Error(`ההזמנה מיועדת ל-${invitation.email} אך אתה מחובר כ-${user.email}`);
     }
     
-    // Get the account details - using maybeSingle() to prevent errors
-    const { data: accountData, error: accountError } = await supabase
-      .from('accounts')
-      .select('*')
-      .eq('id', invitation.account_id)
-      .maybeSingle();
-      
-    if (accountError) {
-      console.error("Error finding account:", accountError);
-      throw accountError;
+    // UPDATE: Check if this account already belongs to the current user
+    // If it does, we don't want to update it to point to itself
+    if (account.owner_id === user.id) {
+      console.error("Cannot share account with yourself");
+      throw new Error('לא ניתן לשתף חשבון עם עצמך');
     }
-    
-    if (!accountData) {
-      console.error("Account not found:", invitation.account_id);
-      
-      // Create a new account since the original one is not found
-      console.log("Creating a new account since the original was not found");
-      const { data: newAccount, error: createError } = await supabase
-        .from('accounts')
-        .insert({
-          name: 'חשבון משותף',
-          owner_id: user.id,
-          shared_with_id: user.id,
-          shared_with_email: user.email,
-          invitation_id: invitationId
-        })
-        .select('*')
-        .single();
-        
-      if (createError) {
-        console.error("Error creating new account:", createError);
-        throw new Error('לא ניתן ליצור חשבון חדש, אנא צור קשר עם מנהל המערכת');
-      }
-      
-      console.log("Created new account:", newAccount);
-      
-      // Mark the invitation as accepted
-      const { error: acceptError } = await supabase
-        .from('invitations')
-        .update({ accepted_at: new Date().toISOString() })
-        .eq('invitation_id', invitationId);
-        
-      if (acceptError) {
-        console.error("Error marking invitation as accepted:", acceptError);
-      }
-      
-      // Remove from localStorage
-      removePendingInvitation(invitationId);
-      
-      toast.success('חשבון חדש נוצר בהצלחה!');
-      
-      return {
-        id: newAccount.id,
-        name: newAccount.name,
-        ownerId: newAccount.owner_id,
-        sharedWithId: user.id,
-        sharedWithEmail: user.email,
-        invitationId: invitationId
-      };
-    }
-    
-    // Explicitly cast the account data to the proper type
-    const accountRecord = accountData as unknown as AccountRecord;
-    console.log("Found account:", accountRecord);
     
     // Update the account to add the shared user
     const { error: updateError } = await supabase
@@ -232,7 +198,7 @@ export async function acceptInvitation(invitationId: string, user: User): Promis
         shared_with_id: user.id,
         shared_with_email: user.email
       })
-      .eq('id', invitation.account_id);
+      .eq('id', account.id);
       
     if (updateError) {
       console.error("Error updating account:", updateError);
@@ -251,13 +217,14 @@ export async function acceptInvitation(invitationId: string, user: User): Promis
     }
     
     // Create account object to return
-    const account: Account = {
-      id: accountRecord.id,
-      name: accountRecord.name,
-      ownerId: accountRecord.owner_id,
+    const sharedAccount: Account = {
+      id: account.id,
+      name: account.name,
+      ownerId: account.owner_id,
       sharedWithId: user.id,
       sharedWithEmail: user.email,
-      invitationId: invitationId
+      invitationId: invitationId,
+      isSharedAccount: true // Mark this as a shared account for the current user
     };
     
     // Remove from localStorage
@@ -265,7 +232,7 @@ export async function acceptInvitation(invitationId: string, user: User): Promis
     
     console.log("Invitation acceptance completed successfully");
     toast.success('הצטרפת לחשבון בהצלחה!');
-    return account;
+    return sharedAccount;
   } catch (error: any) {
     console.error('Failed to accept invitation:', error);
     toast.error(error.message || 'קבלת ההזמנה נכשלה, אנא נסה שוב');
