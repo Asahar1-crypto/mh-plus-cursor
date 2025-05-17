@@ -21,7 +21,7 @@ export interface AuthContextType {
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
   register: (name: string, email: string, password: string) => Promise<void>;
-  logout: () => void;
+  logout: () => Promise<void>;
   sendInvitation: (email: string) => Promise<void>;
   removeInvitation: () => Promise<void>;
   acceptInvitation: (invitationId: string) => Promise<void>;

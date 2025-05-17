@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/contexts/auth';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 
@@ -26,14 +26,24 @@ const Register = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [emailFromInvitation, setEmailFromInvitation] = useState<string>('');
+  const [invitationId, setInvitationId] = useState<string | null>(null);
   
   useEffect(() => {
     // Check if there's an invitationId in the URL
-    const invitationId = searchParams.get('invitationId');
+    const urlInvitationId = searchParams.get('invitationId');
     const email = searchParams.get('email');
+    
+    console.log("URL params:", { urlInvitationId, email });
     
     if (email) {
       setEmailFromInvitation(email);
+    }
+    
+    if (urlInvitationId) {
+      setInvitationId(urlInvitationId);
+      // Store the invitation ID for processing after registration
+      localStorage.setItem('registrationInvitationId', urlInvitationId);
+      console.log(`Stored invitationId ${urlInvitationId} for processing after registration`);
     }
   }, [searchParams]);
   
@@ -41,7 +51,7 @@ const Register = () => {
     resolver: zodResolver(registerSchema),
     defaultValues: {
       name: '',
-      email: emailFromInvitation || '',
+      email: '',
       password: '',
       confirmPassword: '',
     },
@@ -56,6 +66,17 @@ const Register = () => {
   
   const onSubmit = async (data: z.infer<typeof registerSchema>) => {
     try {
+      console.log("Registering with data:", { ...data, invitationId });
+      
+      // If we have an invitationId, store it along with the email for auto-linking after verification
+      if (invitationId) {
+        localStorage.setItem('pendingInvitationsAfterRegistration', JSON.stringify({
+          email: data.email,
+          invitations: [{ invitationId }]
+        }));
+        console.log(`Stored invitation ${invitationId} for email ${data.email} for processing after verification`);
+      }
+      
       await register(data.name, data.email, data.password);
       navigate('/verify-email', { state: { email: data.email } });
     } catch (error) {
@@ -74,6 +95,11 @@ const Register = () => {
               {emailFromInvitation && (
                 <div className="mt-2 text-sm bg-blue-50 p-2 rounded border border-blue-100">
                   הרשמה עם האימייל: {emailFromInvitation}
+                  {invitationId && (
+                    <div className="mt-1 text-green-700">
+                      תחובר אוטומטית לחשבון המשותף אחרי אימות האימייל
+                    </div>
+                  )}
                 </div>
               )}
             </CardDescription>

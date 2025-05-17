@@ -22,6 +22,7 @@ const LoginRequiredAlert = ({ email, invitationId }: LoginRequiredAlertProps) =>
           onClick={() => {
             // If we have an email and invitationId, include them in the URL
             if (email && invitationId) {
+              console.log(`Navigating to register with email=${email} and invitationId=${invitationId}`);
               navigate(`/register?email=${encodeURIComponent(email)}&invitationId=${invitationId}`);
             } else {
               navigate('/register');
@@ -34,8 +35,8 @@ const LoginRequiredAlert = ({ email, invitationId }: LoginRequiredAlertProps) =>
           size="sm" 
           onClick={() => {
             // Store the invitation ID to redirect back after login
-            const invitationId = window.location.pathname.split('/').pop();
             if (invitationId) {
+              console.log(`Storing pendingInvitationId=${invitationId} in sessionStorage`);
               sessionStorage.setItem('pendingInvitationId', invitationId);
             }
             navigate('/login');

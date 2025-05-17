@@ -1,5 +1,6 @@
 
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 interface SendEmailOptions {
   to: string;
@@ -16,6 +17,7 @@ interface SendEmailOptions {
  */
 export async function sendEmail(options: SendEmailOptions) {
   try {
+    console.log('Sending email request to edge function:', options);
     const { data, error } = await supabase.functions.invoke('send-email', {
       body: options
     });
@@ -25,9 +27,11 @@ export async function sendEmail(options: SendEmailOptions) {
       throw error;
     }
     
+    console.log('Email sent successfully:', data);
     return data;
   } catch (error) {
     console.error('Failed to send email:', error);
+    toast.error('שגיאה בשליחת אימייל, אנא נסה שוב');
     throw error;
   }
 }
@@ -55,12 +59,14 @@ export async function sendInvitationEmail(
       <p style="margin: 25px 0;">
         <a href="${invitationLink}" style="background-color: #3182ce; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">אישור הזמנה</a>
       </p>
+      <p>אם אין לך חשבון במערכת, תוכל/י להירשם ואז לקבל את ההזמנה.</p>
       <p>אם אתה לא מכיר את השולח, אתה יכול להתעלם מהודעה זו.</p>
       <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 20px 0;" />
       <p style="color: #718096; font-size: 14px;">מחציות פלוס - האפליקציה המובילה לניהול הוצאות משותפות</p>
     </div>
   `;
   
+  console.log(`Sending invitation email to ${email} with link ${invitationLink}`);
   return sendEmail({
     to: email,
     subject: `הזמנה להצטרף לחשבון משותף "${accountName}"`,

@@ -4,7 +4,10 @@ import sgMail from "npm:@sendgrid/mail@7.7.0";
 
 // Initialize SendGrid with the API key
 const sendgridApiKey = Deno.env.get("SENDGRID_API_KEY");
-sgMail.setApiKey(sendgridApiKey);
+if (!sendgridApiKey) {
+  console.error("SENDGRID_API_KEY environment variable is not set!");
+}
+sgMail.setApiKey(sendgridApiKey || "");
 
 // Define CORS headers
 const corsHeaders = {
@@ -30,10 +33,12 @@ serve(async (req) => {
   }
 
   try {
+    console.log("Received request to send email");
     const { to, subject, text, html, templateId, dynamicTemplateData } = await req.json() as EmailRequest;
 
     // Validate required fields
     if (!to || !subject || (!text && !html && !templateId)) {
+      console.error("Missing required fields", { to, subject, hasText: !!text, hasHtml: !!html, hasTemplate: !!templateId });
       return new Response(
         JSON.stringify({
           error: "Missing required fields: 'to', 'subject', and one of 'text', 'html', or 'templateId'",
@@ -45,10 +50,12 @@ serve(async (req) => {
       );
     }
 
+    console.log(`Preparing to send email to ${to} with subject ${subject}`);
+
     // Configure the email message
     const msg = {
       to,
-      from: "noreply@mchatziot.plus", // Replace with your verified sender
+      from: "noreply@mchatziot.plus", // This email domain should be verified in SendGrid
       subject,
       text,
       html,
@@ -63,20 +70,38 @@ serve(async (req) => {
     }
 
     // Send the email
-    await sgMail.send(msg);
-
-    return new Response(
-      JSON.stringify({ success: true, message: "Email sent successfully" }),
-      {
-        status: 200,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      }
-    );
-  } catch (error) {
-    console.error("Error sending email:", error);
+    try {
+      const result = await sgMail.send(msg);
+      console.log("Email sent successfully", result);
+      
+      return new Response(
+        JSON.stringify({ success: true, message: "Email sent successfully" }),
+        {
+          status: 200,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
+    } catch (sendError: any) {
+      console.error("Error sending email with SendGrid:", sendError);
+      // Return detailed error for debugging
+      return new Response(
+        JSON.stringify({
+          error: "Failed to send email via SendGrid",
+          details: sendError.message,
+          code: sendError.code,
+          response: sendError.response?.body || null,
+        }),
+        {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
+    }
+  } catch (error: any) {
+    console.error("Error processing request:", error);
     return new Response(
       JSON.stringify({
-        error: error.message || "Failed to send email",
+        error: error.message || "Failed to process email request",
       }),
       {
         status: 500,

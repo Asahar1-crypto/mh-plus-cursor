@@ -77,7 +77,10 @@ const SuccessState = ({
           
           {!isAuthenticated && (
             <>
-              <LoginRequiredAlert />
+              <LoginRequiredAlert 
+                email={invitationDetails.email} 
+                invitationId={invitationId}
+              />
               <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
                 <p className="mb-2 text-sm text-blue-800">אין לך חשבון? הירשם עכשיו עם האימייל מההזמנה:</p>
                 <Button 

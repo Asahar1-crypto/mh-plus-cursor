@@ -10,6 +10,8 @@ export const userService = {
   // Login function
   login: async (email: string, password: string) => {
     try {
+      console.log(`Attempting login for ${email}`);
+      
       // Sign in with Supabase
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
@@ -17,10 +19,12 @@ export const userService = {
       });
       
       if (error) {
+        console.error("Login error from Supabase:", error);
         throw error;
       }
       
       if (!data.session) {
+        console.error("No session returned after login");
         throw new Error('No session returned after login');
       }
       
@@ -31,6 +35,7 @@ export const userService = {
         name: data.user.user_metadata?.name || data.user.email?.split('@')[0] || 'User'
       };
       
+      console.log("Login successful:", user);
       toast.success('התחברת בהצלחה!');
       return user;
     } catch (error: any) {
@@ -52,6 +57,8 @@ export const userService = {
   // Register function
   register: async (name: string, email: string, password: string) => {
     try {
+      console.log(`Attempting registration for ${email} with name ${name}`);
+      
       // Register with Supabase
       const { data, error } = await supabase.auth.signUp({
         email,
@@ -64,8 +71,11 @@ export const userService = {
       });
       
       if (error) {
+        console.error("Registration error from Supabase:", error);
         throw error;
       }
+
+      console.log("Registration successful, checking for pending invitations");
 
       // Check for pending invitations for this email
       const { data: invitations, error: invitationError } = await supabase
@@ -81,16 +91,37 @@ export const userService = {
 
       // If there are pending invitations, store them for processing after email verification
       if (invitations && invitations.length > 0) {
-        // Store the invitation in localStorage so we can access it after verification
+        console.log(`Found ${invitations.length} pending invitations for ${email}`);
+        
+        // Get any existing data
+        const existingData = localStorage.getItem('pendingInvitationsAfterRegistration');
+        let existingParsed = { email, invitations: [] };
+        
+        if (existingData) {
+          try {
+            existingParsed = JSON.parse(existingData);
+          } catch (e) {
+            console.error("Error parsing existing pendingInvitationsAfterRegistration:", e);
+          }
+        }
+        
+        // Store the invitations in localStorage so we can access them after verification
         localStorage.setItem('pendingInvitationsAfterRegistration', JSON.stringify({
           email,
-          invitations: invitations.map(inv => ({
-            id: inv.id,
-            accountId: inv.account_id,
-            email: inv.email,
-            invitationId: inv.invitation_id
-          }))
+          invitations: [
+            ...existingParsed.invitations,
+            ...invitations.map(inv => ({
+              id: inv.id,
+              accountId: inv.account_id,
+              email: inv.email,
+              invitationId: inv.invitation_id
+            }))
+          ]
         }));
+        
+        console.log("Stored pending invitations for processing after email verification");
+      } else {
+        console.log(`No pending invitations found for ${email}`);
       }
 
       toast.success('הרשמה בוצעה בהצלחה! אנא אמת את כתובת האימייל שלך.');
@@ -112,12 +143,15 @@ export const userService = {
   // Logout function
   logout: async () => {
     try {
+      console.log("Attempting logout");
       const { error } = await supabase.auth.signOut();
       
       if (error) {
+        console.error("Logout error from Supabase:", error);
         throw error;
       }
       
+      console.log("Logout successful");
       toast.info('התנתקת בהצלחה');
     } catch (error) {
       console.error('Logout failed:', error);
@@ -129,6 +163,8 @@ export const userService = {
   // Verify email function
   verifyEmail: async (token: string) => {
     try {
+      console.log("Attempting to verify email with token");
+      
       // For email verification, we'll use Supabase's built-in functionality
       const { error } = await supabase.auth.verifyOtp({
         token_hash: token,
@@ -136,9 +172,11 @@ export const userService = {
       });
       
       if (error) {
+        console.error("Email verification error from Supabase:", error);
         throw error;
       }
       
+      console.log("Email verification successful");
       toast.success('האימייל אומת בהצלחה!');
       return true;
     } catch (error) {
@@ -151,14 +189,18 @@ export const userService = {
   // Reset password function
   resetPassword: async (email: string) => {
     try {
+      console.log(`Attempting password reset for ${email}`);
+      
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: window.location.origin + '/reset-password'
       });
       
       if (error) {
+        console.error("Password reset error from Supabase:", error);
         throw error;
       }
       
+      console.log("Password reset email sent");
       toast.success('הוראות לאיפוס סיסמה נשלחו לאימייל שלך');
     } catch (error) {
       console.error('Failed to reset password:', error);
@@ -170,6 +212,8 @@ export const userService = {
   // Check for pending invitations for a user
   checkPendingInvitations: async (email: string) => {
     try {
+      console.log(`Checking pending invitations for ${email}`);
+      
       const { data: invitations, error } = await supabase
         .from('invitations')
         .select('*')
@@ -177,8 +221,12 @@ export const userService = {
         .is('accepted_at', null)
         .gt('expires_at', 'now()');
         
-      if (error) throw error;
+      if (error) {
+        console.error("Error checking pending invitations:", error);
+        throw error;
+      }
 
+      console.log(`Found ${invitations?.length || 0} pending invitations for ${email}`);
       return invitations || [];
     } catch (error) {
       console.error('Failed to check pending invitations:', error);
