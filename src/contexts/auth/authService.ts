@@ -1,3 +1,4 @@
+
 import { toast } from 'sonner';
 import { User, Account } from './types';
 
@@ -32,15 +33,20 @@ export const authService = {
       // Simulate API call delay
       await new Promise(resolve => setTimeout(resolve, 1000));
       
-      // Simulate successful login
-      const mockUser = {
-        id: '12345',
+      // Generate a unique user ID based on email to ensure each user gets their own data
+      const userId = `user-${btoa(email).replace(/[^a-zA-Z0-9]/g, '')}`;
+      
+      // Simulate successful login with unique user data
+      const mockUser: User = {
+        id: userId,
         email: email,
         name: email.split('@')[0]
       };
       
+      const accountId = `acc-${btoa(email).replace(/[^a-zA-Z0-9]/g, '')}`;
+      
       const mockAccount: Account = {
-        id: 'acc-12345',
+        id: accountId,
         name: 'משפחת ' + mockUser.name,
         ownerId: mockUser.id
       };
@@ -76,7 +82,12 @@ export const authService = {
         toast.success('התחברת בהצלחה!');
       }
       
-      // Save to localStorage for persistence
+      // Save to localStorage for persistence - with a namespace based on the user's email
+      // This ensures that each user's data is kept separate in localStorage
+      localStorage.setItem(`user_${email}`, JSON.stringify(mockUser));
+      localStorage.setItem(`account_${email}`, JSON.stringify(mockAccount));
+      
+      // Also save to the general keys for the current session
       localStorage.setItem('user', JSON.stringify(mockUser));
       localStorage.setItem('account', JSON.stringify(mockAccount));
       
@@ -117,8 +128,29 @@ export const authService = {
 
   // Logout function
   logout: () => {
+    // Get current user email before removing data
+    const currentUser = localStorage.getItem('user');
+    let email = '';
+    
+    if (currentUser) {
+      try {
+        const userData = JSON.parse(currentUser);
+        email = userData.email || '';
+      } catch (e) {
+        console.error('Error parsing user data during logout:', e);
+      }
+    }
+    
+    // Clear session data
     localStorage.removeItem('user');
     localStorage.removeItem('account');
+    
+    // Also clear user-specific data if email is available
+    if (email) {
+      localStorage.removeItem(`user_${email}`);
+      localStorage.removeItem(`account_${email}`);
+    }
+    
     toast.info('התנתקת בהצלחה');
   },
 
