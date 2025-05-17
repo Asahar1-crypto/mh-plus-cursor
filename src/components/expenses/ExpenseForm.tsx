@@ -1,7 +1,6 @@
 
 import React from 'react';
 import { useForm } from 'react-hook-form';
-import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,7 +10,11 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { Switch } from '@/components/ui/switch';
 import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
-import { Child, useExpense } from '@/contexts/ExpenseContext';
+import { Calendar as CalendarIcon } from 'lucide-react';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { cn } from '@/lib/utils';
+import { useExpense } from '@/contexts/ExpenseContext';
 import { ExpenseFormValues, expenseSchema } from './expenseFormSchema';
 
 interface ExpenseFormProps {
@@ -32,6 +35,9 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({ onSubmitSuccess }) => 
       childId: '',
       isRecurring: false,
       frequency: 'monthly',
+      includeInMonthlyBalance: true,
+      date: new Date(),
+      receipt: '',
     },
   });
   
@@ -47,17 +53,19 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({ onSubmitSuccess }) => 
         amount: Number(data.amount),
         description: data.description,
         category: data.category,
-        date: format(new Date(), 'yyyy-MM-dd'),
-        childId: data.childId,
+        date: format(data.date, 'yyyy-MM-dd'),
+        childId: data.childId === 'general' ? undefined : data.childId,
         childName: childInfo?.name,
         isRecurring: data.isRecurring,
         frequency: data.isRecurring ? data.frequency as 'monthly' | 'weekly' | 'yearly' : undefined,
+        includeInMonthlyBalance: data.includeInMonthlyBalance,
+        receipt: data.receipt,
       });
       
       if (onSubmitSuccess) {
         onSubmitSuccess();
       } else {
-        navigate('/dashboard');
+        navigate('/expenses');
       }
     } finally {
       setIsPending(false);
@@ -79,6 +87,48 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({ onSubmitSuccess }) => 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <FormField
             control={form.control}
+            name="date"
+            render={({ field }) => (
+              <FormItem className="flex flex-col">
+                <FormLabel>תאריך</FormLabel>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <FormControl>
+                      <Button
+                        variant={"outline"}
+                        className={cn(
+                          "w-full pl-3 text-left font-normal",
+                          !field.value && "text-muted-foreground"
+                        )}
+                      >
+                        {field.value ? (
+                          format(field.value, "dd/MM/yyyy")
+                        ) : (
+                          <span>בחר תאריך</span>
+                        )}
+                        <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                      </Button>
+                    </FormControl>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={field.value}
+                      onSelect={field.onChange}
+                      disabled={(date) =>
+                        date > new Date() || date < new Date("1900-01-01")
+                      }
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
             name="amount"
             render={({ field }) => (
               <FormItem>
@@ -90,7 +140,27 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({ onSubmitSuccess }) => 
               </FormItem>
             )}
           />
-          
+        </div>
+        
+        <FormField
+          control={form.control}
+          name="description"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>תיאור</FormLabel>
+              <FormControl>
+                <Textarea 
+                  placeholder="תיאור ההוצאה..." 
+                  className="min-h-[80px]"
+                  {...field} 
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <FormField
             control={form.control}
             name="category"
@@ -118,63 +188,45 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({ onSubmitSuccess }) => 
               </FormItem>
             )}
           />
-        </div>
-        
-        <FormField
-          control={form.control}
-          name="description"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>תיאור</FormLabel>
-              <FormControl>
-                <Textarea 
-                  placeholder="תיאור ההוצאה..." 
-                  className="min-h-[80px]"
-                  {...field} 
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        
-        <FormField
-          control={form.control}
-          name="childId"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>ילד/ה</FormLabel>
-              <Select 
-                onValueChange={field.onChange} 
-                defaultValue={field.value}
-              >
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="בחר ילד/ה (אופציונלי)" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  <SelectItem value="general">כללי - ללא שיוך לילד/ה</SelectItem>
-                  {childrenList.length > 0 ? (
-                    childrenList.map((child) => (
-                      <SelectItem key={child.id} value={child.id}>
-                        {child.name}
+
+          <FormField
+            control={form.control}
+            name="childId"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>שיוך לילד/ה</FormLabel>
+                <Select 
+                  onValueChange={field.onChange} 
+                  defaultValue={field.value}
+                >
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="בחר ילד/ה (אופציונלי)" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    <SelectItem value="general">כללי - ללא שיוך לילד/ה</SelectItem>
+                    {childrenList.length > 0 ? (
+                      childrenList.map((child) => (
+                        <SelectItem key={child.id} value={child.id}>
+                          {child.name}
+                        </SelectItem>
+                      ))
+                    ) : (
+                      <SelectItem value="no-children" disabled>
+                        אין ילדים במערכת
                       </SelectItem>
-                    ))
-                  ) : (
-                    <SelectItem value="no-children" disabled>
-                      אין ילדים במערכת
-                    </SelectItem>
-                  )}
-                </SelectContent>
-              </Select>
-              <FormDescription>
-                שיוך ההוצאה לילד ספציפי (אופציונלי)
-              </FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+                    )}
+                  </SelectContent>
+                </Select>
+                <FormDescription>
+                  שיוך ההוצאה לילד ספציפי (אופציונלי)
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
         
         <FormField
           control={form.control}
@@ -224,12 +276,33 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({ onSubmitSuccess }) => 
             )}
           />
         )}
+
+        <FormField
+          control={form.control}
+          name="includeInMonthlyBalance"
+          render={({ field }) => (
+            <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+              <div className="space-y-0.5">
+                <FormLabel className="text-base">כלול בקיזוז החודשי</FormLabel>
+                <FormDescription>
+                  הוצאה זו תיכלל בחישוב הקיזוז החודשי בין השותפים
+                </FormDescription>
+              </div>
+              <FormControl>
+                <Switch
+                  checked={field.value}
+                  onCheckedChange={field.onChange}
+                />
+              </FormControl>
+            </FormItem>
+          )}
+        />
         
         <div className="flex justify-end gap-4 pt-4">
           <Button 
             type="button" 
             variant="outline" 
-            onClick={() => navigate('/dashboard')}
+            onClick={() => navigate('/expenses')}
           >
             ביטול
           </Button>

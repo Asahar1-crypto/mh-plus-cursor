@@ -10,6 +10,9 @@ export const expenseSchema = z.object({
   childId: z.string().optional(),
   isRecurring: z.boolean().default(false),
   frequency: z.string().optional(),
+  includeInMonthlyBalance: z.boolean().default(true),
+  date: z.date().default(() => new Date()),
+  receipt: z.string().optional(),
 });
 
 export type ExpenseFormValues = z.infer<typeof expenseSchema>;

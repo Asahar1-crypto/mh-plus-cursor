@@ -10,9 +10,12 @@ export interface Expense {
   createdBy: string;
   creatorName: string;
   status: 'pending' | 'approved' | 'rejected' | 'paid';
+  approvedBy?: string;
+  approvedAt?: string;
   receipt?: string;
   isRecurring: boolean;
   frequency?: 'monthly' | 'weekly' | 'yearly';
+  includeInMonthlyBalance: boolean;
 }
 
 export interface Child {
@@ -24,7 +27,7 @@ export interface Child {
 export interface ExpenseContextType {
   expenses: Expense[];
   childrenList: Child[];
-  addExpense: (expense: Omit<Expense, 'id' | 'createdBy' | 'creatorName' | 'status'>) => Promise<void>;
+  addExpense: (expense: Omit<Expense, 'id' | 'createdBy' | 'creatorName' | 'status' | 'approvedBy' | 'approvedAt'>) => Promise<void>;
   approveExpense: (id: string) => Promise<void>;
   rejectExpense: (id: string) => Promise<void>;
   markAsPaid: (id: string) => Promise<void>;
@@ -32,7 +35,12 @@ export interface ExpenseContextType {
   getPendingExpenses: () => Expense[];
   getApprovedExpenses: () => Expense[];
   getPaidExpenses: () => Expense[];
+  getRejectedExpenses: () => Expense[];
   getTotalPending: () => number;
   getTotalApproved: () => number;
   getExpensesByChild: (childId: string) => Expense[];
+  getExpensesByCategory: (category: string) => Expense[];
+  getExpensesByMonth: (month: number, year: number) => Expense[];
+  getMonthlyBalance: () => number;
+  uploadReceipt: (expenseId: string, receiptUrl: string) => Promise<void>;
 }

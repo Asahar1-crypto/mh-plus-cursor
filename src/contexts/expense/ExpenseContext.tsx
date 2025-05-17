@@ -7,9 +7,13 @@ import {
   getPendingExpenses as getFilteredPendingExpenses,
   getApprovedExpenses as getFilteredApprovedExpenses,
   getPaidExpenses as getFilteredPaidExpenses,
+  getRejectedExpenses as getFilteredRejectedExpenses,
   getTotalPending as calculateTotalPending,
   getTotalApproved as calculateTotalApproved,
-  getExpensesByChild as filterExpensesByChild
+  getExpensesByChild as filterExpensesByChild,
+  getExpensesByCategory as filterExpensesByCategory,
+  getExpensesByMonth as filterExpensesByMonth,
+  getMonthlyBalance as calculateMonthlyBalance
 } from './expenseUtils';
 
 export const ExpenseContext = createContext<ExpenseContextType | undefined>(undefined);
@@ -36,10 +40,27 @@ export const ExpenseProvider = ({ children }: ExpenseProviderProps) => {
           console.error('Failed to parse saved children:', error);
         }
       }
+      
+      // Load expenses for the user
+      const savedExpenses = localStorage.getItem(`expenses-${user.id}`);
+      if (savedExpenses) {
+        try {
+          setExpenses(JSON.parse(savedExpenses));
+        } catch (error) {
+          console.error('Failed to parse saved expenses:', error);
+        }
+      }
     }
   }, [user]);
 
-  const addExpense = async (newExpense: Omit<Expense, 'id' | 'createdBy' | 'creatorName' | 'status'>) => {
+  // Save expenses whenever they change
+  useEffect(() => {
+    if (user && expenses.length > 0) {
+      localStorage.setItem(`expenses-${user.id}`, JSON.stringify(expenses));
+    }
+  }, [expenses, user]);
+
+  const addExpense = async (newExpense: Omit<Expense, 'id' | 'createdBy' | 'creatorName' | 'status' | 'approvedBy' | 'approvedAt'>) => {
     if (!user) {
       toast.error('יש להתחבר כדי להוסיף הוצאה');
       return;
@@ -54,11 +75,15 @@ export const ExpenseProvider = ({ children }: ExpenseProviderProps) => {
         id: `exp-${Date.now()}`,
         createdBy: user.id,
         creatorName: user.name,
-        status: 'pending'
+        status: 'pending',
+        includeInMonthlyBalance: true // Default to include in balance
       };
       
       setExpenses(prev => [...prev, expense]);
       toast.success('ההוצאה נוספה בהצלחה');
+      
+      // In a real app, this would trigger a notification to the other user
+      // toast.info('התראה נשלחה לשותף לאישור ההוצאה');
     } catch (error) {
       console.error('Failed to add expense:', error);
       toast.error('הוספת ההוצאה נכשלה, אנא נסה שוב.');
@@ -93,13 +118,40 @@ export const ExpenseProvider = ({ children }: ExpenseProviderProps) => {
     }
   };
 
+  const uploadReceipt = async (expenseId: string, receiptUrl: string): Promise<void> => {
+    if (!user) {
+      toast.error('יש להתחבר כדי להעלות קבלה');
+      return;
+    }
+    
+    try {
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      setExpenses(prev => 
+        prev.map(expense => 
+          expense.id === expenseId ? { ...expense, receipt: receiptUrl } : expense
+        )
+      );
+      
+      toast.success('הקבלה הועלתה בהצלחה');
+    } catch (error) {
+      console.error('Failed to upload receipt:', error);
+      toast.error('העלאת הקבלה נכשלה, אנא נסה שוב.');
+    }
+  };
+
   // Use utility functions but pass in the current expenses state
   const getPendingExpenses = () => getFilteredPendingExpenses(expenses);
   const getApprovedExpenses = () => getFilteredApprovedExpenses(expenses);
   const getPaidExpenses = () => getFilteredPaidExpenses(expenses);
+  const getRejectedExpenses = () => getFilteredRejectedExpenses(expenses);
   const getTotalPending = () => calculateTotalPending(expenses);
   const getTotalApproved = () => calculateTotalApproved(expenses);
   const getExpensesByChild = (childId: string) => filterExpensesByChild(expenses, childId);
+  const getExpensesByCategory = (category: string) => filterExpensesByCategory(expenses, category);
+  const getExpensesByMonth = (month: number, year: number) => filterExpensesByMonth(expenses, month, year);
+  const getMonthlyBalance = () => calculateMonthlyBalance(expenses);
 
   return (
     <ExpenseContext.Provider value={{
@@ -113,23 +165,47 @@ export const ExpenseProvider = ({ children }: ExpenseProviderProps) => {
       getPendingExpenses,
       getApprovedExpenses,
       getPaidExpenses,
+      getRejectedExpenses,
       getTotalPending,
       getTotalApproved,
-      getExpensesByChild
+      getExpensesByChild,
+      getExpensesByCategory,
+      getExpensesByMonth,
+      getMonthlyBalance,
+      uploadReceipt
     }}>
       {children}
     </ExpenseContext.Provider>
   );
   
   async function approveExpense(id: string): Promise<void> {
+    if (!user) {
+      toast.error('יש להתחבר כדי לאשר הוצאה');
+      return;
+    }
+    
     try {
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 500));
       
       setExpenses(prev => 
-        prev.map(expense => 
-          expense.id === id ? { ...expense, status: 'approved' } : expense
-        )
+        prev.map(expense => {
+          if (expense.id === id) {
+            // Check if user is not the one who created the expense
+            if (expense.createdBy === user.id) {
+              toast.error('לא ניתן לאשר הוצאה שהוספת בעצמך');
+              return expense;
+            }
+            
+            return { 
+              ...expense, 
+              status: 'approved',
+              approvedBy: user.id,
+              approvedAt: new Date().toISOString()
+            };
+          }
+          return expense;
+        })
       );
       
       toast.success('ההוצאה אושרה בהצלחה');
@@ -141,14 +217,32 @@ export const ExpenseProvider = ({ children }: ExpenseProviderProps) => {
   }
 
   async function rejectExpense(id: string): Promise<void> {
+    if (!user) {
+      toast.error('יש להתחבר כדי לדחות הוצאה');
+      return;
+    }
+    
     try {
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 500));
       
       setExpenses(prev => 
-        prev.map(expense => 
-          expense.id === id ? { ...expense, status: 'rejected' } : expense
-        )
+        prev.map(expense => {
+          if (expense.id === id) {
+            // Check if user is not the one who created the expense
+            if (expense.createdBy === user.id) {
+              toast.error('לא ניתן לדחות הוצאה שהוספת בעצמך');
+              return expense;
+            }
+            
+            return { 
+              ...expense, 
+              status: 'rejected',
+              includeInMonthlyBalance: false // Rejected expenses don't affect balance
+            };
+          }
+          return expense;
+        })
       );
       
       toast.success('ההוצאה נדחתה');
@@ -160,14 +254,28 @@ export const ExpenseProvider = ({ children }: ExpenseProviderProps) => {
   }
 
   async function markAsPaid(id: string): Promise<void> {
+    if (!user) {
+      toast.error('יש להתחבר כדי לסמן הוצאה כשולמה');
+      return;
+    }
+    
     try {
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 500));
       
       setExpenses(prev => 
-        prev.map(expense => 
-          expense.id === id ? { ...expense, status: 'paid' } : expense
-        )
+        prev.map(expense => {
+          if (expense.id === id) {
+            // Check if expense is approved
+            if (expense.status !== 'approved') {
+              toast.error('רק הוצאות מאושרות יכולות להיות מסומנות כשולמו');
+              return expense;
+            }
+            
+            return { ...expense, status: 'paid' };
+          }
+          return expense;
+        })
       );
       
       toast.success('ההוצאה סומנה כשולמה');

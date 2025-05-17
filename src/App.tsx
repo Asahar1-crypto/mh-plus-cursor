@@ -18,6 +18,7 @@ import AcceptInvitation from "./pages/AcceptInvitation";
 import NotFound from "./pages/NotFound";
 import AddExpense from "./pages/AddExpense";
 import Children from "./pages/Children";
+import Expenses from "./pages/Expenses"; // Add import
 
 import AuthLayout from "./components/AuthLayout";
 import AppLayout from "./components/AppLayout";
@@ -52,6 +53,7 @@ const App = () => (
                 <Route path="/account-settings" element={<AccountSettings />} />
                 <Route path="/add-expense" element={<AddExpense />} />
                 <Route path="/children" element={<Children />} />
+                <Route path="/expenses" element={<Expenses />} /> {/* Add route */}
               </Route>
               
               {/* Special routes */}
