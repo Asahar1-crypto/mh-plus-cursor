@@ -38,10 +38,11 @@ export interface AccountRecord {
 }
 
 // Define a simple standalone type for pending invitations stored in localStorage
-export type PendingInvitationRecord = {
+export interface PendingInvitationRecord {
   name: string;
   ownerName: string;
   sharedWithEmail: string;
   invitationId: string;
-  accountId?: string;  // This field is now properly defined in the type
-};
+  accountId?: string;
+  ownerId?: string;
+}

@@ -9,18 +9,6 @@ import { useAuth } from '@/contexts/auth';
 import { toast } from 'sonner';
 import { PendingInvitationRecord } from '@/contexts/auth/services/invitation/types';
 
-interface PendingInvitation {
-  invitationId: string;
-  accountId: string;
-  accountName: string;
-  ownerId: string;
-}
-
-interface PendingInvitations {
-  email: string;
-  invitations: PendingInvitation[];
-}
-
 const PendingInvitationAlert = () => {
   const [dismissed, setDismissed] = useState(false);
   const [invitations, setInvitations] = useState<Record<string, PendingInvitationRecord>>({});
@@ -31,8 +19,8 @@ const PendingInvitationAlert = () => {
     // בדיקת הזמנות בעת טעינת הקומפוננטה
     checkForInvitations();
     
-    // בדיקת הזמנות כל 30 שניות
-    const interval = setInterval(checkForInvitations, 30000);
+    // בדיקת הזמנות כל 15 שניות
+    const interval = setInterval(checkForInvitations, 15000);
     
     return () => clearInterval(interval);
   }, [user]);
@@ -44,7 +32,7 @@ const PendingInvitationAlert = () => {
     if (!pendingInvitationsData) return;
     
     try {
-      const pendingInvitations = JSON.parse(pendingInvitationsData);
+      const pendingInvitations = JSON.parse(pendingInvitationsData) as Record<string, PendingInvitationRecord>;
       
       // בדיקה אם יש הזמנות ששייכות למשתמש הנוכחי
       const currentUserInvitations: Record<string, PendingInvitationRecord> = {};
@@ -52,16 +40,16 @@ const PendingInvitationAlert = () => {
       
       Object.entries(pendingInvitations).forEach(([invitationId, invitation]) => {
         // בודקים אם האימייל בהזמנה תואם לאימייל של המשתמש המחובר (ללא תלות ברישיות)
-        const typedInvitation = invitation as PendingInvitationRecord;
-        if (typedInvitation.sharedWithEmail && 
+        if (invitation.sharedWithEmail && 
             user.email && 
-            typedInvitation.sharedWithEmail.toLowerCase() === user.email.toLowerCase()) {
-          currentUserInvitations[invitationId] = typedInvitation;
+            invitation.sharedWithEmail.toLowerCase() === user.email.toLowerCase()) {
+          currentUserInvitations[invitationId] = invitation;
           hasInvitationsForCurrentUser = true;
         }
       });
       
       if (hasInvitationsForCurrentUser) {
+        console.log('Found pending invitations for the current user:', currentUserInvitations);
         setInvitations(currentUserInvitations);
       }
     } catch (error) {
@@ -97,7 +85,7 @@ const PendingInvitationAlert = () => {
   };
   
   return (
-    <Alert className="mb-6 bg-blue-50 border-blue-200 flex items-center justify-between animate-pulse">
+    <Alert className="mb-6 bg-blue-50 border-blue-200 flex items-center justify-between">
       <div className="flex items-center">
         <Bell className="h-5 w-5 text-blue-500 mr-2" />
         <AlertDescription>

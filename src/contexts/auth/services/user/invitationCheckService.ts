@@ -1,38 +1,33 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from 'sonner';
-
-// Define interface for the invitation data that correctly handles profile errors
-interface InvitationData {
-  id: string;
-  account_id: string;
-  email: string;
-  invitation_id: string;
-  expires_at: string;
-  accepted_at: string | null;
-  accounts?: {
-    name: string;
-    id: string;
-    owner_id: string;
-  };
-  owner_profile?: {
-    name?: string;
-  };
-}
+import { PendingInvitationRecord } from '../../services/invitation/types';
 
 /**
  * Service for checking pending invitations for a user
  */
 export const invitationCheckService = {
   // Check for pending invitations for a user
-  checkPendingInvitations: async (email: string): Promise<InvitationData[]> => {
+  checkPendingInvitations: async (email: string): Promise<any[]> => {
     try {
       console.log(`Checking pending invitations for ${email}`);
       
-      // Get basic invitation data first
+      // Get basic invitation data
       const { data: invitations, error } = await supabase
         .from('invitations')
-        .select('id, account_id, email, invitation_id, expires_at, accepted_at')
+        .select(`
+          id,
+          account_id,
+          email,
+          invitation_id,
+          expires_at,
+          accepted_at,
+          accounts:account_id (
+            id,
+            name,
+            owner_id
+          )
+        `)
         .eq('email', email)
         .is('accepted_at', null)
         .gt('expires_at', 'now()');
@@ -47,61 +42,60 @@ export const invitationCheckService = {
         return [];
       }
 
-      console.log(`Found ${invitations.length} invitations:`, invitations);
+      console.log(`Found ${invitations.length} pending invitations for ${email}:`, invitations);
       
-      // Get account information for each invitation
+      // Get enriched invitation data with owner information
       const enrichedInvitations = [];
       
       for (const invitation of invitations) {
-        // Get account information
-        const { data: account, error: accountError } = await supabase
-          .from('accounts')
-          .select('*')
-          .eq('id', invitation.account_id)
-          .single();
-          
-        if (accountError) {
-          console.error(`Error fetching account for invitation ${invitation.invitation_id}:`, accountError);
+        if (!invitation.accounts || !invitation.account_id) {
+          console.warn(`Invitation ${invitation.invitation_id} has no account data`);
           continue;
         }
         
-        if (!account) {
-          console.warn(`No account found for invitation ${invitation.invitation_id}`);
-          continue;
-        }
-        
-        console.log(`Found account for invitation ${invitation.invitation_id}:`, account);
-        
-        // Get owner profile
+        // Get owner profile information
         const { data: ownerProfile, error: profileError } = await supabase
           .from('profiles')
-          .select('id, name')
-          .eq('id', account.owner_id)
+          .select('name')
+          .eq('id', invitation.accounts.owner_id)
           .single();
           
         if (profileError) {
-          console.warn(`Error fetching owner profile for account ${account.id}:`, profileError);
+          console.warn(`Error fetching owner profile for account ${invitation.account_id}:`, profileError);
         }
         
-        console.log(`Owner profile for account ${account.id}:`, ownerProfile);
+        const ownerName = ownerProfile?.name || 'בעל החשבון';
+        console.log(`Owner profile for account ${invitation.account_id}:`, ownerProfile);
         
-        // Combine the data
+        // Add enriched invitation to list
         enrichedInvitations.push({
           ...invitation,
-          accounts: {
-            name: account.name,
-            id: account.id,
-            owner_id: account.owner_id
-          },
-          owner_profile: ownerProfile || { name: 'בעל החשבון' }
+          owner_profile: { name: ownerName }
         });
       }
 
       console.log(`Processed ${enrichedInvitations.length} pending invitations for ${email}`);
       
-      // הצגת התראה על ההזמנות הממתינות
+      // Store invitations in localStorage with complete account information
+      const pendingInvitations: Record<string, PendingInvitationRecord> = {};
+      
+      enrichedInvitations.forEach(inv => {
+        pendingInvitations[inv.invitation_id] = {
+          name: inv.accounts?.name || 'חשבון משותף',
+          ownerName: inv.owner_profile?.name || 'בעל החשבון',
+          ownerId: inv.accounts?.owner_id,
+          sharedWithEmail: inv.email,
+          invitationId: inv.invitation_id,
+          accountId: inv.account_id
+        };
+      });
+      
+      // Save to localStorage
+      localStorage.setItem('pendingInvitations', JSON.stringify(pendingInvitations));
+      console.log("Updated localStorage with pending invitations:", pendingInvitations);
+      
+      // Show notification for first invitation
       if (enrichedInvitations.length > 0) {
-        // מציגים התראה על ההזמנה הראשונה
         const firstInvitation = enrichedInvitations[0];
         const ownerName = firstInvitation.owner_profile?.name || 'בעל החשבון';
         const accountName = firstInvitation.accounts?.name || 'חשבון משותף';
@@ -115,34 +109,7 @@ export const invitationCheckService = {
         );
       }
       
-      // Store invitations in localStorage with complete account information
-      const pendingInvitations = {};
-      enrichedInvitations.forEach(inv => {
-        if (inv.accounts) {
-          pendingInvitations[inv.invitation_id] = {
-            name: inv.accounts.name || 'חשבון משותף',
-            ownerName: inv.owner_profile?.name || 'בעל החשבון',
-            ownerId: inv.accounts.owner_id,
-            sharedWithEmail: inv.email,
-            invitationId: inv.invitation_id,
-            accountId: inv.account_id
-          };
-        } else {
-          // Fallback if we can't get the account information
-          pendingInvitations[inv.invitation_id] = {
-            name: 'חשבון משותף',
-            ownerName: 'בעל החשבון',
-            sharedWithEmail: inv.email,
-            invitationId: inv.invitation_id,
-            accountId: inv.account_id
-          };
-        }
-      });
-      
-      localStorage.setItem('pendingInvitations', JSON.stringify(pendingInvitations));
-      console.log("Updated localStorage with pending invitations:", pendingInvitations);
-      
-      return enrichedInvitations as InvitationData[];
+      return enrichedInvitations;
     } catch (error) {
       console.error('Failed to check pending invitations:', error);
       return [];

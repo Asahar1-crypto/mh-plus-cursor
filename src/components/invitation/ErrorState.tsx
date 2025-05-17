@@ -3,25 +3,48 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { X } from 'lucide-react';
+import { AlertCircle } from 'lucide-react';
+import ClearInvitationsButton from './ClearInvitationsButton';
 
-const ErrorState = () => {
+interface ErrorStateProps {
+  message?: string;
+}
+
+const ErrorState = ({ message = 'ההזמנה לא נמצאה או שפג תוקפה' }: ErrorStateProps) => {
   const navigate = useNavigate();
   
   return (
     <Card className="w-full max-w-md border-border shadow-lg animate-fade-in">
       <CardHeader className="text-center">
         <div className="mx-auto mb-4 h-12 w-12 rounded-full bg-red-100 flex items-center justify-center">
-          <X className="h-6 w-6 text-red-500" />
+          <AlertCircle className="h-6 w-6 text-red-500" />
         </div>
-        <CardTitle className="text-2xl font-bold">הזמנה לא תקפה</CardTitle>
+        <CardTitle className="text-2xl font-bold">{"אירעה שגיאה"}</CardTitle>
         <CardDescription>
-          ההזמנה שהתבקשת לקבל אינה קיימת או שפג תוקפה
+          {message}
         </CardDescription>
       </CardHeader>
-      <CardFooter className="flex justify-center pt-2">
+      
+      <CardContent>
+        <div className="space-y-4">
+          <div className="p-3 bg-red-50 border border-red-200 rounded-md">
+            <p className="mb-2 text-sm text-red-800">
+              אם אתה מצפה להזמנה לחשבון משותף וחושב שזו טעות, אנא בקש מבעל החשבון לשלוח לך הזמנה חדשה.
+            </p>
+            <p className="text-sm text-red-800">
+              לחלופין, אם אתה רואה שורה זו בטעות, נקה את רשימת ההזמנות ונסה שוב:
+            </p>
+          </div>
+          
+          <div className="mt-4">
+            <ClearInvitationsButton redirectAfterClear={true} variant="destructive" className="w-full" />
+          </div>
+        </div>
+      </CardContent>
+      
+      <CardFooter className="flex justify-end">
         <Button onClick={() => navigate('/')}>
-          חזרה לדף הבית
+          {"חזרה לדף הבית"}
         </Button>
       </CardFooter>
     </Card>

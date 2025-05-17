@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { User, Account } from '../types';
 import { accountService } from './accountService';
 import { userService } from './user';
-import { showInvitationNotification } from '@/utils/notifications';
+import { showInvitationNotification, checkForNewInvitations } from '@/utils/notifications';
 import { toast } from 'sonner';
 import { InvitationData } from './invitation/types';
 
@@ -97,47 +97,9 @@ export async function checkAuth(): Promise<{ user: User | null, account: Account
     const account = await accountService.getDefaultAccount(user.id, user.name);
     console.log("Default account retrieved:", account);
     
-    // Improved invitation checking to ensure complete data
-    try {
-      const invitations = await userService.checkPendingInvitations(user.email);
-      
-      // If there's a pending invitation, notify the user
-      if (invitations && invitations.length > 0) {
-        console.log(`Found ${invitations.length} pending invitations for ${user.email}`);
-        
-        // Store the invitation in localStorage so we can access it later
-        const pendingInvitations = {};
-        invitations.forEach(inv => {
-          // Ensure we're handling valid data
-          if (typeof inv === 'object' && inv !== null && !('error' in inv)) {
-            // Safely access properties using optional chaining and nullish coalescing
-            const accountName = inv.accounts?.name || 'חשבון משותף';
-            // Owner name might come from either accounts.profiles or owner_profile
-            const ownerName = inv.accounts?.profiles?.name || inv.owner_profile?.name || 'בעל החשבון';
-            const ownerId = inv.accounts?.owner_id; // Store the owner ID for later use
-            
-            pendingInvitations[inv.invitation_id] = {
-              name: accountName,
-              ownerName,
-              ownerId, // Add the owner ID to the localStorage data
-              sharedWithEmail: inv.email,
-              invitationId: inv.invitation_id,
-              accountId: inv.account_id // Store the account ID
-            };
-          } else {
-            console.error("Invalid invitation data:", inv);
-          }
-        });
-        
-        localStorage.setItem('pendingInvitations', JSON.stringify(pendingInvitations));
-        
-        // Notify the user about the pending invitation
-        if (invitations[0] && invitations[0].invitation_id) {
-          showInvitationNotification(invitations[0].invitation_id);
-        }
-      }
-    } catch (error) {
-      console.error('Error checking pending invitations:', error);
+    // בדיקת הזמנות חדשות
+    if (user.email) {
+      await checkForNewInvitations(user.email);
     }
     
     // Check if there's a pendingInvitationId in sessionStorage

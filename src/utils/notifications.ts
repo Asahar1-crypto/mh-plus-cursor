@@ -1,33 +1,49 @@
+
 import { toast } from 'sonner';
 import { PendingInvitationRecord } from '@/contexts/auth/services/invitation/types';
 
+/**
+ * מציג התראה על הזמנה חדשה
+ */
 export const showInvitationNotification = (invitationId: string) => {
-  toast.info(
-    "יש לך הזמנה לחשבון משותף!",
-    {
-      description: `לצפייה בהזמנה: /invitation/${invitationId}`,
-      duration: 15000
-    }
-  );
+  // בדיקה אם יש פרטי הזמנה ב-localStorage
+  const pendingInvitationsData = localStorage.getItem('pendingInvitations');
+  if (!pendingInvitationsData) return;
+  
+  try {
+    const pendingInvitations = JSON.parse(pendingInvitationsData) as Record<string, PendingInvitationRecord>;
+    const invitation = pendingInvitations[invitationId];
+    
+    if (!invitation) return;
+    
+    // הצגת התראה עם פרטי ההזמנה
+    toast.info(
+      `יש לך הזמנה לחשבון משותף מ-${invitation.ownerName}!`,
+      {
+        description: `לצפייה בהזמנה וקבלתה: /invitation/${invitationId}`,
+        duration: 15000,
+        action: {
+          label: "צפה בהזמנה",
+          onClick: () => {
+            window.location.href = `/invitation/${invitationId}`;
+          }
+        }
+      }
+    );
+  } catch (error) {
+    console.error('Failed to parse pending invitations:', error);
+  }
 };
 
-export const showPendingInvitationsNotification = () => {
-  toast.info(
-    "יש לך הזמנות לחשבונות משותפים!",
-    {
-      description: 'לצפייה לחץ: /account-settings',
-      duration: 10000
-    }
-  );
-};
-
-// Helper to check if we have pending invitations for the current user
+/**
+ * בודק אם יש הזמנות ממתינות למשתמש הנוכחי
+ */
 export const hasPendingInvitations = (currentUserEmail?: string): boolean => {
   const pendingInvitationsData = localStorage.getItem('pendingInvitations');
   if (!pendingInvitationsData) return false;
   
   try {
-    const pendingInvitations = JSON.parse(pendingInvitationsData);
+    const pendingInvitations = JSON.parse(pendingInvitationsData) as Record<string, PendingInvitationRecord>;
     
     // אם לא סופק אימייל משתמש, נבדוק רק אם יש הזמנות כלשהן
     if (!currentUserEmail) {
@@ -36,7 +52,7 @@ export const hasPendingInvitations = (currentUserEmail?: string): boolean => {
     
     // בדיקה אם יש הזמנה שמתאימה לאימייל המשתמש הנוכחי
     return Object.values(pendingInvitations).some(
-      (invitation: any) => 
+      invitation => 
         invitation.sharedWithEmail && 
         invitation.sharedWithEmail.toLowerCase() === currentUserEmail.toLowerCase()
     );
@@ -46,13 +62,15 @@ export const hasPendingInvitations = (currentUserEmail?: string): boolean => {
   }
 };
 
-// Helper to remove a specific invitation from localStorage
+/**
+ * מסיר הזמנה ספציפית מ-localStorage
+ */
 export const removePendingInvitation = (invitationId: string): void => {
   const pendingInvitationsData = localStorage.getItem('pendingInvitations');
   if (!pendingInvitationsData) return;
   
   try {
-    const pendingInvitations = JSON.parse(pendingInvitationsData);
+    const pendingInvitations = JSON.parse(pendingInvitationsData) as Record<string, PendingInvitationRecord>;
     if (pendingInvitations[invitationId]) {
       delete pendingInvitations[invitationId];
       localStorage.setItem('pendingInvitations', JSON.stringify(pendingInvitations));
@@ -63,7 +81,9 @@ export const removePendingInvitation = (invitationId: string): void => {
   }
 };
 
-// Clear all pending invitations that don't match the current user's email
+/**
+ * מנקה הזמנות שלא מתאימות למשתמש הנוכחי
+ */
 export const clearInvalidInvitations = (currentUserEmail: string): void => {
   const pendingInvitationsData = localStorage.getItem('pendingInvitations');
   if (!pendingInvitationsData) return;
@@ -90,7 +110,9 @@ export const clearInvalidInvitations = (currentUserEmail: string): void => {
   }
 };
 
-// Clear all pending invitations from localStorage
+/**
+ * מנקה את כל ההזמנות הממתינות
+ */
 export const clearAllPendingInvitations = (): void => {
   try {
     localStorage.removeItem('pendingInvitations');
@@ -102,5 +124,30 @@ export const clearAllPendingInvitations = (): void => {
   } catch (error) {
     console.error('Failed to clear pending invitations:', error);
     toast.error('אירעה שגיאה בניקוי רשימת ההזמנות');
+  }
+};
+
+/**
+ * בדיקה אוטומטית של הזמנות חדשות
+ */
+export const checkForNewInvitations = async (email: string) => {
+  if (!email) return;
+  
+  try {
+    // ייבוא שירות בדיקת ההזמנות
+    const { invitationCheckService } = await import('@/contexts/auth/services/user/invitationCheckService');
+    
+    // בדיקת הזמנות
+    const invitations = await invitationCheckService.checkPendingInvitations(email);
+    
+    // אם יש הזמנות חדשות, מציג התראה
+    if (invitations && invitations.length > 0) {
+      const firstInvitation = invitations[0];
+      if (firstInvitation.invitation_id) {
+        showInvitationNotification(firstInvitation.invitation_id);
+      }
+    }
+  } catch (error) {
+    console.error('Failed to check for new invitations:', error);
   }
 };

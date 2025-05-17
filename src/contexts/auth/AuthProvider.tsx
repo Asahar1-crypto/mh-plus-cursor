@@ -1,9 +1,11 @@
+
 import React, { useState, useEffect, ReactNode } from 'react';
 import { AuthContext } from './AuthContext';
 import { User, Account } from './types';
 import { authService } from './authService';
 import { supabase } from "@/integrations/supabase/client";
 import { invitationCheckService } from './services/user/invitationCheckService';
+import { checkForNewInvitations } from '@/utils/notifications';
 
 interface AuthProviderProps {
   children: ReactNode;
@@ -26,8 +28,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
           
           // Check for pending invitations after sign in
           if (session?.user?.email) {
-            setTimeout(() => {
-              invitationCheckService.checkPendingInvitations(session.user.email || '');
+            setTimeout(async () => {
+              await checkForNewInvitations(session.user.email || '');
             }, 1000);
           }
         } else if (event === 'SIGNED_OUT') {
@@ -54,10 +56,10 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       setUser(user);
       setAccount(account);
       
-      // כשמשתמש מתחבר, נבדוק אם יש לו הזמנות
+      // בדיקת הזמנות חדשות כשמשתמש מתחבר
       if (user?.email) {
-        setTimeout(() => {
-          invitationCheckService.checkPendingInvitations(user.email || '');
+        setTimeout(async () => {
+          await checkForNewInvitations(user.email);
         }, 1000);
       }
     } finally {
