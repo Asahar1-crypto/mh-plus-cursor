@@ -1,5 +1,5 @@
-
 import { toast } from 'sonner';
+import { PendingInvitationRecord } from '@/contexts/auth/services/invitation/types';
 
 export const showInvitationNotification = (invitationId: string) => {
   toast.info(
@@ -69,7 +69,7 @@ export const clearInvalidInvitations = (currentUserEmail: string): void => {
   if (!pendingInvitationsData) return;
   
   try {
-    const pendingInvitations = JSON.parse(pendingInvitationsData);
+    const pendingInvitations = JSON.parse(pendingInvitationsData) as Record<string, PendingInvitationRecord>;
     let hasChanges = false;
     
     Object.entries(pendingInvitations).forEach(([invitationId, invitation]) => {
