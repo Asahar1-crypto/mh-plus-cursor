@@ -13,9 +13,6 @@ interface InvitationData {
     name: string;
     id: string;
     owner_id: string;
-    profiles?: {
-      name?: string;
-    };
   };
   owner_profile?: {
     name?: string;
@@ -96,7 +93,7 @@ export const invitationCheckService = {
         if (inv.accounts) {
           pendingInvitations[inv.invitation_id] = {
             name: inv.accounts.name || 'חשבון משותף',
-            ownerName: inv.accounts.profiles?.name || inv.owner_profile?.name || 'בעל החשבון',
+            ownerName: inv.owner_profile?.name || 'בעל החשבון',
             ownerId: inv.accounts.owner_id, // Store the owner ID properly
             sharedWithEmail: inv.email,
             invitationId: inv.invitation_id,

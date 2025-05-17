@@ -15,7 +15,7 @@ export async function acceptInvitation(invitationId: string, user: User): Promis
     // CRITICAL FIX: Modified query to properly join accounts data
     const { data: invitations, error: findError } = await supabase
       .from('invitations')
-      .select('*, accounts(id, name, owner_id)')
+      .select('*, accounts(*)')
       .eq('invitation_id', invitationId)
       .is('accepted_at', null)
       .gt('expires_at', 'now()');
@@ -82,7 +82,7 @@ export async function acceptInvitation(invitationId: string, user: User): Promis
       const invitation = invitations[0];
       console.log("Found invitation in database:", invitation);
       
-      // CRITICAL FIX: Access accounts data directly from the joined data
+      // Get the account directly from the joined data
       const account = invitation.accounts;
       console.log("Retrieved account data:", account);
       
