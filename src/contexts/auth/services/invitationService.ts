@@ -5,13 +5,24 @@ import { toast } from 'sonner';
 import { sendInvitationEmail } from '@/utils/emailService';
 import { Tables } from "@/integrations/supabase/types";
 
-// Define local interface for invitation data to avoid circular references
+// Define local interfaces for data structures to avoid circular references
 interface InvitationData {
   id: string;
   account_id: string;
   email: string;
   invitation_id: string;
 }
+
+// Use explicit type for invitation record from database
+type InvitationRecord = {
+  id: string;
+  account_id: string;
+  email: string;
+  invitation_id: string;
+  accepted_at: string | null;
+  expires_at: string;
+  created_at: string;
+};
 
 /**
  * Service for invitation-related operations
@@ -233,7 +244,7 @@ export const invitationService = {
         throw new Error('ההזמנה לא נמצאה או שפג תוקפה');
       }
       
-      const invitation = invitations[0];
+      const invitation = invitations[0] as InvitationRecord;
       console.log("Found invitation:", invitation);
       
       // Validate that the invitation is for this user
