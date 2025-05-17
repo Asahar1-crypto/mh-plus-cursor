@@ -78,8 +78,9 @@ const AcceptInvitation = () => {
             email: invitation.sharedWithEmail || '',
           });
           
-          // Store the account_id in localStorage if it exists
+          // Store the account_id in sessionStorage if it exists
           if (invitation.accountId) {
+            console.log("Storing account ID in sessionStorage:", invitation.accountId);
             sessionStorage.setItem('pendingInvitationAccountId', invitation.accountId);
           }
         } else {
@@ -105,6 +106,7 @@ const AcceptInvitation = () => {
             });
             
             // Store the account_id in sessionStorage
+            console.log("Storing account ID in sessionStorage:", invitation.account_id);
             sessionStorage.setItem('pendingInvitationAccountId', invitation.account_id);
           } else {
             // Fallback if we can't get the owner's profile
@@ -116,6 +118,7 @@ const AcceptInvitation = () => {
             
             // Store the account_id in sessionStorage
             if (invitation.account_id) {
+              console.log("Storing account ID in sessionStorage:", invitation.account_id);
               sessionStorage.setItem('pendingInvitationAccountId', invitation.account_id);
             }
           }

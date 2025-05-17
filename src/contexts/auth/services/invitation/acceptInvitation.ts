@@ -26,7 +26,7 @@ export async function acceptInvitation(invitationId: string, user: User): Promis
     }
     
     if (!invitations || invitations.length === 0) {
-      console.error("Invitation not found or expired in database");
+      console.log("Invitation not found or expired in database, checking localStorage");
       
       // Check localStorage as fallback
       const pendingInvitationsData = localStorage.getItem('pendingInvitations');
@@ -43,6 +43,8 @@ export async function acceptInvitation(invitationId: string, user: User): Promis
         throw new Error('ההזמנה לא נמצאה או שפג תוקפה');
       }
       
+      console.log("Found invitation in localStorage:", localInvitation);
+      
       // Case insensitive comparison for email
       if (localInvitation.sharedWithEmail && 
           localInvitation.sharedWithEmail.toLowerCase() !== user.email.toLowerCase()) {
@@ -50,9 +52,67 @@ export async function acceptInvitation(invitationId: string, user: User): Promis
         throw new Error(`ההזמנה מיועדת ל-${localInvitation.sharedWithEmail} אך אתה מחובר כ-${user.email}`);
       }
       
-      console.log("Attempting to create account sharing from localStorage invitation data");
+      // Check if we have stored the account_id in localStorage or sessionStorage
+      let accountId = localInvitation.accountId;
+      if (!accountId) {
+        accountId = sessionStorage.getItem('pendingInvitationAccountId');
+      }
       
-      // Create a new account record if it doesn't exist
+      console.log("Looking for account using accountId:", accountId);
+      
+      // If we have an account ID, try to find the account
+      if (accountId) {
+        const { data: existingAccount, error: accountError } = await supabase
+          .from('accounts')
+          .select('*')
+          .eq('id', accountId)
+          .maybeSingle();
+          
+        if (!accountError && existingAccount) {
+          console.log("Found existing account:", existingAccount);
+          
+          // Update the existing account to add the user
+          const { error: updateError } = await supabase
+            .from('accounts')
+            .update({ 
+              shared_with_id: user.id,
+              shared_with_email: user.email,
+              invitation_id: invitationId
+            })
+            .eq('id', accountId);
+            
+          if (updateError) {
+            console.error("Error updating existing account:", updateError);
+            // Continue to create a new account
+          } else {
+            console.log("Successfully updated existing account");
+            
+            // Remove the invitation from localStorage
+            removePendingInvitation(invitationId);
+            
+            // Clear the sessionStorage
+            sessionStorage.removeItem('pendingInvitationAccountId');
+            
+            toast.success('הצטרפת לחשבון בהצלחה!');
+            
+            // Return the updated account
+            return {
+              id: existingAccount.id,
+              name: existingAccount.name,
+              ownerId: existingAccount.owner_id,
+              sharedWithId: user.id,
+              sharedWithEmail: user.email,
+              invitationId: invitationId
+            };
+          }
+        } else {
+          console.log("Account ID found but account not found in database:", accountId);
+        }
+      }
+      
+      // If we couldn't find or update an existing account, create a new one
+      console.log("Creating new account from localStorage invitation data");
+      
       const { data: newAccount, error: createError } = await supabase
         .from('accounts')
         .insert({
@@ -72,8 +132,11 @@ export async function acceptInvitation(invitationId: string, user: User): Promis
       
       console.log("Created new account from localStorage invitation:", newAccount);
       
-      // Mark the invitation as accepted by removing it from localStorage
+      // Remove the invitation from localStorage
       removePendingInvitation(invitationId);
+      
+      // Clear the sessionStorage
+      sessionStorage.removeItem('pendingInvitationAccountId');
       
       toast.success('חשבון חדש נוצר בהצלחה!');
       
@@ -89,7 +152,7 @@ export async function acceptInvitation(invitationId: string, user: User): Promis
     
     // If we reach here, we found the invitation in the database
     const invitation = invitations[0] as unknown as InvitationRecord;
-    console.log("Found invitation:", invitation);
+    console.log("Found invitation in database:", invitation);
     
     // Validate that the invitation is for this user - Case insensitive email comparison
     if (invitation.email.toLowerCase() !== user.email.toLowerCase()) {
@@ -97,22 +160,23 @@ export async function acceptInvitation(invitationId: string, user: User): Promis
       throw new Error(`ההזמנה מיועדת ל-${invitation.email} אך אתה מחובר כ-${user.email}`);
     }
     
-    // Get the account details - Do not use .single() to prevent the error
+    // Get the account details - using maybeSingle() to prevent errors
     const { data: accountData, error: accountError } = await supabase
       .from('accounts')
       .select('*')
-      .eq('id', invitation.account_id);
+      .eq('id', invitation.account_id)
+      .maybeSingle();
       
     if (accountError) {
       console.error("Error finding account:", accountError);
       throw accountError;
     }
     
-    if (!accountData || accountData.length === 0) {
+    if (!accountData) {
       console.error("Account not found:", invitation.account_id);
       
-      // Create a new account if the original one is not found
-      console.log("Original account not found, creating a new account");
+      // Create a new account since the original one is not found
+      console.log("Creating a new account since the original was not found");
       const { data: newAccount, error: createError } = await supabase
         .from('accounts')
         .insert({
@@ -158,7 +222,7 @@ export async function acceptInvitation(invitationId: string, user: User): Promis
     }
     
     // Explicitly cast the account data to the proper type
-    const accountRecord = accountData[0] as unknown as AccountRecord;
+    const accountRecord = accountData as unknown as AccountRecord;
     console.log("Found account:", accountRecord);
     
     // Update the account to add the shared user
@@ -175,7 +239,7 @@ export async function acceptInvitation(invitationId: string, user: User): Promis
       throw updateError;
     }
     
-    // Mark the invitation as accepted - using the correct column name - invitation_id
+    // Mark the invitation as accepted
     const { error: acceptError } = await supabase
       .from('invitations')
       .update({ accepted_at: new Date().toISOString() })
@@ -196,7 +260,7 @@ export async function acceptInvitation(invitationId: string, user: User): Promis
       invitationId: invitationId
     };
     
-    // Remove from localStorage for the demo
+    // Remove from localStorage
     removePendingInvitation(invitationId);
     
     console.log("Invitation acceptance completed successfully");

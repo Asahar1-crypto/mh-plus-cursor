@@ -99,12 +99,12 @@ export const invitationCheckService = {
           ownerName: inv.owner_profile?.name || 'בעל החשבון',
           sharedWithEmail: inv.email,
           invitationId: inv.invitation_id,
-          accountId: inv.account_id  // Add account_id to the localStorage data
+          accountId: inv.account_id  // Store the account_id in localStorage
         };
       });
       
       localStorage.setItem('pendingInvitations', JSON.stringify(pendingInvitations));
-      console.log("Updated localStorage with pending invitations");
+      console.log("Updated localStorage with pending invitations:", pendingInvitations);
       
       return enrichedInvitations as InvitationData[];
     } catch (error) {
