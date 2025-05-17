@@ -3,21 +3,6 @@ import { toast } from 'sonner';
 import { User, Account } from './types';
 import { supabase } from "@/integrations/supabase/client";
 
-// Type definitions for raw data from Supabase
-interface ProfileData {
-  id: string;
-  name: string;
-}
-
-interface AccountData {
-  id: string;
-  name: string;
-  owner_id: string;
-  shared_with_id?: string;
-  shared_with_email?: string;
-  invitation_id?: string;
-}
-
 export const authService = {
   // Check for saved session
   checkAuth: async () => {
