@@ -12,8 +12,8 @@ interface InvitationData {
   invitation_id: string;
 }
 
-// Use explicit type for invitation record from database
-type InvitationRecord = {
+// Use explicit types for database records to avoid circular references
+interface InvitationRecord {
   id: string;
   account_id: string;
   email: string;
@@ -21,14 +21,14 @@ type InvitationRecord = {
   accepted_at: string | null;
   expires_at: string;
   created_at: string;
-};
+}
 
-// Define the accounts data structure separately to avoid deep type references
-type AccountRecord = {
+// Define simple account record type without references to other types
+interface AccountRecord {
   id: string;
   name: string;
   owner_id: string;
-};
+}
 
 /**
  * Service for invitation-related operations
