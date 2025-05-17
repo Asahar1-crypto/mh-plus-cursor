@@ -1,3 +1,4 @@
+
 import React, { createContext, useState, useEffect, ReactNode } from 'react';
 import { toast } from 'sonner';
 import { useAuth } from '../AuthContext';
@@ -120,7 +121,7 @@ export const ExpenseProvider = ({ children }: ExpenseProviderProps) => {
     </ExpenseContext.Provider>
   );
   
-  function approveExpense(id: string): Promise<void> {
+  async function approveExpense(id: string): Promise<void> {
     try {
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 500));
@@ -139,7 +140,7 @@ export const ExpenseProvider = ({ children }: ExpenseProviderProps) => {
     return Promise.resolve();
   }
 
-  function rejectExpense(id: string): Promise<void> {
+  async function rejectExpense(id: string): Promise<void> {
     try {
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 500));
@@ -158,7 +159,7 @@ export const ExpenseProvider = ({ children }: ExpenseProviderProps) => {
     return Promise.resolve();
   }
 
-  function markAsPaid(id: string): Promise<void> {
+  async function markAsPaid(id: string): Promise<void> {
     try {
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 500));
