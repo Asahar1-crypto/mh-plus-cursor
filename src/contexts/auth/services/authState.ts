@@ -41,36 +41,36 @@ export async function checkAuth(): Promise<{ user: User | null, account: Account
           
           // Try to accept the first invitation
           const invitation = invitations[0];
+          
+          if (!invitation.invitationId) {
+            console.error("Invitation is missing invitationId");
+            localStorage.removeItem('pendingInvitationsAfterRegistration');
+            return { user, account: await accountService.getDefaultAccount(user.id, user.name) };
+          }
+          
           try {
-            const acceptInvitationModule = await import('./invitation');
-            await acceptInvitationModule.invitationService.acceptInvitation(invitation.invitationId, user);
+            // Import and use acceptInvitation directly
+            const { acceptInvitation } = await import('./invitation/acceptInvitation');
+            
+            // Accept the invitation with the current user
+            const sharedAccount = await acceptInvitation(invitation.invitationId, user);
+            console.log("Successfully accepted invitation after registration:", sharedAccount);
             
             // Remove the pending invitation data
             localStorage.removeItem('pendingInvitationsAfterRegistration');
-            console.log("Removed pending invitations data after processing");
             
             toast.success('התחברת אוטומטית לחשבון שהוזמנת אליו!');
             
-            // Get the account after accepting the invitation
-            const { sharedAccounts } = await accountService.getUserAccounts(user.id);
-            if (sharedAccounts && sharedAccounts.length > 0) {
-              console.log("Returning shared account after auto-linking:", sharedAccounts[0]);
-              return { 
-                user, 
-                account: {
-                  id: sharedAccounts[0].id,
-                  name: sharedAccounts[0].name,
-                  ownerId: sharedAccounts[0].owner_id,
-                  sharedWithId: user.id,
-                  sharedWithEmail: user.email
-                }
-              };
-            }
+            // Return the shared account
+            return { user, account: sharedAccount };
+            
           } catch (error) {
             console.error('Error accepting invitation after registration:', error);
+            localStorage.removeItem('pendingInvitationsAfterRegistration');
           }
         } else {
           console.log("User email doesn't match invitation or no invitations found");
+          localStorage.removeItem('pendingInvitationsAfterRegistration');
         }
       } catch (error) {
         console.error('Error processing pending invitations after registration:', error);
@@ -92,22 +92,21 @@ export async function checkAuth(): Promise<{ user: User | null, account: Account
       // Store the invitation in localStorage so we can access it later
       const pendingInvitations = {};
       invitations.forEach(inv => {
-        // Add type checking to ensure we're not dealing with an error object
-        if ('error' in inv) {
-          console.error("Error in invitation data:", inv);
-          return; // Skip this invitation if it's an error
+        // Safety checks to ensure we're dealing with valid data
+        if (typeof inv === 'object' && inv !== null && !('error' in inv)) {
+          // Safely access properties using optional chaining and nullish coalescing
+          const accountName = inv.accounts?.name || 'חשבון משותף';
+          const ownerName = inv.owner_profile?.name || 'בעל החשבון';
+          
+          pendingInvitations[inv.invitation_id] = {
+            name: accountName,
+            ownerName,
+            sharedWithEmail: inv.email,
+            invitationId: inv.invitation_id
+          };
+        } else {
+          console.error("Invalid invitation data:", inv);
         }
-        
-        // Safely access properties using optional chaining and nullish coalescing
-        const accountName = inv.accounts?.name || 'חשבון משותף';
-        const ownerName = inv.owner_profile?.name || 'בעל החשבון';
-        
-        pendingInvitations[inv.invitation_id] = {
-          name: accountName,
-          ownerName,
-          sharedWithEmail: inv.email,
-          invitationId: inv.invitation_id
-        };
       });
       
       localStorage.setItem('pendingInvitations', JSON.stringify(pendingInvitations));

@@ -22,28 +22,29 @@ export async function login(email: string, password: string) {
       // Store the invitation in localStorage so we can access it later
       const pendingInvitations = {};
       invitations.forEach(inv => {
-        // Add type checking to ensure we're not dealing with an error object
-        if ('error' in inv) {
-          console.error("Error in invitation data:", inv);
-          return; // Skip this invitation if it's an error
+        // Safety checks to ensure we're dealing with valid data
+        if (typeof inv === 'object' && inv !== null && !('error' in inv)) {
+          // Safely access properties using optional chaining and nullish coalescing
+          const accountName = inv.accounts?.name || 'חשבון משותף';
+          const ownerName = inv.owner_profile?.name || 'בעל החשבון';
+          
+          pendingInvitations[inv.invitation_id] = {
+            name: accountName,
+            ownerName,
+            sharedWithEmail: inv.email,
+            invitationId: inv.invitation_id
+          };
+        } else {
+          console.error("Invalid invitation data:", inv);
         }
-        
-        // Safely access properties using optional chaining and nullish coalescing
-        const accountName = inv.accounts?.name || 'חשבון משותף';
-        const ownerName = inv.owner_profile?.name || 'בעל החשבון';
-        
-        pendingInvitations[inv.invitation_id] = {
-          name: accountName,
-          ownerName,
-          sharedWithEmail: inv.email,
-          invitationId: inv.invitation_id
-        };
       });
       
       localStorage.setItem('pendingInvitations', JSON.stringify(pendingInvitations));
       
-      // Notify the user about the pending invitation - use the utility function instead of JSX
-      showInvitationNotification(invitations[0].invitation_id);
+      // Notify the user about the pending invitation
+      if (invitations[0] && invitations[0].invitation_id) {
+        showInvitationNotification(invitations[0].invitation_id);
+      }
     }
     
     // Check if there's a pendingInvitationId in sessionStorage
