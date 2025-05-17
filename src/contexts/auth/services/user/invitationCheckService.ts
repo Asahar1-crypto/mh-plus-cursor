@@ -1,12 +1,30 @@
 
 import { supabase } from "@/integrations/supabase/client";
 
+// Define interface for the invitation data
+interface InvitationData {
+  id: string;
+  account_id: string;
+  email: string;
+  invitation_id: string;
+  expires_at: string;
+  accepted_at: string | null;
+  accounts?: {
+    name: string;
+    id: string;
+    owner_id: string;
+  };
+  owner_profile?: {
+    name: string;
+  };
+}
+
 /**
  * Service for checking pending invitations for a user
  */
 export const invitationCheckService = {
   // Check for pending invitations for a user
-  checkPendingInvitations: async (email: string) => {
+  checkPendingInvitations: async (email: string): Promise<InvitationData[]> => {
     try {
       console.log(`Checking pending invitations for ${email}`);
       
@@ -23,7 +41,7 @@ export const invitationCheckService = {
       }
 
       console.log(`Found ${invitations?.length || 0} pending invitations for ${email}`);
-      return invitations || [];
+      return invitations as InvitationData[] || [];
     } catch (error) {
       console.error('Failed to check pending invitations:', error);
       return [];

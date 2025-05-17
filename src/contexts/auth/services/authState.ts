@@ -92,6 +92,12 @@ export async function checkAuth(): Promise<{ user: User | null, account: Account
       // Store the invitation in localStorage so we can access it later
       const pendingInvitations = {};
       invitations.forEach(inv => {
+        // Add type checking to ensure we're not dealing with an error object
+        if ('error' in inv) {
+          console.error("Error in invitation data:", inv);
+          return; // Skip this invitation if it's an error
+        }
+        
         // Safely access properties using optional chaining and nullish coalescing
         const accountName = inv.accounts?.name || 'חשבון משותף';
         const ownerName = inv.owner_profile?.name || 'בעל החשבון';
