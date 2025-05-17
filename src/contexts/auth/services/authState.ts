@@ -92,9 +92,9 @@ export async function checkAuth(): Promise<{ user: User | null, account: Account
       // Store the invitation in localStorage so we can access it later
       const pendingInvitations = {};
       invitations.forEach(inv => {
-        // Use optional chaining to safely access properties
-        const accountName = inv.accounts ? inv.accounts.name : 'חשבון משותף';
-        const ownerName = inv.owner_profile ? inv.owner_profile.name : 'בעל החשבון';
+        // Safely access properties using optional chaining and nullish coalescing
+        const accountName = inv.accounts?.name || 'חשבון משותף';
+        const ownerName = inv.owner_profile?.name || 'בעל החשבון';
         
         pendingInvitations[inv.invitation_id] = {
           name: accountName,

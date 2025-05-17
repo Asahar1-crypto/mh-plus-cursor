@@ -1,13 +1,13 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { User, Account } from '../../types';
 import { toast } from 'sonner';
 import { v4 as uuidv4 } from 'uuid';
+import { User, Account } from '../../types';
 
 /**
  * Sends an invitation to a user to join an account
  */
-export async function sendInvitation(email: string, user: User, account: Account): Promise<Account> {
+export async function sendInvitation(email: string, user: User, account: Account) {
   try {
     console.log(`User ${user.id} (${user.email}) sending invitation to ${email} for account ${account.id}`);
     
@@ -31,7 +31,7 @@ export async function sendInvitation(email: string, user: User, account: Account
     // Update the account with the invitation details
     const { error: updateError } = await supabase
       .from('accounts')
-      .update({ 
+      .update({
         invitation_id: invitationId,
         shared_with_email: email
       })
@@ -43,7 +43,7 @@ export async function sendInvitation(email: string, user: User, account: Account
     }
     
     // Return the updated account object
-    const updatedAccount: Account = {
+    const updatedAccount = {
       ...account,
       invitationId,
       sharedWithEmail: email
