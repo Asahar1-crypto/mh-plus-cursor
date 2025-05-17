@@ -49,7 +49,7 @@ export const registrationService = {
         if (invitations && invitations.length > 0) {
           console.log(`Found ${invitations.length} pending invitations for ${email} during registration`);
           
-          // Save more complete invitation data to localStorage, includig the account details
+          // Save more complete invitation data to localStorage, including the account details
           const pendingInvitations = {
             email,
             invitations: invitations.map(inv => ({
@@ -63,6 +63,8 @@ export const registrationService = {
           localStorage.setItem('pendingInvitationsAfterRegistration', JSON.stringify(pendingInvitations));
           
           console.log('Stored pending invitations with complete data:', pendingInvitations);
+        } else {
+          console.log(`No pending invitations found for ${email} during registration`);
         }
         
         // Create typed User object

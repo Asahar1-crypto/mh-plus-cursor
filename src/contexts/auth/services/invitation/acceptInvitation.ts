@@ -70,7 +70,7 @@ export async function acceptInvitation(invitationId: string, user: User): Promis
       throw updateError;
     }
     
-    // Mark the invitation as accepted - FIXED: using the correct column name - invitation_id instead of id
+    // Mark the invitation as accepted - using the correct column name - invitation_id
     const { error: acceptError } = await supabase
       .from('invitations')
       .update({ accepted_at: new Date().toISOString() })
