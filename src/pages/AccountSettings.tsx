@@ -9,15 +9,17 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/contexts/AuthContext';
-import { Mail, User, UserPlus } from 'lucide-react';
+import { Mail, User, UserPlus, Loader2, CheckCircle2, XCircle } from 'lucide-react';
+import { toast } from 'sonner';
 
 const inviteSchema = z.object({
   email: z.string().email({ message: 'אימייל לא תקין' }),
 });
 
 const AccountSettings = () => {
-  const { user, account, sendInvitation } = useAuth();
+  const { user, account, sendInvitation, removeInvitation } = useAuth();
   const [isInviting, setIsInviting] = useState(false);
+  const [isRemoving, setIsRemoving] = useState(false);
   
   const inviteForm = useForm<z.infer<typeof inviteSchema>>({
     resolver: zodResolver(inviteSchema),
@@ -30,9 +32,28 @@ const AccountSettings = () => {
     setIsInviting(true);
     try {
       await sendInvitation(data.email);
+      toast.success(`הזמנה נשלחה בהצלחה ל-${data.email}`);
       inviteForm.reset();
+    } catch (error) {
+      console.error('Failed to send invitation:', error);
+      toast.error('שגיאה בשליחת ההזמנה, אנא נסה שוב');
     } finally {
       setIsInviting(false);
+    }
+  };
+
+  const handleRemovePartner = async () => {
+    if (!account?.sharedWithId) return;
+    
+    setIsRemoving(true);
+    try {
+      await removeInvitation();
+      toast.success('השותף הוסר בהצלחה מהחשבון');
+    } catch (error) {
+      console.error('Failed to remove partner:', error);
+      toast.error('שגיאה בהסרת השותף, אנא נסה שוב');
+    } finally {
+      setIsRemoving(false);
     }
   };
   
@@ -95,18 +116,37 @@ const AccountSettings = () => {
                     <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded">בעלים</span>
                   </div>
                   
-                  {account?.sharedWithId ? (
+                  {account?.sharedWithEmail ? (
                     <div className="p-4 flex items-center justify-between">
                       <div className="flex items-center gap-3">
                         <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
                           <User className="h-5 w-5 text-primary" />
                         </div>
                         <div>
-                          <p className="font-medium">משתמש משותף</p>
-                          <p className="text-sm text-muted-foreground">user@example.com</p>
+                          <p className="font-medium">שותף בחשבון</p>
+                          <p className="text-sm text-muted-foreground">{account.sharedWithEmail}</p>
                         </div>
                       </div>
-                      <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded">משתתף</span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded">
+                          {account.sharedWithId ? 'משתתף פעיל' : 'הזמנה נשלחה'}
+                        </span>
+                        {!isRemoving ? (
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="text-destructive border-destructive hover:bg-destructive/10"
+                            onClick={handleRemovePartner}
+                          >
+                            <XCircle className="h-4 w-4 mr-1" />
+                            הסר
+                          </Button>
+                        ) : (
+                          <Button variant="outline" size="sm" disabled className="border-destructive">
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          </Button>
+                        )}
+                      </div>
                     </div>
                   ) : null}
                 </div>
@@ -135,10 +175,14 @@ const AccountSettings = () => {
                       )}
                     />
                     
-                    <Button type="submit" className="w-full" disabled={isInviting || !!account?.sharedWithId}>
+                    <Button 
+                      type="submit" 
+                      className="w-full" 
+                      disabled={isInviting || !!account?.sharedWithEmail}
+                    >
                       {isInviting ? (
                         <span className="flex items-center gap-2">
-                          <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-r-transparent" />
+                          <Loader2 className="h-4 w-4 animate-spin" />
                           שולח הזמנה...
                         </span>
                       ) : (
@@ -149,10 +193,13 @@ const AccountSettings = () => {
                       )}
                     </Button>
                     
-                    {account?.sharedWithId && (
-                      <p className="text-sm text-muted-foreground text-center">
-                        כבר יש משתמש נוסף בחשבון זה
-                      </p>
+                    {account?.sharedWithEmail && (
+                      <div className="p-3 bg-muted rounded-md mt-2">
+                        <p className="text-sm text-center flex items-center justify-center gap-2">
+                          <CheckCircle2 className="h-4 w-4 text-green-500" />
+                          <span>הזמנה נשלחה ל-{account.sharedWithEmail}</span>
+                        </p>
+                      </div>
                     )}
                   </form>
                 </Form>
