@@ -98,7 +98,8 @@ export const invitationCheckService = {
           name: inv.accounts?.name || 'חשבון משותף',
           ownerName: inv.owner_profile?.name || 'בעל החשבון',
           sharedWithEmail: inv.email,
-          invitationId: inv.invitation_id
+          invitationId: inv.invitation_id,
+          accountId: inv.account_id  // Add account_id to the localStorage data
         };
       });
       

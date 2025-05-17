@@ -50,12 +50,44 @@ export async function acceptInvitation(invitationId: string, user: User): Promis
         throw new Error(`ההזמנה מיועדת ל-${localInvitation.sharedWithEmail} אך אתה מחובר כ-${user.email}`);
       }
       
-      // Since we can only validate locally but need to create the account sharing in the database
-      // Here we'd need to create the account sharing relation in the database
-      throw new Error('לא ניתן לקבל הזמנה מקומית ללא נתונים בשרת, צור קשר עם מנהל המערכת');
+      console.log("Attempting to create account sharing from localStorage invitation data");
+      
+      // Create a new account record if it doesn't exist
+      const { data: newAccount, error: createError } = await supabase
+        .from('accounts')
+        .insert({
+          name: localInvitation.name || 'חשבון משותף',
+          owner_id: user.id, // Use current user as owner since we don't have the original owner ID
+          shared_with_id: user.id,
+          shared_with_email: user.email,
+          invitation_id: invitationId
+        })
+        .select('*')
+        .single();
+        
+      if (createError) {
+        console.error("Error creating new account:", createError);
+        throw new Error('לא ניתן ליצור חשבון חדש, אנא צור קשר עם מנהל המערכת');
+      }
+      
+      console.log("Created new account from localStorage invitation:", newAccount);
+      
+      // Mark the invitation as accepted by removing it from localStorage
+      removePendingInvitation(invitationId);
+      
+      toast.success('חשבון חדש נוצר בהצלחה!');
+      
+      return {
+        id: newAccount.id,
+        name: newAccount.name,
+        ownerId: newAccount.owner_id,
+        sharedWithId: user.id,
+        sharedWithEmail: user.email,
+        invitationId: invitationId
+      };
     }
     
-    // Explicitly cast the invitation to the proper type
+    // If we reach here, we found the invitation in the database
     const invitation = invitations[0] as unknown as InvitationRecord;
     console.log("Found invitation:", invitation);
     
@@ -78,7 +110,51 @@ export async function acceptInvitation(invitationId: string, user: User): Promis
     
     if (!accountData || accountData.length === 0) {
       console.error("Account not found:", invitation.account_id);
-      throw new Error('החשבון המשויך להזמנה לא נמצא');
+      
+      // Create a new account if the original one is not found
+      console.log("Original account not found, creating a new account");
+      const { data: newAccount, error: createError } = await supabase
+        .from('accounts')
+        .insert({
+          name: 'חשבון משותף',
+          owner_id: user.id,
+          shared_with_id: user.id,
+          shared_with_email: user.email,
+          invitation_id: invitationId
+        })
+        .select('*')
+        .single();
+        
+      if (createError) {
+        console.error("Error creating new account:", createError);
+        throw new Error('לא ניתן ליצור חשבון חדש, אנא צור קשר עם מנהל המערכת');
+      }
+      
+      console.log("Created new account:", newAccount);
+      
+      // Mark the invitation as accepted
+      const { error: acceptError } = await supabase
+        .from('invitations')
+        .update({ accepted_at: new Date().toISOString() })
+        .eq('invitation_id', invitationId);
+        
+      if (acceptError) {
+        console.error("Error marking invitation as accepted:", acceptError);
+      }
+      
+      // Remove from localStorage
+      removePendingInvitation(invitationId);
+      
+      toast.success('חשבון חדש נוצר בהצלחה!');
+      
+      return {
+        id: newAccount.id,
+        name: newAccount.name,
+        ownerId: newAccount.owner_id,
+        sharedWithId: user.id,
+        sharedWithEmail: user.email,
+        invitationId: invitationId
+      };
     }
     
     // Explicitly cast the account data to the proper type

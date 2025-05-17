@@ -32,4 +32,5 @@ export type PendingInvitationRecord = {
   ownerName: string;
   sharedWithEmail: string;
   invitationId: string;
+  accountId?: string;  // Added accountId field
 };

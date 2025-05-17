@@ -77,6 +77,11 @@ const AcceptInvitation = () => {
             accountName: invitation.name || 'חשבון משותף',
             email: invitation.sharedWithEmail || '',
           });
+          
+          // Store the account_id in localStorage if it exists
+          if (invitation.accountId) {
+            sessionStorage.setItem('pendingInvitationAccountId', invitation.accountId);
+          }
         } else {
           // Use supabase data
           const invitation = invitations[0];
@@ -98,6 +103,9 @@ const AcceptInvitation = () => {
               accountName: account?.name || 'חשבון משותף',
               email: invitation.email || '',
             });
+            
+            // Store the account_id in sessionStorage
+            sessionStorage.setItem('pendingInvitationAccountId', invitation.account_id);
           } else {
             // Fallback if we can't get the owner's profile
             setInvitationDetails({
@@ -105,6 +113,11 @@ const AcceptInvitation = () => {
               accountName: account?.name || 'חשבון משותף',
               email: invitation.email || '',
             });
+            
+            // Store the account_id in sessionStorage
+            if (invitation.account_id) {
+              sessionStorage.setItem('pendingInvitationAccountId', invitation.account_id);
+            }
           }
         }
         
