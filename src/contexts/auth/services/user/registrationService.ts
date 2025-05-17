@@ -11,10 +11,17 @@ export const registrationService = {
     try {
       console.log(`Registering user: ${name} (${email})`);
       
-      // Check if email has pending invitations
+      // CRITICAL FIX: Improved invitation query to ensure complete data
       const { data: invitations, error: invitationsError } = await supabase
         .from('invitations')
-        .select('invitation_id, account_id, accounts:account_id(name, owner_id)')
+        .select(`
+          invitation_id, 
+          account_id, 
+          accounts:account_id(
+            name, 
+            owner_id
+          )
+        `)
         .eq('email', email)
         .is('accepted_at', null)
         .gt('expires_at', 'now()');
@@ -49,7 +56,7 @@ export const registrationService = {
         if (invitations && invitations.length > 0) {
           console.log(`Found ${invitations.length} pending invitations for ${email} during registration`);
           
-          // Save more complete invitation data to localStorage, including the account details
+          // CRITICAL FIX: Save complete invitation data to localStorage
           const pendingInvitations = {
             email,
             invitations: invitations.map(inv => ({

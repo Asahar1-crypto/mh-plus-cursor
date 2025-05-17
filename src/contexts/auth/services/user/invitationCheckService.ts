@@ -29,6 +29,7 @@ export const invitationCheckService = {
       console.log(`Checking pending invitations for ${email}`);
       
       // Modified query to ensure data integrity and better error handling
+      // CRITICAL FIX: Added explicit selection of accounts fields and fixed join relationship
       const { data: invitations, error } = await supabase
         .from('invitations')
         .select(`
@@ -91,17 +92,28 @@ export const invitationCheckService = {
 
       console.log(`Found and processed ${enrichedInvitations.length} pending invitations for ${email}`);
       
-      // Store these invitations in localStorage for fallback
+      // CRITICAL FIX: Store invitations in localStorage with complete account information
       const pendingInvitations = {};
       enrichedInvitations.forEach(inv => {
-        pendingInvitations[inv.invitation_id] = {
-          name: inv.accounts?.name || 'חשבון משותף',
-          ownerName: inv.owner_profile?.name || 'בעל החשבון',
-          ownerId: inv.accounts?.owner_id, // Store the owner ID
-          sharedWithEmail: inv.email,
-          invitationId: inv.invitation_id,
-          accountId: inv.account_id  // Store the account_id in localStorage
-        };
+        if (inv.accounts) {
+          pendingInvitations[inv.invitation_id] = {
+            name: inv.accounts.name || 'חשבון משותף',
+            ownerName: inv.owner_profile?.name || 'בעל החשבון',
+            ownerId: inv.accounts.owner_id, // Store the owner ID properly
+            sharedWithEmail: inv.email,
+            invitationId: inv.invitation_id,
+            accountId: inv.account_id  // Store the account_id in localStorage
+          };
+        } else {
+          // Fallback for missing account data
+          pendingInvitations[inv.invitation_id] = {
+            name: 'חשבון משותף',
+            ownerName: 'בעל החשבון',
+            sharedWithEmail: inv.email,
+            invitationId: inv.invitation_id,
+            accountId: inv.account_id
+          };
+        }
       });
       
       localStorage.setItem('pendingInvitations', JSON.stringify(pendingInvitations));

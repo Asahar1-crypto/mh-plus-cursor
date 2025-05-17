@@ -15,7 +15,7 @@ export async function login(email: string, password: string) {
     // Get default account
     const account = await accountService.getDefaultAccount(user.id, user.name);
     
-    // Check for valid invitations by email that haven't been accepted yet
+    // CRITICAL FIX: Improved invitation checking to ensure proper data is stored
     try {
       const invitations = await userService.checkPendingInvitations(email);
       
@@ -31,12 +31,15 @@ export async function login(email: string, password: string) {
             // Safely access properties using optional chaining and nullish coalescing
             const accountName = inv.accounts?.name || 'חשבון משותף';
             const ownerName = inv.owner_profile?.name || 'בעל החשבון';
+            const ownerId = inv.accounts?.owner_id; // Store the owner ID
             
             pendingInvitations[inv.invitation_id] = {
               name: accountName,
               ownerName,
+              ownerId, // Store the owner ID in localStorage
               sharedWithEmail: inv.email,
-              invitationId: inv.invitation_id
+              invitationId: inv.invitation_id,
+              accountId: inv.account_id // Store the account ID
             };
           } else {
             console.error("Invalid invitation data:", inv);

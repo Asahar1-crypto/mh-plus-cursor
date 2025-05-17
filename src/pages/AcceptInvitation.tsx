@@ -27,7 +27,7 @@ const AcceptInvitation = () => {
       try {
         console.log(`Fetching invitation details for ID: ${invitationId}`);
         
-        // First try to get from Supabase with comprehensive data selection
+        // CRITICAL FIX: Improved query to ensure we get complete account information
         const { data: invitations, error } = await supabase
           .from('invitations')
           .select(`
@@ -35,7 +35,10 @@ const AcceptInvitation = () => {
             accounts:account_id (
               id,
               name,
-              owner_id
+              owner_id,
+              profiles:owner_id (
+                name
+              )
             )
           `)
           .eq('invitation_id', invitationId)
@@ -83,36 +86,57 @@ const AcceptInvitation = () => {
             console.log("Storing account ID in sessionStorage:", invitation.accountId);
             sessionStorage.setItem('pendingInvitationAccountId', invitation.accountId);
           }
+          
+          // CRITICAL FIX: Also store the owner ID to ensure proper account linking
+          if (invitation.ownerId) {
+            console.log("Storing owner ID in sessionStorage:", invitation.ownerId);
+            sessionStorage.setItem('pendingInvitationOwnerId', invitation.ownerId);
+          }
         } else {
           // Use supabase data
           const invitation = invitations[0];
           const account = invitation.accounts;
           console.log("Processing Supabase invitation:", { invitation, account });
           
-          // If we have account data, fetch the owner's profile separately
-          if (account && account.owner_id) {
-            const { data: ownerData } = await supabase
-              .from('profiles')
-              .select('name')
-              .eq('id', account.owner_id)
-              .single();
-              
-            const ownerName = ownerData?.name || 'בעל החשבון';
+          if (account) {
+            // CRITICAL FIX: Get owner name from nested profiles or fetch separately if needed
+            let ownerName = 'בעל החשבון';
+            
+            if (account.profiles && account.profiles.name) {
+              ownerName = account.profiles.name;
+            } else if (account.owner_id) {
+              // Fallback to separate query if nested join didn't work
+              const { data: ownerData } = await supabase
+                .from('profiles')
+                .select('name')
+                .eq('id', account.owner_id)
+                .single();
+                
+              if (ownerData) {
+                ownerName = ownerData.name || 'בעל החשבון';
+              }
+            }
             
             setInvitationDetails({
               ownerName: ownerName,
-              accountName: account?.name || 'חשבון משותף',
+              accountName: account.name || 'חשבון משותף',
               email: invitation.email || '',
             });
             
-            // Store the account_id in sessionStorage
+            // Store IDs in sessionStorage
             console.log("Storing account ID in sessionStorage:", invitation.account_id);
             sessionStorage.setItem('pendingInvitationAccountId', invitation.account_id);
+            
+            // CRITICAL FIX: Also store the owner ID to ensure proper account linking
+            if (account.owner_id) {
+              console.log("Storing owner ID in sessionStorage:", account.owner_id);
+              sessionStorage.setItem('pendingInvitationOwnerId', account.owner_id);
+            }
           } else {
-            // Fallback if we can't get the owner's profile
+            // Fallback if we can't get the account information
             setInvitationDetails({
               ownerName: 'בעל החשבון',
-              accountName: account?.name || 'חשבון משותף',
+              accountName: 'חשבון משותף',
               email: invitation.email || '',
             });
             

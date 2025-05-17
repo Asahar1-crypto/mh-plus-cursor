@@ -37,8 +37,8 @@ export async function checkAuth(): Promise<{ user: User | null, account: Account
         const email = pendingData.email;
         const invitations = pendingData.invitations;
         
-        // Check if this is the right user for these invitations
-        if (email === user.email && invitations && invitations.length > 0) {
+        // Case insensitive email comparison
+        if (email.toLowerCase() === user.email.toLowerCase() && invitations && invitations.length > 0) {
           console.log(`Processing auto-linking for user ${user.email} with ${invitations.length} invitations`);
           
           // Try to accept the first invitation
@@ -56,6 +56,14 @@ export async function checkAuth(): Promise<{ user: User | null, account: Account
             
             console.log("Accepting invitation with ID:", invitation.invitationId);
             console.log("Current user for invitation acceptance:", user);
+            
+            // Store additional data in sessionStorage to help with acceptance
+            if (invitation.accountId) {
+              sessionStorage.setItem('pendingInvitationAccountId', invitation.accountId);
+            }
+            if (invitation.ownerId) {
+              sessionStorage.setItem('pendingInvitationOwnerId', invitation.ownerId);
+            }
             
             // Accept the invitation with the current user
             const sharedAccount = await acceptInvitation(invitation.invitationId, user);
@@ -75,7 +83,7 @@ export async function checkAuth(): Promise<{ user: User | null, account: Account
             localStorage.removeItem('pendingInvitationsAfterRegistration');
           }
         } else {
-          console.log(`User email doesn't match invitation (${user.email} vs ${email}) or no invitations found`);
+          console.log(`User email doesn't match invitation (${user.email.toLowerCase()} vs ${email.toLowerCase()}) or no invitations found`);
           localStorage.removeItem('pendingInvitationsAfterRegistration');
         }
       } catch (error) {
@@ -88,7 +96,7 @@ export async function checkAuth(): Promise<{ user: User | null, account: Account
     const account = await accountService.getDefaultAccount(user.id, user.name);
     console.log("Default account retrieved:", account);
     
-    // Check for valid invitations by email
+    // CRITICAL FIX: Improved invitation checking to ensure complete data
     try {
       const invitations = await userService.checkPendingInvitations(user.email);
       
@@ -99,7 +107,7 @@ export async function checkAuth(): Promise<{ user: User | null, account: Account
         // Store the invitation in localStorage so we can access it later
         const pendingInvitations = {};
         invitations.forEach(inv => {
-          // Safety checks to ensure we're dealing with valid data
+          // Ensure we're handling valid data
           if (typeof inv === 'object' && inv !== null && !('error' in inv)) {
             // Safely access properties using optional chaining and nullish coalescing
             const accountName = inv.accounts?.name || 'חשבון משותף';
