@@ -11,7 +11,10 @@ export interface Account {
   ownerId: string;
   sharedWithId?: string;
   sharedWithEmail?: string;
+  sharedWithName?: string;
+  ownerName?: string;
   invitationId?: string;
+  isSharedAccount?: boolean;
 }
 
 export interface AuthContextType {
