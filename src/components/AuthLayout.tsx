@@ -2,7 +2,7 @@
 import React from 'react';
 import AppHeader from './AppHeader';
 import { Outlet, Navigate } from 'react-router-dom';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/contexts/auth';
 
 interface AuthLayoutProps {
   requiresAuth?: boolean;

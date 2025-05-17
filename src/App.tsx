@@ -4,7 +4,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { AuthProvider } from "@/contexts/AuthContext";
+import { AuthProvider } from "@/contexts/auth";
 import { ExpenseProvider } from "@/contexts/expense";
 
 import Home from "./pages/Home";
@@ -18,7 +18,7 @@ import AcceptInvitation from "./pages/AcceptInvitation";
 import NotFound from "./pages/NotFound";
 import AddExpense from "./pages/AddExpense";
 import Children from "./pages/Children";
-import Expenses from "./pages/Expenses"; // Add import
+import Expenses from "./pages/Expenses";
 
 import AuthLayout from "./components/AuthLayout";
 import AppLayout from "./components/AppLayout";
