@@ -15,8 +15,8 @@ interface InvitationData {
     owner_id: string;
   };
   owner_profile?: {
-    name: string;
-  };
+    name?: string;
+  } | null;
 }
 
 /**
@@ -41,7 +41,7 @@ export const invitationCheckService = {
       }
 
       console.log(`Found ${invitations?.length || 0} pending invitations for ${email}`);
-      return invitations as InvitationData[] || [];
+      return invitations as unknown as InvitationData[] || [];
     } catch (error) {
       console.error('Failed to check pending invitations:', error);
       return [];
