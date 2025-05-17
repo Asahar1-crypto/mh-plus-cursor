@@ -4,7 +4,7 @@ import { User, Account } from '../types';
 import { toast } from 'sonner';
 import { sendInvitationEmail } from '@/utils/emailService';
 
-// Define local interfaces for data structures to avoid circular references
+// Define standalone interfaces for database records to avoid circular references
 interface InvitationData {
   id: string;
   account_id: string;
@@ -12,7 +12,6 @@ interface InvitationData {
   invitation_id: string;
 }
 
-// Use explicit types for database records to avoid circular references
 interface InvitationRecord {
   id: string;
   account_id: string;
@@ -23,11 +22,21 @@ interface InvitationRecord {
   created_at: string;
 }
 
-// Define simple account record type without references to other types
 interface AccountRecord {
   id: string;
   name: string;
   owner_id: string;
+  shared_with_email?: string;
+  shared_with_id?: string;
+  invitation_id?: string;
+}
+
+// Define a simple type for pending invitations stored in localStorage
+interface PendingInvitation {
+  name: string;
+  ownerName: string;
+  sharedWithEmail: string;
+  invitationId: string;
 }
 
 /**
@@ -115,7 +124,7 @@ export const invitationService = {
       
       // Store in localStorage for the demo
       try {
-        const pendingInvitations = JSON.parse(localStorage.getItem('pendingInvitations') || '{}');
+        const pendingInvitations: Record<string, PendingInvitation> = JSON.parse(localStorage.getItem('pendingInvitations') || '{}');
         pendingInvitations[invitationId] = {
           name: account.name,
           ownerName: user.name,
@@ -182,7 +191,7 @@ export const invitationService = {
         
         // Remove from localStorage for the demo
         try {
-          const pendingInvitations = JSON.parse(localStorage.getItem('pendingInvitations') || '{}');
+          const pendingInvitations: Record<string, PendingInvitation> = JSON.parse(localStorage.getItem('pendingInvitations') || '{}');
           delete pendingInvitations[account.invitationId];
           localStorage.setItem('pendingInvitations', JSON.stringify(pendingInvitations));
           console.log("Removed invitation from localStorage");
@@ -250,7 +259,8 @@ export const invitationService = {
         throw new Error('ההזמנה לא נמצאה או שפג תוקפה');
       }
       
-      const invitation = invitations[0] as InvitationRecord;
+      // Explicitly cast the invitation to the proper type
+      const invitation = invitations[0] as unknown as InvitationRecord;
       console.log("Found invitation:", invitation);
       
       // Validate that the invitation is for this user
@@ -271,7 +281,9 @@ export const invitationService = {
         throw accountError;
       }
       
-      console.log("Found account:", accountData);
+      // Explicitly cast the account data to the proper type
+      const accountRecord = accountData as unknown as AccountRecord;
+      console.log("Found account:", accountRecord);
       
       // Update the account to add the shared user
       const { error: updateError } = await supabase
@@ -300,9 +312,9 @@ export const invitationService = {
       
       // Create account object to return
       const account: Account = {
-        id: accountData.id,
-        name: accountData.name,
-        ownerId: accountData.owner_id,
+        id: accountRecord.id,
+        name: accountRecord.name,
+        ownerId: accountRecord.owner_id,
         sharedWithId: user.id,
         sharedWithEmail: user.email,
         invitationId: invitationId
@@ -310,7 +322,7 @@ export const invitationService = {
       
       // Remove from localStorage for the demo
       try {
-        const pendingInvitations = JSON.parse(localStorage.getItem('pendingInvitations') || '{}');
+        const pendingInvitations: Record<string, PendingInvitation> = JSON.parse(localStorage.getItem('pendingInvitations') || '{}');
         delete pendingInvitations[invitationId];
         localStorage.setItem('pendingInvitations', JSON.stringify(pendingInvitations));
         console.log("Removed accepted invitation from localStorage");
