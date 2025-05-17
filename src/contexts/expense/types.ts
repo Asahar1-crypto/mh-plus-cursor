@@ -27,6 +27,8 @@ export interface Child {
 export interface ExpenseContextType {
   expenses: Expense[];
   childrenList: Child[];
+  isLoading: boolean;
+  isSubmitting: boolean;
   addExpense: (expense: Omit<Expense, 'id' | 'createdBy' | 'creatorName' | 'status' | 'approvedBy' | 'approvedAt'>) => Promise<void>;
   approveExpense: (id: string) => Promise<void>;
   rejectExpense: (id: string) => Promise<void>;

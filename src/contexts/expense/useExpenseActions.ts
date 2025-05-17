@@ -1,7 +1,9 @@
+
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { Expense, Child } from './types';
 import { User } from '@/contexts/AuthContext';
+import { expenseService } from '@/integrations/supabase/expenseService';
 
 export interface ExpenseActions {
   addExpense: (expense: Omit<Expense, 'id' | 'createdBy' | 'creatorName' | 'status' | 'approvedBy' | 'approvedAt'>) => Promise<void>;
@@ -10,6 +12,7 @@ export interface ExpenseActions {
   markAsPaid: (id: string) => Promise<void>;
   addChild: (child: Omit<Child, 'id'>) => Promise<void>;
   uploadReceipt: (expenseId: string, receiptUrl: string) => Promise<void>;
+  isSubmitting: boolean;
 }
 
 export const useExpenseActions = (
@@ -19,6 +22,7 @@ export const useExpenseActions = (
   childrenList: Child[],
   setChildrenList: React.Dispatch<React.SetStateAction<Child[]>>
 ): ExpenseActions => {
+  const [isSubmitting, setIsSubmitting] = useState(false);
   
   const addExpense = async (newExpense: Omit<Expense, 'id' | 'createdBy' | 'creatorName' | 'status' | 'approvedBy' | 'approvedAt'>) => {
     if (!user) {
@@ -26,31 +30,33 @@ export const useExpenseActions = (
       return;
     }
 
+    setIsSubmitting(true);
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 500));
+      const result = await expenseService.addExpense(newExpense, user);
       
+      // Create a client-side representation of the expense with the data we need
       const expense: Expense = {
-        ...newExpense,
-        id: `exp-${Date.now()}`,
+        id: result.id,
+        amount: newExpense.amount,
+        description: newExpense.description,
+        date: newExpense.date,
+        category: newExpense.category,
+        childId: newExpense.childId,
+        childName: newExpense.childName,
         createdBy: user.id,
         creatorName: user.name,
-        status: 'pending' as const,
-        includeInMonthlyBalance: true // Default to include in balance
+        status: 'pending',
+        receipt: newExpense.receipt,
+        isRecurring: newExpense.isRecurring || false,
+        frequency: newExpense.frequency,
+        includeInMonthlyBalance: newExpense.includeInMonthlyBalance || true
       };
       
-      const updatedExpenses = [...expenses, expense];
-      setExpenses(updatedExpenses);
-      
-      // Save to localStorage directly to ensure it's saved immediately
-      if (user) {
-        localStorage.setItem(`expenses-${user.id}`, JSON.stringify(updatedExpenses));
-      }
-      
-      toast.success('ההוצאה נוספה בהצלחה');
+      setExpenses(prevExpenses => [...prevExpenses, expense]);
     } catch (error) {
       console.error('Failed to add expense:', error);
-      toast.error('הוספת ההוצאה נכשלה, אנא נסה שוב.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -60,27 +66,14 @@ export const useExpenseActions = (
       return;
     }
 
+    setIsSubmitting(true);
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      const child: Child = {
-        ...newChild,
-        id: `child-${Date.now()}`
-      };
-      
-      const updatedChildren = [...childrenList, child];
-      setChildrenList(updatedChildren);
-      
-      // Save to localStorage with user ID as part of the key
-      if (user) {
-        localStorage.setItem(`children-${user.id}`, JSON.stringify(updatedChildren));
-      }
-      
-      toast.success('הילד/ה נוספ/ה בהצלחה');
+      const child = await expenseService.addChild(newChild, user);
+      setChildrenList(prevChildren => [...prevChildren, child]);
     } catch (error) {
       console.error('Failed to add child:', error);
-      toast.error('הוספת הילד/ה נכשלה, אנא נסה שוב.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -90,173 +83,104 @@ export const useExpenseActions = (
       return;
     }
     
+    setIsSubmitting(true);
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 500));
+      await expenseService.uploadReceipt(expenseId, receiptUrl, user);
       
-      const updatedExpenses = expenses.map(expense => 
+      // Update local state
+      setExpenses(prevExpenses => prevExpenses.map(expense => 
         expense.id === expenseId ? { ...expense, receipt: receiptUrl } : expense
-      );
-      
-      setExpenses(updatedExpenses);
-      
-      // Save to localStorage immediately
-      if (user) {
-        localStorage.setItem(`expenses-${user.id}`, JSON.stringify(updatedExpenses));
-      }
-      
-      toast.success('הקבלה הועלתה בהצלחה');
+      ));
     } catch (error) {
       console.error('Failed to upload receipt:', error);
-      toast.error('העלאת הקבלה נכשלה, אנא נסה שוב.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
-  const approveExpense = async (id: string): Promise<void> => {
+  const updateExpenseStatus = async (id: string, status: 'pending' | 'approved' | 'rejected' | 'paid'): Promise<void> => {
     if (!user) {
-      toast.error('יש להתחבר כדי לאשר הוצאה');
+      toast.error('יש להתחבר כדי לעדכן סטטוס הוצאה');
       return;
     }
     
+    setIsSubmitting(true);
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 500));
+      await expenseService.updateExpenseStatus(id, status, user);
       
-      // Find the expense to approve
-      const expenseToApprove = expenses.find(expense => expense.id === id);
-      
-      if (!expenseToApprove) {
-        toast.error('ההוצאה לא נמצאה');
-        return;
-      }
-      
-      // Check if user IS the one who created the expense - if so, they CAN'T approve it
-      if (expenseToApprove.createdBy === user.id) {
-        toast.error('לא ניתן לאשר הוצאה שהוספת בעצמך');
-        return;
-      }
-      
-      // Create a new array with the updated expense
-      const updatedExpenses = expenses.map(expense => {
+      // Update local state
+      setExpenses(prevExpenses => prevExpenses.map(expense => {
         if (expense.id === id) {
-          return { 
-            ...expense, 
-            status: 'approved' as const,
-            approvedBy: user.id,
-            approvedAt: new Date().toISOString()
-          };
+          let updatedExpense = { ...expense, status };
+          
+          if (status === 'approved') {
+            updatedExpense.approvedBy = user.id;
+            updatedExpense.approvedAt = new Date().toISOString();
+          }
+          
+          return updatedExpense;
         }
         return expense;
-      });
-      
-      // Update state with the new array
-      setExpenses(updatedExpenses);
-      
-      // Save to localStorage
-      localStorage.setItem(`expenses-${user.id}`, JSON.stringify(updatedExpenses));
-      
-      toast.success('ההוצאה אושרה בהצלחה');
+      }));
     } catch (error) {
-      console.error('Failed to approve expense:', error);
-      toast.error('אישור ההוצאה נכשל, אנא נסה שוב.');
+      console.error(`Failed to ${status} expense:`, error);
+    } finally {
+      setIsSubmitting(false);
     }
+  };
+  
+  const approveExpense = async (id: string): Promise<void> => {
+    // Find the expense to approve
+    const expenseToApprove = expenses.find(expense => expense.id === id);
+      
+    if (!expenseToApprove) {
+      toast.error('ההוצאה לא נמצאה');
+      return;
+    }
+    
+    // Check if user IS the one who created the expense - if so, they CAN'T approve it
+    if (user && expenseToApprove.createdBy === user.id) {
+      toast.error('לא ניתן לאשר הוצאה שהוספת בעצמך');
+      return;
+    }
+    
+    await updateExpenseStatus(id, 'approved');
   };
 
   const rejectExpense = async (id: string): Promise<void> => {
-    if (!user) {
-      toast.error('יש להתחבר כדי לדחות הוצאה');
+    // Find the expense to reject
+    const expenseToReject = expenses.find(expense => expense.id === id);
+      
+    if (!expenseToReject) {
+      toast.error('ההוצאה לא נמצאה');
       return;
     }
     
-    try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      // Find the expense to reject
-      const expenseToReject = expenses.find(expense => expense.id === id);
-      
-      if (!expenseToReject) {
-        toast.error('ההוצאה לא נמצאה');
-        return;
-      }
-      
-      // Check if user IS the one who created the expense - if so, they CAN'T reject it
-      if (expenseToReject.createdBy === user.id) {
-        toast.error('לא ניתן לדחות הוצאה שהוספת בעצמך');
-        return;
-      }
-      
-      // Create a new array with the updated expense
-      const updatedExpenses = expenses.map(expense => {
-        if (expense.id === id) {
-          return { 
-            ...expense, 
-            status: 'rejected' as const,
-            includeInMonthlyBalance: false // Rejected expenses don't affect balance
-          };
-        }
-        return expense;
-      });
-      
-      // Update state with the new array
-      setExpenses(updatedExpenses);
-      
-      // Save to localStorage
-      localStorage.setItem(`expenses-${user.id}`, JSON.stringify(updatedExpenses));
-      
-      toast.success('ההוצאה נדחתה');
-    } catch (error) {
-      console.error('Failed to reject expense:', error);
-      toast.error('דחיית ההוצאה נכשלה, אנא נסה שוב.');
+    // Check if user IS the one who created the expense - if so, they CAN'T reject it
+    if (user && expenseToReject.createdBy === user.id) {
+      toast.error('לא ניתן לדחות הוצאה שהוספת בעצמך');
+      return;
     }
+    
+    await updateExpenseStatus(id, 'rejected');
   };
 
   const markAsPaid = async (id: string): Promise<void> => {
-    if (!user) {
-      toast.error('יש להתחבר כדי לסמן הוצאה כשולמה');
+    // Find the expense to mark as paid
+    const expenseToPay = expenses.find(expense => expense.id === id);
+      
+    if (!expenseToPay) {
+      toast.error('ההוצאה לא נמצאה');
       return;
     }
     
-    try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      // Find the expense to mark as paid
-      const expenseToPay = expenses.find(expense => expense.id === id);
-      
-      if (!expenseToPay) {
-        toast.error('ההוצאה לא נמצאה');
-        return;
-      }
-      
-      // Check if expense is approved
-      if (expenseToPay.status !== 'approved') {
-        toast.error('רק הוצאות מאושרות יכולות להיות מסומנות כשולמו');
-        return;
-      }
-      
-      // Create a new array with the updated expense
-      const updatedExpenses = expenses.map(expense => {
-        if (expense.id === id) {
-          return { 
-            ...expense, 
-            status: 'paid' as const 
-          };
-        }
-        return expense;
-      });
-      
-      // Update state with the new array
-      setExpenses(updatedExpenses);
-      
-      // Save to localStorage
-      localStorage.setItem(`expenses-${user.id}`, JSON.stringify(updatedExpenses));
-      
-      toast.success('ההוצאה סומנה כשולמה');
-    } catch (error) {
-      console.error('Failed to mark expense as paid:', error);
-      toast.error('סימון ההוצאה כשולמה נכשל, אנא נסה שוב.');
+    // Check if expense is approved
+    if (expenseToPay.status !== 'approved') {
+      toast.error('רק הוצאות מאושרות יכולות להיות מסומנות כשולמו');
+      return;
     }
+    
+    await updateExpenseStatus(id, 'paid');
   };
 
   return {
@@ -265,6 +189,7 @@ export const useExpenseActions = (
     rejectExpense,
     markAsPaid,
     addChild,
-    uploadReceipt
+    uploadReceipt,
+    isSubmitting
   };
 };

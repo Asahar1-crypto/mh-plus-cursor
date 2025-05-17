@@ -20,7 +20,8 @@ export const ExpenseProvider = ({ children }: ExpenseProviderProps) => {
     expenses, 
     setExpenses, 
     childrenList, 
-    setChildrenList 
+    setChildrenList,
+    isLoading
   } = useExpenseStorage(user);
   
   const { 
@@ -29,7 +30,8 @@ export const ExpenseProvider = ({ children }: ExpenseProviderProps) => {
     rejectExpense,
     markAsPaid,
     addChild,
-    uploadReceipt
+    uploadReceipt,
+    isSubmitting
   } = useExpenseActions(user, expenses, setExpenses, childrenList, setChildrenList);
   
   const { 
@@ -49,6 +51,8 @@ export const ExpenseProvider = ({ children }: ExpenseProviderProps) => {
   const contextValue: ExpenseContextType = {
     expenses,
     childrenList,
+    isLoading,
+    isSubmitting,
     addExpense,
     approveExpense,
     rejectExpense,

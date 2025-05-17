@@ -2,61 +2,54 @@
 import { useState, useEffect } from 'react';
 import { Expense, Child } from './types';
 import { User } from '@/contexts/AuthContext';
+import { expenseService } from '@/integrations/supabase/expenseService';
 
 export interface ExpenseStorage {
   expenses: Expense[];
   setExpenses: React.Dispatch<React.SetStateAction<Expense[]>>;
   childrenList: Child[];
   setChildrenList: React.Dispatch<React.SetStateAction<Child[]>>;
+  isLoading: boolean;
 }
 
 export const useExpenseStorage = (user: User | null): ExpenseStorage => {
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [childrenList, setChildrenList] = useState<Child[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
 
-  // Load children and expenses when user changes
+  // Load data when user changes
   useEffect(() => {
-    if (user) {
-      // Load children for the user
-      const savedChildren = localStorage.getItem(`children-${user.id}`);
-      if (savedChildren) {
-        try {
-          setChildrenList(JSON.parse(savedChildren));
-        } catch (error) {
-          console.error('Failed to parse saved children:', error);
-        }
+    const loadData = async () => {
+      if (!user) {
+        setExpenses([]);
+        setChildrenList([]);
+        return;
       }
       
-      // Load expenses for the user
-      const savedExpenses = localStorage.getItem(`expenses-${user.id}`);
-      if (savedExpenses) {
-        try {
-          setExpenses(JSON.parse(savedExpenses));
-        } catch (error) {
-          console.error('Failed to parse saved expenses:', error);
-        }
+      setIsLoading(true);
+      try {
+        // Load expenses from Supabase
+        const fetchedExpenses = await expenseService.getExpenses(user);
+        setExpenses(fetchedExpenses);
+        
+        // Load children from Supabase
+        const fetchedChildren = await expenseService.getChildren(user);
+        setChildrenList(fetchedChildren);
+      } catch (error) {
+        console.error('Failed to load data:', error);
+      } finally {
+        setIsLoading(false);
       }
-    }
+    };
+    
+    loadData();
   }, [user]);
-
-  // Save expenses whenever they change
-  useEffect(() => {
-    if (user) {
-      localStorage.setItem(`expenses-${user.id}`, JSON.stringify(expenses));
-    }
-  }, [expenses, user]);
-  
-  // Save children whenever they change
-  useEffect(() => {
-    if (user && childrenList.length > 0) {
-      localStorage.setItem(`children-${user.id}`, JSON.stringify(childrenList));
-    }
-  }, [childrenList, user]);
 
   return {
     expenses,
     setExpenses,
     childrenList,
-    setChildrenList
+    setChildrenList,
+    isLoading
   };
 };
