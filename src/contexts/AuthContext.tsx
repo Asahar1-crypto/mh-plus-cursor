@@ -2,13 +2,13 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { toast } from 'sonner';
 
-interface User {
+export interface User {
   id: string;
   email: string;
   name: string;
 }
 
-interface Account {
+export interface Account {
   id: string;
   name: string;
   ownerId: string;
