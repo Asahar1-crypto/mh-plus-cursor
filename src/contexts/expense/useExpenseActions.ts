@@ -40,11 +40,13 @@ export const useExpenseActions = (
         includeInMonthlyBalance: true // Default to include in balance
       };
       
-      setExpenses(prev => [...prev, expense]);
-      toast.success('ההוצאה נוספה בהצלחה');
+      const updatedExpenses = [...expenses, expense];
+      setExpenses(updatedExpenses);
       
-      // In a real app, this would trigger a notification to the other user
-      // toast.info('התראה נשלחה לשותף לאישור ההוצאה');
+      // Save to localStorage directly to ensure it's saved immediately
+      localStorage.setItem(`expenses-${user.id}`, JSON.stringify(updatedExpenses));
+      
+      toast.success('ההוצאה נוספה בהצלחה');
     } catch (error) {
       console.error('Failed to add expense:', error);
       toast.error('הוספת ההוצאה נכשלה, אנא נסה שוב.');
@@ -112,25 +114,28 @@ export const useExpenseActions = (
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 500));
       
-      setExpenses(prev => 
-        prev.map(expense => {
-          if (expense.id === id) {
-            // Check if user is not the one who created the expense
-            if (expense.createdBy === user.id) {
-              toast.error('לא ניתן לאשר הוצאה שהוספת בעצמך');
-              return expense;
-            }
-            
-            return { 
-              ...expense, 
-              status: 'approved',
-              approvedBy: user.id,
-              approvedAt: new Date().toISOString()
-            };
+      let updatedExpenses = expenses.map(expense => {
+        if (expense.id === id) {
+          // Check if user is not the one who created the expense
+          if (expense.createdBy === user.id) {
+            toast.error('לא ניתן לאשר הוצאה שהוספת בעצמך');
+            return expense;
           }
-          return expense;
-        })
-      );
+          
+          return { 
+            ...expense, 
+            status: 'approved',
+            approvedBy: user.id,
+            approvedAt: new Date().toISOString()
+          };
+        }
+        return expense;
+      });
+      
+      setExpenses(updatedExpenses);
+      
+      // Save to localStorage directly to ensure it's saved immediately
+      localStorage.setItem(`expenses-${user.id}`, JSON.stringify(updatedExpenses));
       
       toast.success('ההוצאה אושרה בהצלחה');
     } catch (error) {
@@ -149,24 +154,27 @@ export const useExpenseActions = (
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 500));
       
-      setExpenses(prev => 
-        prev.map(expense => {
-          if (expense.id === id) {
-            // Check if user is not the one who created the expense
-            if (expense.createdBy === user.id) {
-              toast.error('לא ניתן לדחות הוצאה שהוספת בעצמך');
-              return expense;
-            }
-            
-            return { 
-              ...expense, 
-              status: 'rejected',
-              includeInMonthlyBalance: false // Rejected expenses don't affect balance
-            };
+      let updatedExpenses = expenses.map(expense => {
+        if (expense.id === id) {
+          // Check if user is not the one who created the expense
+          if (expense.createdBy === user.id) {
+            toast.error('לא ניתן לדחות הוצאה שהוספת בעצמך');
+            return expense;
           }
-          return expense;
-        })
-      );
+          
+          return { 
+            ...expense, 
+            status: 'rejected',
+            includeInMonthlyBalance: false // Rejected expenses don't affect balance
+          };
+        }
+        return expense;
+      });
+      
+      setExpenses(updatedExpenses);
+      
+      // Save to localStorage directly to ensure it's saved immediately
+      localStorage.setItem(`expenses-${user.id}`, JSON.stringify(updatedExpenses));
       
       toast.success('ההוצאה נדחתה');
     } catch (error) {
@@ -185,20 +193,23 @@ export const useExpenseActions = (
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 500));
       
-      setExpenses(prev => 
-        prev.map(expense => {
-          if (expense.id === id) {
-            // Check if expense is approved
-            if (expense.status !== 'approved') {
-              toast.error('רק הוצאות מאושרות יכולות להיות מסומנות כשולמו');
-              return expense;
-            }
-            
-            return { ...expense, status: 'paid' };
+      let updatedExpenses = expenses.map(expense => {
+        if (expense.id === id) {
+          // Check if expense is approved
+          if (expense.status !== 'approved') {
+            toast.error('רק הוצאות מאושרות יכולות להיות מסומנות כשולמו');
+            return expense;
           }
-          return expense;
-        })
-      );
+          
+          return { ...expense, status: 'paid' };
+        }
+        return expense;
+      });
+      
+      setExpenses(updatedExpenses);
+      
+      // Save to localStorage directly to ensure it's saved immediately
+      localStorage.setItem(`expenses-${user.id}`, JSON.stringify(updatedExpenses));
       
       toast.success('ההוצאה סומנה כשולמה');
     } catch (error) {

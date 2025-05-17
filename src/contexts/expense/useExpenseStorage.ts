@@ -41,10 +41,17 @@ export const useExpenseStorage = (user: User | null): ExpenseStorage => {
 
   // Save expenses whenever they change
   useEffect(() => {
-    if (user && expenses.length > 0) {
+    if (user) {
       localStorage.setItem(`expenses-${user.id}`, JSON.stringify(expenses));
     }
   }, [expenses, user]);
+  
+  // Save children whenever they change
+  useEffect(() => {
+    if (user && childrenList.length > 0) {
+      localStorage.setItem(`children-${user.id}`, JSON.stringify(childrenList));
+    }
+  }, [childrenList, user]);
 
   return {
     expenses,
