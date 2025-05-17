@@ -5,6 +5,7 @@ import { accountService } from './accountService';
 import { userService } from './user';
 import { showInvitationNotification } from '@/utils/notifications';
 import { toast } from 'sonner';
+import { InvitationData } from './invitation/types';
 
 /**
  * Checks the current auth state and returns user and account if authenticated

@@ -4,6 +4,7 @@ import { registrationService } from './registrationService';
 import { accountVerificationService } from './accountVerificationService';
 import { invitationCheckService } from './invitationCheckService';
 import { User } from '../../types';
+import { InvitationData } from '../invitation/types';
 
 /**
  * Combined user service that re-exports functionality from specialized services
@@ -33,7 +34,7 @@ export const userService = {
   },
 
   // Invitation Checking
-  checkPendingInvitations: (email: string) => {
+  checkPendingInvitations: (email: string): Promise<InvitationData[]> => {
     return invitationCheckService.checkPendingInvitations(email);
   }
 };

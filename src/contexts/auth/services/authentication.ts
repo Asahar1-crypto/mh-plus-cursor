@@ -3,6 +3,7 @@ import { User, Account } from '../types';
 import { userService } from './user';
 import { accountService } from './accountService';
 import { showInvitationNotification, clearInvalidInvitations } from '@/utils/notifications';
+import { InvitationData } from './invitation/types';
 
 export async function login(email: string, password: string) {
   try {

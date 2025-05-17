@@ -17,6 +17,9 @@ interface InvitationData {
       name?: string;
     };
   };
+  owner_profile?: {
+    name?: string;
+  };
 }
 
 /**
