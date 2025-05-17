@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { hasPendingInvitations } from '@/utils/notifications';
 import { useAuth } from '@/contexts/auth';
 import { toast } from 'sonner';
+import { PendingInvitationRecord } from '@/contexts/auth/services/invitation/types';
 
 interface PendingInvitation {
   invitationId: string;
@@ -22,7 +23,7 @@ interface PendingInvitations {
 
 const PendingInvitationAlert = () => {
   const [dismissed, setDismissed] = useState(false);
-  const [invitations, setInvitations] = useState<Record<string, any>>({});
+  const [invitations, setInvitations] = useState<Record<string, PendingInvitationRecord>>({});
   const navigate = useNavigate();
   const { user } = useAuth();
   
@@ -46,15 +47,16 @@ const PendingInvitationAlert = () => {
       const pendingInvitations = JSON.parse(pendingInvitationsData);
       
       // בדיקה אם יש הזמנות ששייכות למשתמש הנוכחי
-      const currentUserInvitations: Record<string, any> = {};
+      const currentUserInvitations: Record<string, PendingInvitationRecord> = {};
       let hasInvitationsForCurrentUser = false;
       
       Object.entries(pendingInvitations).forEach(([invitationId, invitation]) => {
         // בודקים אם האימייל בהזמנה תואם לאימייל של המשתמש המחובר (ללא תלות ברישיות)
-        if (invitation.sharedWithEmail && 
+        const typedInvitation = invitation as PendingInvitationRecord;
+        if (typedInvitation.sharedWithEmail && 
             user.email && 
-            invitation.sharedWithEmail.toLowerCase() === user.email.toLowerCase()) {
-          currentUserInvitations[invitationId] = invitation;
+            typedInvitation.sharedWithEmail.toLowerCase() === user.email.toLowerCase()) {
+          currentUserInvitations[invitationId] = typedInvitation;
           hasInvitationsForCurrentUser = true;
         }
       });
