@@ -36,7 +36,7 @@ export const useExpenseActions = (
         id: `exp-${Date.now()}`,
         createdBy: user.id,
         creatorName: user.name,
-        status: 'pending',
+        status: 'pending' as const,
         includeInMonthlyBalance: true // Default to include in balance
       };
       
@@ -44,7 +44,9 @@ export const useExpenseActions = (
       setExpenses(updatedExpenses);
       
       // Save to localStorage directly to ensure it's saved immediately
-      localStorage.setItem(`expenses-${user.id}`, JSON.stringify(updatedExpenses));
+      if (user) {
+        localStorage.setItem(`expenses-${user.id}`, JSON.stringify(updatedExpenses));
+      }
       
       toast.success('ההוצאה נוספה בהצלחה');
     } catch (error) {
@@ -72,7 +74,9 @@ export const useExpenseActions = (
       setChildrenList(updatedChildren);
       
       // Save to localStorage with user ID as part of the key
-      localStorage.setItem(`children-${user.id}`, JSON.stringify(updatedChildren));
+      if (user) {
+        localStorage.setItem(`children-${user.id}`, JSON.stringify(updatedChildren));
+      }
       
       toast.success('הילד/ה נוספ/ה בהצלחה');
     } catch (error) {
@@ -91,11 +95,16 @@ export const useExpenseActions = (
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 500));
       
-      setExpenses(prev => 
-        prev.map(expense => 
-          expense.id === expenseId ? { ...expense, receipt: receiptUrl } : expense
-        )
+      const updatedExpenses = expenses.map(expense => 
+        expense.id === expenseId ? { ...expense, receipt: receiptUrl } : expense
       );
+      
+      setExpenses(updatedExpenses);
+      
+      // Save to localStorage immediately
+      if (user) {
+        localStorage.setItem(`expenses-${user.id}`, JSON.stringify(updatedExpenses));
+      }
       
       toast.success('הקבלה הועלתה בהצלחה');
     } catch (error) {
@@ -114,7 +123,7 @@ export const useExpenseActions = (
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 500));
       
-      let updatedExpenses = expenses.map(expense => {
+      const updatedExpenses = expenses.map(expense => {
         if (expense.id === id) {
           // Check if user is not the one who created the expense
           if (expense.createdBy === user.id) {
@@ -124,7 +133,7 @@ export const useExpenseActions = (
           
           return { 
             ...expense, 
-            status: 'approved',
+            status: 'approved' as const,
             approvedBy: user.id,
             approvedAt: new Date().toISOString()
           };
@@ -135,7 +144,9 @@ export const useExpenseActions = (
       setExpenses(updatedExpenses);
       
       // Save to localStorage directly to ensure it's saved immediately
-      localStorage.setItem(`expenses-${user.id}`, JSON.stringify(updatedExpenses));
+      if (user) {
+        localStorage.setItem(`expenses-${user.id}`, JSON.stringify(updatedExpenses));
+      }
       
       toast.success('ההוצאה אושרה בהצלחה');
     } catch (error) {
@@ -154,7 +165,7 @@ export const useExpenseActions = (
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 500));
       
-      let updatedExpenses = expenses.map(expense => {
+      const updatedExpenses = expenses.map(expense => {
         if (expense.id === id) {
           // Check if user is not the one who created the expense
           if (expense.createdBy === user.id) {
@@ -164,7 +175,7 @@ export const useExpenseActions = (
           
           return { 
             ...expense, 
-            status: 'rejected',
+            status: 'rejected' as const,
             includeInMonthlyBalance: false // Rejected expenses don't affect balance
           };
         }
@@ -174,7 +185,9 @@ export const useExpenseActions = (
       setExpenses(updatedExpenses);
       
       // Save to localStorage directly to ensure it's saved immediately
-      localStorage.setItem(`expenses-${user.id}`, JSON.stringify(updatedExpenses));
+      if (user) {
+        localStorage.setItem(`expenses-${user.id}`, JSON.stringify(updatedExpenses));
+      }
       
       toast.success('ההוצאה נדחתה');
     } catch (error) {
@@ -193,7 +206,7 @@ export const useExpenseActions = (
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 500));
       
-      let updatedExpenses = expenses.map(expense => {
+      const updatedExpenses = expenses.map(expense => {
         if (expense.id === id) {
           // Check if expense is approved
           if (expense.status !== 'approved') {
@@ -201,7 +214,7 @@ export const useExpenseActions = (
             return expense;
           }
           
-          return { ...expense, status: 'paid' };
+          return { ...expense, status: 'paid' as const };
         }
         return expense;
       });
@@ -209,7 +222,9 @@ export const useExpenseActions = (
       setExpenses(updatedExpenses);
       
       // Save to localStorage directly to ensure it's saved immediately
-      localStorage.setItem(`expenses-${user.id}`, JSON.stringify(updatedExpenses));
+      if (user) {
+        localStorage.setItem(`expenses-${user.id}`, JSON.stringify(updatedExpenses));
+      }
       
       toast.success('ההוצאה סומנה כשולמה');
     } catch (error) {
