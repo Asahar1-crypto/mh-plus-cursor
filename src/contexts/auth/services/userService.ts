@@ -2,6 +2,21 @@ import { supabase } from "@/integrations/supabase/client";
 import { User, Account } from '../types';
 import { toast } from 'sonner';
 
+// Hebrew text constants to avoid JSX parsing issues
+const LOGIN_SUCCESS_MESSAGE = 'התחברת בהצלחה!';
+const INVALID_CREDENTIALS_MESSAGE = 'שם המשתמש או הסיסמה אינם נכונים';
+const TOO_MANY_REQUESTS_MESSAGE = 'יותר מדי נסיונות התחברות, נסה שוב מאוחר יותר';
+const GENERIC_LOGIN_ERROR_MESSAGE = 'ההתחברות נכשלה, אנא נסה שוב';
+const REGISTRATION_SUCCESS_MESSAGE = 'הרשמה בוצעה בהצלחה! אנא אמת את כתובת האימייל שלך.';
+const EMAIL_ALREADY_REGISTERED_MESSAGE = 'כתובת האימייל כבר רשומה במערכת';
+const GENERIC_REGISTRATION_ERROR_MESSAGE = 'ההרשמה נכשלה, אנא נסה שוב';
+const LOGOUT_SUCCESS_MESSAGE = 'התנתקת בהצלחה';
+const LOGOUT_ERROR_MESSAGE = 'ההתנתקות נכשלה, אנא נסה שוב';
+const EMAIL_VERIFICATION_SUCCESS_MESSAGE = 'האימייל אומת בהצלחה!';
+const EMAIL_VERIFICATION_ERROR_MESSAGE = 'אימות האימייל נכשל, אנא נסה שוב';
+const PASSWORD_RESET_SUCCESS_MESSAGE = 'הוראות לאיפוס סיסמה נשלחו לאימייל שלך';
+const PASSWORD_RESET_ERROR_MESSAGE = 'איפוס הסיסמה נכשל, אנא נסה שוב';
+
 /**
  * Service for user-related operations (login, register, etc.)
  */
@@ -35,18 +50,18 @@ export const userService = {
       };
       
       console.log("Login successful:", user);
-      toast.success('התחברת בהצלחה!');
+      toast.success(LOGIN_SUCCESS_MESSAGE);
       return user;
     } catch (error: any) {
       console.error('Login failed:', error);
       
       // Handle specific error codes
       if (error.message?.includes('Invalid login credentials')) {
-        toast.error('שם המשתמש או הסיסמה אינם נכונים');
+        toast.error(INVALID_CREDENTIALS_MESSAGE);
       } else if (error.message?.includes('Too many requests')) {
-        toast.error('יותר מדי נסיונות התחברות, נסה שוב מאוחר יותר');
+        toast.error(TOO_MANY_REQUESTS_MESSAGE);
       } else {
-        toast.error('ההתחברות נכשלה, אנא נסה שוב');
+        toast.error(GENERIC_LOGIN_ERROR_MESSAGE);
       }
       
       throw error;
@@ -125,16 +140,16 @@ export const userService = {
         console.log(`No pending invitations found for ${email}`);
       }
 
-      toast.success('הרשמה בוצעה בהצלחה! אנא אמת את כתובת האימייל שלך.');
+      toast.success(REGISTRATION_SUCCESS_MESSAGE);
       return data;
     } catch (error: any) {
       console.error('Registration failed:', error);
       
       // Handle specific error codes
       if (error.message?.includes('already registered')) {
-        toast.error('כתובת האימייל כבר רשומה במערכת');
+        toast.error(EMAIL_ALREADY_REGISTERED_MESSAGE);
       } else {
-        toast.error('ההרשמה נכשלה, אנא נסה שוב');
+        toast.error(GENERIC_REGISTRATION_ERROR_MESSAGE);
       }
       
       throw error;
@@ -153,10 +168,10 @@ export const userService = {
       }
       
       console.log("Logout successful");
-      toast.info('התנתקת בהצלחה');
+      toast.info(LOGOUT_SUCCESS_MESSAGE);
     } catch (error) {
       console.error('Logout failed:', error);
-      toast.error('ההתנתקות נכשלה, אנא נסה שוב');
+      toast.error(LOGOUT_ERROR_MESSAGE);
       throw error;
     }
   },
@@ -178,11 +193,11 @@ export const userService = {
       }
       
       console.log("Email verification successful");
-      toast.success('האימייל אומת בהצלחה!');
+      toast.success(EMAIL_VERIFICATION_SUCCESS_MESSAGE);
       return true;
     } catch (error) {
       console.error('Failed to verify email:', error);
-      toast.error('אימות האימייל נכשל, אנא נסה שוב');
+      toast.error(EMAIL_VERIFICATION_ERROR_MESSAGE);
       return false;
     }
   },
@@ -202,10 +217,10 @@ export const userService = {
       }
       
       console.log("Password reset email sent");
-      toast.success('הוראות לאיפוס סיסמה נשלחו לאימייל שלך');
+      toast.success(PASSWORD_RESET_SUCCESS_MESSAGE);
     } catch (error) {
       console.error('Failed to reset password:', error);
-      toast.error('איפוס הסיסמה נכשל, אנא נסה שוב');
+      toast.error(PASSWORD_RESET_ERROR_MESSAGE);
       throw error;
     }
   },

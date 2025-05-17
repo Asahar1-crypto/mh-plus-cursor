@@ -6,6 +6,11 @@ import { userService } from './services/userService';
 import { accountService } from './services/accountService';
 import { invitationService } from './services/invitation';
 
+// Hebrew text constants to avoid JSX parsing issues
+const INVITATION_SUCCESS_MESSAGE = 'התחברת אוטומטית לחשבון שהוזמנת אליו!';
+const INVITATION_NOTIFICATION_MESSAGE = 'יש לך הזמנה לחשבון משותף!';
+const VIEW_INVITATION_TEXT = 'לצפייה בהזמנה';
+
 export const authService = {
   // Check for saved session
   checkAuth: async () => {
@@ -47,7 +52,7 @@ export const authService = {
               localStorage.removeItem('pendingInvitationsAfterRegistration');
               console.log("Removed pending invitations data after processing");
               
-              toast.success('התחברת אוטומטית לחשבון שהוזמנת אליו!');
+              toast.success(INVITATION_SUCCESS_MESSAGE);
               
               // Get the account after accepting the invitation
               const { sharedAccounts } = await accountService.getUserAccounts(user.id);
@@ -97,14 +102,16 @@ export const authService = {
         
         localStorage.setItem('pendingInvitations', JSON.stringify(pendingInvitations));
         
-        // Notify the user about the pending invitation
+        // Notify the user about the pending invitation - using normal string instead of JSX
         toast.info(
-          <div>
-            יש לך הזמנה לחשבון משותף!{' '}
-            <a href={`/invitation/${invitations[0].invitation_id}`} className="underline font-bold">
-              לצפייה בהזמנה
-            </a>
-          </div>, 
+          {
+            title: INVITATION_NOTIFICATION_MESSAGE,
+            description: (
+              <a href={`/invitation/${invitations[0].invitation_id}`} className="underline font-bold">
+                {VIEW_INVITATION_TEXT}
+              </a>
+            )
+          },
           { duration: 15000 }
         );
       }
@@ -145,14 +152,16 @@ export const authService = {
         
         localStorage.setItem('pendingInvitations', JSON.stringify(pendingInvitations));
         
-        // Notify the user about the pending invitation
+        // Notify the user about the pending invitation - using normal string instead of JSX
         toast.info(
-          <div>
-            יש לך הזמנה לחשבון משותף!{' '}
-            <a href={`/invitation/${invitations[0].invitation_id}`} className="underline font-bold">
-              לצפייה בהזמנה
-            </a>
-          </div>, 
+          {
+            title: INVITATION_NOTIFICATION_MESSAGE,
+            description: (
+              <a href={`/invitation/${invitations[0].invitation_id}`} className="underline font-bold">
+                {VIEW_INVITATION_TEXT}
+              </a>
+            )
+          },
           { duration: 15000 }
         );
       }
