@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -7,6 +6,7 @@ import { useExpense, Expense } from '@/contexts/ExpenseContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { CheckCircle, Clock, CreditCard, Plus, XCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import PendingInvitationAlert from '@/components/invitation/PendingInvitationAlert';
 
 const ExpenseCard: React.FC<{ expense: Expense; onApprove?: () => void; onReject?: () => void; onMarkPaid?: () => void }> = ({ 
   expense, 
@@ -97,6 +97,9 @@ const Dashboard = () => {
   
   return (
     <div className="container mx-auto animate-fade-in">
+      {/* Add the PendingInvitationAlert at the top of the dashboard */}
+      <PendingInvitationAlert />
+      
       <div className="flex flex-col md:flex-row items-start justify-between mb-6">
         <div>
           <h1 className="text-3xl font-bold">שלום, {user?.name || 'משתמש'}</h1>

@@ -20,3 +20,34 @@ export const showPendingInvitationsNotification = () => {
     }
   );
 };
+
+// Helper to check if we have pending invitations
+export const hasPendingInvitations = (): boolean => {
+  const pendingInvitationsData = localStorage.getItem('pendingInvitations');
+  if (!pendingInvitationsData) return false;
+  
+  try {
+    const pendingInvitations = JSON.parse(pendingInvitationsData);
+    return Object.keys(pendingInvitations).length > 0;
+  } catch (error) {
+    console.error('Failed to parse pending invitations:', error);
+    return false;
+  }
+};
+
+// Helper to remove a specific invitation from localStorage
+export const removePendingInvitation = (invitationId: string): void => {
+  const pendingInvitationsData = localStorage.getItem('pendingInvitations');
+  if (!pendingInvitationsData) return;
+  
+  try {
+    const pendingInvitations = JSON.parse(pendingInvitationsData);
+    if (pendingInvitations[invitationId]) {
+      delete pendingInvitations[invitationId];
+      localStorage.setItem('pendingInvitations', JSON.stringify(pendingInvitations));
+      console.log(`Removed invitation ${invitationId} from localStorage`);
+    }
+  } catch (error) {
+    console.error('Failed to remove pending invitation:', error);
+  }
+};
