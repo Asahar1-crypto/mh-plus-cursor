@@ -154,7 +154,7 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({ onSubmitSuccess }) => 
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  <SelectItem value="">כללי - ללא שיוך לילד/ה</SelectItem>
+                  <SelectItem value="general">כללי - ללא שיוך לילד/ה</SelectItem>
                   {childrenList.length > 0 ? (
                     childrenList.map((child) => (
                       <SelectItem key={child.id} value={child.id}>
@@ -162,7 +162,7 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({ onSubmitSuccess }) => 
                       </SelectItem>
                     ))
                   ) : (
-                    <SelectItem value="none" disabled>
+                    <SelectItem value="no-children" disabled>
                       אין ילדים במערכת
                     </SelectItem>
                   )}
