@@ -68,10 +68,15 @@ export const useExpenseActions = (
 
     setIsSubmitting(true);
     try {
+      // ניסיון להוסיף את הילד עם טיפול טוב יותר בשגיאות
       const child = await expenseService.addChild(newChild, user);
-      setChildrenList(prevChildren => [...prevChildren, child]);
-    } catch (error) {
+      if (child) {
+        setChildrenList(prevChildren => [...prevChildren, child]);
+        toast.success('הילד/ה נוספ/ה בהצלחה');
+      }
+    } catch (error: any) {
       console.error('Failed to add child:', error);
+      toast.error(`שגיאה בהוספת ילד/ה: ${error.message || 'אנא נסה שוב'}`);
     } finally {
       setIsSubmitting(false);
     }

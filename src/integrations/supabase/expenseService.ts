@@ -73,12 +73,25 @@ export const expenseService = {
         .limit(1);
       
       if (accountsError) throw accountsError;
-      if (!accountsData || accountsData.length === 0) {
-        toast.error('לא נמצאו חשבונות משותפים');
-        throw new Error('No accounts found');
-      }
       
-      const accountId = accountsData[0].id;
+      let accountId;
+      
+      if (!accountsData || accountsData.length === 0) {
+        // Create a new account if the user doesn't have one
+        const { data: newAccount, error: newAccountError } = await supabase
+          .from('accounts')
+          .insert({
+            name: `משפחת ${user.name}`,
+            owner_id: user.id
+          })
+          .select()
+          .single();
+        
+        if (newAccountError) throw newAccountError;
+        accountId = newAccount.id;
+      } else {
+        accountId = accountsData[0].id;
+      }
       
       // Insert the expense
       const { data, error } = await supabase
@@ -167,18 +180,24 @@ export const expenseService = {
         throw new Error('User not authenticated');
       }
       
-      // Get the first account the user owns
+      console.log("Adding child for user:", user.id, "name:", user.name);
+      
+      // Get the first account the user owns or is part of
       const { data: accountsData, error: accountsError } = await supabase
         .from('accounts')
         .select('id')
-        .eq('owner_id', user.id)
+        .or(`owner_id.eq.${user.id},shared_with_id.eq.${user.id}`)
         .limit(1);
       
-      if (accountsError) throw accountsError;
+      if (accountsError) {
+        console.error("Error fetching accounts:", accountsError);
+        throw accountsError;
+      }
       
       let accountId;
       
       if (!accountsData || accountsData.length === 0) {
+        console.log("No accounts found, creating a new one");
         // Create a new account if the user doesn't have one
         const { data: newAccount, error: newAccountError } = await supabase
           .from('accounts')
@@ -189,11 +208,19 @@ export const expenseService = {
           .select()
           .single();
         
-        if (newAccountError) throw newAccountError;
+        if (newAccountError) {
+          console.error("Error creating account:", newAccountError);
+          throw newAccountError;
+        }
+        
+        console.log("Created new account:", newAccount.id);
         accountId = newAccount.id;
       } else {
+        console.log("Using existing account:", accountsData[0].id);
         accountId = accountsData[0].id;
       }
+      
+      console.log("Adding child to account:", accountId);
       
       // Insert the child
       const { data, error } = await supabase
@@ -206,9 +233,11 @@ export const expenseService = {
         .select()
         .single();
       
-      if (error) throw error;
+      if (error) {
+        console.error("Error adding child:", error);
+        throw error;
+      }
       
-      toast.success('הילד/ה נוספ/ה בהצלחה');
       return {
         id: data.id,
         name: data.name,
@@ -216,8 +245,7 @@ export const expenseService = {
       };
     } catch (error: any) {
       console.error('Failed to add child:', error);
-      toast.error('הוספת הילד/ה נכשלה, אנא נסה שוב');
-      throw error;
+      throw new Error(error.message || 'הוספת הילד/ה נכשלה, אנא נסה שוב');
     }
   },
   
