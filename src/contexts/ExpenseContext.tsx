@@ -27,7 +27,7 @@ export interface Child {
 
 interface ExpenseContextType {
   expenses: Expense[];
-  children: Child[];
+  childrenList: Child[];
   addExpense: (expense: Omit<Expense, 'id' | 'createdBy' | 'creatorName' | 'status'>) => Promise<void>;
   approveExpense: (id: string) => Promise<void>;
   rejectExpense: (id: string) => Promise<void>;
@@ -58,7 +58,7 @@ interface ExpenseProviderProps {
 export const ExpenseProvider = ({ children }: ExpenseProviderProps) => {
   const { user } = useAuth();
   const [expenses, setExpenses] = useState<Expense[]>([]);
-  const [children, setChildren] = useState<Child[]>([]);
+  const [childrenList, setChildrenList] = useState<Child[]>([]);
 
   const addExpense = async (newExpense: Omit<Expense, 'id' | 'createdBy' | 'creatorName' | 'status'>) => {
     if (!user) {
@@ -150,7 +150,7 @@ export const ExpenseProvider = ({ children }: ExpenseProviderProps) => {
         id: `child-${Date.now()}`
       };
       
-      setChildren(prev => [...prev, child]);
+      setChildrenList(prev => [...prev, child]);
       toast.success('הילד/ה נוספ/ה בהצלחה');
     } catch (error) {
       console.error('Failed to add child:', error);
@@ -173,7 +173,7 @@ export const ExpenseProvider = ({ children }: ExpenseProviderProps) => {
   return (
     <ExpenseContext.Provider value={{
       expenses,
-      children,
+      childrenList,
       addExpense,
       approveExpense,
       rejectExpense,
