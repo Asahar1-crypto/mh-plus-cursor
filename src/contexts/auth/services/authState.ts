@@ -4,6 +4,7 @@ import { User, Account } from '../types';
 import { accountService } from './accountService';
 import { userService } from './user';
 import { showInvitationNotification } from "@/utils/notifications";
+import { toast } from 'sonner';
 
 /**
  * Checks the current auth state and returns user and account if authenticated
@@ -97,7 +98,7 @@ export async function checkAuth(): Promise<{ user: User | null, account: Account
         
         pendingInvitations[inv.invitation_id] = {
           name: accountName,
-          ownerName: ownerName,
+          ownerName,
           sharedWithEmail: inv.email,
           invitationId: inv.invitation_id
         };

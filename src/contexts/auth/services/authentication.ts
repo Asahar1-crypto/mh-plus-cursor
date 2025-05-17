@@ -28,7 +28,7 @@ export async function login(email: string, password: string) {
         
         pendingInvitations[inv.invitation_id] = {
           name: accountName,
-          ownerName: ownerName,
+          ownerName,
           sharedWithEmail: inv.email,
           invitationId: inv.invitation_id
         };
