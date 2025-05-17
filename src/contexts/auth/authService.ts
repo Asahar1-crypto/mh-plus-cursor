@@ -1,4 +1,3 @@
-
 import { toast } from 'sonner';
 import { User, Account } from './types';
 
@@ -40,7 +39,7 @@ export const authService = {
         name: email.split('@')[0]
       };
       
-      const mockAccount = {
+      const mockAccount: Account = {
         id: 'acc-12345',
         name: 'משפחת ' + mockUser.name,
         ownerId: mockUser.id
