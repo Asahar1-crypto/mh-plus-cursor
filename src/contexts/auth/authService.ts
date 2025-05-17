@@ -1,10 +1,9 @@
-
 import { toast } from 'sonner';
 import { User, Account } from './types';
 import { supabase } from "@/integrations/supabase/client";
 import { userService } from './services/userService';
 import { accountService } from './services/accountService';
-import { invitationService } from './services/invitationService';
+import { invitationService } from './services/invitation';
 
 export const authService = {
   // Check for saved session
