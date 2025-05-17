@@ -1,4 +1,3 @@
-
 import { toast } from 'sonner';
 import { User, Account } from './types';
 import { supabase } from "@/integrations/supabase/client";
@@ -197,11 +196,11 @@ export const authService = {
           }
         }));
         
-        // Notify the user about the pending invitation
+        // Notify the user about the pending invitation - fixed Hebrew text in JSX
         toast.info(
           <div>
-            יש לך הזמנה לחשבון משותף! 
-            <a href={`/invitation/${invitations[0].invitation_id}`} className="underline ml-1">לחץ כאן לצפייה</a>
+            {"יש לך הזמנה לחשבון משותף!"} 
+            <a href={`/invitation/${invitations[0].invitation_id}`} className="underline ml-1">{"לחץ כאן לצפייה"}</a>
           </div>, 
           { duration: 10000 }
         );
@@ -491,7 +490,6 @@ export const authService = {
   verifyEmail: async (token: string) => {
     try {
       // For email verification, we'll use Supabase's built-in functionality
-      // Note: This might need adjustments based on how exactly your email verification works
       const { error } = await supabase.auth.verifyOtp({
         token_hash: token,
         type: 'email'
@@ -506,11 +504,11 @@ export const authService = {
       const hasInvitations = Object.keys(pendingInvitations).length > 0;
       
       if (hasInvitations) {
-        // Notify the user about pending invitations
+        // Notify the user about pending invitations - fixed Hebrew text in JSX
         toast.info(
           <div>
-            יש לך הזמנות לחשבונות משותפים! 
-            <a href="/account-settings" className="underline ml-1">צפה בהזמנות</a>
+            {"יש לך הזמנות לחשבונות משותפים!"} 
+            <a href="/account-settings" className="underline ml-1">{"צפה בהזמנות"}</a>
           </div>,
           { duration: 10000 }
         );

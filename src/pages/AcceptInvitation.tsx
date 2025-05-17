@@ -185,34 +185,34 @@ const AcceptInvitation = () => {
           <div className="mx-auto mb-4 h-12 w-12 rounded-full bg-green-100 flex items-center justify-center">
             <CheckCircle className="h-6 w-6 text-green-500" />
           </div>
-          <CardTitle className="text-2xl font-bold">הוזמנת לחשבון משותף</CardTitle>
+          <CardTitle className="text-2xl font-bold">{"הוזמנת לחשבון משותף"}</CardTitle>
           <CardDescription>
-            הוזמנת להצטרף לחשבון "מחציות פלוס" לניהול הוצאות משותפות
+            {"הוזמנת להצטרף לחשבון \"מחציות פלוס\" לניהול הוצאות משותפות"}
           </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
             <div className="bg-muted p-4 rounded-md">
-              <h3 className="font-medium mb-2">פרטי ההזמנה:</h3>
+              <h3 className="font-medium mb-2">{"פרטי ההזמנה:"}</h3>
               {invitationDetails && (
                 <>
-                  <p className="text-sm"><strong>מזמין:</strong> {invitationDetails.ownerName}</p>
-                  <p className="text-sm"><strong>חשבון:</strong> {invitationDetails.accountName}</p>
-                  <p className="text-sm"><strong>הזמנה לאימייל:</strong> {invitationDetails.email}</p>
-                  <p className="text-sm"><strong>תפקיד:</strong> שותף בחשבון</p>
+                  <p className="text-sm"><strong>{"מזמין:"}</strong> {invitationDetails.ownerName}</p>
+                  <p className="text-sm"><strong>{"חשבון:"}</strong> {invitationDetails.accountName}</p>
+                  <p className="text-sm"><strong>{"הזמנה לאימייל:"}</strong> {invitationDetails.email}</p>
+                  <p className="text-sm"><strong>{"תפקיד:"}</strong> {"שותף בחשבון"}</p>
                 </>
               )}
             </div>
             
             {!isAuthenticated && (
               <div className="bg-yellow-50 border border-yellow-200 p-3 rounded-md text-sm text-yellow-800">
-                <p>עליך להיות מחובר/ת כדי לקבל את ההזמנה הזו.</p>
+                <p>{"עליך להיות מחובר/ת כדי לקבל את ההזמנה הזו."}</p>
                 <div className="mt-2 flex gap-2">
                   <Button size="sm" variant="outline" onClick={() => navigate('/register')}>
-                    הרשמה
+                    {"הרשמה"}
                   </Button>
                   <Button size="sm" onClick={handleLogin}>
-                    התחברות
+                    {"התחברות"}
                   </Button>
                 </div>
               </div>
@@ -220,7 +220,7 @@ const AcceptInvitation = () => {
             
             {isAuthenticated && user && invitationDetails && user.email !== invitationDetails.email && (
               <div className="bg-red-50 border border-red-200 p-3 rounded-md text-sm text-red-800">
-                <p>ההזמנה מיועדת לכתובת {invitationDetails.email} אך אתה מחובר עם {user.email}.</p>
+                <p>{"ההזמנה מיועדת לכתובת"} {invitationDetails.email} {"אך אתה מחובר עם"} {user.email}.</p>
                 <div className="mt-2">
                   <Button 
                     size="sm" 
@@ -232,7 +232,7 @@ const AcceptInvitation = () => {
                       window.location.reload();
                     }}
                   >
-                    התנתק וחזור להזמנה
+                    {"התנתק וחזור להזמנה"}
                   </Button>
                 </div>
               </div>
@@ -241,7 +241,7 @@ const AcceptInvitation = () => {
         </CardContent>
         <CardFooter className="flex justify-between pt-2">
           <Button variant="outline" onClick={handleDecline}>
-            דחה הזמנה
+            {"דחה הזמנה"}
           </Button>
           <Button 
             onClick={handleAccept} 
@@ -254,10 +254,10 @@ const AcceptInvitation = () => {
             {isProcessing ? (
               <span className="flex items-center gap-2">
                 <Loader2 className="h-4 w-4 animate-spin" />
-                מקבל הזמנה...
+                {"מקבל הזמנה..."}
               </span>
             ) : (
-              'קבל הזמנה'
+              "קבל הזמנה"
             )}
           </Button>
         </CardFooter>
