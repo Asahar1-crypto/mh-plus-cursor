@@ -5,11 +5,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { userService } from './services/userService';
 import { accountService } from './services/accountService';
 import { invitationService } from './services/invitation';
+import { showInvitationNotification } from '@/utils/notifications';
 
 // Hebrew text constants to avoid JSX parsing issues
 const INVITATION_SUCCESS_MESSAGE = 'התחברת אוטומטית לחשבון שהוזמנת אליו!';
-const INVITATION_NOTIFICATION_MESSAGE = 'יש לך הזמנה לחשבון משותף!';
-const VIEW_INVITATION_TEXT = 'לצפייה בהזמנה';
 
 export const authService = {
   // Check for saved session
@@ -102,18 +101,8 @@ export const authService = {
         
         localStorage.setItem('pendingInvitations', JSON.stringify(pendingInvitations));
         
-        // Notify the user about the pending invitation - using normal string instead of JSX
-        toast.info(
-          {
-            title: INVITATION_NOTIFICATION_MESSAGE,
-            description: (
-              <a href={`/invitation/${invitations[0].invitation_id}`} className="underline font-bold">
-                {VIEW_INVITATION_TEXT}
-              </a>
-            )
-          },
-          { duration: 15000 }
-        );
+        // Notify the user about the pending invitation - use the utility function instead of JSX
+        showInvitationNotification(invitations[0].invitation_id);
       }
       
       return { user, account };
@@ -152,18 +141,8 @@ export const authService = {
         
         localStorage.setItem('pendingInvitations', JSON.stringify(pendingInvitations));
         
-        // Notify the user about the pending invitation - using normal string instead of JSX
-        toast.info(
-          {
-            title: INVITATION_NOTIFICATION_MESSAGE,
-            description: (
-              <a href={`/invitation/${invitations[0].invitation_id}`} className="underline font-bold">
-                {VIEW_INVITATION_TEXT}
-              </a>
-            )
-          },
-          { duration: 15000 }
-        );
+        // Notify the user about the pending invitation - use the utility function instead of JSX
+        showInvitationNotification(invitations[0].invitation_id);
       }
       
       // Check if there's a pendingInvitationId in sessionStorage
