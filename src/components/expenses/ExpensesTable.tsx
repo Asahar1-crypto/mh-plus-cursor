@@ -13,6 +13,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { StatusBadge } from './StatusBadge';
 import { Expense } from '@/contexts/expense/types';
+import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 
 interface ExpensesTableProps {
   expenses: Expense[];
@@ -28,15 +30,33 @@ export const ExpensesTable: React.FC<ExpensesTableProps> = ({
   markAsPaid 
 }) => {
   const handleApproveExpense = async (id: string) => {
-    await approveExpense(id);
+    try {
+      await approveExpense(id);
+      console.log('Expense approved successfully', id);
+    } catch (error) {
+      console.error('Error approving expense:', error);
+      toast.error('אירעה שגיאה בעת אישור ההוצאה');
+    }
   };
 
   const handleRejectExpense = async (id: string) => {
-    await rejectExpense(id);
+    try {
+      await rejectExpense(id);
+      console.log('Expense rejected successfully', id);
+    } catch (error) {
+      console.error('Error rejecting expense:', error);
+      toast.error('אירעה שגיאה בעת דחיית ההוצאה');
+    }
   };
 
   const handleMarkAsPaid = async (id: string) => {
-    await markAsPaid(id);
+    try {
+      await markAsPaid(id);
+      console.log('Expense marked as paid successfully', id);
+    } catch (error) {
+      console.error('Error marking expense as paid:', error);
+      toast.error('אירעה שגיאה בעת סימון ההוצאה כשולמה');
+    }
   };
 
   return (

@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { Expense, Child } from './types';
@@ -123,14 +122,23 @@ export const useExpenseActions = (
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 500));
       
+      // Find the expense to approve
+      const expenseToApprove = expenses.find(expense => expense.id === id);
+      
+      if (!expenseToApprove) {
+        toast.error('ההוצאה לא נמצאה');
+        return;
+      }
+      
+      // Check if user IS the one who created the expense - if so, they CAN'T approve it
+      if (expenseToApprove.createdBy === user.id) {
+        toast.error('לא ניתן לאשר הוצאה שהוספת בעצמך');
+        return;
+      }
+      
+      // Create a new array with the updated expense
       const updatedExpenses = expenses.map(expense => {
         if (expense.id === id) {
-          // Check if user IS the one who created the expense - if so, they CAN'T approve it
-          if (expense.createdBy === user.id) {
-            toast.error('לא ניתן לאשר הוצאה שהוספת בעצמך');
-            return expense;
-          }
-          
           return { 
             ...expense, 
             status: 'approved' as const,
@@ -141,12 +149,11 @@ export const useExpenseActions = (
         return expense;
       });
       
+      // Update state with the new array
       setExpenses(updatedExpenses);
       
-      // Save to localStorage directly to ensure it's saved immediately
-      if (user) {
-        localStorage.setItem(`expenses-${user.id}`, JSON.stringify(updatedExpenses));
-      }
+      // Save to localStorage
+      localStorage.setItem(`expenses-${user.id}`, JSON.stringify(updatedExpenses));
       
       toast.success('ההוצאה אושרה בהצלחה');
     } catch (error) {
@@ -165,14 +172,23 @@ export const useExpenseActions = (
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 500));
       
+      // Find the expense to reject
+      const expenseToReject = expenses.find(expense => expense.id === id);
+      
+      if (!expenseToReject) {
+        toast.error('ההוצאה לא נמצאה');
+        return;
+      }
+      
+      // Check if user IS the one who created the expense - if so, they CAN'T reject it
+      if (expenseToReject.createdBy === user.id) {
+        toast.error('לא ניתן לדחות הוצאה שהוספת בעצמך');
+        return;
+      }
+      
+      // Create a new array with the updated expense
       const updatedExpenses = expenses.map(expense => {
         if (expense.id === id) {
-          // Check if user IS the one who created the expense - if so, they CAN'T reject it
-          if (expense.createdBy === user.id) {
-            toast.error('לא ניתן לדחות הוצאה שהוספת בעצמך');
-            return expense;
-          }
-          
           return { 
             ...expense, 
             status: 'rejected' as const,
@@ -182,12 +198,11 @@ export const useExpenseActions = (
         return expense;
       });
       
+      // Update state with the new array
       setExpenses(updatedExpenses);
       
-      // Save to localStorage directly to ensure it's saved immediately
-      if (user) {
-        localStorage.setItem(`expenses-${user.id}`, JSON.stringify(updatedExpenses));
-      }
+      // Save to localStorage
+      localStorage.setItem(`expenses-${user.id}`, JSON.stringify(updatedExpenses));
       
       toast.success('ההוצאה נדחתה');
     } catch (error) {
@@ -206,25 +221,36 @@ export const useExpenseActions = (
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 500));
       
+      // Find the expense to mark as paid
+      const expenseToPay = expenses.find(expense => expense.id === id);
+      
+      if (!expenseToPay) {
+        toast.error('ההוצאה לא נמצאה');
+        return;
+      }
+      
+      // Check if expense is approved
+      if (expenseToPay.status !== 'approved') {
+        toast.error('רק הוצאות מאושרות יכולות להיות מסומנות כשולמו');
+        return;
+      }
+      
+      // Create a new array with the updated expense
       const updatedExpenses = expenses.map(expense => {
         if (expense.id === id) {
-          // Check if expense is approved
-          if (expense.status !== 'approved') {
-            toast.error('רק הוצאות מאושרות יכולות להיות מסומנות כשולמו');
-            return expense;
-          }
-          
-          return { ...expense, status: 'paid' as const };
+          return { 
+            ...expense, 
+            status: 'paid' as const 
+          };
         }
         return expense;
       });
       
+      // Update state with the new array
       setExpenses(updatedExpenses);
       
-      // Save to localStorage directly to ensure it's saved immediately
-      if (user) {
-        localStorage.setItem(`expenses-${user.id}`, JSON.stringify(updatedExpenses));
-      }
+      // Save to localStorage
+      localStorage.setItem(`expenses-${user.id}`, JSON.stringify(updatedExpenses));
       
       toast.success('ההוצאה סומנה כשולמה');
     } catch (error) {
