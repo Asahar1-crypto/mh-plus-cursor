@@ -54,7 +54,9 @@ const SuccessState = ({
     navigate(`/register?email=${encodeURIComponent(invitationDetails.email)}&invitationId=${invitationId}`);
   };
   
-  const emailMismatch = isAuthenticated && user && invitationDetails && user.email !== invitationDetails.email;
+  // FIXED: Use case-insensitive email comparison
+  const emailMismatch = isAuthenticated && user && invitationDetails && 
+    user.email.toLowerCase() !== invitationDetails.email.toLowerCase();
   
   return (
     <Card className="w-full max-w-md border-border shadow-lg animate-fade-in">

@@ -9,6 +9,14 @@ interface EmailMismatchAlertProps {
 }
 
 const EmailMismatchAlert = ({ invitationEmail, userEmail }: EmailMismatchAlertProps) => {
+  // Check if emails match in a case-insensitive manner
+  const emailsMatchIgnoreCase = invitationEmail.toLowerCase() === userEmail.toLowerCase();
+  
+  // If emails match when ignoring case, don't show this alert
+  if (emailsMatchIgnoreCase) {
+    return null;
+  }
+  
   return (
     <div className="bg-red-50 border border-red-200 p-3 rounded-md text-sm text-red-800">
       <p>{"ההזמנה מיועדת לכתובת"} {invitationEmail} {"אך אתה מחובר עם"} {userEmail}.</p>

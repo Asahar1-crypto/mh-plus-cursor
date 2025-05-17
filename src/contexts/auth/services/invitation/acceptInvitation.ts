@@ -35,8 +35,8 @@ export async function acceptInvitation(invitationId: string, user: User): Promis
     const invitation = invitations[0] as unknown as InvitationRecord;
     console.log("Found invitation:", invitation);
     
-    // Validate that the invitation is for this user
-    if (invitation.email !== user.email) {
+    // Validate that the invitation is for this user - FIXED: Case insensitive email comparison
+    if (invitation.email.toLowerCase() !== user.email.toLowerCase()) {
       console.error(`Email mismatch: invitation for ${invitation.email} but user is ${user.email}`);
       throw new Error(`ההזמנה מיועדת ל-${invitation.email} אך אתה מחובר כ-${user.email}`);
     }
