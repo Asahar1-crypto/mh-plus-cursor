@@ -13,24 +13,30 @@ export type Database = {
         Row: {
           created_at: string
           id: string
+          invitation_id: string | null
           name: string
           owner_id: string
+          shared_with_email: string | null
           shared_with_id: string | null
           updated_at: string
         }
         Insert: {
           created_at?: string
           id?: string
+          invitation_id?: string | null
           name: string
           owner_id: string
+          shared_with_email?: string | null
           shared_with_id?: string | null
           updated_at?: string
         }
         Update: {
           created_at?: string
           id?: string
+          invitation_id?: string | null
           name?: string
           owner_id?: string
+          shared_with_email?: string | null
           shared_with_id?: string | null
           updated_at?: string
         }

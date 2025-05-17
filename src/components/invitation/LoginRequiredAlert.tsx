@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 
 interface LoginRequiredAlertProps {
@@ -10,7 +10,6 @@ interface LoginRequiredAlertProps {
 
 const LoginRequiredAlert = ({ email, invitationId }: LoginRequiredAlertProps) => {
   const navigate = useNavigate();
-  const location = useLocation();
   
   return (
     <div className="bg-yellow-50 border border-yellow-200 p-3 rounded-md text-sm text-yellow-800">
