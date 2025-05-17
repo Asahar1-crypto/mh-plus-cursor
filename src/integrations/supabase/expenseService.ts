@@ -10,15 +10,25 @@ export const expenseService = {
     try {
       if (!user) return [];
       
+      console.log("Getting expenses for user:", user.id);
+      
       // Get accounts the user is part of (either as owner or shared)
       const { data: accountsData, error: accountsError } = await supabase
         .from('accounts')
         .select('id')
         .or(`owner_id.eq.${user.id},shared_with_id.eq.${user.id}`);
       
-      if (accountsError) throw accountsError;
-      if (!accountsData || accountsData.length === 0) return [];
+      if (accountsError) {
+        console.error("Error fetching accounts:", accountsError);
+        throw accountsError;
+      }
       
+      if (!accountsData || accountsData.length === 0) {
+        console.log("No accounts found for user:", user.id);
+        return [];
+      }
+      
+      console.log("Found accounts:", accountsData);
       const accountIds = accountsData.map(acc => acc.id);
       
       // Get expenses for those accounts
@@ -26,28 +36,57 @@ export const expenseService = {
         .from('expenses')
         .select(`
           *,
-          profiles:paid_by_id (name)
+          profiles:paid_by_id (name),
+          children:expense_children (
+            child:child_id (
+              id,
+              name
+            )
+          )
         `)
         .in('account_id', accountIds);
       
-      if (error) throw error;
-      if (!data) return [];
-
-      // Transform data to match our app's Expense type
-      const expenses: Expense[] = data.map(exp => ({
-        id: exp.id,
-        amount: exp.amount,
-        description: exp.description,
-        date: exp.date,
-        category: exp.category || '',
-        createdBy: exp.paid_by_id,
-        creatorName: exp.profiles?.name || 'Unknown',
-        status: exp.status as 'pending' | 'approved' | 'rejected' | 'paid',
-        receipt: exp.receipt_url || undefined,
-        isRecurring: false, // TODO: Add recurring expense support
-        includeInMonthlyBalance: true
-      }));
+      if (error) {
+        console.error("Error fetching expenses:", error);
+        throw error;
+      }
       
+      if (!data) {
+        console.log("No expenses found for accounts:", accountIds);
+        return [];
+      }
+
+      console.log("Raw expenses data:", data);
+      
+      // Transform data to match our app's Expense type
+      const expenses: Expense[] = data.map(exp => {
+        // Get child info if available
+        let childId = null;
+        let childName = null;
+        
+        if (exp.children && exp.children.length > 0 && exp.children[0].child) {
+          childId = exp.children[0].child.id;
+          childName = exp.children[0].child.name;
+        }
+        
+        return {
+          id: exp.id,
+          amount: exp.amount,
+          description: exp.description,
+          date: exp.date,
+          category: exp.category || '',
+          createdBy: exp.paid_by_id,
+          creatorName: exp.profiles?.name || 'Unknown',
+          status: exp.status as 'pending' | 'approved' | 'rejected' | 'paid',
+          receipt: exp.receipt_url || undefined,
+          childId: childId,
+          childName: childName,
+          isRecurring: false, // TODO: Add recurring expense support
+          includeInMonthlyBalance: true
+        };
+      });
+      
+      console.log(`Transformed ${expenses.length} expenses`);
       return expenses;
     } catch (error: any) {
       console.error('Failed to fetch expenses:', error);

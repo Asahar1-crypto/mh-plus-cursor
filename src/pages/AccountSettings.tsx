@@ -11,6 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/contexts/auth';
 import { Mail, User, UserPlus, Loader2, CheckCircle2, XCircle } from 'lucide-react';
 import { toast } from 'sonner';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 const inviteSchema = z.object({
   email: z.string().email({ message: 'אימייל לא תקין' }),
@@ -43,7 +44,7 @@ const AccountSettings = () => {
   };
 
   const handleRemovePartner = async () => {
-    if (!account?.sharedWithId) return;
+    if (!account?.sharedWithId && !account?.sharedWithEmail) return;
     
     setIsRemoving(true);
     try {
@@ -56,10 +57,53 @@ const AccountSettings = () => {
       setIsRemoving(false);
     }
   };
+
+  // קביעת סטטוס החשבון המשותף
+  const getSharedAccountStatus = () => {
+    // אם זה חשבון משותף שהמשתמש מחובר אליו
+    if (account?.isSharedAccount) {
+      return (
+        <Alert className="mb-4">
+          <AlertDescription className="flex items-center gap-2">
+            <CheckCircle2 className="h-5 w-5 text-green-500" />
+            <span>אתה משתתף בחשבון של {account.ownerName || 'משתמש אחר'}</span>
+          </AlertDescription>
+        </Alert>
+      );
+    }
+
+    // אם יש משתמש משותף בחשבון שהמשתמש הנוכחי הוא הבעלים שלו
+    if (account?.sharedWithId) {
+      return (
+        <Alert className="mb-4">
+          <AlertDescription className="flex items-center gap-2">
+            <CheckCircle2 className="h-5 w-5 text-green-500" />
+            <span>{account.sharedWithName || account.sharedWithEmail} משתתף פעיל בחשבון שלך</span>
+          </AlertDescription>
+        </Alert>
+      );
+    }
+
+    // אם נשלחה הזמנה אך היא עדיין לא התקבלה
+    if (account?.sharedWithEmail && !account?.sharedWithId) {
+      return (
+        <Alert className="mb-4">
+          <AlertDescription className="flex items-center gap-2">
+            <Mail className="h-5 w-5 text-blue-500" />
+            <span>הזמנה נשלחה ל-{account.sharedWithEmail} וממתינה לאישור</span>
+          </AlertDescription>
+        </Alert>
+      );
+    }
+
+    return null;
+  };
   
   return (
     <div className="container mx-auto animate-fade-in">
       <h1 className="text-3xl font-bold mb-6">הגדרות חשבון</h1>
+      
+      {getSharedAccountStatus()}
       
       <Tabs defaultValue="account" className="w-full">
         <TabsList className="mb-4">
@@ -83,9 +127,20 @@ const AccountSettings = () => {
                   </div>
                   <div className="space-y-2">
                     <label className="text-sm font-medium">סוג חשבון</label>
-                    <Input value="חשבון משפחה" readOnly />
+                    <Input 
+                      value={account?.isSharedAccount ? 'חשבון משותף (משתתף)' : account?.sharedWithId ? 'חשבון משותף (בעלים)' : 'חשבון משפחה'} 
+                      readOnly 
+                    />
                   </div>
                 </div>
+                {account?.isSharedAccount && (
+                  <div className="mt-2">
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">בעל החשבון</label>
+                      <Input value={account?.ownerName || 'לא ידוע'} readOnly />
+                    </div>
+                  </div>
+                )}
                 <div className="mt-4">
                   <Button>שמור שינויים</Button>
                 </div>
@@ -113,17 +168,32 @@ const AccountSettings = () => {
                         <p className="text-sm text-muted-foreground">{user?.email}</p>
                       </div>
                     </div>
-                    <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded">בעלים</span>
+                    <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded">
+                      {account?.isSharedAccount ? 'משתתף' : 'בעלים'}
+                    </span>
                   </div>
                   
-                  {account?.sharedWithEmail ? (
+                  {account?.isSharedAccount ? (
                     <div className="p-4 flex items-center justify-between">
                       <div className="flex items-center gap-3">
                         <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
                           <User className="h-5 w-5 text-primary" />
                         </div>
                         <div>
-                          <p className="font-medium">שותף בחשבון</p>
+                          <p className="font-medium">{account.ownerName || 'בעל החשבון'}</p>
+                          <p className="text-sm text-muted-foreground">בעל החשבון</p>
+                        </div>
+                      </div>
+                      <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded">בעלים</span>
+                    </div>
+                  ) : account?.sharedWithEmail ? (
+                    <div className="p-4 flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+                          <User className="h-5 w-5 text-primary" />
+                        </div>
+                        <div>
+                          <p className="font-medium">{account.sharedWithName || 'שותף בחשבון'}</p>
                           <p className="text-sm text-muted-foreground">{account.sharedWithEmail}</p>
                         </div>
                       </div>
@@ -153,58 +223,51 @@ const AccountSettings = () => {
               </CardContent>
             </Card>
             
-            <Card>
-              <CardHeader>
-                <CardTitle>הזמנת משתמש לחשבון</CardTitle>
-                <CardDescription>הזמן משתמש נוסף לצפייה וניהול החשבון</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Form {...inviteForm}>
-                  <form onSubmit={inviteForm.handleSubmit(onSubmitInvite)} className="space-y-4">
-                    <FormField
-                      control={inviteForm.control}
-                      name="email"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>כתובת אימייל</FormLabel>
-                          <FormControl>
-                            <Input placeholder="דוא״ל של המשתמש" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    
-                    <Button 
-                      type="submit" 
-                      className="w-full" 
-                      disabled={isInviting || !!account?.sharedWithEmail}
-                    >
-                      {isInviting ? (
-                        <span className="flex items-center gap-2">
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                          שולח הזמנה...
-                        </span>
-                      ) : (
-                        <>
-                          <UserPlus className="mr-2 h-4 w-4" />
-                          שלח הזמנה
-                        </>
-                      )}
-                    </Button>
-                    
-                    {account?.sharedWithEmail && (
-                      <div className="p-3 bg-muted rounded-md mt-2">
-                        <p className="text-sm text-center flex items-center justify-center gap-2">
-                          <CheckCircle2 className="h-4 w-4 text-green-500" />
-                          <span>הזמנה נשלחה ל-{account.sharedWithEmail}</span>
-                        </p>
-                      </div>
-                    )}
-                  </form>
-                </Form>
-              </CardContent>
-            </Card>
+            {!account?.isSharedAccount && !account?.sharedWithEmail && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>הזמנת משתמש לחשבון</CardTitle>
+                  <CardDescription>הזמן משתמש נוסף לצפייה וניהול החשבון</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Form {...inviteForm}>
+                    <form onSubmit={inviteForm.handleSubmit(onSubmitInvite)} className="space-y-4">
+                      <FormField
+                        control={inviteForm.control}
+                        name="email"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>כתובת אימייל</FormLabel>
+                            <FormControl>
+                              <Input placeholder="דוא״ל של המשתמש" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <Button 
+                        type="submit" 
+                        className="w-full" 
+                        disabled={isInviting || !!account?.sharedWithEmail}
+                      >
+                        {isInviting ? (
+                          <span className="flex items-center gap-2">
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                            שולח הזמנה...
+                          </span>
+                        ) : (
+                          <>
+                            <UserPlus className="mr-2 h-4 w-4" />
+                            שלח הזמנה
+                          </>
+                        )}
+                      </Button>
+                    </form>
+                  </Form>
+                </CardContent>
+              </Card>
+            )}
           </div>
         </TabsContent>
         
