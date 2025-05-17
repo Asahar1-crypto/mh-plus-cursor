@@ -3,6 +3,15 @@ import { supabase } from "@/integrations/supabase/client";
 import { User, Account } from '../types';
 import { toast } from 'sonner';
 import { sendInvitationEmail } from '@/utils/emailService';
+import { Tables } from "@/integrations/supabase/types";
+
+// Define local interface for invitation data to avoid circular references
+interface InvitationData {
+  id: string;
+  account_id: string;
+  email: string;
+  invitation_id: string;
+}
 
 /**
  * Service for invitation-related operations
