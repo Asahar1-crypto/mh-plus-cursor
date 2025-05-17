@@ -16,10 +16,10 @@ const AppLayout: React.FC = () => {
     <div className="min-h-screen bg-background flex flex-col">
       <AppHeader toggleSidebar={toggleSidebar} />
       
-      <div className="pt-16 flex flex-1 h-[calc(100vh-4rem)]">
+      <div className="flex flex-1 h-[calc(100vh-4rem)] pt-16">
         <AppSidebar isMobile={isMobile} isOpen={sidebarOpen} onClose={closeSidebar} />
         
-        <main className="flex-1 overflow-y-auto p-4 md:p-6 md:pr-6 md:ml-64 md:w-[calc(100%-16rem)]">
+        <main className="flex-1 overflow-y-auto p-4 md:p-6 w-full md:w-[calc(100%-16rem)] transition-all duration-300">
           <Outlet />
         </main>
       </div>

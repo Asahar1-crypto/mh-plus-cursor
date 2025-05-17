@@ -46,9 +46,10 @@ const AppSidebar: React.FC<AppSidebarProps> = ({ isMobile, isOpen, onClose }) =>
     { icon: Settings, label: 'הגדרות', path: '/account-settings' },
   ];
 
+  // Fixed the sidebar positioning and z-index
   const sidebarClasses = cn(
-    'flex flex-col w-64 bg-card border-r border-border h-[calc(100vh-4rem)] fixed top-16 transition-all duration-300',
-    isMobile ? 'z-50' : 'hidden md:flex',
+    'flex flex-col w-64 bg-card border-r border-border h-[calc(100vh-4rem)] fixed top-16 z-10 transition-all duration-300',
+    isMobile ? 'z-50' : 'md:relative md:top-0',
     isMobile && !isOpen ? '-translate-x-full' : 'translate-x-0'
   );
 
