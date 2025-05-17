@@ -46,7 +46,6 @@ export async function checkAuth(): Promise<{ user: User | null, account: Account
           
           if (!invitation.invitationId) {
             console.error("Invitation is missing invitationId");
-            localStorage.removeItem('pendingInvitationsAfterRegistration');
             toast.error('אירעה שגיאה בקבלת ההזמנה האוטומטית');
             return { user, account: await accountService.getDefaultAccount(user.id, user.name) };
           }
@@ -54,6 +53,9 @@ export async function checkAuth(): Promise<{ user: User | null, account: Account
           try {
             // Import and use acceptInvitation directly to avoid circular dependencies
             const { acceptInvitation } = await import('./invitation/acceptInvitation');
+            
+            console.log("Accepting invitation with ID:", invitation.invitationId);
+            console.log("Current user for invitation acceptance:", user);
             
             // Accept the invitation with the current user
             const sharedAccount = await acceptInvitation(invitation.invitationId, user);
@@ -73,7 +75,7 @@ export async function checkAuth(): Promise<{ user: User | null, account: Account
             localStorage.removeItem('pendingInvitationsAfterRegistration');
           }
         } else {
-          console.log("User email doesn't match invitation or no invitations found");
+          console.log(`User email doesn't match invitation (${user.email} vs ${email}) or no invitations found`);
           localStorage.removeItem('pendingInvitationsAfterRegistration');
         }
       } catch (error) {

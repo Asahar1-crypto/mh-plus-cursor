@@ -63,6 +63,12 @@ export const registrationService = {
           localStorage.setItem('pendingInvitationsAfterRegistration', JSON.stringify(pendingInvitations));
           
           console.log('Stored pending invitations with complete data:', pendingInvitations);
+          
+          // Additional logging to verify that invitations are properly stored
+          setTimeout(() => {
+            const storedInvitations = JSON.parse(localStorage.getItem('pendingInvitationsAfterRegistration') || '{}');
+            console.log('Verification of stored invitations after timeout:', storedInvitations);
+          }, 100);
         } else {
           console.log(`No pending invitations found for ${email} during registration`);
         }

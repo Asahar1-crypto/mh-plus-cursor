@@ -41,9 +41,7 @@ const Register = () => {
     
     if (urlInvitationId) {
       setInvitationId(urlInvitationId);
-      // Store the invitation ID for processing after registration
-      localStorage.setItem('registrationInvitationId', urlInvitationId);
-      console.log(`Stored invitationId ${urlInvitationId} for processing after registration`);
+      console.log(`Detected invitationId ${urlInvitationId} for processing after registration`);
     }
   }, [searchParams]);
   
@@ -51,7 +49,7 @@ const Register = () => {
     resolver: zodResolver(registerSchema),
     defaultValues: {
       name: '',
-      email: '',
+      email: emailFromInvitation || '',
       password: '',
       confirmPassword: '',
     },
@@ -70,11 +68,25 @@ const Register = () => {
       
       // If we have an invitationId, store it along with the email for auto-linking after verification
       if (invitationId) {
-        localStorage.setItem('pendingInvitationsAfterRegistration', JSON.stringify({
+        const pendingInvitations = {
           email: data.email,
-          invitations: [{ invitationId }]
-        }));
+          invitations: [{ 
+            invitationId,
+            // Empty values since we don't have this data yet, will be fetched during auth check
+            accountId: "",
+            accountName: "חשבון משותף",
+            ownerId: ""
+          }]
+        };
+        
+        localStorage.setItem('pendingInvitationsAfterRegistration', JSON.stringify(pendingInvitations));
         console.log(`Stored invitation ${invitationId} for email ${data.email} for processing after verification`);
+        
+        // Verify that data was stored
+        setTimeout(() => {
+          const storedData = localStorage.getItem('pendingInvitationsAfterRegistration');
+          console.log("Verification - stored pendingInvitationsAfterRegistration:", storedData);
+        }, 100);
       }
       
       await register(data.name, data.email, data.password);
