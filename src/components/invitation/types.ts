@@ -14,8 +14,11 @@ export interface InvitationData {
     id: string;
     name: string;
     owner_id: string;
+    profiles?: {
+      name?: string;
+    };
   };
   owner_profile?: {
-    name: string;
+    name?: string;
   };
 }

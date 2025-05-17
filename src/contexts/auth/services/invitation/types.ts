@@ -5,6 +5,17 @@ export interface InvitationData {
   account_id: string;
   email: string;
   invitation_id: string;
+  accounts?: {
+    id: string;
+    name: string;
+    owner_id: string;
+    profiles?: {
+      name?: string;
+    };
+  };
+  owner_profile?: { // Keep for backward compatibility
+    name?: string;
+  };
 }
 
 export interface InvitationRecord {

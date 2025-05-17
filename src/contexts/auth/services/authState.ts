@@ -96,7 +96,7 @@ export async function checkAuth(): Promise<{ user: User | null, account: Account
     const account = await accountService.getDefaultAccount(user.id, user.name);
     console.log("Default account retrieved:", account);
     
-    // CRITICAL FIX: Improved invitation checking to ensure complete data
+    // Improved invitation checking to ensure complete data
     try {
       const invitations = await userService.checkPendingInvitations(user.email);
       
@@ -111,8 +111,8 @@ export async function checkAuth(): Promise<{ user: User | null, account: Account
           if (typeof inv === 'object' && inv !== null && !('error' in inv)) {
             // Safely access properties using optional chaining and nullish coalescing
             const accountName = inv.accounts?.name || 'חשבון משותף';
-            // Owner name might be null if we couldn't get the profile
-            const ownerName = inv.owner_profile?.name || 'בעל החשבון';
+            // Owner name might come from either accounts.profiles or owner_profile
+            const ownerName = inv.accounts?.profiles?.name || inv.owner_profile?.name || 'בעל החשבון';
             const ownerId = inv.accounts?.owner_id; // Store the owner ID for later use
             
             pendingInvitations[inv.invitation_id] = {

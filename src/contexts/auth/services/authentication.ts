@@ -15,7 +15,7 @@ export async function login(email: string, password: string) {
     // Get default account
     const account = await accountService.getDefaultAccount(user.id, user.name);
     
-    // CRITICAL FIX: Improved invitation checking to ensure proper data is stored
+    // Improved invitation checking to ensure proper data is stored
     try {
       const invitations = await userService.checkPendingInvitations(email);
       
@@ -30,7 +30,8 @@ export async function login(email: string, password: string) {
           if (typeof inv === 'object' && inv !== null && !('error' in inv)) {
             // Safely access properties using optional chaining and nullish coalescing
             const accountName = inv.accounts?.name || 'חשבון משותף';
-            const ownerName = inv.owner_profile?.name || 'בעל החשבון';
+            // Owner name might come from either accounts.profiles or owner_profile
+            const ownerName = inv.accounts?.profiles?.name || inv.owner_profile?.name || 'בעל החשבון';
             const ownerId = inv.accounts?.owner_id; // Store the owner ID
             
             pendingInvitations[inv.invitation_id] = {
