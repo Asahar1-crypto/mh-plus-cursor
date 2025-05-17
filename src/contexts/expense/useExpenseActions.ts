@@ -125,7 +125,7 @@ export const useExpenseActions = (
       
       const updatedExpenses = expenses.map(expense => {
         if (expense.id === id) {
-          // Check if user is not the one who created the expense
+          // Check if user IS the one who created the expense - if so, they CAN'T approve it
           if (expense.createdBy === user.id) {
             toast.error('לא ניתן לאשר הוצאה שהוספת בעצמך');
             return expense;
@@ -167,7 +167,7 @@ export const useExpenseActions = (
       
       const updatedExpenses = expenses.map(expense => {
         if (expense.id === id) {
-          // Check if user is not the one who created the expense
+          // Check if user IS the one who created the expense - if so, they CAN'T reject it
           if (expense.createdBy === user.id) {
             toast.error('לא ניתן לדחות הוצאה שהוספת בעצמך');
             return expense;

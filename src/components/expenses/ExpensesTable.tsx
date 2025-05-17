@@ -27,6 +27,18 @@ export const ExpensesTable: React.FC<ExpensesTableProps> = ({
   rejectExpense, 
   markAsPaid 
 }) => {
+  const handleApproveExpense = async (id: string) => {
+    await approveExpense(id);
+  };
+
+  const handleRejectExpense = async (id: string) => {
+    await rejectExpense(id);
+  };
+
+  const handleMarkAsPaid = async (id: string) => {
+    await markAsPaid(id);
+  };
+
   return (
     <Card>
       <CardHeader className="pb-0">
@@ -74,7 +86,7 @@ export const ExpensesTable: React.FC<ExpensesTableProps> = ({
                             <Button 
                               variant="ghost" 
                               size="sm"
-                              onClick={() => approveExpense(expense.id)}
+                              onClick={() => handleApproveExpense(expense.id)}
                               className="text-green-600 hover:text-green-800 hover:bg-green-50 h-7 px-2"
                             >
                               אישור
@@ -82,7 +94,7 @@ export const ExpensesTable: React.FC<ExpensesTableProps> = ({
                             <Button 
                               variant="ghost" 
                               size="sm"
-                              onClick={() => rejectExpense(expense.id)}
+                              onClick={() => handleRejectExpense(expense.id)}
                               className="text-red-600 hover:text-red-800 hover:bg-red-50 h-7 px-2"
                             >
                               דחייה
@@ -93,7 +105,7 @@ export const ExpensesTable: React.FC<ExpensesTableProps> = ({
                           <Button 
                             variant="ghost" 
                             size="sm"
-                            onClick={() => markAsPaid(expense.id)}
+                            onClick={() => handleMarkAsPaid(expense.id)}
                             className="text-blue-600 hover:text-blue-800 hover:bg-blue-50 h-7 px-2"
                           >
                             סמן כשולם
