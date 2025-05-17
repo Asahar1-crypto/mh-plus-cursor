@@ -1,9 +1,11 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { User, Account } from '../../types';
 import { toast } from 'sonner';
 import { sendInvitationEmail } from '@/utils/emailService';
 import { PendingInvitationRecord } from './types';
+
+// Import User and Account from the parent context to avoid circular references
+import type { User, Account } from '../../types';
 
 /**
  * Sends an invitation to a user to join an account
