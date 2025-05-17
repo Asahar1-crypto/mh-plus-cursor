@@ -8,7 +8,8 @@ import { Input } from '@/components/ui/input';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/contexts/AuthContext';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { useEffect, useState } from 'react';
 
 const registerSchema = z.object({
   name: z.string().min(2, { message: 'שם חייב להיות לפחות 2 תווים' }),
@@ -23,16 +24,35 @@ const registerSchema = z.object({
 const Register = () => {
   const { register, isLoading } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const [emailFromInvitation, setEmailFromInvitation] = useState<string>('');
+  
+  useEffect(() => {
+    // Check if there's an invitationId in the URL
+    const invitationId = searchParams.get('invitationId');
+    const email = searchParams.get('email');
+    
+    if (email) {
+      setEmailFromInvitation(email);
+    }
+  }, [searchParams]);
   
   const form = useForm<z.infer<typeof registerSchema>>({
     resolver: zodResolver(registerSchema),
     defaultValues: {
       name: '',
-      email: '',
+      email: emailFromInvitation || '',
       password: '',
       confirmPassword: '',
     },
   });
+  
+  // Update form when emailFromInvitation changes
+  useEffect(() => {
+    if (emailFromInvitation) {
+      form.setValue('email', emailFromInvitation);
+    }
+  }, [emailFromInvitation, form]);
   
   const onSubmit = async (data: z.infer<typeof registerSchema>) => {
     try {
@@ -51,6 +71,11 @@ const Register = () => {
             <CardTitle className="text-2xl font-bold">הרשמה</CardTitle>
             <CardDescription>
               צור חשבון חדש במערכת מחציות פלוס
+              {emailFromInvitation && (
+                <div className="mt-2 text-sm bg-blue-50 p-2 rounded border border-blue-100">
+                  הרשמה עם האימייל: {emailFromInvitation}
+                </div>
+              )}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -77,7 +102,11 @@ const Register = () => {
                     <FormItem>
                       <FormLabel>אימייל</FormLabel>
                       <FormControl>
-                        <Input placeholder="your@email.com" {...field} />
+                        <Input 
+                          placeholder="your@email.com" 
+                          {...field} 
+                          disabled={!!emailFromInvitation} // Disable editing if coming from invitation 
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>

@@ -67,7 +67,34 @@ export const userService = {
         throw error;
       }
 
+      // Check for pending invitations for this email
+      const { data: invitations, error: invitationError } = await supabase
+        .from('invitations')
+        .select('*')
+        .eq('email', email)
+        .is('accepted_at', null)
+        .gt('expires_at', 'now()');
+        
+      if (invitationError) {
+        console.error('Error checking invitations:', invitationError);
+      }
+
+      // If there are pending invitations, store them for processing after email verification
+      if (invitations && invitations.length > 0) {
+        // Store the invitation in localStorage so we can access it after verification
+        localStorage.setItem('pendingInvitationsAfterRegistration', JSON.stringify({
+          email,
+          invitations: invitations.map(inv => ({
+            id: inv.id,
+            accountId: inv.account_id,
+            email: inv.email,
+            invitationId: inv.invitation_id
+          }))
+        }));
+      }
+
       toast.success('הרשמה בוצעה בהצלחה! אנא אמת את כתובת האימייל שלך.');
+      return data;
     } catch (error: any) {
       console.error('Registration failed:', error);
       

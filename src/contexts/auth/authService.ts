@@ -23,7 +23,42 @@ export const authService = {
         name: session.user.user_metadata?.name || session.user.email?.split('@')[0] || 'User'
       };
       
-      // Get user account
+      // Check if there are pending invitations from registration
+      const pendingInvitationsData = localStorage.getItem('pendingInvitationsAfterRegistration');
+      
+      if (pendingInvitationsData) {
+        try {
+          const { email, invitations } = JSON.parse(pendingInvitationsData);
+          
+          // Check if this is the right user for these invitations
+          if (email === user.email && invitations && invitations.length > 0) {
+            // Try to accept the first invitation
+            const invitation = invitations[0];
+            await invitationService.acceptInvitation(invitation.invitationId, user);
+            
+            // Remove the pending invitation data
+            localStorage.removeItem('pendingInvitationsAfterRegistration');
+            
+            toast.success('התחברת אוטומטית לחשבון שהוזמנת אליו!');
+            
+            // Get the account after accepting the invitation
+            const account = await accountService.getUserAccounts(user.id);
+            if (account.sharedAccounts && account.sharedAccounts.length > 0) {
+              return { user, account: {
+                id: account.sharedAccounts[0].id,
+                name: account.sharedAccounts[0].name,
+                ownerId: account.sharedAccounts[0].owner_id,
+                sharedWithId: user.id
+              }};
+            }
+          }
+        } catch (error) {
+          console.error('Error processing pending invitations after registration:', error);
+          localStorage.removeItem('pendingInvitationsAfterRegistration');
+        }
+      }
+      
+      // Get user account (default flow if no pending invitation was processed)
       const account = await accountService.getDefaultAccount(user.id, user.name);
       
       // Check for valid invitations by email

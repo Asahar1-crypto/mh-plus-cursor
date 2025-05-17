@@ -1,28 +1,47 @@
 
-import React, { useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
+import React, { useEffect, useState } from 'react';
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { useAuth } from '@/contexts/AuthContext';
-import { Mail } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { useAuth } from '@/contexts/auth';
+import { CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
 
 const VerifyEmail = () => {
-  const { state } = useLocation();
-  const { verifyEmail } = useAuth();
+  const { verifyEmail, isAuthenticated } = useAuth();
+  const location = useLocation();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const [verificationStatus, setVerificationStatus] = useState<'pending' | 'success' | 'error'>('pending');
   const [isVerifying, setIsVerifying] = useState(false);
   
-  const email = state?.email || 'your email';
+  const email = location.state?.email || '';
+  const token = searchParams.get('token');
   
-  // In a real app, we would get the token from URL params
-  const mockToken = 'mock-verification-token';
+  useEffect(() => {
+    // If we have a token, verify email
+    if (token) {
+      verifyEmailWithToken(token);
+    }
+    
+    // If user is already authenticated, redirect to dashboard
+    if (isAuthenticated) {
+      // Check if we have pending invitations from registration
+      const pendingInvitationsData = localStorage.getItem('pendingInvitationsAfterRegistration');
+      if (pendingInvitationsData) {
+        // We'll redirect to dashboard and the automatic linking will happen there
+        navigate('/dashboard');
+      }
+    }
+  }, [token, isAuthenticated]);
   
-  const handleVerify = async () => {
+  const verifyEmailWithToken = async (token: string) => {
     setIsVerifying(true);
     try {
-      const success = await verifyEmail(mockToken);
-      if (success) {
-        // In a real app, we would redirect to login after successful verification
+      const result = await verifyEmail(token);
+      setVerificationStatus(result ? 'success' : 'error');
+      
+      // If verification was successful, redirect to login
+      if (result) {
         setTimeout(() => {
           navigate('/login');
         }, 2000);
@@ -34,59 +53,65 @@ const VerifyEmail = () => {
   
   return (
     <div className="container mx-auto py-10 px-4 flex items-center justify-center min-h-[calc(100vh-4rem)]">
-      <div className="w-full max-w-md">
-        <Card className="border-border shadow-lg animate-fade-in">
-          <CardHeader className="text-center">
-            <div className="mx-auto mb-4 w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
-              <Mail className="h-8 w-8 text-primary" />
-            </div>
-            <CardTitle className="text-2xl font-bold">אימות אימייל</CardTitle>
-            <CardDescription>
-              שלחנו לך אימייל אימות ל-{email}.<br />
-              אנא לחץ על הקישור באימייל לאימות החשבון שלך.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground text-center mb-4">
-              לא קיבלת אימייל? בדוק בתיקיית הספאם או לחץ על הכפתור למטה לשליחה חוזרת.
-            </p>
-            
-            {/* For demo purposes only - in a real app the verification would happen via email link */}
-            <Button 
-              variant="secondary" 
-              className="w-full mb-2"
-              onClick={handleVerify}
-              disabled={isVerifying}
-            >
-              {isVerifying ? (
-                <span className="flex items-center gap-2">
-                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-r-transparent" />
-                  מאמת...
-                </span>
-              ) : (
-                'אמת חשבון (לצורכי הדגמה)'
+      <Card className="w-full max-w-md border-border shadow-lg animate-fade-in">
+        <CardHeader className="text-center">
+          {token ? (
+            <>
+              {verificationStatus === 'pending' && (
+                <div className="mx-auto mb-4 h-12 w-12 rounded-full bg-muted flex items-center justify-center">
+                  <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                </div>
               )}
-            </Button>
-            
-            <Button 
-              variant="outline" 
-              className="w-full"
-              onClick={() => {}}
-            >
-              שלח אימייל אימות שוב
-            </Button>
-          </CardContent>
-          <CardFooter className="flex justify-center">
-            <Button
-              variant="link"
-              className="text-sm text-muted-foreground"
-              onClick={() => navigate('/login')}
-            >
-              חזרה למסך התחברות
-            </Button>
-          </CardFooter>
-        </Card>
-      </div>
+              {verificationStatus === 'success' && (
+                <div className="mx-auto mb-4 h-12 w-12 rounded-full bg-green-100 flex items-center justify-center">
+                  <CheckCircle className="h-6 w-6 text-green-500" />
+                </div>
+              )}
+              {verificationStatus === 'error' && (
+                <div className="mx-auto mb-4 h-12 w-12 rounded-full bg-red-100 flex items-center justify-center">
+                  <AlertCircle className="h-6 w-6 text-red-500" />
+                </div>
+              )}
+              <CardTitle className="text-2xl font-bold">
+                {verificationStatus === 'pending' && 'מאמת את האימייל...'}
+                {verificationStatus === 'success' && 'האימייל אומת בהצלחה'}
+                {verificationStatus === 'error' && 'אימות האימייל נכשל'}
+              </CardTitle>
+              <CardDescription>
+                {verificationStatus === 'pending' && 'אנא המתן בזמן שאנו מאמתים את האימייל שלך.'}
+                {verificationStatus === 'success' && 'תודה על אימות האימייל. מעביר אותך למסך ההתחברות...'}
+                {verificationStatus === 'error' && 'לא הצלחנו לאמת את האימייל שלך. אנא נסה שוב או צור קשר עם התמיכה.'}
+              </CardDescription>
+            </>
+          ) : (
+            <>
+              <div className="mx-auto mb-4 h-12 w-12 rounded-full bg-blue-100 flex items-center justify-center">
+                <CheckCircle className="h-6 w-6 text-blue-500" />
+              </div>
+              <CardTitle className="text-2xl font-bold">בדוק את האימייל שלך</CardTitle>
+              <CardDescription>
+                שלחנו הוראות לאימות חשבונך אל {email || 'האימייל שסיפקת'}
+              </CardDescription>
+            </>
+          )}
+        </CardHeader>
+        <CardContent>
+          {!token && (
+            <div className="text-center text-muted-foreground">
+              <p>לא קיבלת אימייל? בדוק את תיבת הספאם שלך או חזור למסך ההרשמה ונסה שוב.</p>
+            </div>
+          )}
+        </CardContent>
+        <CardFooter className="flex justify-center">
+          <Button 
+            onClick={() => navigate('/login')} 
+            variant="outline"
+            disabled={isVerifying}
+          >
+            חזרה למסך ההתחברות
+          </Button>
+        </CardFooter>
+      </Card>
     </div>
   );
 };

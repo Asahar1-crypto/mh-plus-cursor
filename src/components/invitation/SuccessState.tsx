@@ -49,6 +49,11 @@ const SuccessState = ({
     }
   };
   
+  const handleRegister = () => {
+    // Navigate to registration page with email from invitation
+    navigate(`/register?email=${encodeURIComponent(invitationDetails.email)}&invitationId=${invitationId}`);
+  };
+  
   const emailMismatch = isAuthenticated && user && invitationDetails && user.email !== invitationDetails.email;
   
   return (
@@ -70,7 +75,21 @@ const SuccessState = ({
             email={invitationDetails.email}
           />
           
-          {!isAuthenticated && <LoginRequiredAlert />}
+          {!isAuthenticated && (
+            <>
+              <LoginRequiredAlert />
+              <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
+                <p className="mb-2 text-sm text-blue-800">אין לך חשבון? הירשם עכשיו עם האימייל מההזמנה:</p>
+                <Button 
+                  onClick={handleRegister} 
+                  variant="outline" 
+                  className="w-full border-blue-300 text-blue-700 hover:bg-blue-100"
+                >
+                  הירשם עם {invitationDetails.email}
+                </Button>
+              </div>
+            </>
+          )}
           
           {emailMismatch && user && (
             <EmailMismatchAlert 
