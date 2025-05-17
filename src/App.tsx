@@ -22,6 +22,7 @@ import Expenses from "./pages/Expenses";
 
 import AuthLayout from "./components/AuthLayout";
 import AppLayout from "./components/AppLayout";
+import PendingInvitationAlert from "./components/invitation/PendingInvitationAlert";
 
 const queryClient = new QueryClient();
 
@@ -31,8 +32,10 @@ const App = () => (
       <AuthProvider>
         <ExpenseProvider>
           <Toaster />
-          <Sonner />
+          <Sonner position="top-center" closeButton />
           <BrowserRouter>
+            {/* הצגת התראות הזמנות בכל עמוד */}
+            <PendingInvitationAlert />
             <Routes>
               {/* Public routes */}
               <Route element={<AuthLayout />}>
@@ -53,7 +56,7 @@ const App = () => (
                 <Route path="/account-settings" element={<AccountSettings />} />
                 <Route path="/add-expense" element={<AddExpense />} />
                 <Route path="/children" element={<Children />} />
-                <Route path="/expenses" element={<Expenses />} /> {/* Add route */}
+                <Route path="/expenses" element={<Expenses />} />
               </Route>
               
               {/* Special routes */}

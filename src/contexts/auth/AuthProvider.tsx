@@ -1,9 +1,9 @@
-
 import React, { useState, useEffect, ReactNode } from 'react';
 import { AuthContext } from './AuthContext';
 import { User, Account } from './types';
 import { authService } from './authService';
 import { supabase } from "@/integrations/supabase/client";
+import { invitationCheckService } from './services/user/invitationCheckService';
 
 interface AuthProviderProps {
   children: ReactNode;
@@ -18,11 +18,18 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   useEffect(() => {
     // First set up the auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
+      async (event, session) => {
         // Handle auth state changes
         if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
           // User signed in or token refreshed, update session
-          checkAndSetUserData();
+          await checkAndSetUserData();
+          
+          // Check for pending invitations after sign in
+          if (session?.user?.email) {
+            setTimeout(() => {
+              invitationCheckService.checkPendingInvitations(session.user.email || '');
+            }, 1000);
+          }
         } else if (event === 'SIGNED_OUT') {
           // User signed out, clear session
           setUser(null);
@@ -46,6 +53,13 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       const { user, account } = await authService.checkAuth();
       setUser(user);
       setAccount(account);
+      
+      // כשמשתמש מתחבר, נבדוק אם יש לו הזמנות
+      if (user?.email) {
+        setTimeout(() => {
+          invitationCheckService.checkPendingInvitations(user.email || '');
+        }, 1000);
+      }
     } finally {
       setIsLoading(false);
     }

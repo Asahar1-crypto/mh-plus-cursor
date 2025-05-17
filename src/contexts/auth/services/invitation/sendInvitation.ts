@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from 'sonner';
 import { v4 as uuidv4 } from 'uuid';
 import { User, Account } from '../../types';
+import { sendInvitationEmail } from '@/utils/emailService';
 
 /**
  * Sends an invitation to a user to join an account
@@ -40,6 +41,25 @@ export async function sendInvitation(email: string, user: User, account: Account
     if (updateError) {
       console.error("Error updating account:", updateError);
       throw updateError;
+    }
+    
+    // Prepare invitation link and send email
+    try {
+      const baseUrl = window.location.origin;
+      const invitationLink = `${baseUrl}/invitation/${invitationId}`;
+      
+      await sendInvitationEmail(
+        email,
+        invitationLink,
+        user.name || user.email,
+        account.name
+      );
+      
+      console.log(`Invitation email sent to ${email} with link ${invitationLink}`);
+    } catch (emailError) {
+      console.error('Failed to send invitation email:', emailError);
+      // We don't throw here because the invitation was created successfully
+      // The user can still access it via the app
     }
     
     // Return the updated account object

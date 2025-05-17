@@ -1,5 +1,6 @@
 
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from 'sonner';
 
 // Define interface for the invitation data that correctly handles profile errors
 interface InvitationData {
@@ -97,6 +98,22 @@ export const invitationCheckService = {
       }
 
       console.log(`Processed ${enrichedInvitations.length} pending invitations for ${email}`);
+      
+      // הצגת התראה על ההזמנות הממתינות
+      if (enrichedInvitations.length > 0) {
+        // מציגים התראה על ההזמנה הראשונה
+        const firstInvitation = enrichedInvitations[0];
+        const ownerName = firstInvitation.owner_profile?.name || 'בעל החשבון';
+        const accountName = firstInvitation.accounts?.name || 'חשבון משותף';
+        
+        toast.info(
+          `יש לך הזמנה מ-${ownerName} לחשבון "${accountName}"`,
+          {
+            description: `לצפייה בהזמנה, לחץ על כפתור "צפה בהזמנה" בראש הדף`,
+            duration: 10000
+          }
+        );
+      }
       
       // Store invitations in localStorage with complete account information
       const pendingInvitations = {};

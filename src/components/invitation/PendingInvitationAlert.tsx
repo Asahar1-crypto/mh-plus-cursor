@@ -1,11 +1,12 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Bell } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { hasPendingInvitations } from '@/utils/notifications';
 import { useAuth } from '@/contexts/auth';
+import { toast } from 'sonner';
 
 interface PendingInvitation {
   invitationId: string;
@@ -21,52 +22,59 @@ interface PendingInvitations {
 
 const PendingInvitationAlert = () => {
   const [dismissed, setDismissed] = useState(false);
+  const [invitations, setInvitations] = useState<Record<string, any>>({});
   const navigate = useNavigate();
   const { user } = useAuth();
   
-  // אם המשתמש לא מחובר או אין הזמנות או שהמשתמש סגר את ההתראה, אין מה להציג
-  if (!user || !hasPendingInvitations() || dismissed) {
-    return null;
-  }
+  useEffect(() => {
+    // בדיקת הזמנות בעת טעינת הקומפוננטה
+    checkForInvitations();
+    
+    // בדיקת הזמנות כל 30 שניות
+    const interval = setInterval(checkForInvitations, 30000);
+    
+    return () => clearInterval(interval);
+  }, [user]);
   
-  // קבלת ההזמנות מאחסון מקומי
-  const pendingInvitationsData = localStorage.getItem('pendingInvitations');
-  
-  if (!pendingInvitationsData) {
-    return null;
-  }
-  
-  let pendingInvitations: Record<string, any> = {};
-  
-  try {
-    pendingInvitations = JSON.parse(pendingInvitationsData);
-  } catch (error) {
-    console.error('Failed to parse pending invitations:', error);
-    return null;
-  }
-  
-  // בדיקה אם יש הזמנות ששייכות למשתמש הנוכחי
-  const currentUserInvitations: Record<string, any> = {};
-  let hasInvitationsForCurrentUser = false;
-  
-  Object.entries(pendingInvitations).forEach(([invitationId, invitation]) => {
-    // בודקים אם האימייל בהזמנה תואם לאימייל של המשתמש המחובר (ללא תלות ברישיות)
-    if (invitation.sharedWithEmail && 
-        user.email && 
-        invitation.sharedWithEmail.toLowerCase() === user.email.toLowerCase()) {
-      currentUserInvitations[invitationId] = invitation;
-      hasInvitationsForCurrentUser = true;
+  const checkForInvitations = () => {
+    if (!user) return;
+    
+    const pendingInvitationsData = localStorage.getItem('pendingInvitations');
+    if (!pendingInvitationsData) return;
+    
+    try {
+      const pendingInvitations = JSON.parse(pendingInvitationsData);
+      
+      // בדיקה אם יש הזמנות ששייכות למשתמש הנוכחי
+      const currentUserInvitations: Record<string, any> = {};
+      let hasInvitationsForCurrentUser = false;
+      
+      Object.entries(pendingInvitations).forEach(([invitationId, invitation]) => {
+        // בודקים אם האימייל בהזמנה תואם לאימייל של המשתמש המחובר (ללא תלות ברישיות)
+        if (invitation.sharedWithEmail && 
+            user.email && 
+            invitation.sharedWithEmail.toLowerCase() === user.email.toLowerCase()) {
+          currentUserInvitations[invitationId] = invitation;
+          hasInvitationsForCurrentUser = true;
+        }
+      });
+      
+      if (hasInvitationsForCurrentUser) {
+        setInvitations(currentUserInvitations);
+      }
+    } catch (error) {
+      console.error('Failed to parse pending invitations:', error);
     }
-  });
+  };
   
-  // אם אין הזמנות למשתמש הנוכחי, לא מציגים כלום
-  if (!hasInvitationsForCurrentUser) {
+  // אם המשתמש לא מחובר או אין הזמנות או שהמשתמש סגר את ההתראה, אין מה להציג
+  if (!user || Object.keys(invitations).length === 0 || dismissed) {
     return null;
   }
   
   // מקבלים את ההזמנה הראשונה להצגה
-  const firstInvitationId = Object.keys(currentUserInvitations)[0];
-  const firstInvitation = currentUserInvitations[firstInvitationId];
+  const firstInvitationId = Object.keys(invitations)[0];
+  const firstInvitation = invitations[firstInvitationId];
   
   if (!firstInvitationId || !firstInvitation) {
     return null;
@@ -79,10 +87,15 @@ const PendingInvitationAlert = () => {
   
   const handleDismiss = () => {
     setDismissed(true);
+    // הצגת התראה מוקטנת שנעלמת אחרי זמן קצר
+    toast.info('הזמנה ממתינה לאישור', {
+      description: 'תמיד תוכל לגשת להזמנות בעמוד הגדרות החשבון',
+      duration: 5000
+    });
   };
   
   return (
-    <Alert className="mb-6 bg-blue-50 border-blue-200 flex items-center justify-between">
+    <Alert className="mb-6 bg-blue-50 border-blue-200 flex items-center justify-between animate-pulse">
       <div className="flex items-center">
         <Bell className="h-5 w-5 text-blue-500 mr-2" />
         <AlertDescription>
