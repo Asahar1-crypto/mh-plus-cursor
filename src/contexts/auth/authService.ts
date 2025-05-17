@@ -20,12 +20,64 @@ export const authService = {
         name: session.user.user_metadata?.name || session.user.email?.split('@')[0] || 'User'
       };
       
-      // For now, create a simulated account since we don't have actual Supabase tables yet
-      const account: Account = {
-        id: `account-${user.id}`,
-        name: `משפחת ${user.name}`,
-        ownerId: user.id
-      };
+      // Check if the user has an account as owner
+      const { data: ownedAccounts, error: ownedAccountsError } = await supabase
+        .from('accounts')
+        .select('*')
+        .eq('owner_id', user.id)
+        .limit(1);
+        
+      if (ownedAccountsError) throw ownedAccountsError;
+      
+      // Check if user is shared with any account
+      const { data: sharedAccounts, error: sharedAccountsError } = await supabase
+        .from('accounts')
+        .select('*')
+        .eq('shared_with_id', user.id)
+        .limit(1);
+        
+      if (sharedAccountsError) throw sharedAccountsError;
+      
+      // Check for valid invitations by email
+      const { data: invitations, error: invitationsError } = await supabase
+        .from('invitations')
+        .select('*')
+        .eq('email', user.email)
+        .is('accepted_at', null)
+        .gt('expires_at', 'now()')
+        .limit(1);
+        
+      if (invitationsError) throw invitationsError;
+      
+      // Prioritize accounts: owned > shared > invitations
+      let account: Account | null = null;
+      
+      if (ownedAccounts && ownedAccounts.length > 0) {
+        account = {
+          id: ownedAccounts[0].id,
+          name: ownedAccounts[0].name,
+          ownerId: ownedAccounts[0].owner_id,
+          sharedWithId: ownedAccounts[0].shared_with_id
+        };
+      } else if (sharedAccounts && sharedAccounts.length > 0) {
+        account = {
+          id: sharedAccounts[0].id,
+          name: sharedAccounts[0].name,
+          ownerId: sharedAccounts[0].owner_id,
+          sharedWithId: sharedAccounts[0].shared_with_id
+        };
+      } else if (invitations && invitations.length > 0) {
+        // There's an invitation, but user needs to accept it separately
+        // We don't auto-accept here, but we could show a notification
+        console.log('Pending invitation found:', invitations[0]);
+      } else {
+        // Create a simulated account since we don't have an actual one yet
+        account = {
+          id: `account-${user.id}`,
+          name: `משפחת ${user.name}`,
+          ownerId: user.id
+        };
+      }
       
       return { user, account };
     } catch (error) {
@@ -58,12 +110,102 @@ export const authService = {
         name: data.user.user_metadata?.name || data.user.email?.split('@')[0] || 'User'
       };
       
-      // Create a simulated account
-      const account: Account = {
-        id: `account-${user.id}`,
-        name: `משפחת ${user.name}`,
-        ownerId: user.id
-      };
+      // Check if the user has an account as owner
+      const { data: ownedAccounts, error: ownedAccountsError } = await supabase
+        .from('accounts')
+        .select('*')
+        .eq('owner_id', user.id)
+        .limit(1);
+        
+      if (ownedAccountsError) throw ownedAccountsError;
+      
+      // Check if user is shared with any account
+      const { data: sharedAccounts, error: sharedAccountsError } = await supabase
+        .from('accounts')
+        .select('*')
+        .eq('shared_with_id', user.id)
+        .limit(1);
+        
+      if (sharedAccountsError) throw sharedAccountsError;
+      
+      // Check for valid invitations by email that haven't been accepted yet
+      const { data: invitations, error: invitationsError } = await supabase
+        .from('invitations')
+        .select('*')
+        .eq('email', user.email)
+        .is('accepted_at', null)
+        .gt('expires_at', 'now()')
+        .limit(1);
+        
+      if (invitationsError) throw invitationsError;
+      
+      // Prioritize accounts: owned > shared > create new
+      let account: Account | null = null;
+      
+      if (ownedAccounts && ownedAccounts.length > 0) {
+        account = {
+          id: ownedAccounts[0].id,
+          name: ownedAccounts[0].name,
+          ownerId: ownedAccounts[0].owner_id,
+          sharedWithId: ownedAccounts[0].shared_with_id
+        };
+      } else if (sharedAccounts && sharedAccounts.length > 0) {
+        account = {
+          id: sharedAccounts[0].id,
+          name: sharedAccounts[0].name,
+          ownerId: sharedAccounts[0].owner_id,
+          sharedWithId: sharedAccounts[0].shared_with_id
+        };
+      } else {
+        // Create a new account for the user if they don't have one
+        const { data: newAccount, error: newAccountError } = await supabase
+          .from('accounts')
+          .insert({
+            name: `משפחת ${user.name}`,
+            owner_id: user.id
+          })
+          .select()
+          .single();
+          
+        if (newAccountError) {
+          console.error('Error creating account:', newAccountError);
+          // Create a temporary account object
+          account = {
+            id: `account-${user.id}`,
+            name: `משפחת ${user.name}`,
+            ownerId: user.id
+          };
+        } else {
+          account = {
+            id: newAccount.id,
+            name: newAccount.name,
+            ownerId: newAccount.owner_id,
+            sharedWithId: newAccount.shared_with_id
+          };
+        }
+      }
+      
+      // If there's a pending invitation, notify the user
+      if (invitations && invitations.length > 0) {
+        // Store the invitation in localStorage so we can access it later
+        localStorage.setItem('pendingInvitations', JSON.stringify({
+          [invitations[0].invitation_id]: {
+            id: invitations[0].id,
+            accountId: invitations[0].account_id,
+            email: invitations[0].email,
+            invitationId: invitations[0].invitation_id
+          }
+        }));
+        
+        // Notify the user about the pending invitation
+        toast.info(
+          <div>
+            יש לך הזמנה לחשבון משותף! 
+            <a href={`/invitation/${invitations[0].invitation_id}`} className="underline ml-1">לחץ כאן לצפייה</a>
+          </div>, 
+          { duration: 10000 }
+        );
+      }
       
       toast.success('התחברת בהצלחה!');
       return { user, account };
@@ -100,6 +242,31 @@ export const authService = {
       if (error) {
         throw error;
       }
+
+      // Check for pending invitations
+      if (data.user) {
+        const { data: invitations, error: invitationsError } = await supabase
+          .from('invitations')
+          .select('*')
+          .eq('email', email)
+          .is('accepted_at', null)
+          .gt('expires_at', 'now()')
+          .limit(1);
+          
+        if (!invitationsError && invitations && invitations.length > 0) {
+          // Store the invitation in localStorage so we can access it later
+          localStorage.setItem('pendingInvitations', JSON.stringify({
+            [invitations[0].invitation_id]: {
+              id: invitations[0].id,
+              accountId: invitations[0].account_id,
+              email: invitations[0].email,
+              invitationId: invitations[0].invitation_id
+            }
+          }));
+          
+          // We will inform them about the invitation after they verify their email
+        }
+      }
       
       toast.success('הרשמה בוצעה בהצלחה! אנא אמת את כתובת האימייל שלך.');
     } catch (error: any) {
@@ -132,11 +299,50 @@ export const authService = {
     }
   },
 
-  // Send invitation function - simplified version until we have tables
+  // Send invitation function
   sendInvitation: async (email: string, user: User, account: Account) => {
     try {
+      // Check if there's already an invitation for this email
+      const { data: existingInvitations, error: checkError } = await supabase
+        .from('invitations')
+        .select('*')
+        .eq('account_id', account.id)
+        .eq('email', email)
+        .is('accepted_at', null)
+        .gt('expires_at', 'now()');
+        
+      if (checkError) throw checkError;
+      
+      if (existingInvitations && existingInvitations.length > 0) {
+        // Return the existing invitation
+        console.log(`Invitation already exists for ${email}, reusing: ${existingInvitations[0].invitation_id}`);
+        
+        // Update the account object
+        const updatedAccount: Account = {
+          ...account,
+          sharedWithEmail: email,
+          invitationId: existingInvitations[0].invitation_id
+        };
+        
+        return updatedAccount;
+      }
+      
       // Generate a unique invitation ID
       const invitationId = `inv-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+      
+      // Insert the invitation into Supabase
+      const { error: insertError } = await supabase
+        .from('invitations')
+        .insert({
+          account_id: account.id,
+          email: email,
+          invitation_id: invitationId
+        });
+        
+      if (insertError) throw insertError;
+      
+      // Simulate sending an email
+      console.log(`Email would be sent to ${email} with invitation link: /invitation/${invitationId}`);
       
       // In a real implementation, this would update the database
       const updatedAccount: Account = {
@@ -145,7 +351,15 @@ export const authService = {
         invitationId: invitationId
       };
       
-      console.log(`Email would be sent to ${email} with invitation link: /invitation/${invitationId}`);
+      // Store the invitation in localStorage for the demo
+      const pendingInvitations = JSON.parse(localStorage.getItem('pendingInvitations') || '{}');
+      pendingInvitations[invitationId] = {
+        name: account.name,
+        ownerName: user.name,
+        sharedWithEmail: email,
+        invitationId: invitationId
+      };
+      localStorage.setItem('pendingInvitations', JSON.stringify(pendingInvitations));
       
       return updatedAccount;
     } catch (error) {
@@ -155,10 +369,36 @@ export const authService = {
     }
   },
 
-  // Remove invitation function - simplified version until we have tables
+  // Remove invitation function
   removeInvitation: async (account: Account) => {
     try {
-      // In a real implementation, this would update the database
+      // In a real implementation with Supabase, we'd mark the invitation as deleted or remove it
+      if (account.invitationId) {
+        // Remove the invitation from supabase
+        const { error } = await supabase
+          .from('invitations')
+          .update({ accepted_at: null }) // Set to null to indicate it was revoked
+          .eq('invitation_id', account.invitationId);
+          
+        if (error) throw error;
+        
+        // Remove from localStorage for the demo
+        const pendingInvitations = JSON.parse(localStorage.getItem('pendingInvitations') || '{}');
+        delete pendingInvitations[account.invitationId];
+        localStorage.setItem('pendingInvitations', JSON.stringify(pendingInvitations));
+      }
+      
+      // Update the account in Supabase if there's a shared user
+      if (account.sharedWithId) {
+        const { error } = await supabase
+          .from('accounts')
+          .update({ shared_with_id: null })
+          .eq('id', account.id);
+          
+        if (error) throw error;
+      }
+      
+      // Return the updated account object
       const updatedAccount: Account = {
         ...account,
         sharedWithId: undefined,
@@ -174,18 +414,69 @@ export const authService = {
     }
   },
 
-  // Accept invitation function - simplified version until we have tables
+  // Accept invitation function
   acceptInvitation: async (invitationId: string, user: User) => {
     try {
-      // This is a simplified implementation until we have actual database tables
-      // Create a simulated account for demonstration purposes
+      // Find the invitation in Supabase
+      const { data: invitations, error: findError } = await supabase
+        .from('invitations')
+        .select('*')
+        .eq('invitation_id', invitationId)
+        .is('accepted_at', null)
+        .gt('expires_at', 'now()')
+        .limit(1);
+        
+      if (findError) throw findError;
+      
+      if (!invitations || invitations.length === 0) {
+        throw new Error('ההזמנה לא נמצאה או שפג תוקפה');
+      }
+      
+      const invitation = invitations[0];
+      
+      // Validate that the invitation is for this user
+      if (invitation.email !== user.email) {
+        throw new Error(`ההזמנה מיועדת ל-${invitation.email} אך אתה מחובר כ-${user.email}`);
+      }
+      
+      // Get the account details
+      const { data: accountData, error: accountError } = await supabase
+        .from('accounts')
+        .select('*')
+        .eq('id', invitation.account_id)
+        .single();
+        
+      if (accountError) throw accountError;
+      
+      // Update the account to add the shared user
+      const { error: updateError } = await supabase
+        .from('accounts')
+        .update({ shared_with_id: user.id })
+        .eq('id', invitation.account_id);
+        
+      if (updateError) throw updateError;
+      
+      // Mark the invitation as accepted
+      const { error: acceptError } = await supabase
+        .from('invitations')
+        .update({ accepted_at: new Date().toISOString() })
+        .eq('id', invitation.id);
+        
+      if (acceptError) throw acceptError;
+      
+      // Create account object to return
       const account: Account = {
-        id: `shared-account-${Date.now()}`,
-        name: `משפחה משותפת`,
-        ownerId: `owner-${Date.now()}`,
+        id: accountData.id,
+        name: accountData.name,
+        ownerId: accountData.owner_id,
         sharedWithId: user.id,
         invitationId: invitationId
       };
+      
+      // Remove from localStorage for the demo
+      const pendingInvitations = JSON.parse(localStorage.getItem('pendingInvitations') || '{}');
+      delete pendingInvitations[invitationId];
+      localStorage.setItem('pendingInvitations', JSON.stringify(pendingInvitations));
       
       toast.success('הצטרפת לחשבון בהצלחה!');
       return account;
@@ -208,6 +499,21 @@ export const authService = {
       
       if (error) {
         throw error;
+      }
+      
+      // Check if there are pending invitations
+      const pendingInvitations = JSON.parse(localStorage.getItem('pendingInvitations') || '{}');
+      const hasInvitations = Object.keys(pendingInvitations).length > 0;
+      
+      if (hasInvitations) {
+        // Notify the user about pending invitations
+        toast.info(
+          <div>
+            יש לך הזמנות לחשבונות משותפים! 
+            <a href="/account-settings" className="underline ml-1">צפה בהזמנות</a>
+          </div>,
+          { duration: 10000 }
+        );
       }
       
       toast.success('האימייל אומת בהצלחה!');

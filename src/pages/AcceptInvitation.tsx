@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { useAuth } from '@/contexts/auth';
 import { CheckCircle, X, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
 interface InvitationDetails {
   ownerName: string;
@@ -28,30 +29,66 @@ const AcceptInvitation = () => {
     }
     
     // Fetch invitation details
-    const fetchInvitationDetails = () => {
+    const fetchInvitationDetails = async () => {
       try {
-        const pendingInvitations = JSON.parse(localStorage.getItem('pendingInvitations') || '{}');
-        const invitation = pendingInvitations[invitationId];
-        
-        if (!invitation) {
-          setStatus('error');
-          return;
+        // First try to get from Supabase
+        const { data: invitations, error } = await supabase
+          .from('invitations')
+          .select(`
+            id,
+            email,
+            invitation_id,
+            accounts:account_id (
+              id,
+              name,
+              owner_id,
+              profiles:owner_id (
+                name
+              )
+            )
+          `)
+          .eq('invitation_id', invitationId)
+          .is('accepted_at', null)
+          .gt('expires_at', 'now()')
+          .limit(1);
+          
+        if (error) {
+          throw error;
         }
         
-        // Get owner details
-        const mockOwnerName = invitation.name.replace('משפחת ', '');
-        
-        setInvitationDetails({
-          ownerName: mockOwnerName,
-          accountName: invitation.name,
-          email: invitation.sharedWithEmail || '',
-        });
+        if (!invitations || invitations.length === 0) {
+          // Fallback to localStorage for demo purposes
+          const pendingInvitations = JSON.parse(localStorage.getItem('pendingInvitations') || '{}');
+          const invitation = pendingInvitations[invitationId];
+          
+          if (!invitation) {
+            setStatus('error');
+            return;
+          }
+          
+          // Construct detail from localStorage data
+          setInvitationDetails({
+            ownerName: invitation.ownerName || 'בעל החשבון',
+            accountName: invitation.name || 'חשבון משותף',
+            email: invitation.sharedWithEmail || '',
+          });
+        } else {
+          // Use supabase data
+          const invitation = invitations[0];
+          const account = invitation.accounts;
+          
+          setInvitationDetails({
+            ownerName: account?.profiles?.name || 'בעל החשבון',
+            accountName: account?.name || 'חשבון משותף',
+            email: invitation.email || '',
+          });
+        }
         
         setStatus('success');
         
         // If the user is authenticated but the invitation is for a different email, show an error
-        if (isAuthenticated && user && user.email !== invitation.sharedWithEmail) {
-          toast.error(`ההזמנה מיועדת לכתובת ${invitation.sharedWithEmail} אך אתה מחובר עם ${user.email}. יש להתנתק ולהתחבר עם החשבון המתאים.`);
+        if (isAuthenticated && user && invitationDetails && user.email !== invitationDetails.email) {
+          toast.error(`ההזמנה מיועדת לכתובת ${invitationDetails.email} אך אתה מחובר עם ${user.email}. יש להתנתק ולהתחבר עם החשבון המתאים.`);
           setStatus('error');
         }
         
@@ -189,9 +226,9 @@ const AcceptInvitation = () => {
                     size="sm" 
                     variant="outline" 
                     className="border-red-300 text-red-700"
-                    onClick={() => {
-                      localStorage.removeItem('user');
-                      localStorage.removeItem('account');
+                    onClick={async () => {
+                      // התנתקות מהחשבון הנוכחי
+                      await supabase.auth.signOut();
                       window.location.reload();
                     }}
                   >
