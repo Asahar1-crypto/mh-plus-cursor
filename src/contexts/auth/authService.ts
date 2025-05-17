@@ -2,7 +2,7 @@
 import { toast } from 'sonner';
 import { User, Account } from './types';
 import { supabase } from "@/integrations/supabase/client";
-import { userService } from './services/userService';
+import { userService } from './services/user';
 import { accountService } from './services/accountService';
 import { invitationService } from './services/invitation';
 import { showInvitationNotification } from '@/utils/notifications';
