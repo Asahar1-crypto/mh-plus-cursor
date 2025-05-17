@@ -18,8 +18,7 @@ export async function acceptInvitation(invitationId: string, user: User): Promis
       .select('*')
       .eq('invitation_id', invitationId)
       .is('accepted_at', null)
-      .gt('expires_at', 'now()')
-      .limit(1);
+      .gt('expires_at', 'now()');
       
     if (findError) {
       console.error("Error finding invitation:", findError);
@@ -27,21 +26,46 @@ export async function acceptInvitation(invitationId: string, user: User): Promis
     }
     
     if (!invitations || invitations.length === 0) {
-      console.error("Invitation not found or expired");
-      throw new Error('ההזמנה לא נמצאה או שפג תוקפה');
+      console.error("Invitation not found or expired in database");
+      
+      // Check localStorage as fallback
+      const pendingInvitationsData = localStorage.getItem('pendingInvitations');
+      if (!pendingInvitationsData) {
+        console.error("No pending invitations found in localStorage");
+        throw new Error('ההזמנה לא נמצאה או שפג תוקפה');
+      }
+      
+      const pendingInvitations = JSON.parse(pendingInvitationsData);
+      const localInvitation = pendingInvitations[invitationId];
+      
+      if (!localInvitation) {
+        console.error(`Invitation ${invitationId} not found in localStorage`);
+        throw new Error('ההזמנה לא נמצאה או שפג תוקפה');
+      }
+      
+      // Case insensitive comparison for email
+      if (localInvitation.sharedWithEmail && 
+          localInvitation.sharedWithEmail.toLowerCase() !== user.email.toLowerCase()) {
+        console.error(`Email mismatch: invitation for ${localInvitation.sharedWithEmail} but user is ${user.email}`);
+        throw new Error(`ההזמנה מיועדת ל-${localInvitation.sharedWithEmail} אך אתה מחובר כ-${user.email}`);
+      }
+      
+      // Since we can only validate locally but need to create the account sharing in the database
+      // Here we'd need to create the account sharing relation in the database
+      throw new Error('לא ניתן לקבל הזמנה מקומית ללא נתונים בשרת, צור קשר עם מנהל המערכת');
     }
     
     // Explicitly cast the invitation to the proper type
     const invitation = invitations[0] as unknown as InvitationRecord;
     console.log("Found invitation:", invitation);
     
-    // Validate that the invitation is for this user - FIXED: Case insensitive email comparison
+    // Validate that the invitation is for this user - Case insensitive email comparison
     if (invitation.email.toLowerCase() !== user.email.toLowerCase()) {
       console.error(`Email mismatch: invitation for ${invitation.email} but user is ${user.email}`);
       throw new Error(`ההזמנה מיועדת ל-${invitation.email} אך אתה מחובר כ-${user.email}`);
     }
     
-    // Get the account details - FIXED: Do not use .single() to prevent the error
+    // Get the account details - Do not use .single() to prevent the error
     const { data: accountData, error: accountError } = await supabase
       .from('accounts')
       .select('*')

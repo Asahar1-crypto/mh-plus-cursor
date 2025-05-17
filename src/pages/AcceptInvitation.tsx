@@ -25,14 +25,13 @@ const AcceptInvitation = () => {
     // Fetch invitation details
     const fetchInvitationDetails = async () => {
       try {
-        // First try to get from Supabase
+        console.log(`Fetching invitation details for ID: ${invitationId}`);
+        
+        // First try to get from Supabase with comprehensive data selection
         const { data: invitations, error } = await supabase
           .from('invitations')
           .select(`
-            id,
-            email,
-            invitation_id,
-            account_id,
+            *,
             accounts:account_id (
               id,
               name,
@@ -41,24 +40,38 @@ const AcceptInvitation = () => {
           `)
           .eq('invitation_id', invitationId)
           .is('accepted_at', null)
-          .gt('expires_at', 'now()')
-          .limit(1);
+          .gt('expires_at', 'now()');
+          
+        console.log("Supabase invitation query results:", { invitations, error });
           
         if (error) {
+          console.error("Error fetching invitation from Supabase:", error);
           throw error;
         }
         
         if (!invitations || invitations.length === 0) {
+          console.log("No invitation found in Supabase, checking localStorage");
           // Fallback to localStorage for demo purposes
-          const pendingInvitations = JSON.parse(localStorage.getItem('pendingInvitations') || '{}');
+          const pendingInvitationsData = localStorage.getItem('pendingInvitations');
+          console.log("Pending invitations in localStorage:", pendingInvitationsData);
+          
+          if (!pendingInvitationsData) {
+            console.error("No invitations found in localStorage either");
+            setStatus('error');
+            return;
+          }
+          
+          const pendingInvitations = JSON.parse(pendingInvitationsData);
           const invitation = pendingInvitations[invitationId];
           
           if (!invitation) {
+            console.error(`Invitation with ID ${invitationId} not found in localStorage`);
             setStatus('error');
             return;
           }
           
           // Construct detail from localStorage data
+          console.log("Found invitation in localStorage:", invitation);
           setInvitationDetails({
             ownerName: invitation.ownerName || 'בעל החשבון',
             accountName: invitation.name || 'חשבון משותף',
@@ -66,8 +79,9 @@ const AcceptInvitation = () => {
           });
         } else {
           // Use supabase data
-          const invitation = invitations[0] as InvitationData;
+          const invitation = invitations[0];
           const account = invitation.accounts;
+          console.log("Processing Supabase invitation:", { invitation, account });
           
           // If we have account data, fetch the owner's profile separately
           if (account && account.owner_id) {

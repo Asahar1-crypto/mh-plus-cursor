@@ -51,6 +51,8 @@ export const invitationCheckService = {
         return [];
       }
 
+      console.log(`Found invitations:`, invitations);
+
       // Now let's get the owner profiles for these invitations in a separate query
       // This avoids the issues with the relationship between invitations and profiles
       const ownerIds = invitations
@@ -71,6 +73,8 @@ export const invitationCheckService = {
             acc[profile.id] = { name: profile.name };
             return acc;
           }, {});
+          
+          console.log("Owner profiles:", ownerProfiles);
         } else {
           console.error("Error fetching owner profiles:", profileError);
         }
@@ -86,6 +90,21 @@ export const invitationCheckService = {
       });
 
       console.log(`Found and processed ${enrichedInvitations.length} pending invitations for ${email}`);
+      
+      // Store these invitations in localStorage for fallback
+      const pendingInvitations = {};
+      enrichedInvitations.forEach(inv => {
+        pendingInvitations[inv.invitation_id] = {
+          name: inv.accounts?.name || 'חשבון משותף',
+          ownerName: inv.owner_profile?.name || 'בעל החשבון',
+          sharedWithEmail: inv.email,
+          invitationId: inv.invitation_id
+        };
+      });
+      
+      localStorage.setItem('pendingInvitations', JSON.stringify(pendingInvitations));
+      console.log("Updated localStorage with pending invitations");
+      
       return enrichedInvitations as InvitationData[];
     } catch (error) {
       console.error('Failed to check pending invitations:', error);
