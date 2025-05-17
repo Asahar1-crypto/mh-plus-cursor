@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { User, Account } from '../../types';
 import { toast } from 'sonner';
 import { InvitationRecord, AccountRecord, PendingInvitationRecord } from './types';
+import { removePendingInvitation } from '@/utils/notifications';
 
 /**
  * Accepts an invitation and updates the account
@@ -40,20 +41,24 @@ export async function acceptInvitation(invitationId: string, user: User): Promis
       throw new Error(`ההזמנה מיועדת ל-${invitation.email} אך אתה מחובר כ-${user.email}`);
     }
     
-    // Get the account details
+    // Get the account details - FIXED: Do not use .single() to prevent the error
     const { data: accountData, error: accountError } = await supabase
       .from('accounts')
       .select('*')
-      .eq('id', invitation.account_id)
-      .single();
+      .eq('id', invitation.account_id);
       
     if (accountError) {
       console.error("Error finding account:", accountError);
       throw accountError;
     }
     
+    if (!accountData || accountData.length === 0) {
+      console.error("Account not found:", invitation.account_id);
+      throw new Error('החשבון המשויך להזמנה לא נמצא');
+    }
+    
     // Explicitly cast the account data to the proper type
-    const accountRecord = accountData as unknown as AccountRecord;
+    const accountRecord = accountData[0] as unknown as AccountRecord;
     console.log("Found account:", accountRecord);
     
     // Update the account to add the shared user
@@ -92,14 +97,7 @@ export async function acceptInvitation(invitationId: string, user: User): Promis
     };
     
     // Remove from localStorage for the demo
-    try {
-      const pendingInvitations = JSON.parse(localStorage.getItem('pendingInvitations') || '{}') as Record<string, PendingInvitationRecord>;
-      delete pendingInvitations[invitationId];
-      localStorage.setItem('pendingInvitations', JSON.stringify(pendingInvitations));
-      console.log("Removed accepted invitation from localStorage");
-    } catch (storageError) {
-      console.error("Error updating localStorage:", storageError);
-    }
+    removePendingInvitation(invitationId);
     
     console.log("Invitation acceptance completed successfully");
     toast.success('הצטרפת לחשבון בהצלחה!');

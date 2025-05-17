@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Bell } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { hasPendingInvitations } from '@/utils/notifications';
 
 interface PendingInvitation {
   invitationId: string;
@@ -21,10 +22,15 @@ const PendingInvitationAlert = () => {
   const [dismissed, setDismissed] = useState(false);
   const navigate = useNavigate();
   
+  // Get invitations from localStorage and check if we have any
+  if (!hasPendingInvitations() || dismissed) {
+    return null;
+  }
+  
   // Get invitations from localStorage
   const pendingInvitationsData = localStorage.getItem('pendingInvitations');
   
-  if (!pendingInvitationsData || dismissed) {
+  if (!pendingInvitationsData) {
     return null;
   }
   
