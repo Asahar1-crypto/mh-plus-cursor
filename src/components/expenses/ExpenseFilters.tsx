@@ -114,14 +114,14 @@ export const ExpenseFilters: React.FC<ExpenseFiltersProps> = ({
           <div className="space-y-2">
             <label className="text-sm font-medium">לפי קטגוריה</label>
             <Select 
-              value={selectedCategory || ''} 
-              onValueChange={(value) => setSelectedCategory(value || null)}
+              value={selectedCategory || 'all'} 
+              onValueChange={(value) => setSelectedCategory(value === 'all' ? null : value)}
             >
               <SelectTrigger>
                 <SelectValue placeholder="כל הקטגוריות" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">הכל</SelectItem>
+                <SelectItem value="all">הכל</SelectItem>
                 {categories.map((category) => (
                   <SelectItem key={category} value={category}>
                     {category}
@@ -134,14 +134,14 @@ export const ExpenseFilters: React.FC<ExpenseFiltersProps> = ({
           <div className="space-y-2">
             <label className="text-sm font-medium">לפי סטטוס</label>
             <Select 
-              value={selectedStatus || ''} 
-              onValueChange={(value) => setSelectedStatus(value as Expense['status'] || null)}
+              value={selectedStatus || 'all'} 
+              onValueChange={(value) => setSelectedStatus(value === 'all' ? null : value as Expense['status'])}
             >
               <SelectTrigger>
                 <SelectValue placeholder="כל הסטטוסים" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">הכל</SelectItem>
+                <SelectItem value="all">הכל</SelectItem>
                 <SelectItem value="pending">ממתינה לאישור</SelectItem>
                 <SelectItem value="approved">אושרה</SelectItem>
                 <SelectItem value="rejected">נדחתה</SelectItem>
@@ -153,14 +153,14 @@ export const ExpenseFilters: React.FC<ExpenseFiltersProps> = ({
           <div className="space-y-2">
             <label className="text-sm font-medium">לפי שיוך לילד</label>
             <Select 
-              value={selectedChild || ''} 
-              onValueChange={(value) => setSelectedChild(value || null)}
+              value={selectedChild || 'all'} 
+              onValueChange={(value) => setSelectedChild(value === 'all' ? null : value)}
             >
               <SelectTrigger>
                 <SelectValue placeholder="כל הילדים" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">הכל</SelectItem>
+                <SelectItem value="all">הכל</SelectItem>
                 <SelectItem value="general">הוצאה כללית</SelectItem>
                 {childrenList.map((child) => (
                   <SelectItem key={child.id} value={child.id}>
