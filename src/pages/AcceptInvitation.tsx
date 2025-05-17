@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -12,6 +11,25 @@ interface InvitationDetails {
   ownerName: string;
   accountName: string;
   email: string;
+}
+
+// Define the shape of the data returned by Supabase when fetching invitation details
+interface ProfileData {
+  name: string;
+}
+
+interface AccountData {
+  id: string;
+  name: string;
+  owner_id: string;
+  profiles: ProfileData[];
+}
+
+interface InvitationData {
+  id: string;
+  email: string;
+  invitation_id: string;
+  accounts: AccountData;
 }
 
 const AcceptInvitation = () => {
@@ -72,7 +90,7 @@ const AcceptInvitation = () => {
           });
         } else {
           // Use supabase data
-          const invitation = invitations[0];
+          const invitation = invitations[0] as InvitationData;
           const account = invitation.accounts;
           
           setInvitationDetails({
