@@ -76,9 +76,7 @@ export const accountService = {
         id: data.id,
         name: data.name,
         ownerId: data.owner_id,
-        sharedWithId: data.shared_with_id,
-        sharedWithEmail: data.shared_with_email,
-        invitationId: data.invitation_id
+        sharedWithId: data.shared_with_id
       };
     } catch (error) {
       console.error('Failed to create account:', error);
@@ -103,9 +101,7 @@ export const accountService = {
           id: account.id,
           name: account.name,
           ownerId: account.owner_id,
-          sharedWithId: account.shared_with_id,
-          sharedWithEmail: account.shared_with_email,
-          invitationId: account.invitation_id
+          sharedWithId: account.shared_with_id
         };
       } 
       
@@ -117,9 +113,7 @@ export const accountService = {
           id: account.id,
           name: account.name,
           ownerId: account.owner_id,
-          sharedWithId: account.shared_with_id || userId, // If missing, use current user ID
-          sharedWithEmail: account.shared_with_email,
-          invitationId: account.invitation_id
+          sharedWithId: account.shared_with_id || userId // If missing, use current user ID
         };
       }
       
