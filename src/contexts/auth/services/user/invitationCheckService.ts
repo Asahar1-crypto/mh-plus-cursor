@@ -34,6 +34,7 @@ export const invitationCheckService = {
       
       // Get basic invitation data with full account and owner information
       // Adding specific conditions to ensure we get only valid invitations
+      // Use FULL join syntax to ensure we get complete account data
       const { data: invitations, error } = await supabase
         .from('invitations')
         .select(`
@@ -47,7 +48,7 @@ export const invitationCheckService = {
             id,
             name,
             owner_id,
-            profiles!owner_id (
+            profiles!accounts_owner_id_fkey (
               id,
               name
             )
@@ -150,7 +151,11 @@ export const invitationCheckService = {
           accounts:account_id (
             id,
             name,
-            owner_id
+            owner_id,
+            profiles!accounts_owner_id_fkey (
+              id,
+              name
+            )
           )
         `)
         .eq('invitation_id', invitationId)
@@ -166,11 +171,17 @@ export const invitationCheckService = {
       console.log(`Invitation ${invitationId} exists in database: ${exists}`);
       
       if (exists && data[0]) {
+        // Validate account data exists
+        if (!data[0].accounts) {
+          console.error("Invitation found but account data is missing:", data[0]);
+          return false;
+        }
+        
         // Temporarily store invitation details in sessionStorage for UI
         sessionStorage.setItem('currentInvitationDetails', JSON.stringify(data[0]));
       }
       
-      return exists;
+      return exists && data[0]?.accounts !== null;
       
     } catch (error) {
       console.error("Error in checkInvitationById:", error);

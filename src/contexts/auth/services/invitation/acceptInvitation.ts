@@ -20,7 +20,7 @@ export async function acceptInvitation(invitationId: string, user: User): Promis
       throw new Error('נתוני משתמש חסרים');
     }
     
-    // Get the invitation from the database
+    // Get the invitation from the database with improved query
     console.log("Querying database for invitation:", invitationId);
     const { data: invitationData, error: findError } = await supabase
       .from('invitations')
@@ -34,7 +34,11 @@ export async function acceptInvitation(invitationId: string, user: User): Promis
         accounts:account_id (
           id,
           name,
-          owner_id
+          owner_id,
+          profiles!accounts_owner_id_fkey (
+            id,
+            name
+          )
         )
       `)
       .eq('invitation_id', invitationId)
@@ -101,17 +105,8 @@ export async function acceptInvitation(invitationId: string, user: User): Promis
     // Get owner name
     let ownerName = 'בעל החשבון';
     
-    if (invitation.accounts.owner_id) {
-      console.log("Fetching owner profile");
-      const { data: ownerData } = await supabase
-        .from('profiles')
-        .select('name')
-        .eq('id', invitation.accounts.owner_id)
-        .single();
-        
-      if (ownerData) {
-        ownerName = ownerData.name;
-      }
+    if (invitation.accounts.profiles && invitation.accounts.profiles.length > 0) {
+      ownerName = invitation.accounts.profiles[0].name || 'בעל החשבון';
     }
     
     // Create account object to return
@@ -132,6 +127,7 @@ export async function acceptInvitation(invitationId: string, user: User): Promis
     sessionStorage.removeItem('pendingInvitationAccountId');
     sessionStorage.removeItem('pendingInvitationOwnerId');
     sessionStorage.removeItem('currentInvitationDetails');
+    sessionStorage.removeItem('pendingInvitationRedirectChecked');
     
     console.log("Invitation accepted successfully");
     toast.success('הצטרפת לחשבון בהצלחה!');

@@ -60,7 +60,7 @@ const AcceptInvitation = () => {
         setFetchAttempted(true);
         console.log(`Fetching invitation details for ID: ${invitationId}`);
         
-        // Get invitation info from the database
+        // Get invitation info from the database with improved query
         const { data: invitation, error } = await supabase
           .from('invitations')
           .select(`
@@ -74,7 +74,7 @@ const AcceptInvitation = () => {
               id,
               name,
               owner_id,
-              profiles!owner_id (
+              profiles!accounts_owner_id_fkey (
                 id,
                 name
               )
@@ -97,8 +97,8 @@ const AcceptInvitation = () => {
         const invitationRecord = invitation[0];
         console.log("Found invitation in database:", invitationRecord);
         
-        if (!invitationRecord.accounts) {
-          console.error("Invitation found but account data is missing");
+        if (!invitationRecord.accounts || !invitationRecord.accounts.id) {
+          console.error("Invitation found but account data is missing or incomplete");
           throw new Error("הזמנה לא תקפה - חסרים פרטי חשבון");
         }
         

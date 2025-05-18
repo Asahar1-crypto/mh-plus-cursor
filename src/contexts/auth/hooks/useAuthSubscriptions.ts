@@ -1,3 +1,4 @@
+
 import { useEffect } from 'react';
 import { User } from '../types';
 import { supabase } from "@/integrations/supabase/client";
@@ -50,10 +51,41 @@ export const useAuthSubscriptions = (
       
       try {
         checkDone = true;
+        // Check for pending invitations
         const invitations = await invitationCheckService.checkPendingInvitations(user.email);
         console.log('Initial invitation check result:', invitations);
+        
+        // Check if there's a pending invitation ID in sessionStorage that needs redirection
+        const pendingInvitationId = sessionStorage.getItem('pendingInvitationId');
+        if (pendingInvitationId) {
+          console.log(`Found pendingInvitationId ${pendingInvitationId} in sessionStorage after auth check`);
+          
+          // Verify that the invitation exists and is valid before redirecting
+          const isValid = await invitationCheckService.checkInvitationById(pendingInvitationId);
+          
+          if (isValid) {
+            // Only redirect if user is on dashboard or home page (prevent redirection loops)
+            const currentPath = window.location.pathname;
+            const isOnBasePage = currentPath === '/' || currentPath === '/dashboard';
+            
+            if (isOnBasePage) {
+              console.log(`Redirecting to invitation page: /invitation/${pendingInvitationId}`);
+              setTimeout(() => {
+                window.location.href = `/invitation/${pendingInvitationId}`;
+              }, 1000);
+            }
+          } else {
+            // If invitation is not valid, clear the pending ID to prevent further redirect attempts
+            console.log("Clearing invalid pending invitation ID");
+            sessionStorage.removeItem('pendingInvitationId');
+            sessionStorage.removeItem('pendingInvitationRedirectChecked');
+          }
+        }
       } catch (error) {
         console.error("Failed to check pending invitations:", error);
+        // Clear potentially problematic invitation data
+        sessionStorage.removeItem('pendingInvitationId');
+        sessionStorage.removeItem('pendingInvitationRedirectChecked');
       }
     };
     
