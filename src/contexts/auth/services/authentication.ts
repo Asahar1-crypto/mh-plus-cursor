@@ -35,6 +35,7 @@ export async function login(email: string, password: string) {
     
     return { user, account };
   } catch (error: any) {
+    console.error("Login error:", error);
     throw error;
   }
 }

@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/contexts/auth';
 import { toast } from 'sonner';
@@ -11,24 +11,37 @@ import NotificationsCard from '@/components/account/NotificationsCard';
 
 const AccountSettings = () => {
   const { user, account, sendInvitation, removeInvitation } = useAuth();
+  const [isProcessing, setIsProcessing] = useState(false);
   
   const handleSendInvitation = async (email: string) => {
+    if (isProcessing) return;
+    
+    setIsProcessing(true);
     try {
       await sendInvitation(email);
       toast.success(`הזמנה נשלחה בהצלחה ל-${email}`);
     } catch (error) {
       console.error('Failed to send invitation:', error);
       toast.error('שגיאה בשליחת ההזמנה, אנא נסה שוב');
+    } finally {
+      setIsProcessing(false);
     }
   };
 
   const handleRemovePartner = async () => {
+    if (isProcessing) return;
+    
+    setIsProcessing(true);
     try {
+      console.log('Starting partner removal process');
       await removeInvitation();
+      console.log('Partner removal completed successfully');
       toast.success('השותף הוסר בהצלחה מהחשבון');
     } catch (error) {
       console.error('Failed to remove partner:', error);
       toast.error('שגיאה בהסרת השותף, אנא נסה שוב');
+    } finally {
+      setIsProcessing(false);
     }
   };
   

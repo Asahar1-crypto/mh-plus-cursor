@@ -5,6 +5,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { User, XCircle, Loader2 } from 'lucide-react';
 import { Account } from '@/contexts/auth/types';
 import { User as UserType } from '@/contexts/auth/types';
+import { toast } from 'sonner';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 
 interface UsersListCardProps {
   account: Account | null;
@@ -14,6 +16,7 @@ interface UsersListCardProps {
 
 const UsersListCard: React.FC<UsersListCardProps> = ({ account, user, onRemovePartner }) => {
   const [isRemoving, setIsRemoving] = useState(false);
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
 
   const handleRemovePartner = async () => {
     if (!account?.sharedWithId && !account?.sharedWithEmail) return;
@@ -21,10 +24,13 @@ const UsersListCard: React.FC<UsersListCardProps> = ({ account, user, onRemovePa
     setIsRemoving(true);
     try {
       await onRemovePartner();
+      toast.success('השותף הוסר בהצלחה');
     } catch (error) {
       console.error('Failed to remove partner:', error);
+      toast.error('שגיאה בהסרת השותף, אנא נסה שוב');
     } finally {
       setIsRemoving(false);
+      setShowConfirmDialog(false);
     }
   };
 
@@ -81,21 +87,47 @@ const UsersListCard: React.FC<UsersListCardProps> = ({ account, user, onRemovePa
                 <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded">
                   {account.sharedWithId ? 'משתתף פעיל' : 'הזמנה נשלחה'}
                 </span>
-                {!isRemoving ? (
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    className="text-destructive border-destructive hover:bg-destructive/10"
-                    onClick={handleRemovePartner}
-                  >
-                    <XCircle className="h-4 w-4 mr-1" />
-                    הסר
-                  </Button>
-                ) : (
-                  <Button variant="outline" size="sm" disabled className="border-destructive">
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  </Button>
-                )}
+                
+                <AlertDialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
+                  <AlertDialogTrigger asChild>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="text-destructive border-destructive hover:bg-destructive/10"
+                      disabled={isRemoving}
+                    >
+                      {isRemoving ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <>
+                          <XCircle className="h-4 w-4 mr-1" />
+                          הסר
+                        </>
+                      )}
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>האם אתה בטוח?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        פעולה זו תסיר את השותף מהחשבון ותבטל את ההזמנה שנשלחה.
+                        לא ניתן לבטל פעולה זו לאחר הביצוע.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>ביטול</AlertDialogCancel>
+                      <AlertDialogAction onClick={handleRemovePartner} disabled={isRemoving}>
+                        {isRemoving ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" /> מסיר...
+                          </>
+                        ) : (
+                          'אישור'
+                        )}
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
               </div>
             </div>
           ) : null}

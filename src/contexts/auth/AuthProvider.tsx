@@ -62,6 +62,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
           await checkForNewInvitations(user.email);
         }, 1000);
       }
+    } catch (error) {
+      console.error("Failed to check auth state:", error);
     } finally {
       setIsLoading(false);
     }
@@ -116,9 +118,14 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     
     setIsLoading(true);
     try {
+      console.log("AuthProvider: Starting to remove invitation for account:", account);
       const updatedAccount = await authService.removeInvitation(account);
+      console.log("AuthProvider: Updated account after removing invitation:", updatedAccount);
       setAccount(updatedAccount);
       return Promise.resolve();
+    } catch (error) {
+      console.error("AuthProvider: Error removing invitation:", error);
+      throw error;
     } finally {
       setIsLoading(false);
     }
