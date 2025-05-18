@@ -93,10 +93,20 @@ export const hasPendingInvitations = async (currentUserEmail?: string): Promise<
 };
 
 /**
- * Automatically checks for new invitations
+ * Automatically checks for new invitations - with throttling to prevent loops
  */
 export const checkForNewInvitations = async (email: string) => {
   if (!email) return [];
+  
+  // Use a static timestamp to prevent multiple checks in short period
+  const now = Date.now();
+  if ((checkForNewInvitations as any).lastCheckTime && 
+      now - (checkForNewInvitations as any).lastCheckTime < 30000) { // 30 seconds
+    console.log('Skipping invitation check - checked too recently');
+    return [];
+  }
+  
+  (checkForNewInvitations as any).lastCheckTime = now;
   
   try {
     console.log(`Checking for new invitations for ${email}`);
@@ -131,9 +141,28 @@ export const checkForNewInvitations = async (email: string) => {
     if (invitations && invitations.length > 0) {
       console.log("Found invitations in database:", invitations);
       
-      // Show notification for the first invitation
-      if (invitations[0]?.invitation_id) {
-        showInvitationNotification(invitations[0].invitation_id);
+      // Check if we've already notified about these invitations
+      const notifiedInvitationsStr = sessionStorage.getItem('notifiedInvitations') || '[]';
+      let notifiedIds: string[] = [];
+      
+      try {
+        notifiedIds = JSON.parse(notifiedInvitationsStr);
+      } catch (e) {
+        console.error('Error parsing notifiedInvitations:', e);
+      }
+      
+      // Show notification for the first invitation we haven't notified about yet
+      for (const invitation of invitations) {
+        if (invitation.invitation_id && !notifiedIds.includes(invitation.invitation_id)) {
+          showInvitationNotification(invitation.invitation_id);
+          
+          // Add to notified list
+          notifiedIds.push(invitation.invitation_id);
+          sessionStorage.setItem('notifiedInvitations', JSON.stringify(notifiedIds));
+          
+          // Only show one notification at a time
+          break;
+        }
       }
       
       return invitations;

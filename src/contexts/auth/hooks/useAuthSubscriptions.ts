@@ -1,4 +1,3 @@
-
 import { useEffect } from 'react';
 import { User } from '../types';
 import { supabase } from "@/integrations/supabase/client";
@@ -42,13 +41,19 @@ export const useAuthSubscriptions = (
     
     console.log('Setting up one-time invitation check for', user.email);
     
+    // Keep track if check has been performed to avoid loops
+    let checkDone = false;
+    
     // Only do an initial check when component loads
     const checkInvitationsOnce = async () => {
+      if (checkDone) return;
+      
       try {
+        checkDone = true;
         const invitations = await invitationCheckService.checkPendingInvitations(user.email);
         console.log('Initial invitation check result:', invitations);
       } catch (error) {
-        console.error('Error during initial invitation check:', error);
+        console.error("Failed to check pending invitations:", error);
       }
     };
     

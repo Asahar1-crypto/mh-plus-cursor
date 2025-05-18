@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { User, Account } from '../types';
 import { accountService } from './accountService';
 import { userService } from './user';
-import { checkForNewInvitations } from '@/utils/notifications';
+import { clearAllPendingInvitations } from '@/utils/notifications';
 import { toast } from 'sonner';
 
 /**
@@ -29,8 +29,12 @@ export async function checkAuth(): Promise<{ user: User | null, account: Account
     // Check if there is a pending invitation ID in session storage
     const pendingInvitationId = sessionStorage.getItem('pendingInvitationId');
     
-    if (pendingInvitationId) {
+    // Use a flag to avoid redirection loops
+    let redirectChecked = sessionStorage.getItem('pendingInvitationRedirectChecked');
+    
+    if (pendingInvitationId && !redirectChecked && user.email) {
       console.log(`Found pendingInvitationId ${pendingInvitationId} in sessionStorage`);
+      sessionStorage.setItem('pendingInvitationRedirectChecked', 'true');
       
       try {
         // Verify that the invitation exists and is valid
@@ -51,29 +55,30 @@ export async function checkAuth(): Promise<{ user: User | null, account: Account
         if (invitation && invitation.length > 0) {
           console.log(`Verified that invitation ${pendingInvitationId} is valid for user ${user.email}`);
           
-          // If the user just registered, we'll redirect to the invitation page
-          // but don't clear the pending invitation ID yet
-          setTimeout(() => {
-            window.location.href = `/invitation/${pendingInvitationId}`;
-          }, 1000);
+          // If the user just registered or logged in, redirect to the invitation page
+          // but we'll only do this once per session to avoid loops
+          const currentPath = window.location.pathname;
+          if (!currentPath.includes(`/invitation/${pendingInvitationId}`)) {
+            setTimeout(() => {
+              window.location.href = `/invitation/${pendingInvitationId}`;
+            }, 1000);
+            return { user, account: null };
+          }
         } else {
           console.log("Invitation not found or not valid, clearing pendingInvitationId");
           sessionStorage.removeItem('pendingInvitationId');
+          sessionStorage.removeItem('pendingInvitationRedirectChecked');
         }
       } catch (error) {
         console.error("Error verifying invitation:", error);
         sessionStorage.removeItem('pendingInvitationId');
+        sessionStorage.removeItem('pendingInvitationRedirectChecked');
       }
     }
     
     // Get user account
     const account = await accountService.getDefaultAccount(user.id, user.name);
     console.log("Default account retrieved:", account);
-    
-    // Check for new invitations
-    if (user.email) {
-      await checkForNewInvitations(user.email);
-    }
     
     return { user, account };
   } catch (error) {

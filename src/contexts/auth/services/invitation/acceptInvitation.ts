@@ -39,7 +39,8 @@ export async function acceptInvitation(invitationId: string, user: User): Promis
       `)
       .eq('invitation_id', invitationId)
       .is('accepted_at', null)
-      .gt('expires_at', 'now()');
+      .gt('expires_at', 'now()')
+      .limit(1); // Make sure we only get one result
       
     if (findError) {
       console.error("Error finding invitation:", findError);

@@ -17,9 +17,9 @@ export const invitationCheckService = {
       return [];
     }
     
-    // Prevent checking too frequently (throttle to once per 10 seconds)
+    // Prevent checking too frequently (throttle to once per 30 seconds)
     const now = Date.now();
-    if (now - invitationCheckService.lastCheckTime < 10000) {
+    if (now - invitationCheckService.lastCheckTime < 30000) {
       console.log('Skipping invitation check - checked too recently');
       return [];
     }
@@ -98,11 +98,22 @@ export const invitationCheckService = {
           notifiedIds = [];
         }
         
+        // Only show notification once per invitation
         if (!notifiedIds.includes(invitation.invitation_id)) {
           shouldShowNotification = true;
           // Mark as notified
           notifiedIds.push(invitation.invitation_id);
           sessionStorage.setItem('notifiedInvitations', JSON.stringify(notifiedIds));
+          
+          // Don't show notification if we're already on the invitation page
+          const currentPath = window.location.pathname;
+          const isOnInvitationPage = currentPath.includes('/invitation/');
+          
+          if (!isOnInvitationPage) {
+            // Show at most one notification per check
+            showInvitationNotification(invitation.invitation_id);
+            break;
+          }
         }
         
         // Add processed invitation to list
@@ -113,22 +124,6 @@ export const invitationCheckService = {
       }
 
       console.log(`Processed ${processedInvitations.length} pending invitations for ${email}`);
-      
-      // Show notification for first invitation if we haven't shown it before
-      if (shouldShowNotification && processedInvitations.length > 0 && processedInvitations[0].invitation_id) {
-        // Don't show notification if we're already on the invitation page
-        const currentPath = window.location.pathname;
-        const isOnInvitationPage = currentPath.includes('/invitation/');
-        
-        if (!isOnInvitationPage) {
-          // Temporarily store active invitation ID in sessionStorage (not localStorage)
-          // This is just for UI purposes, not for permanent storage
-          sessionStorage.setItem('currentActiveInvitationId', processedInvitations[0].invitation_id);
-          
-          // Show notification with valid invitation_id
-          showInvitationNotification(processedInvitations[0].invitation_id);
-        }
-      }
       
       return processedInvitations;
     } catch (error) {

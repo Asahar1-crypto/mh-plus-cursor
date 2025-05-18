@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -11,26 +12,27 @@ const PendingInvitationAlert = () => {
   const [dismissed, setDismissed] = useState(false);
   const [invitations, setInvitations] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [checkPerformed, setCheckPerformed] = useState(false);
   const checkTimeoutRef = useRef<number | null>(null);
   const navigate = useNavigate();
   const { user } = useAuth();
   
   useEffect(() => {
-    // Check for invitations immediately when component loads
-    if (user?.email) {
+    // Check for invitations only once when component loads
+    if (user?.email && !checkPerformed) {
       checkForInvitations();
+      setCheckPerformed(true);
       setLoading(false);
-    } else {
+    } else if (!user) {
       setLoading(true);
     }
     
-    // We'll use a ref to keep track of the timeout
     return () => {
       if (checkTimeoutRef.current) {
         clearTimeout(checkTimeoutRef.current);
       }
     };
-  }, [user]);
+  }, [user, checkPerformed]);
   
   const checkForInvitations = async () => {
     if (!user?.email) return;

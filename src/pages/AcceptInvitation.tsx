@@ -1,11 +1,11 @@
 
 import React, { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/auth';
 import { supabase } from '@/integrations/supabase/client';
 import { InvitationDetails } from '@/components/invitation/types';
 import { toast } from 'sonner';
-import { debugInvitations } from '@/utils/notifications';
+import { debugInvitations, clearAllPendingInvitations } from '@/utils/notifications';
 
 // Import the components
 import LoadingState from '@/components/invitation/LoadingState';
@@ -18,17 +18,34 @@ const AcceptInvitation = () => {
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
   const [invitationDetails, setInvitationDetails] = useState<InvitationDetails | null>(null);
   const [errorMessage, setErrorMessage] = useState<string>('');
+  const navigate = useNavigate();
+  // Flag to track if we've already fetched the invitation
+  const [fetchAttempted, setFetchAttempted] = useState(false);
   
   // Debug function that displays invitation status to help troubleshoot
   const debugInvitationStatus = () => {
     debugInvitations();
     toast.info('בדיקת נתוני הזמנה בוצעה. בדוק את הקונסול לפרטים.');
   };
+
+  // Troubleshoot function to reset everything and go back to dashboard
+  const resetAndGoBack = () => {
+    clearAllPendingInvitations();
+    toast.info('ניקיון בוצע, חוזר לדף הבית');
+    setTimeout(() => {
+      navigate('/dashboard');
+    }, 1500);
+  };
   
   useEffect(() => {
     if (!invitationId) {
       setStatus('error');
       setErrorMessage('מזהה הזמנה חסר');
+      return;
+    }
+    
+    // Only fetch once to avoid loops
+    if (fetchAttempted) {
       return;
     }
     
@@ -40,6 +57,7 @@ const AcceptInvitation = () => {
     // Fetch invitation details
     const fetchInvitationDetails = async () => {
       try {
+        setFetchAttempted(true);
         console.log(`Fetching invitation details for ID: ${invitationId}`);
         
         // Get invitation info from the database
@@ -121,7 +139,7 @@ const AcceptInvitation = () => {
     }, 1000);
     
     return () => clearTimeout(timer);
-  }, [invitationId, isAuthenticated]);
+  }, [invitationId, isAuthenticated, fetchAttempted]);
   
   return (
     <div className="container mx-auto py-10 px-4 flex flex-col items-center justify-center min-h-[calc(100vh-4rem)]">
@@ -139,14 +157,22 @@ const AcceptInvitation = () => {
         />
       )}
       
-      {/* Debug button - only shown in error state */}
+      {/* Debug buttons - only shown in error state */}
       {status === 'error' && (
-        <button 
-          onClick={debugInvitationStatus}
-          className="mt-4 text-sm text-gray-500 underline"
-        >
-          בדוק נתוני הזמנה (דיבאג)
-        </button>
+        <div className="flex flex-col gap-2 mt-4">
+          <button 
+            onClick={debugInvitationStatus}
+            className="text-sm text-gray-500 underline"
+          >
+            בדוק נתוני הזמנה (דיבאג)
+          </button>
+          <button 
+            onClick={resetAndGoBack}
+            className="mt-2 text-sm text-red-500 underline"
+          >
+            נקה נתונים וחזור לדף הבית
+          </button>
+        </div>
       )}
     </div>
   );
