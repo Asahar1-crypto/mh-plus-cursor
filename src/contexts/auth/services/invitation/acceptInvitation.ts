@@ -105,8 +105,19 @@ export async function acceptInvitation(invitationId: string, user: User): Promis
     // Get owner name
     let ownerName = 'בעל החשבון';
     
-    if (invitation.accounts.profiles && invitation.accounts.profiles.id) {
-      ownerName = invitation.accounts.profiles.name || 'בעל החשבון';
+    // Fix here: Check if profiles exists and if it's an array before accessing length
+    if (invitation.accounts.profiles) {
+      // Handle both array and object structures
+      if (Array.isArray(invitation.accounts.profiles)) {
+        if (invitation.accounts.profiles.length > 0) {
+          ownerName = invitation.accounts.profiles[0]?.name || 'בעל החשבון';
+        }
+      } else {
+        // If it's an object with an id property, it's a single profile
+        if (invitation.accounts.profiles.id) {
+          ownerName = invitation.accounts.profiles.name || 'בעל החשבון';
+        }
+      }
     }
     
     // Create account object to return
