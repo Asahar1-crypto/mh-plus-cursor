@@ -20,134 +20,47 @@ export async function acceptInvitation(invitationId: string, user: User): Promis
       throw new Error('נתוני משתמש חסרים');
     }
     
-    // Get the invitation from the database with explicit join conditions and simplified query
-    console.log("Querying database for invitation:", invitationId);
-    const { data: invitationData, error: findError } = await supabase
-      .from('invitations')
-      .select(`
-        *,
-        accounts:account_id (*)
-      `)
-      .eq('invitation_id', invitationId)
-      .is('accepted_at', null)
-      .gt('expires_at', 'now()');
+    // Transaction to ensure data consistency
+    const { data: transaction, error: transactionError } = await supabase
+      .rpc('accept_invitation_and_update_account', {
+        p_invitation_id: invitationId,
+        p_user_id: user.id,
+        p_user_email: user.email.toLowerCase()
+      });
       
-    if (findError) {
-      console.error("Error finding invitation:", findError);
-      throw new Error('שגיאה בחיפוש ההזמנה: ' + findError.message);
+    if (transactionError) {
+      console.error("Transaction error:", transactionError);
+      throw new Error(transactionError.message || 'שגיאה בקבלת ההזמנה');
     }
     
-    // Convert to array if needed and check length
-    const invitationArray = Array.isArray(invitationData) ? invitationData : (invitationData ? [invitationData] : []);
-    
-    if (!invitationArray || invitationArray.length === 0) {
-      console.error("No active invitation found with ID", invitationId);
-      throw new Error('ההזמנה לא נמצאה או שפג תוקפה');
-    }
-    
-    // Process invitation data from the database
-    const invitation = invitationArray[0];
-    console.log("Processing invitation from database:", invitation);
-    
-    // Case insensitive comparison for email
-    if (invitation.email && invitation.email.toLowerCase() !== user.email.toLowerCase()) {
-      console.error(`Email mismatch: invitation for ${invitation.email} but user is ${user.email}`);
-      throw new Error(`ההזמנה מיועדת ל-${invitation.email} אך אתה מחובר כ-${user.email}`);
-    }
-    
-    // Enhance account data validation
-    if (!invitation.accounts || !invitation.account_id) {
-      console.error("Invitation found but account data is missing or incomplete");
-      
-      // Try to fetch account data directly
-      try {
-        const { data: accountData, error: accountError } = await supabase
-          .from('accounts')
-          .select('*')
-          .eq('id', invitation.account_id);
-          
-        if (accountError) {
-          console.error("Failed to fetch account data:", accountError);
-          throw new Error('חסר מידע חיוני על החשבון, אנא בקש הזמנה חדשה');
-        }
-        
-        if (!accountData || accountData.length === 0) {
-          console.error("No account data found for account_id:", invitation.account_id);
-          throw new Error('חסר מידע חיוני על החשבון, אנא בקש הזמנה חדשה');
-        }
-        
-        // Replace with complete account data
-        invitation.accounts = accountData[0];
-      } catch (err) {
-        console.error("Error in account data fallback fetch:", err);
-        throw new Error('חסר מידע חיוני על החשבון, אנא בקש הזמנה חדשה');
-      }
-    }
-    
-    if (!invitation.accounts.id || !invitation.accounts.owner_id) {
-      console.error("Critical account data still missing after fetch attempt");
+    if (!transaction || !transaction.account_id) {
       throw new Error('חסר מידע חיוני על החשבון, אנא בקש הזמנה חדשה');
     }
     
-    const accountId = invitation.account_id;
-    
-    // Check if this account already belongs to the current user
-    if (invitation.accounts.owner_id === user.id) {
-      console.error("Cannot share account with self");
-      throw new Error('לא ניתן לשתף חשבון עם עצמך');
-    }
-    
-    // Update the account to link with the current user
-    console.log("Updating account with user information");
-    const { error: updateError } = await supabase
+    // Get account data with owner information
+    const { data: accountData, error: accountError } = await supabase
       .from('accounts')
-      .update({ 
-        shared_with_id: user.id,
-        shared_with_email: user.email,
-        invitation_id: invitation.invitation_id
-      })
-      .eq('id', accountId);
+      .select(`
+        *,
+        owner_profile:profiles!accounts_owner_id_fkey (name)
+      `)
+      .eq('id', transaction.account_id)
+      .single();
       
-    if (updateError) {
-      console.error("Error updating account:", updateError);
-      throw new Error('שגיאה בעדכון החשבון: ' + updateError.message);
-    }
-    
-    // Mark invitation as accepted
-    console.log("Marking invitation as accepted");
-    await supabase
-      .from('invitations')
-      .update({ accepted_at: new Date().toISOString() })
-      .eq('invitation_id', invitation.invitation_id);
-      
-    // Get owner profile data
-    let ownerName = 'בעל החשבון';
-    
-    // Fetch owner profile directly for reliability
-    try {
-      const { data: ownerProfile } = await supabase
-        .from('profiles')
-        .select('name')
-        .eq('id', invitation.accounts.owner_id)
-        .maybeSingle();
-        
-      if (ownerProfile && ownerProfile.name) {
-        ownerName = ownerProfile.name;
-      }
-    } catch (error) {
-      console.error("Could not fetch owner profile:", error);
-      // Continue with default name
+    if (accountError || !accountData) {
+      console.error("Error fetching account data:", accountError);
+      throw new Error('חסר מידע חיוני על החשבון, אנא בקש הזמנה חדשה');
     }
     
     // Create account object to return
     const sharedAccount: Account = {
-      id: accountId,
-      name: invitation.accounts.name || 'חשבון משותף',
-      ownerId: invitation.accounts.owner_id,
-      ownerName: ownerName,
+      id: accountData.id,
+      name: accountData.name || 'חשבון משותף',
+      ownerId: accountData.owner_id,
+      ownerName: accountData.owner_profile?.name || 'בעל החשבון',
       sharedWithId: user.id,
       sharedWithEmail: user.email,
-      invitationId: invitation.invitation_id,
+      invitationId: invitationId,
       isSharedAccount: true
     };
     
