@@ -91,3 +91,4 @@ export const hasPendingInvitations = async (currentUserEmail?: string): Promise<
     return false;
   }
 };
+

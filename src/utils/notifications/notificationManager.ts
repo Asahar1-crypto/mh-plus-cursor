@@ -88,25 +88,3 @@ export const checkForNewInvitations = async (email: string) => {
     return [];
   }
 };
-
-/**
- * Clear temporary invitation data from sessionStorage
- */
-export const clearAllPendingInvitations = (): void => {
-  try {
-    // Clear session storage items
-    sessionStorage.removeItem('notifiedInvitations');
-    sessionStorage.removeItem('currentActiveInvitationId');
-    sessionStorage.removeItem('pendingInvitationId');
-    sessionStorage.removeItem('pendingInvitationAccountId');
-    sessionStorage.removeItem('pendingInvitationOwnerId');
-    sessionStorage.removeItem('currentInvitationDetails');
-    sessionStorage.removeItem('pendingInvitationsAfterRegistration');
-    
-    console.log('All temporary invitation data cleared from sessionStorage');
-    toast.success('רשימת ההזמנות נוקתה בהצלחה');
-  } catch (error) {
-    console.error('Failed to clear pending invitations:', error);
-    toast.error('אירעה שגיאה בניקוי רשימת ההזמנות');
-  }
-};

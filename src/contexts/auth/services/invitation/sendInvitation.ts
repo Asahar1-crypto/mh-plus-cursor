@@ -72,14 +72,7 @@ export async function sendInvitation(email: string, user: User, account: Account
     
     console.log(`Creating new invitation with ID ${invitationId}`);
     
-    // We'll use a database transaction to ensure consistency
-    // Start a transaction block
-    const { error: transactionError } = await supabase.rpc('begin_transaction');
-    if (transactionError) {
-      console.error("Transaction error:", transactionError);
-      throw transactionError;
-    }
-    
+    // Start a transaction
     try {
       // Create the invitation in Supabase
       const { data: invitation, error: inviteError } = await supabase
@@ -112,14 +105,14 @@ export async function sendInvitation(email: string, user: User, account: Account
         
       if (updateError) {
         console.error("Error updating account:", updateError);
+        
+        // Clean up the invitation if account update fails
+        await supabase
+          .from('invitations')
+          .delete()
+          .eq('invitation_id', invitationId);
+          
         throw updateError;
-      }
-      
-      // Commit the transaction
-      const { error: commitError } = await supabase.rpc('commit_transaction');
-      if (commitError) {
-        console.error("Error committing transaction:", commitError);
-        throw commitError;
       }
       
       console.log('Account updated with invitation details:', updatedAccountData);
@@ -135,7 +128,7 @@ export async function sendInvitation(email: string, user: User, account: Account
           normalizedEmail,
           invitationLink,
           user.name || user.email,
-          account.name
+          account.name || 'Shared Account'
         );
         
         console.log(`Invitation email sent to ${normalizedEmail} with link ${invitationLink}`);
@@ -156,12 +149,9 @@ export async function sendInvitation(email: string, user: User, account: Account
       console.log("Invitation process completed successfully");
       toast.success('ההזמנה נשלחה בהצלחה!');
       return updatedAccount;
+      
     } catch (innerError) {
-      // If any error occurs during the transaction, roll it back
-      const { error: rollbackError } = await supabase.rpc('rollback_transaction');
-      if (rollbackError) {
-        console.error("Error rolling back transaction:", rollbackError);
-      }
+      console.error("Error in invitation transaction:", innerError);
       throw innerError;
     }
   } catch (error: any) {

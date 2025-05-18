@@ -17,14 +17,11 @@ export const clearAllPendingInvitations = () => {
     sessionStorage.removeItem('pendingInvitationsAfterRegistration');
     
     console.log('All invitation data cleared from sessionStorage');
+    toast.success('נתוני ההזמנות נוקו בהצלחה');
   } catch (error) {
     console.error('Error clearing invitation data:', error);
     toast.error('שגיאה בניקוי נתוני ההזמנות');
   }
 };
 
-/**
- * Upgrade the existing debug utilities exports to include the new function
- */
-export * from './debugUtils';
-export { clearAllPendingInvitations };
+// Export debug utilities from debugUtils instead of re-exporting here
