@@ -93,7 +93,14 @@ export const accountService = {
       console.log('No accounts found, creating a new one with transaction');
       
       // Use a transaction to prevent race conditions causing duplicate accounts
-      const { data: newAccount, error: createError } = await supabase.rpc(
+      // Define the expected response type for the RPC call
+      interface AccountRPCResponse {
+        id: string;
+        name: string;
+        owner_id: string;
+      }
+      
+      const { data, error: createError } = await supabase.rpc<AccountRPCResponse>(
         'create_account_if_not_exists',
         { 
           user_id: userId,
@@ -106,11 +113,15 @@ export const accountService = {
         throw createError;
       }
       
-      console.log('Created or retrieved account via transaction:', newAccount);
+      if (!data) {
+        throw new Error('No account data returned from account creation');
+      }
+      
+      console.log('Created or retrieved account via transaction:', data);
       return {
-        id: newAccount.id,
-        name: newAccount.name,
-        ownerId: newAccount.owner_id
+        id: data.id,
+        name: data.name,
+        ownerId: data.owner_id
       };
     } catch (error) {
       console.error('Error getting default account:', error);
