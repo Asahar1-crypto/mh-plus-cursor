@@ -3,15 +3,15 @@ export * from './types';
 export * from './sendInvitation';
 export * from './removeInvitation';
 export * from './acceptInvitation';
-export * from './checkInvitation';
-export * from './fetchInvitation';
-export * from './pendingInvitations';
+export * from './invitationValidator';
+export * from './invitationFetcher';
+export * from './invitationChecker';
 
 import { sendInvitation } from './sendInvitation';
 import { removeInvitation } from './removeInvitation';
 import { acceptInvitation } from './acceptInvitation';
-import { checkInvitationById } from './checkInvitation';
-import { checkPendingInvitations } from './pendingInvitations';
+import { checkInvitationById } from './invitationValidator';
+import { checkPendingInvitations } from './invitationChecker';
 
 /**
  * Service for invitation-related operations

@@ -1,7 +1,7 @@
 
 import { toast } from 'sonner';
-import { checkPendingInvitations } from '../invitation/pendingInvitations';
-import { checkInvitationById } from '../invitation/checkInvitation';
+import { checkPendingInvitations } from '../invitation/invitationChecker';
+import { checkInvitationById } from '../invitation/invitationValidator';
 import { InvitationData } from '../invitation/types';
 
 /**

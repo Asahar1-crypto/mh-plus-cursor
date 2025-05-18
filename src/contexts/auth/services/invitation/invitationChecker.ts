@@ -3,14 +3,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from 'sonner';
 import { showInvitationNotification } from '@/utils/notifications';
 import { InvitationData } from './types';
-import { 
-  shouldCheckInvitations, 
-  updateLastCheckTime 
-} from './checkInvitation';
-import { 
-  enhanceInvitation, 
-  cleanupInvalidInvitation 
-} from './fetchInvitation';
+import { shouldCheckInvitations, updateLastCheckTime } from './invitationValidator';
+import { enhanceInvitation, cleanupInvalidInvitation } from './invitationFetcher';
 
 /**
  * Check for pending invitations for a user's email
