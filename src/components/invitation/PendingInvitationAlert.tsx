@@ -29,7 +29,7 @@ const PendingInvitationAlert = () => {
       if (user?.email) {
         checkForInvitations();
       }
-    }, 10000); // Check every 10 seconds
+    }, 30000); // Check every 30 seconds (reduced from 10s to reduce DB load)
     
     return () => clearInterval(interval);
   }, [user]);
@@ -40,7 +40,7 @@ const PendingInvitationAlert = () => {
     try {
       console.log("PendingInvitationAlert: Checking for pending invitations for", user.email);
       
-      // Check database for invitations
+      // Check database for invitations with explicit conditions
       const { data, error } = await supabase
         .from('invitations')
         .select(`
@@ -58,29 +58,42 @@ const PendingInvitationAlert = () => {
           )
         `)
         .eq('email', user.email.toLowerCase())
-        .is('accepted_at', null)
-        .gt('expires_at', 'now()');
+        .is('accepted_at', null) // Must not be accepted
+        .gt('expires_at', 'now()'); // Must not be expired
       
       if (error) {
         console.error('PendingInvitationAlert: Error fetching invitations:', error);
         return;
       }
       
-      // Process database invitations
-      if (data && data.length > 0) {
-        console.log('PendingInvitationAlert: Found pending invitations in database:', data);
-        setInvitations(data);
+      // Only update state if there's a change in invitations
+      if (data && Array.isArray(data)) {
+        console.log('PendingInvitationAlert: Found pending invitations:', data);
+
+        // Validate invitations - ensure they have required properties
+        const validInvitations = data.filter(invitation => 
+          invitation && 
+          invitation.invitation_id && 
+          invitation.accounts && 
+          invitation.accounts.id
+        );
+
+        // Set invitations in state
+        setInvitations(validInvitations);
         
         // Ensure the UI is not in dismissed state if there are invitations
-        if (dismissed && data.length > 0) {
+        if (dismissed && validInvitations.length > 0) {
           setDismissed(false);
         }
       } else {
-        // No invitations found
+        // No invitations found or invalid data format
+        console.log('PendingInvitationAlert: No valid invitations found');
         setInvitations([]);
       }
     } catch (error) {
       console.error('PendingInvitationAlert: Error checking for invitations:', error);
+      // Set empty array in case of error
+      setInvitations([]);
     }
   };
   

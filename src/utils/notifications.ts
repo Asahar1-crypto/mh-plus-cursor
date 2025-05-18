@@ -12,6 +12,7 @@ export const showInvitationNotification = (invitationId: string) => {
     try {
       console.log(`Showing notification for invitation ID: ${invitationId}`);
       
+      // Make sure this is still a valid invitation before showing notification
       const { data, error } = await supabase
         .from('invitations')
         .select(`
@@ -33,7 +34,7 @@ export const showInvitationNotification = (invitationId: string) => {
         .single();
 
       if (error || !data) {
-        console.error("Could not find invitation in database:", error);
+        console.error("Could not find valid invitation in database:", error);
         return;
       }
 
@@ -71,7 +72,7 @@ export const hasPendingInvitations = async (currentUserEmail?: string): Promise<
   if (!currentUserEmail) return false;
   
   try {
-    // Check database for invitations
+    // Check database for invitations with explicit conditions
     const { data, error } = await supabase
       .from('invitations')
       .select('invitation_id, email')

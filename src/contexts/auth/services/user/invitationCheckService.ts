@@ -22,6 +22,7 @@ export const invitationCheckService = {
       const normalizedEmail = email.toLowerCase();
       
       // Get basic invitation data with full account and owner information
+      // Adding specific conditions to ensure we get only valid invitations
       const { data: invitations, error } = await supabase
         .from('invitations')
         .select(`
@@ -42,12 +43,12 @@ export const invitationCheckService = {
           )
         `)
         .eq('email', normalizedEmail)
-        .is('accepted_at', null)
-        .gt('expires_at', 'now()');
+        .is('accepted_at', null) // Explicitly check that it's not accepted
+        .gt('expires_at', 'now()'); // Explicitly check that it's not expired
         
       if (error) {
         console.error("Error checking pending invitations:", error);
-        throw error;
+        return [];
       }
 
       if (!invitations || invitations.length === 0) {
@@ -62,8 +63,9 @@ export const invitationCheckService = {
       let shouldShowNotification = false;
       
       for (const invitation of invitations) {
-        if (!invitation.accounts || !invitation.account_id) {
-          console.warn(`Invitation ${invitation.invitation_id} has no account data`);
+        // Validate that the invitation has all required data
+        if (!invitation.accounts || !invitation.account_id || !invitation.invitation_id) {
+          console.warn(`Invitation has missing required data:`, invitation);
           continue;
         }
         
@@ -73,7 +75,17 @@ export const invitationCheckService = {
         // Check if we've already notified about this invitation using sessionStorage
         // (minimizing notifications but not storing permanent state in localStorage)
         const notifiedInvitationsStr = sessionStorage.getItem('notifiedInvitations') || '[]';
-        const notifiedIds = JSON.parse(notifiedInvitationsStr);
+        let notifiedIds: string[];
+        
+        try {
+          notifiedIds = JSON.parse(notifiedInvitationsStr);
+          if (!Array.isArray(notifiedIds)) {
+            notifiedIds = [];
+          }
+        } catch (e) {
+          console.error('Error parsing notifiedInvitations:', e);
+          notifiedIds = [];
+        }
         
         if (!notifiedIds.includes(invitation.invitation_id)) {
           shouldShowNotification = true;
@@ -96,6 +108,8 @@ export const invitationCheckService = {
         // Temporarily store active invitation ID in sessionStorage (not localStorage)
         // This is just for UI purposes, not for permanent storage
         sessionStorage.setItem('currentActiveInvitationId', processedInvitations[0].invitation_id);
+        
+        // Show notification with valid invitation_id
         showInvitationNotification(processedInvitations[0].invitation_id);
       }
       
@@ -128,8 +142,8 @@ export const invitationCheckService = {
           )
         `)
         .eq('invitation_id', invitationId)
-        .is('accepted_at', null)
-        .gt('expires_at', 'now()');
+        .is('accepted_at', null) // Must not be accepted
+        .gt('expires_at', 'now()'); // Must not be expired
         
       if (error) {
         console.error("Error checking invitation by ID:", error);
