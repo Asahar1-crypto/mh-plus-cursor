@@ -100,7 +100,11 @@ export const accountService = {
         owner_id: string;
       }
       
-      const { data, error: createError } = await supabase.rpc<AccountRPCResponse>(
+      // The rpc function needs both input and output type parameters
+      const { data, error: createError } = await supabase.rpc<AccountRPCResponse, { 
+        user_id: string; 
+        account_name: string; 
+      }>(
         'create_account_if_not_exists',
         { 
           user_id: userId,
