@@ -33,7 +33,7 @@ export const invitationCheckService = {
       // Normalize email to lowercase for consistent comparison
       const normalizedEmail = email.toLowerCase();
       
-      // Use simplified query to avoid join issues
+      // First, get valid invitations
       const { data: invitations, error } = await supabase
         .from('invitations')
         .select('*')
@@ -65,20 +65,34 @@ export const invitationCheckService = {
         }
         
         try {
+          // IMPORTANT: First verify that account actually exists
+          const { data: accountExists, error: accountCheckError } = await supabase
+            .from('accounts')
+            .select('id')
+            .eq('id', invitation.account_id)
+            .single();
+            
+          if (accountCheckError || !accountExists) {
+            console.warn(`No account found for ID ${invitation.account_id}, skipping invitation`);
+            
+            // Optionally clean up invalid invitation
+            await supabase
+              .from('invitations')
+              .delete()
+              .eq('invitation_id', invitation.invitation_id);
+              
+            continue;
+          }
+          
           // Fetch account data separately for each invitation
           const { data: accountData, error: accountError } = await supabase
             .from('accounts')
             .select('*')
             .eq('id', invitation.account_id)
-            .maybeSingle();
+            .single();
             
-          if (accountError) {
+          if (accountError || !accountData) {
             console.error('Failed to fetch account data:', accountError);
-            continue;
-          }
-          
-          if (!accountData) {
-            console.error('No account data returned for id:', invitation.account_id);
             continue;
           }
           
@@ -89,8 +103,8 @@ export const invitationCheckService = {
           } as InvitationData;
           
           // No valid account data or missing owner_id
-          if (!accountData || !accountData.owner_id) {
-            console.warn('Invalid account data:', accountData);
+          if (!accountData.owner_id) {
+            console.warn('Invalid account data - missing owner_id:', accountData);
             continue;
           }
           
@@ -179,8 +193,8 @@ export const invitationCheckService = {
         .is('accepted_at', null)
         .gt('expires_at', 'now()');
         
-      if (invitationError) {
-        console.error("Error checking invitation by ID:", invitationError);
+      if (invitationError || !invitationData || invitationData.length === 0) {
+        console.error("Error checking invitation by ID or invitation not found:", invitationError);
         return false;
       }
       
@@ -193,20 +207,27 @@ export const invitationCheckService = {
       if (exists && invitationArray[0]) {
         const invitation = invitationArray[0];
         
+        // IMPORTANT: First verify that account actually exists
+        const { data: accountExists, error: accountCheckError } = await supabase
+          .from('accounts')
+          .select('id')
+          .eq('id', invitation.account_id)
+          .single();
+          
+        if (accountCheckError || !accountExists) {
+          console.warn(`No account found for ID ${invitation.account_id}, invalid invitation`);
+          return false;
+        }
+        
         // Now fetch account data separately
         try {
           const { data: accountData, error: accountError } = await supabase
             .from('accounts')
             .select('*')
             .eq('id', invitation.account_id)
-            .maybeSingle();
+            .single();
             
-          if (accountError) {
-            console.error('Failed to fetch account data in fallback:', accountError);
-            return false;
-          }
-          
-          if (!accountData) {
+          if (accountError || !accountData) {
             console.error('No account data found for account_id:', invitation.account_id);
             return false;
           }
@@ -237,6 +258,7 @@ export const invitationCheckService = {
             }
           } else {
             console.log("Warning: Account has no owner_id:", accountData);
+            return false; // Invalid account without owner_id
           }
           
           // Create an owner_profile object
@@ -246,7 +268,7 @@ export const invitationCheckService = {
           sessionStorage.setItem('currentInvitationDetails', JSON.stringify(enhancedInvitation));
           return true;
         } catch (err) {
-          console.error('Error in account data fallback fetch:', err);
+          console.error('Error in account data fetch:', err);
           return false;
         }
       }
