@@ -7,11 +7,10 @@ import { Button } from "@/components/ui/button";
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/auth';
 import { toast } from 'sonner';
-import { PendingInvitationRecord } from '@/contexts/auth/services/invitation/types';
 
 const PendingInvitationAlert = () => {
   const [dismissed, setDismissed] = useState(false);
-  const [invitations, setInvitations] = useState<Record<string, PendingInvitationRecord>>({});
+  const [invitations, setInvitations] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -30,7 +29,7 @@ const PendingInvitationAlert = () => {
       if (user?.email) {
         checkForInvitations();
       }
-    }, 10000); // Check every 10 seconds instead of 15
+    }, 10000); // Check every 10 seconds
     
     return () => clearInterval(interval);
   }, [user]);
@@ -41,7 +40,7 @@ const PendingInvitationAlert = () => {
     try {
       console.log("PendingInvitationAlert: Checking for pending invitations for", user.email);
       
-      // First check database for invitations
+      // Check database for invitations
       const { data, error } = await supabase
         .from('invitations')
         .select(`
@@ -64,81 +63,21 @@ const PendingInvitationAlert = () => {
       
       if (error) {
         console.error('PendingInvitationAlert: Error fetching invitations:', error);
+        return;
       }
       
       // Process database invitations
       if (data && data.length > 0) {
         console.log('PendingInvitationAlert: Found pending invitations in database:', data);
+        setInvitations(data);
         
-        const dbInvitations: Record<string, PendingInvitationRecord> = {};
-        
-        data.forEach(invitation => {
-          if (invitation.invitation_id && invitation.accounts) {
-            const ownerName = invitation.accounts.profiles?.[0]?.name || 'בעל החשבון';
-            const accountName = invitation.accounts.name || 'חשבון משותף';
-            
-            dbInvitations[invitation.invitation_id] = {
-              name: accountName,
-              ownerName: ownerName,
-              sharedWithEmail: invitation.email,
-              invitationId: invitation.invitation_id,
-              accountId: invitation.account_id,
-              ownerId: invitation.accounts.owner_id
-            };
-          }
-        });
-        
-        if (Object.keys(dbInvitations).length > 0) {
-          // Store invitations in local storage for backup
-          localStorage.setItem('pendingInvitations', JSON.stringify(dbInvitations));
-          
-          // Set invitations state to update the UI
-          setInvitations(dbInvitations);
-          
-          // Ensure the UI is not in dismissed state if there are invitations
-          if (dismissed && Object.keys(dbInvitations).length > 0) {
-            setDismissed(false);
-          }
-          
-          return;
+        // Ensure the UI is not in dismissed state if there are invitations
+        if (dismissed && data.length > 0) {
+          setDismissed(false);
         }
-      }
-      
-      // Fallback to localStorage
-      const pendingInvitationsData = localStorage.getItem('pendingInvitations');
-      if (!pendingInvitationsData) return;
-      
-      try {
-        const pendingInvitations = JSON.parse(pendingInvitationsData) as Record<string, PendingInvitationRecord>;
-        
-        // Check if there are invitations for the current user
-        const currentUserInvitations: Record<string, PendingInvitationRecord> = {};
-        let hasInvitationsForCurrentUser = false;
-        
-        Object.entries(pendingInvitations).forEach(([invitationId, invitation]) => {
-          // Case-insensitive email comparison
-          if (invitation.sharedWithEmail && 
-              user.email && 
-              invitation.sharedWithEmail.toLowerCase() === user.email.toLowerCase()) {
-            currentUserInvitations[invitationId] = invitation;
-            hasInvitationsForCurrentUser = true;
-          }
-        });
-        
-        if (hasInvitationsForCurrentUser) {
-          console.log('PendingInvitationAlert: Found pending invitations for the current user in localStorage:', currentUserInvitations);
-          setInvitations(currentUserInvitations);
-          
-          // Ensure the UI is not in dismissed state if there are invitations
-          if (dismissed) {
-            setDismissed(false);
-          }
-        } else {
-          // If there are no invitations for the current user, clear the state
-          setInvitations({});
-        }
-      } catch (error) {
-        console.error('PendingInvitationAlert: Failed to parse pending invitations from localStorage:', error);
+      } else {
+        // No invitations found
+        setInvitations([]);
       }
     } catch (error) {
       console.error('PendingInvitationAlert: Error checking for invitations:', error);
@@ -146,20 +85,23 @@ const PendingInvitationAlert = () => {
   };
   
   // If user is not logged in, or there are no invitations, or alert was dismissed, don't show anything
-  if (!user || Object.keys(invitations).length === 0 || dismissed || loading) {
+  if (!user || invitations.length === 0 || dismissed || loading) {
     return null;
   }
   
   // Get the first invitation to display
-  const firstInvitationId = Object.keys(invitations)[0];
-  const firstInvitation = invitations[firstInvitationId];
+  const firstInvitation = invitations[0];
   
-  if (!firstInvitationId || !firstInvitation) {
+  if (!firstInvitation || !firstInvitation.invitation_id) {
     return null;
   }
   
+  // Extract owner and account names from the data
+  const ownerName = firstInvitation.accounts?.profiles?.[0]?.name || 'בעל החשבון';
+  const accountName = firstInvitation.accounts?.name || 'חשבון משותף';
+  
   const handleViewInvitation = () => {
-    navigate(`/invitation/${firstInvitationId}`);
+    navigate(`/invitation/${firstInvitation.invitation_id}`);
     setDismissed(true);
   };
   
@@ -177,7 +119,7 @@ const PendingInvitationAlert = () => {
       <div className="flex items-center">
         <Bell className="h-5 w-5 text-blue-500 mr-2" />
         <AlertDescription>
-          יש לך הזמנה לחשבון משותף מ-{firstInvitation.ownerName || 'משתמש'} לחשבון {firstInvitation.name || 'חשבון משותף'}
+          יש לך הזמנה לחשבון משותף מ-{ownerName} לחשבון {accountName}
         </AlertDescription>
       </div>
       <div className="flex space-x-2 rtl:space-x-reverse">

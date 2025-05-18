@@ -2,8 +2,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import { User, Account } from '../../types';
 import { toast } from 'sonner';
-import { InvitationRecord, AccountRecord, PendingInvitationRecord } from './types';
-import { removePendingInvitation } from '@/utils/notifications';
 
 /**
  * Accepts an invitation and updates the account
@@ -22,7 +20,7 @@ export async function acceptInvitation(invitationId: string, user: User): Promis
       throw new Error('נתוני משתמש חסרים');
     }
     
-    // First try to get the invitation from the database
+    // Get the invitation from the database
     console.log("Querying database for invitation:", invitationId);
     const { data: invitationData, error: findError } = await supabase
       .from('invitations')
@@ -49,157 +47,8 @@ export async function acceptInvitation(invitationId: string, user: User): Promis
     }
     
     if (!invitationData || invitationData.length === 0) {
-      console.warn("Could not find invitation in database, trying localStorage...");
-      
-      // Try to get invitation details from localStorage as backup
-      console.log("Checking localStorage for pending invitations");
-      const pendingInvitationsData = localStorage.getItem('pendingInvitations');
-      if (!pendingInvitationsData) {
-        console.error("No pending invitations found in localStorage");
-        throw new Error('ההזמנה לא נמצאה או שפג תוקפה');
-      }
-      
-      try {
-        const pendingInvitations = JSON.parse(pendingInvitationsData) as Record<string, PendingInvitationRecord>;
-        console.log("Local invitations found:", Object.keys(pendingInvitations));
-        
-        const localInvitation = pendingInvitations[invitationId];
-        
-        if (!localInvitation) {
-          console.error(`Invitation ${invitationId} not found in localStorage`);
-          throw new Error('ההזמנה לא נמצאה או שפג תוקפה');
-        }
-        
-        console.log("Found invitation in localStorage:", localInvitation);
-        
-        // Case insensitive comparison for email
-        if (localInvitation.sharedWithEmail && 
-            localInvitation.sharedWithEmail.toLowerCase() !== user.email.toLowerCase()) {
-          console.error(`Email mismatch: invitation for ${localInvitation.sharedWithEmail} but user is ${user.email}`);
-          throw new Error(`ההזמנה מיועדת ל-${localInvitation.sharedWithEmail} אך אתה מחובר כ-${user.email}`);
-        }
-        
-        // Get accountId from localStorage
-        const accountId = localInvitation.accountId;
-        
-        if (!accountId) {
-          console.error("Missing accountId in localStorage invitation");
-          throw new Error('חסר מידע חיוני להצטרפות לחשבון, אנא בקש הזמנה חדשה');
-        }
-        
-        // Fetch account information
-        console.log("Fetching account information for:", accountId);
-        const { data: accountData, error: accountError } = await supabase
-          .from('accounts')
-          .select('*')
-          .eq('id', accountId);
-          
-        if (accountError) {
-          console.error("Error finding account:", accountError);
-          throw new Error('שגיאה בחיפוש החשבון: ' + accountError.message);
-        }
-        
-        if (!accountData || accountData.length === 0) {
-          console.error("Account not found");
-          throw new Error('החשבון לא נמצא, אנא בקש הזמנה חדשה');
-        }
-        
-        const account = accountData[0];
-        console.log("Found account:", account);
-        
-        // Check if this account already belongs to the current user
-        if (account.owner_id === user.id) {
-          console.error("Cannot share account with self");
-          throw new Error('לא ניתן לשתף חשבון עם עצמך');
-        }
-        
-        // Update the account to link with the current user
-        console.log("Updating account with user information");
-        const { error: updateError } = await supabase
-          .from('accounts')
-          .update({ 
-            shared_with_id: user.id,
-            shared_with_email: user.email,
-            invitation_id: invitationId
-          })
-          .eq('id', accountId);
-          
-        if (updateError) {
-          console.error("Error updating account:", updateError);
-          throw new Error('שגיאה בעדכון החשבון: ' + updateError.message);
-        }
-        
-        // Try to add or update the invitation in the database
-        try {
-          console.log("Checking if invitation exists in database");
-          const { data: existingInv } = await supabase
-            .from('invitations')
-            .select('*')
-            .eq('invitation_id', invitationId);
-            
-          if (!existingInv || existingInv.length === 0) {
-            console.log("Creating invitation record in database");
-            await supabase
-              .from('invitations')
-              .insert({
-                invitation_id: invitationId,
-                account_id: accountId,
-                email: user.email.toLowerCase(),
-                accepted_at: new Date().toISOString()
-              });
-          } else {
-            console.log("Marking invitation as accepted");
-            await supabase
-              .from('invitations')
-              .update({ accepted_at: new Date().toISOString() })
-              .eq('invitation_id', invitationId);
-          }
-        } catch (invError) {
-          // Just log this error but don't fail the process
-          console.warn("Could not update invitation in database, but account was updated:", invError);
-        }
-
-        // Get owner name
-        let ownerName = localInvitation.ownerName || 'בעל החשבון';
-        
-        if (account.owner_id) {
-          console.log("Fetching owner profile information");
-          const { data: ownerData } = await supabase
-            .from('profiles')
-            .select('name')
-            .eq('id', account.owner_id)
-            .single();
-            
-          if (ownerData) {
-            ownerName = ownerData.name;
-          }
-        }
-        
-        // Create account object to return
-        const sharedAccount: Account = {
-          id: accountId,
-          name: account.name || localInvitation.name || 'חשבון משותף',
-          ownerId: account.owner_id,
-          ownerName: ownerName,
-          sharedWithId: user.id,
-          sharedWithEmail: user.email,
-          invitationId: invitationId,
-          isSharedAccount: true
-        };
-        
-        // Clean up localStorage and sessionStorage
-        console.log("Clearing stored invitation data");
-        removePendingInvitation(invitationId);
-        sessionStorage.removeItem('pendingInvitationAccountId');
-        sessionStorage.removeItem('pendingInvitationOwnerId');
-        
-        console.log("Invitation accepted successfully (localStorage path)");
-        toast.success('הצטרפת לחשבון בהצלחה!');
-        return sharedAccount;
-      } catch (error: any) {
-        console.error("Error processing invitation from localStorage:", error);
-        throw error;
-      }
+      console.error("No active invitation found with ID", invitationId);
+      throw new Error('ההזמנה לא נמצאה או שפג תוקפה');
     }
     
     // Process invitation data from the database
@@ -212,22 +61,15 @@ export async function acceptInvitation(invitationId: string, user: User): Promis
       throw new Error(`ההזמנה מיועדת ל-${invitation.email} אך אתה מחובר כ-${user.email}`);
     }
     
-    // Fetch account information
-    console.log("Fetching account data for invitation");
-    const { data: accountData, error: accountError } = await supabase
-      .from('accounts')
-      .select('*')
-      .eq('id', invitation.account_id);
-      
-    if (accountError || !accountData || accountData.length === 0) {
-      console.error("Error finding account:", accountError);
-      throw new Error('החשבון לא נמצא, אנא בקש הזמנה חדשה');
+    if (!invitation.accounts || !invitation.account_id) {
+      console.error("Invitation found but account data is missing");
+      throw new Error('חסר מידע חיוני על החשבון, אנא בקש הזמנה חדשה');
     }
     
-    const account = accountData[0];
+    const accountId = invitation.account_id;
     
     // Check if this account already belongs to the current user
-    if (account.owner_id === user.id) {
+    if (invitation.accounts.owner_id === user.id) {
       console.error("Cannot share account with self");
       throw new Error('לא ניתן לשתף חשבון עם עצמך');
     }
@@ -241,7 +83,7 @@ export async function acceptInvitation(invitationId: string, user: User): Promis
         shared_with_email: user.email,
         invitation_id: invitation.invitation_id
       })
-      .eq('id', invitation.account_id);
+      .eq('id', accountId);
       
     if (updateError) {
       console.error("Error updating account:", updateError);
@@ -258,12 +100,12 @@ export async function acceptInvitation(invitationId: string, user: User): Promis
     // Get owner name
     let ownerName = 'בעל החשבון';
     
-    if (account.owner_id) {
+    if (invitation.accounts.owner_id) {
       console.log("Fetching owner profile");
       const { data: ownerData } = await supabase
         .from('profiles')
         .select('name')
-        .eq('id', account.owner_id)
+        .eq('id', invitation.accounts.owner_id)
         .single();
         
       if (ownerData) {
@@ -272,10 +114,10 @@ export async function acceptInvitation(invitationId: string, user: User): Promis
     }
     
     // Create account object to return
-    const dbSharedAccount: Account = {
-      id: invitation.account_id,
-      name: account.name || 'חשבון משותף',
-      ownerId: account.owner_id,
+    const sharedAccount: Account = {
+      id: accountId,
+      name: invitation.accounts.name || 'חשבון משותף',
+      ownerId: invitation.accounts.owner_id,
       ownerName: ownerName,
       sharedWithId: user.id,
       sharedWithEmail: user.email,
@@ -283,10 +125,16 @@ export async function acceptInvitation(invitationId: string, user: User): Promis
       isSharedAccount: true
     };
     
-    console.log("Clearing invitation data");
-    removePendingInvitation(invitation.invitation_id);
+    // Clean up sessionStorage
+    console.log("Clearing temporary invitation data");
+    sessionStorage.removeItem('pendingInvitationId');
+    sessionStorage.removeItem('pendingInvitationAccountId');
+    sessionStorage.removeItem('pendingInvitationOwnerId');
+    sessionStorage.removeItem('currentInvitationDetails');
+    
+    console.log("Invitation accepted successfully");
     toast.success('הצטרפת לחשבון בהצלחה!');
-    return dbSharedAccount;
+    return sharedAccount;
   } catch (error: any) {
     console.error('Failed to accept invitation:', error);
     toast.error(error.message || 'קבלת ההזמנה נכשלה, אנא נסה שוב');

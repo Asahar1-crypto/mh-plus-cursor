@@ -6,40 +6,6 @@ import { User, Account } from '../../types';
 import { sendInvitationEmail } from '@/utils/emailService';
 
 /**
- * Helper function to store invitation data in localStorage
- */
-function storeInvitationLocally(invitationId: string, accountId: string, userId: string, userEmail: string, userName: string, accountName: string, sharedWithEmail: string) {
-  try {
-    // Load existing invitations
-    let pendingInvitations = {};
-    const existingData = localStorage.getItem('pendingInvitations');
-    
-    if (existingData) {
-      pendingInvitations = JSON.parse(existingData);
-    }
-    
-    // Add new invitation
-    pendingInvitations[invitationId] = {
-      accountId: accountId,
-      ownerId: userId,
-      ownerName: userName || userEmail,
-      name: accountName,
-      sharedWithEmail: sharedWithEmail,
-      createdAt: new Date().toISOString(),
-      invitationId: invitationId
-    };
-    
-    // Save back to localStorage
-    localStorage.setItem('pendingInvitations', JSON.stringify(pendingInvitations));
-    console.log(`Invitation stored in localStorage for ID ${invitationId}`);
-    return true;
-  } catch (storageError) {
-    console.error('Failed to store invitation in localStorage:', storageError);
-    return false;
-  }
-}
-
-/**
  * Sends an invitation to a user to join an account
  */
 export async function sendInvitation(email: string, user: User, account: Account) {
@@ -133,18 +99,6 @@ export async function sendInvitation(email: string, user: User, account: Account
     
     console.log('Account updated with invitation details:', updatedAccountData);
     
-    // Store invitation in localStorage BEFORE trying to send email
-    console.log("Storing invitation in localStorage");
-    storeInvitationLocally(
-      invitationId, 
-      account.id, 
-      user.id, 
-      user.email, 
-      user.name || '', 
-      account.name, 
-      normalizedEmail
-    );
-    
     // Prepare invitation link and send email
     try {
       const baseUrl = window.location.origin;
@@ -162,9 +116,9 @@ export async function sendInvitation(email: string, user: User, account: Account
       console.log(`Invitation email sent to ${normalizedEmail} with link ${invitationLink}`);
     } catch (emailError) {
       console.error('Failed to send invitation email:', emailError);
-      // We don't throw here because the invitation was created successfully
-      // The user can still access it via the app
-      toast.warning('ההזמנה נוצרה אך שליחת האימייל נכשלה');
+      // We don't throw here because the invitation was created successfully in the database
+      // The user can still access it via the app when they log in
+      toast.warning('ההזמנה נוצרה בהצלחה אך שליחת האימייל נכשלה');
     }
     
     // Return the updated account object

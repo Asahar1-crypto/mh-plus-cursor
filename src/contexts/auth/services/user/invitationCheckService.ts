@@ -21,7 +21,7 @@ export const invitationCheckService = {
       // Normalize email to lowercase for consistent comparison
       const normalizedEmail = email.toLowerCase();
       
-      // Get basic invitation data
+      // Get basic invitation data with full account and owner information
       const { data: invitations, error } = await supabase
         .from('invitations')
         .select(`
@@ -57,8 +57,8 @@ export const invitationCheckService = {
 
       console.log(`Found ${invitations.length} pending invitations for ${email}:`, invitations);
       
-      // Get enriched invitation data with owner information
-      const enrichedInvitations = [];
+      // Process invitations to standardize format for UI display
+      const processedInvitations = [];
       let shouldShowNotification = false;
       
       for (const invitation of invitations) {
@@ -67,68 +67,39 @@ export const invitationCheckService = {
           continue;
         }
         
-        // Owner information is now included directly in the query via the nested select
+        // Owner information is included directly in the query via the nested select
         const ownerName = invitation.accounts.profiles?.[0]?.name || 'בעל החשבון';
         
-        // Check if we've already notified about this invitation
-        const notifiedInvitations = localStorage.getItem('notifiedInvitations') || '[]';
-        const notifiedIds = JSON.parse(notifiedInvitations);
+        // Check if we've already notified about this invitation using sessionStorage
+        // (minimizing notifications but not storing permanent state in localStorage)
+        const notifiedInvitationsStr = sessionStorage.getItem('notifiedInvitations') || '[]';
+        const notifiedIds = JSON.parse(notifiedInvitationsStr);
         
         if (!notifiedIds.includes(invitation.invitation_id)) {
           shouldShowNotification = true;
           // Mark as notified
           notifiedIds.push(invitation.invitation_id);
-          localStorage.setItem('notifiedInvitations', JSON.stringify(notifiedIds));
+          sessionStorage.setItem('notifiedInvitations', JSON.stringify(notifiedIds));
         }
         
-        // Add enriched invitation to list
-        enrichedInvitations.push({
+        // Add processed invitation to list
+        processedInvitations.push({
           ...invitation,
           owner_profile: { name: ownerName }
         });
       }
 
-      console.log(`Processed ${enrichedInvitations.length} pending invitations for ${email}`);
-      
-      // Store invitations in localStorage with complete account information
-      const pendingInvitations: Record<string, PendingInvitationRecord> = {};
-      
-      // First, try to load any existing invitations
-      const existingData = localStorage.getItem('pendingInvitations');
-      if (existingData) {
-        try {
-          const existing = JSON.parse(existingData);
-          Object.assign(pendingInvitations, existing);
-        } catch (e) {
-          console.error("Error parsing existing invitations:", e);
-        }
-      }
-      
-      // Then add/update with new data
-      enrichedInvitations.forEach(inv => {
-        if (inv.invitation_id) {
-          pendingInvitations[inv.invitation_id] = {
-            name: inv.accounts?.name || 'חשבון משותף',
-            ownerName: inv.owner_profile?.name || 'בעל החשבון',
-            ownerId: inv.accounts?.owner_id,
-            sharedWithEmail: inv.email,
-            invitationId: inv.invitation_id,
-            accountId: inv.account_id
-          };
-        }
-      });
-      
-      // Save to localStorage
-      console.log("Storing invitations in localStorage:", pendingInvitations);
-      localStorage.setItem('pendingInvitations', JSON.stringify(pendingInvitations));
-      console.log("Updated localStorage with pending invitations:", pendingInvitations);
+      console.log(`Processed ${processedInvitations.length} pending invitations for ${email}`);
       
       // Show notification for first invitation if we haven't shown it before
-      if (shouldShowNotification && enrichedInvitations.length > 0 && enrichedInvitations[0].invitation_id) {
-        showInvitationNotification(enrichedInvitations[0].invitation_id);
+      if (shouldShowNotification && processedInvitations.length > 0 && processedInvitations[0].invitation_id) {
+        // Temporarily store active invitation ID in sessionStorage (not localStorage)
+        // This is just for UI purposes, not for permanent storage
+        sessionStorage.setItem('currentActiveInvitationId', processedInvitations[0].invitation_id);
+        showInvitationNotification(processedInvitations[0].invitation_id);
       }
       
-      return enrichedInvitations;
+      return processedInvitations;
     } catch (error) {
       console.error('Failed to check pending invitations:', error);
       return [];
@@ -144,7 +115,18 @@ export const invitationCheckService = {
       
       const { data, error } = await supabase
         .from('invitations')
-        .select('invitation_id')
+        .select(`
+          invitation_id,
+          account_id,
+          email,
+          expires_at,
+          accepted_at,
+          accounts:account_id (
+            id,
+            name,
+            owner_id
+          )
+        `)
         .eq('invitation_id', invitationId)
         .is('accepted_at', null)
         .gt('expires_at', 'now()');
@@ -156,6 +138,12 @@ export const invitationCheckService = {
       
       const exists = data && data.length > 0;
       console.log(`Invitation ${invitationId} exists in database: ${exists}`);
+      
+      if (exists && data[0]) {
+        // Temporarily store invitation details in sessionStorage for UI
+        sessionStorage.setItem('currentInvitationDetails', JSON.stringify(data[0]));
+      }
+      
       return exists;
       
     } catch (error) {

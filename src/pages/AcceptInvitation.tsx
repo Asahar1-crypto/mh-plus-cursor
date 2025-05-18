@@ -19,7 +19,7 @@ const AcceptInvitation = () => {
   const [invitationDetails, setInvitationDetails] = useState<InvitationDetails | null>(null);
   const [errorMessage, setErrorMessage] = useState<string>('');
   
-  // Debug function that displays invitation storage status to help troubleshoot
+  // Debug function that displays invitation status to help troubleshoot
   const debugInvitationStatus = () => {
     debugInvitations();
     toast.info('בדיקת נתוני הזמנה בוצעה. בדוק את הקונסול לפרטים.');
@@ -32,13 +32,17 @@ const AcceptInvitation = () => {
       return;
     }
     
+    // Store invitationId in sessionStorage so we can retrieve it post-login if needed
+    if (!isAuthenticated) {
+      sessionStorage.setItem('pendingInvitationId', invitationId);
+    }
+    
     // Fetch invitation details
     const fetchInvitationDetails = async () => {
       try {
         console.log(`Fetching invitation details for ID: ${invitationId}`);
         
-        // First try to get basic invitation info from the database
-        console.log("Querying database for invitation details");
+        // Get invitation info from the database
         const { data: invitation, error } = await supabase
           .from('invitations')
           .select(`
@@ -51,7 +55,11 @@ const AcceptInvitation = () => {
             accounts:account_id (
               id,
               name,
-              owner_id
+              owner_id,
+              profiles!owner_id (
+                id,
+                name
+              )
             )
           `)
           .eq('invitation_id', invitationId)
@@ -60,12 +68,12 @@ const AcceptInvitation = () => {
           
         if (error) {
           console.error("Error fetching invitation from Supabase:", error);
-          throw new Error('לא נמצאה הזמנה תקפה במערכת');
+          throw new Error('אירעה שגיאה בעת חיפוש ההזמנה: ' + error.message);
         }
         
         if (!invitation || invitation.length === 0) {
-          console.log("No active invitation found in database, checking localStorage...");
-          throw new Error("הזמנה לא נמצאה בבסיס הנתונים");
+          console.log("No active invitation found in database");
+          throw new Error("הזמנה לא נמצאה או שפג תוקפה");
         }
         
         const invitationRecord = invitation[0];
@@ -73,24 +81,11 @@ const AcceptInvitation = () => {
         
         if (!invitationRecord.accounts) {
           console.error("Invitation found but account data is missing");
-          throw new Error("הזמנה לא תקפה או שפג תוקפה");
+          throw new Error("הזמנה לא תקפה - חסרים פרטי חשבון");
         }
         
-        // Get owner profile
-        let ownerName = 'בעל החשבון';
-        
-        if (invitationRecord.accounts.owner_id) {
-          console.log("Fetching owner profile information");
-          const { data: ownerData } = await supabase
-            .from('profiles')
-            .select('name')
-            .eq('id', invitationRecord.accounts.owner_id)
-            .single();
-            
-          if (ownerData) {
-            ownerName = ownerData.name || 'בעל החשבון';
-          }
-        }
+        // Get owner name from the nested profiles data
+        const ownerName = invitationRecord.accounts.profiles?.[0]?.name || 'בעל החשבון';
         
         // Set invitation details
         setInvitationDetails({
@@ -99,75 +94,24 @@ const AcceptInvitation = () => {
           email: invitationRecord.email || '',
         });
         
-        // Store IDs in sessionStorage for later use during acceptance
-        sessionStorage.setItem('pendingInvitationAccountId', invitationRecord.account_id);
+        // Store the account ID and owner ID in sessionStorage for use during acceptance
+        if (invitationRecord.account_id) {
+          sessionStorage.setItem('pendingInvitationAccountId', invitationRecord.account_id);
+        }
         
         if (invitationRecord.accounts.owner_id) {
           sessionStorage.setItem('pendingInvitationOwnerId', invitationRecord.accounts.owner_id);
         }
         
+        // Store full details in sessionStorage for debugging
+        sessionStorage.setItem('currentInvitationDetails', JSON.stringify(invitationRecord));
+        
         setStatus('success');
         
-      } catch (dbError) {
-        console.error('Error fetching invitation from database:', dbError);
-        
-        // Fallback to localStorage
-        try {
-          console.log("Checking localStorage for invitation");
-          const pendingInvitationsData = localStorage.getItem('pendingInvitations');
-          
-          if (!pendingInvitationsData) {
-            console.error("No invitations found in localStorage");
-            setStatus('error');
-            setErrorMessage('לא נמצאו הזמנות פעילות עבורך');
-            return;
-          }
-          
-          const pendingInvitations = JSON.parse(pendingInvitationsData);
-          console.log("Invitations in localStorage:", pendingInvitations);
-          
-          if (!pendingInvitations || Object.keys(pendingInvitations).length === 0) {
-            console.error("Empty invitations object in localStorage");
-            setStatus('error');
-            setErrorMessage('לא נמצאו הזמנות פעילות עבורך');
-            return;
-          }
-          
-          const localInvitation = pendingInvitations[invitationId];
-          
-          if (!localInvitation) {
-            console.error(`Invitation with ID ${invitationId} not found in localStorage`);
-            setStatus('error');
-            setErrorMessage('ההזמנה לא נמצאה או שפג תוקפה');
-            return;
-          }
-          
-          console.log("Found invitation in localStorage:", localInvitation);
-          
-          setInvitationDetails({
-            ownerName: localInvitation.ownerName || 'בעל החשבון',
-            accountName: localInvitation.name || 'חשבון משותף',
-            email: localInvitation.sharedWithEmail || '',
-          });
-          
-          // Store the account_id in sessionStorage if it exists
-          if (localInvitation.accountId) {
-            console.log("Storing account ID in sessionStorage:", localInvitation.accountId);
-            sessionStorage.setItem('pendingInvitationAccountId', localInvitation.accountId);
-          }
-          
-          // Also store the owner ID to ensure proper account linking
-          if (localInvitation.ownerId) {
-            console.log("Storing owner ID in sessionStorage:", localInvitation.ownerId);
-            sessionStorage.setItem('pendingInvitationOwnerId', localInvitation.ownerId);
-          }
-          
-          setStatus('success');
-        } catch (localStorageError) {
-          console.error('Failed to get invitation from localStorage:', localStorageError);
-          setStatus('error');
-          setErrorMessage('אירעה שגיאה בעת קריאת פרטי ההזמנה');
-        }
+      } catch (error: any) {
+        console.error('Error fetching invitation details:', error);
+        setStatus('error');
+        setErrorMessage(error.message || 'לא ניתן למצוא את ההזמנה');
       }
     };
     
@@ -177,7 +121,7 @@ const AcceptInvitation = () => {
     }, 1000);
     
     return () => clearTimeout(timer);
-  }, [invitationId]);
+  }, [invitationId, isAuthenticated]);
   
   return (
     <div className="container mx-auto py-10 px-4 flex flex-col items-center justify-center min-h-[calc(100vh-4rem)]">

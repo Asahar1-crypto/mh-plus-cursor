@@ -3,9 +3,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { User, Account } from '../types';
 import { accountService } from './accountService';
 import { userService } from './user';
-import { showInvitationNotification, checkForNewInvitations } from '@/utils/notifications';
+import { checkForNewInvitations } from '@/utils/notifications';
 import { toast } from 'sonner';
-import { InvitationData } from './invitation/types';
 
 /**
  * Checks the current auth state and returns user and account if authenticated
@@ -27,93 +26,53 @@ export async function checkAuth(): Promise<{ user: User | null, account: Account
     
     console.log("User authenticated:", user);
     
-    // Check if there are pending invitations from registration
-    const pendingInvitationsData = localStorage.getItem('pendingInvitationsAfterRegistration');
+    // Check if there is a pending invitation ID in session storage
+    const pendingInvitationId = sessionStorage.getItem('pendingInvitationId');
     
-    if (pendingInvitationsData) {
-      console.log("Found pending invitations after registration:", pendingInvitationsData);
+    if (pendingInvitationId) {
+      console.log(`Found pendingInvitationId ${pendingInvitationId} in sessionStorage`);
       
       try {
-        const pendingData = JSON.parse(pendingInvitationsData);
-        const email = pendingData.email;
-        const invitations = pendingData.invitations;
-        
-        // Case insensitive email comparison
-        if (email.toLowerCase() === user.email.toLowerCase() && invitations && invitations.length > 0) {
-          console.log(`Processing auto-linking for user ${user.email} with ${invitations.length} invitations`);
+        // Verify that the invitation exists and is valid
+        const { data: invitation } = await supabase
+          .from('invitations')
+          .select(`
+            invitation_id,
+            email,
+            account_id,
+            accepted_at,
+            expires_at
+          `)
+          .eq('invitation_id', pendingInvitationId)
+          .eq('email', user.email.toLowerCase())
+          .is('accepted_at', null)
+          .gt('expires_at', 'now()');
           
-          // Try to accept the first invitation
-          const invitation = invitations[0];
+        if (invitation && invitation.length > 0) {
+          console.log(`Verified that invitation ${pendingInvitationId} is valid for user ${user.email}`);
           
-          if (!invitation.invitationId) {
-            console.error("Invitation is missing invitationId");
-            toast.error('אירעה שגיאה בקבלת ההזמנה האוטומטית');
-            return { user, account: await accountService.getDefaultAccount(user.id, user.name) };
-          }
-          
-          try {
-            // Import and use acceptInvitation directly to avoid circular dependencies
-            const { acceptInvitation } = await import('./invitation/acceptInvitation');
-            
-            console.log("Accepting invitation with ID:", invitation.invitationId);
-            console.log("Current user for invitation acceptance:", user);
-            
-            // Store additional data in sessionStorage to help with acceptance
-            if (invitation.accountId) {
-              sessionStorage.setItem('pendingInvitationAccountId', invitation.accountId);
-            }
-            if (invitation.ownerId) {
-              sessionStorage.setItem('pendingInvitationOwnerId', invitation.ownerId);
-            }
-            
-            // Accept the invitation with the current user
-            const sharedAccount = await acceptInvitation(invitation.invitationId, user);
-            console.log("Successfully accepted invitation after registration:", sharedAccount);
-            
-            // Remove the pending invitation data
-            localStorage.removeItem('pendingInvitationsAfterRegistration');
-            
-            toast.success('התחברת אוטומטית לחשבון שהוזמנת אליו!');
-            
-            // Return the shared account
-            return { user, account: sharedAccount };
-            
-          } catch (error) {
-            console.error('Error accepting invitation after registration:', error);
-            toast.error('אירעה שגיאה בקבלת ההזמנה האוטומטית, מתחבר לחשבון ברירת מחדל');
-            localStorage.removeItem('pendingInvitationsAfterRegistration');
-          }
+          // If the user just registered, we'll redirect to the invitation page
+          // but don't clear the pending invitation ID yet
+          setTimeout(() => {
+            window.location.href = `/invitation/${pendingInvitationId}`;
+          }, 1000);
         } else {
-          console.log(`User email doesn't match invitation (${user.email.toLowerCase()} vs ${email.toLowerCase()}) or no invitations found`);
-          localStorage.removeItem('pendingInvitationsAfterRegistration');
+          console.log("Invitation not found or not valid, clearing pendingInvitationId");
+          sessionStorage.removeItem('pendingInvitationId');
         }
       } catch (error) {
-        console.error('Error processing pending invitations after registration:', error);
-        localStorage.removeItem('pendingInvitationsAfterRegistration');
+        console.error("Error verifying invitation:", error);
+        sessionStorage.removeItem('pendingInvitationId');
       }
     }
     
-    // Get user account (default flow if no pending invitation was processed)
+    // Get user account
     const account = await accountService.getDefaultAccount(user.id, user.name);
     console.log("Default account retrieved:", account);
     
-    // בדיקת הזמנות חדשות
+    // Check for new invitations
     if (user.email) {
       await checkForNewInvitations(user.email);
-    }
-    
-    // Check if there's a pendingInvitationId in sessionStorage
-    const pendingInvitationId = sessionStorage.getItem('pendingInvitationId');
-    if (pendingInvitationId) {
-      console.log(`Found pendingInvitationId ${pendingInvitationId} in sessionStorage after login`);
-      
-      // Clear the pending invitation ID
-      sessionStorage.removeItem('pendingInvitationId');
-      
-      // Redirect to the invitation page
-      setTimeout(() => {
-        window.location.href = `/invitation/${pendingInvitationId}`;
-      }, 1000);
     }
     
     return { user, account };
