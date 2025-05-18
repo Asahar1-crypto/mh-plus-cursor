@@ -12,6 +12,7 @@ import { PendingInvitationRecord } from '@/contexts/auth/services/invitation/typ
 const PendingInvitationAlert = () => {
   const [dismissed, setDismissed] = useState(false);
   const [invitations, setInvitations] = useState<Record<string, PendingInvitationRecord>>({});
+  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
   const { user } = useAuth();
   
@@ -19,6 +20,9 @@ const PendingInvitationAlert = () => {
     // Check for invitations immediately when component loads
     if (user?.email) {
       checkForInvitations();
+      setLoading(false);
+    } else {
+      setLoading(true);
     }
     
     // Check for invitations more frequently to ensure notifications are shown
@@ -35,6 +39,8 @@ const PendingInvitationAlert = () => {
     if (!user?.email) return;
     
     try {
+      console.log("PendingInvitationAlert: Checking for pending invitations for", user.email);
+      
       // First check database for invitations
       const { data, error } = await supabase
         .from('invitations')
@@ -57,12 +63,12 @@ const PendingInvitationAlert = () => {
         .gt('expires_at', 'now()');
       
       if (error) {
-        console.error('Error fetching invitations:', error);
+        console.error('PendingInvitationAlert: Error fetching invitations:', error);
       }
       
       // Process database invitations
       if (data && data.length > 0) {
-        console.log('Found pending invitations in database:', data);
+        console.log('PendingInvitationAlert: Found pending invitations in database:', data);
         
         const dbInvitations: Record<string, PendingInvitationRecord> = {};
         
@@ -120,24 +126,27 @@ const PendingInvitationAlert = () => {
         });
         
         if (hasInvitationsForCurrentUser) {
-          console.log('Found pending invitations for the current user in localStorage:', currentUserInvitations);
+          console.log('PendingInvitationAlert: Found pending invitations for the current user in localStorage:', currentUserInvitations);
           setInvitations(currentUserInvitations);
           
           // Ensure the UI is not in dismissed state if there are invitations
           if (dismissed) {
             setDismissed(false);
           }
+        } else {
+          // If there are no invitations for the current user, clear the state
+          setInvitations({});
         }
       } catch (error) {
-        console.error('Failed to parse pending invitations from localStorage:', error);
+        console.error('PendingInvitationAlert: Failed to parse pending invitations from localStorage:', error);
       }
     } catch (error) {
-      console.error('Error checking for invitations:', error);
+      console.error('PendingInvitationAlert: Error checking for invitations:', error);
     }
   };
   
   // If user is not logged in, or there are no invitations, or alert was dismissed, don't show anything
-  if (!user || Object.keys(invitations).length === 0 || dismissed) {
+  if (!user || Object.keys(invitations).length === 0 || dismissed || loading) {
     return null;
   }
   

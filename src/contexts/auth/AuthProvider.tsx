@@ -1,5 +1,5 @@
 
-import React, { ReactNode, useEffect } from 'react';
+import React, { ReactNode, useEffect, useState } from 'react';
 import { AuthContext } from './AuthContext';
 import { useAuthState } from './hooks/useAuthState';
 import { useAuthActions } from './hooks/useAuthActions';
@@ -10,6 +10,8 @@ interface AuthProviderProps {
 }
 
 export const AuthProvider = ({ children }: AuthProviderProps) => {
+  const [isInitialized, setIsInitialized] = useState(false);
+  
   const {
     user,
     setUser,
@@ -43,17 +45,26 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
   // Perform initial auth check when component mounts
   useEffect(() => {
-    console.log('AuthProvider: Performing initial auth check');
-    checkAndSetUserData().catch(err => {
-      console.error('Error during initial auth check:', err);
-    });
+    const performInitialCheck = async () => {
+      console.log('AuthProvider: Performing initial auth check');
+      try {
+        await checkAndSetUserData();
+        console.log('AuthProvider: Initial auth check completed');
+      } catch (err) {
+        console.error('Error during initial auth check:', err);
+      } finally {
+        setIsInitialized(true);
+      }
+    };
+    
+    performInitialCheck();
   }, []);
 
   const authContextValue = {
     user,
     account,
     isAuthenticated: !!user,
-    isLoading,
+    isLoading: isLoading || !isInitialized,
     login,
     register,
     logout,

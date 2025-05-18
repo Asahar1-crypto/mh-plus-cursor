@@ -2,6 +2,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from 'sonner';
 import { PendingInvitationRecord } from '../../services/invitation/types';
+import { showInvitationNotification } from '@/utils/notifications';
 
 /**
  * Service for checking pending invitations for a user
@@ -9,6 +10,11 @@ import { PendingInvitationRecord } from '../../services/invitation/types';
 export const invitationCheckService = {
   // Check for pending invitations for a user
   checkPendingInvitations: async (email: string): Promise<any[]> => {
+    if (!email) {
+      console.log('No email provided for invitation check');
+      return [];
+    }
+    
     try {
       console.log(`Checking pending invitations for ${email}`);
       
@@ -53,6 +59,7 @@ export const invitationCheckService = {
       
       // Get enriched invitation data with owner information
       const enrichedInvitations = [];
+      let shouldShowNotification = false;
       
       for (const invitation of invitations) {
         if (!invitation.accounts || !invitation.account_id) {
@@ -62,7 +69,17 @@ export const invitationCheckService = {
         
         // Owner information is now included directly in the query via the nested select
         const ownerName = invitation.accounts.profiles?.[0]?.name || 'בעל החשבון';
-        console.log(`Owner profile for account ${invitation.account_id}:`, invitation.accounts.profiles);
+        
+        // Check if we've already notified about this invitation
+        const notifiedInvitations = localStorage.getItem('notifiedInvitations') || '[]';
+        const notifiedIds = JSON.parse(notifiedInvitations);
+        
+        if (!notifiedIds.includes(invitation.invitation_id)) {
+          shouldShowNotification = true;
+          // Mark as notified
+          notifiedIds.push(invitation.invitation_id);
+          localStorage.setItem('notifiedInvitations', JSON.stringify(notifiedIds));
+        }
         
         // Add enriched invitation to list
         enrichedInvitations.push({
@@ -77,43 +94,25 @@ export const invitationCheckService = {
       const pendingInvitations: Record<string, PendingInvitationRecord> = {};
       
       enrichedInvitations.forEach(inv => {
-        pendingInvitations[inv.invitation_id] = {
-          name: inv.accounts?.name || 'חשבון משותף',
-          ownerName: inv.owner_profile?.name || 'בעל החשבון',
-          ownerId: inv.accounts?.owner_id,
-          sharedWithEmail: inv.email,
-          invitationId: inv.invitation_id,
-          accountId: inv.account_id
-        };
+        if (inv.invitation_id) {
+          pendingInvitations[inv.invitation_id] = {
+            name: inv.accounts?.name || 'חשבון משותף',
+            ownerName: inv.owner_profile?.name || 'בעל החשבון',
+            ownerId: inv.accounts?.owner_id,
+            sharedWithEmail: inv.email,
+            invitationId: inv.invitation_id,
+            accountId: inv.account_id
+          };
+        }
       });
       
       // Save to localStorage
       localStorage.setItem('pendingInvitations', JSON.stringify(pendingInvitations));
       console.log("Updated localStorage with pending invitations:", pendingInvitations);
       
-      // Always show notification for first invitation to ensure visibility
-      if (enrichedInvitations.length > 0) {
-        const firstInvitation = enrichedInvitations[0];
-        const ownerName = firstInvitation.owner_profile?.name || 'בעל החשבון';
-        const accountName = firstInvitation.accounts?.name || 'חשבון משותף';
-        
-        // Use more noticeable toast with longer duration
-        toast.info(
-          `יש לך הזמנה מ-${ownerName} לחשבון "${accountName}"`,
-          {
-            description: `לצפייה בהזמנה, לחץ על כפתור "צפה בהזמנה" בראש הדף`,
-            duration: 15000, // Longer duration for better visibility
-            onDismiss: () => {
-              // Show smaller notification after dismissal to ensure user awareness
-              setTimeout(() => {
-                toast.info('הזמנה ממתינה לאישור', {
-                  description: 'לגישה להזמנה, חפש את הכפתור "צפה בהזמנה" בראש הדף',
-                  duration: 5000
-                });
-              }, 500);
-            }
-          }
-        );
+      // Show notification for first invitation if we haven't shown it before
+      if (shouldShowNotification && enrichedInvitations.length > 0 && enrichedInvitations[0].invitation_id) {
+        showInvitationNotification(enrichedInvitations[0].invitation_id);
       }
       
       return enrichedInvitations;

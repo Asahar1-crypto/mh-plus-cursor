@@ -12,13 +12,27 @@ export const useAuthState = () => {
   const [user, setUser] = useState<User | null>(null);
   const [account, setAccount] = useState<Account | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [lastCheck, setLastCheck] = useState<number>(0);
 
   const checkAndSetUserData = useCallback(async () => {
+    // Avoid multiple simultaneous checks
+    const now = Date.now();
+    if (now - lastCheck < 1000) {
+      console.log('Skipping auth check - too soon since last check');
+      return;
+    }
+    
+    setLastCheck(now);
     console.log('Checking auth state...');
     setIsLoading(true);
+    
     try {
       const { user, account } = await authService.checkAuth();
-      console.log('Auth check result:', { user: !!user, account: !!account });
+      console.log('Auth check result:', { 
+        user: user ? `${user.id} (${user.email})` : null, 
+        account: account ? `${account.id} (${account.name})` : null
+      });
+      
       setUser(user);
       setAccount(account);
       
@@ -32,16 +46,27 @@ export const useAuthState = () => {
           }
         }, 1000);
       }
+      
+      return { user, account };
     } catch (error) {
       console.error("Failed to check auth state:", error);
-      toast.error("שגיאה בבדיקת מצב ההתחברות");
-      // Clear state on error to prevent inconsistent state
+      
+      // Only show toast for non-network errors
+      if (error instanceof Error && 
+          !error.message.includes('network') && 
+          !error.message.includes('connection')) {
+        toast.error("שגיאה בבדיקת מצב ההתחברות");
+      }
+      
+      // Clear state on critical errors
       setUser(null);
       setAccount(null);
+      
+      return { user: null, account: null };
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [lastCheck]);
 
   return {
     user,

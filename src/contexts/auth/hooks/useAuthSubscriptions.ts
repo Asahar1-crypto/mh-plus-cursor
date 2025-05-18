@@ -3,6 +3,7 @@ import { useEffect } from 'react';
 import { User } from '../types';
 import { supabase } from "@/integrations/supabase/client";
 import { invitationCheckService } from '../services/user/invitationCheckService';
+import { showInvitationNotification } from '@/utils/notifications';
 
 export const useAuthSubscriptions = (
   user: User | null,
@@ -14,7 +15,7 @@ export const useAuthSubscriptions = (
     
     // First set up the auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
+      (event, session) => {
         console.log('Auth state changed:', event);
         
         // Handle auth state changes
@@ -30,7 +31,11 @@ export const useAuthSubscriptions = (
             if (session?.user?.email) {
               setTimeout(async () => {
                 try {
-                  await invitationCheckService.checkPendingInvitations(session.user.email || '');
+                  const invitations = await invitationCheckService.checkPendingInvitations(session.user.email || '');
+                  // Show notification for first invitation if exists
+                  if (invitations && invitations.length > 0 && invitations[0].invitation_id) {
+                    showInvitationNotification(invitations[0].invitation_id);
+                  }
                 } catch (error) {
                   console.error('Error checking pending invitations:', error);
                 }
@@ -55,6 +60,18 @@ export const useAuthSubscriptions = (
     if (!user?.email) return;
     
     console.log('Setting up periodic invitation checking for', user.email);
+    
+    // Do an immediate check when component loads
+    setTimeout(async () => {
+      try {
+        const invitations = await invitationCheckService.checkPendingInvitations(user.email);
+        console.log('Initial invitation check result:', invitations);
+      } catch (error) {
+        console.error('Error during initial invitation check:', error);
+      }
+    }, 2000);
+    
+    // Then set up periodic checking
     const checkInvitationsInterval = setInterval(async () => {
       try {
         await invitationCheckService.checkPendingInvitations(user.email);
