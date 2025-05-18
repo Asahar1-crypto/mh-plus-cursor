@@ -1,3 +1,4 @@
+
 import { toast } from 'sonner';
 import { PendingInvitationRecord } from '@/contexts/auth/services/invitation/types';
 import { supabase } from '@/integrations/supabase/client';
@@ -44,7 +45,7 @@ export const showInvitationNotification = (invitationId: string) => {
         `יש לך הזמנה לחשבון משותף מ-${ownerName}!`,
         {
           description: `הוזמנת להצטרף לחשבון "${accountName}". לצפייה בהזמנה וקבלתה, לחץ על הכפתור למטה`,
-          duration: 15000,
+          duration: 20000, // Longer duration for better visibility
           action: {
             label: "צפה בהזמנה",
             onClick: () => {
@@ -76,7 +77,7 @@ export const showInvitationNotification = (invitationId: string) => {
         `יש לך הזמנה לחשבון משותף מ-${invitation.ownerName}!`,
         {
           description: `לצפייה בהזמנה וקבלתה, לחץ על הכפתור למטה`,
-          duration: 15000,
+          duration: 20000, // Longer duration for better visibility
           action: {
             label: "צפה בהזמנה",
             onClick: () => {
@@ -203,6 +204,8 @@ export const checkForNewInvitations = async (email: string) => {
   if (!email) return [];
   
   try {
+    console.log(`Checking for new invitations for ${email}`);
+    
     // Check for invitations in Supabase
     const { data: invitations, error } = await supabase
       .from('invitations')

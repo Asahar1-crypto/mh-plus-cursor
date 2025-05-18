@@ -28,7 +28,11 @@ export const invitationCheckService = {
           accounts:account_id (
             id,
             name,
-            owner_id
+            owner_id,
+            profiles!owner_id (
+              id,
+              name
+            )
           )
         `)
         .eq('email', normalizedEmail)
@@ -56,19 +60,9 @@ export const invitationCheckService = {
           continue;
         }
         
-        // Get owner profile information
-        const { data: ownerProfile, error: profileError } = await supabase
-          .from('profiles')
-          .select('name')
-          .eq('id', invitation.accounts.owner_id)
-          .single();
-          
-        if (profileError) {
-          console.warn(`Error fetching owner profile for account ${invitation.account_id}:`, profileError);
-        }
-        
-        const ownerName = ownerProfile?.name || 'בעל החשבון';
-        console.log(`Owner profile for account ${invitation.account_id}:`, ownerProfile);
+        // Owner information is now included directly in the query via the nested select
+        const ownerName = invitation.accounts.profiles?.[0]?.name || 'בעל החשבון';
+        console.log(`Owner profile for account ${invitation.account_id}:`, invitation.accounts.profiles);
         
         // Add enriched invitation to list
         enrichedInvitations.push({
@@ -97,17 +91,27 @@ export const invitationCheckService = {
       localStorage.setItem('pendingInvitations', JSON.stringify(pendingInvitations));
       console.log("Updated localStorage with pending invitations:", pendingInvitations);
       
-      // Show notification for first invitation
+      // Always show notification for first invitation to ensure visibility
       if (enrichedInvitations.length > 0) {
         const firstInvitation = enrichedInvitations[0];
         const ownerName = firstInvitation.owner_profile?.name || 'בעל החשבון';
         const accountName = firstInvitation.accounts?.name || 'חשבון משותף';
         
+        // Use more noticeable toast with longer duration
         toast.info(
           `יש לך הזמנה מ-${ownerName} לחשבון "${accountName}"`,
           {
             description: `לצפייה בהזמנה, לחץ על כפתור "צפה בהזמנה" בראש הדף`,
-            duration: 10000
+            duration: 15000, // Longer duration for better visibility
+            onDismiss: () => {
+              // Show smaller notification after dismissal to ensure user awareness
+              setTimeout(() => {
+                toast.info('הזמנה ממתינה לאישור', {
+                  description: 'לגישה להזמנה, חפש את הכפתור "צפה בהזמנה" בראש הדף',
+                  duration: 5000
+                });
+              }, 500);
+            }
           }
         );
       }

@@ -16,11 +16,17 @@ const PendingInvitationAlert = () => {
   const { user } = useAuth();
   
   useEffect(() => {
-    // Check for invitations when component loads
-    checkForInvitations();
+    // Check for invitations immediately when component loads
+    if (user?.email) {
+      checkForInvitations();
+    }
     
-    // Check for invitations every 15 seconds
-    const interval = setInterval(checkForInvitations, 15000);
+    // Check for invitations more frequently to ensure notifications are shown
+    const interval = setInterval(() => {
+      if (user?.email) {
+        checkForInvitations();
+      }
+    }, 10000); // Check every 10 seconds instead of 15
     
     return () => clearInterval(interval);
   }, [user]);
@@ -77,7 +83,17 @@ const PendingInvitationAlert = () => {
         });
         
         if (Object.keys(dbInvitations).length > 0) {
+          // Store invitations in local storage for backup
+          localStorage.setItem('pendingInvitations', JSON.stringify(dbInvitations));
+          
+          // Set invitations state to update the UI
           setInvitations(dbInvitations);
+          
+          // Ensure the UI is not in dismissed state if there are invitations
+          if (dismissed && Object.keys(dbInvitations).length > 0) {
+            setDismissed(false);
+          }
+          
           return;
         }
       }
@@ -106,6 +122,11 @@ const PendingInvitationAlert = () => {
         if (hasInvitationsForCurrentUser) {
           console.log('Found pending invitations for the current user in localStorage:', currentUserInvitations);
           setInvitations(currentUserInvitations);
+          
+          // Ensure the UI is not in dismissed state if there are invitations
+          if (dismissed) {
+            setDismissed(false);
+          }
         }
       } catch (error) {
         console.error('Failed to parse pending invitations from localStorage:', error);
