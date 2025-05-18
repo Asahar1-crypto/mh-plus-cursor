@@ -89,11 +89,11 @@ export async function sendInvitation(email: string, user: User, account: Account
     
     // Transaction to ensure consistency between invitation and account update
     const { data, error: transactionError } = await supabase
-      .rpc<SendInvitationResponse>('create_invitation_and_update_account', {
+      .rpc<SendInvitationResponse, SendInvitationParams>('create_invitation_and_update_account', {
         p_email: normalizedEmail,
         p_account_id: account.id,
         p_invitation_id: invitationId
-      } as SendInvitationParams);
+      });
       
     if (transactionError) {
       console.error("Transaction error:", transactionError);
