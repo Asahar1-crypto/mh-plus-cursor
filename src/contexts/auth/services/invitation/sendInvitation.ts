@@ -93,7 +93,7 @@ export async function sendInvitation(email: string, user: User, account: Account
         p_email: normalizedEmail,
         p_account_id: account.id,
         p_invitation_id: invitationId
-      });
+      } as any);
       
     if (transactionError) {
       console.error("Transaction error:", transactionError);
