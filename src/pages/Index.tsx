@@ -1,13 +1,15 @@
 
-import React, { useEffect } from 'react';
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
 
 const Index = () => {
   const navigate = useNavigate();
   
-  useEffect(() => {
-    // Redirect to the home page
-    navigate('/');
+  React.useEffect(() => {
+    // Instead of just redirecting, add a condition to prevent potential loops
+    if (window.location.pathname === '/index') {
+      navigate('/');
+    }
   }, [navigate]);
   
   return (
