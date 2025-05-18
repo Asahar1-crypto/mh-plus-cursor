@@ -89,23 +89,24 @@ export const accountService = {
         };
       }
       
-      // If no accounts found, create a new one for the user
-      console.log('No accounts found, creating a new one');
-      const { data: newAccount, error: createError } = await supabase
-        .from('accounts')
-        .insert({
-          name: `${userName}'s Account`,
-          owner_id: userId
-        })
-        .select('*')
-        .single();
-        
+      // If no accounts found, use transaction to safely create a new one
+      console.log('No accounts found, creating a new one with transaction');
+      
+      // Use a transaction to prevent race conditions causing duplicate accounts
+      const { data: newAccount, error: createError } = await supabase.rpc(
+        'create_account_if_not_exists',
+        { 
+          user_id: userId,
+          account_name: `${userName}'s Account`
+        }
+      );
+      
       if (createError) {
         console.error('Error creating new account:', createError);
         throw createError;
       }
       
-      console.log('Created new account:', newAccount);
+      console.log('Created or retrieved account via transaction:', newAccount);
       return {
         id: newAccount.id,
         name: newAccount.name,

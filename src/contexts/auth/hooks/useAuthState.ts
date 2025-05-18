@@ -13,16 +13,18 @@ export const useAuthState = () => {
   const [account, setAccount] = useState<Account | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [lastCheck, setLastCheck] = useState<number>(0);
+  const [isCheckingAuth, setIsCheckingAuth] = useState(false);
 
   const checkAndSetUserData = useCallback(async (): Promise<void> => {
     // Avoid multiple simultaneous checks
     const now = Date.now();
-    if (now - lastCheck < 1000) {
-      console.log('Skipping auth check - too soon since last check');
+    if (now - lastCheck < 1000 || isCheckingAuth) {
+      console.log('Skipping auth check - too soon since last check or already checking');
       return;
     }
     
     setLastCheck(now);
+    setIsCheckingAuth(true);
     console.log('Checking auth state...');
     setIsLoading(true);
     
@@ -61,8 +63,9 @@ export const useAuthState = () => {
       setAccount(null);
     } finally {
       setIsLoading(false);
+      setIsCheckingAuth(false);
     }
-  }, [lastCheck]);
+  }, [lastCheck, isCheckingAuth]);
 
   return {
     user,
