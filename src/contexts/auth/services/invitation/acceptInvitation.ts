@@ -30,21 +30,23 @@ export async function acceptInvitation(invitationId: string, user: User): Promis
       `)
       .eq('invitation_id', invitationId)
       .is('accepted_at', null)
-      .gt('expires_at', 'now()')
-      .maybeSingle();
+      .gt('expires_at', 'now()');
       
     if (findError) {
       console.error("Error finding invitation:", findError);
       throw new Error('שגיאה בחיפוש ההזמנה: ' + findError.message);
     }
     
-    if (!invitationData) {
+    // Convert to array if needed and check length
+    const invitationArray = Array.isArray(invitationData) ? invitationData : (invitationData ? [invitationData] : []);
+    
+    if (!invitationArray || invitationArray.length === 0) {
       console.error("No active invitation found with ID", invitationId);
       throw new Error('ההזמנה לא נמצאה או שפג תוקפה');
     }
     
     // Process invitation data from the database
-    const invitation = invitationData;
+    const invitation = invitationArray[0];
     console.log("Processing invitation from database:", invitation);
     
     // Case insensitive comparison for email
@@ -62,16 +64,20 @@ export async function acceptInvitation(invitationId: string, user: User): Promis
         const { data: accountData, error: accountError } = await supabase
           .from('accounts')
           .select('*')
-          .eq('id', invitation.account_id)
-          .single();
+          .eq('id', invitation.account_id);
           
-        if (accountError || !accountData) {
+        if (accountError) {
           console.error("Failed to fetch account data:", accountError);
           throw new Error('חסר מידע חיוני על החשבון, אנא בקש הזמנה חדשה');
         }
         
+        if (!accountData || accountData.length === 0) {
+          console.error("No account data found for account_id:", invitation.account_id);
+          throw new Error('חסר מידע חיוני על החשבון, אנא בקש הזמנה חדשה');
+        }
+        
         // Replace with complete account data
-        invitation.accounts = accountData;
+        invitation.accounts = accountData[0];
       } catch (err) {
         console.error("Error in account data fallback fetch:", err);
         throw new Error('חסר מידע חיוני על החשבון, אנא בקש הזמנה חדשה');
@@ -122,11 +128,10 @@ export async function acceptInvitation(invitationId: string, user: User): Promis
       const { data: ownerProfile } = await supabase
         .from('profiles')
         .select('name')
-        .eq('id', invitation.accounts.owner_id)
-        .maybeSingle();
+        .eq('id', invitation.accounts.owner_id);
         
-      if (ownerProfile && ownerProfile.name) {
-        ownerName = ownerProfile.name;
+      if (ownerProfile && ownerProfile.length > 0 && ownerProfile[0]?.name) {
+        ownerName = ownerProfile[0].name;
       }
     } catch (error) {
       console.error("Could not fetch owner profile:", error);

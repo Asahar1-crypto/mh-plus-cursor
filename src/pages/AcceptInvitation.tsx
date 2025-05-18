@@ -61,7 +61,7 @@ const AcceptInvitation = () => {
         console.log(`Fetching invitation details for ID: ${invitationId}`);
         
         // Simplified query without problematic profile join
-        const { data: invitation, error } = await supabase
+        const { data: invitationData, error } = await supabase
           .from('invitations')
           .select(`
             *,
@@ -69,20 +69,22 @@ const AcceptInvitation = () => {
           `)
           .eq('invitation_id', invitationId)
           .is('accepted_at', null)
-          .gt('expires_at', 'now()')
-          .maybeSingle();
+          .gt('expires_at', 'now()');
           
         if (error) {
           console.error("Error fetching invitation from Supabase:", error);
           throw new Error('אירעה שגיאה בעת חיפוש ההזמנה: ' + error.message);
         }
         
-        if (!invitation) {
+        // Convert to array if needed and check length
+        const invitationArray = Array.isArray(invitationData) ? invitationData : (invitationData ? [invitationData] : []);
+        
+        if (!invitationArray || invitationArray.length === 0) {
           console.log("No active invitation found in database");
           throw new Error("הזמנה לא נמצאה או שפג תוקפה");
         }
         
-        const invitationRecord = invitation;
+        const invitationRecord = invitationArray[0];
         console.log("Found invitation in database:", invitationRecord);
         
         // Enhanced validation for account data
@@ -94,16 +96,20 @@ const AcceptInvitation = () => {
             const { data: accountData, error: accountError } = await supabase
               .from('accounts')
               .select('*')
-              .eq('id', invitationRecord.account_id)
-              .single();
+              .eq('id', invitationRecord.account_id);
               
-            if (accountError || !accountData) {
-              console.error("Failed to fetch account data in fallback:", accountError || 'No account data returned');
+            if (accountError) {
+              console.error("Failed to fetch account data in fallback:", accountError);
+              throw new Error("הזמנה לא תקפה - חסרים פרטי חשבון");
+            }
+            
+            if (!accountData || accountData.length === 0) {
+              console.error("No account data found for account_id:", invitationRecord.account_id);
               throw new Error("הזמנה לא תקפה - חסרים פרטי חשבון");
             }
             
             // Replace the existing account data with the complete data
-            invitationRecord.accounts = accountData;
+            invitationRecord.accounts = accountData[0];
           } catch (err) {
             console.error("Error in account fallback fetch:", err);
             throw new Error("הזמנה לא תקפה - חסרים פרטי חשבון");
@@ -119,11 +125,10 @@ const AcceptInvitation = () => {
             const { data: ownerProfile } = await supabase
               .from('profiles')
               .select('name')
-              .eq('id', invitationRecord.accounts.owner_id)
-              .maybeSingle();
+              .eq('id', invitationRecord.accounts.owner_id);
             
-            if (ownerProfile?.name) {
-              ownerName = ownerProfile.name;
+            if (ownerProfile && ownerProfile.length > 0 && ownerProfile[0]?.name) {
+              ownerName = ownerProfile[0].name;
             }
           }
         } catch (err) {

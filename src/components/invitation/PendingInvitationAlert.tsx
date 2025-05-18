@@ -50,11 +50,7 @@ const PendingInvitationAlert = () => {
           accounts (
             id,
             name,
-            owner_id,
-            profiles!owner_id (
-              id,
-              name
-            )
+            owner_id
           )
         `)
         .eq('email', user.email.toLowerCase())
@@ -109,8 +105,24 @@ const PendingInvitationAlert = () => {
     return null;
   }
   
-  // Extract owner and account names from the data
-  const ownerName = firstInvitation.accounts?.profiles?.[0]?.name || 'בעל החשבון';
+  // Fetch owner profile information for display
+  const fetchOwnerProfile = async () => {
+    if (!firstInvitation.accounts?.owner_id) return 'בעל החשבון';
+    
+    try {
+      const { data } = await supabase
+        .from('profiles')
+        .select('name')
+        .eq('id', firstInvitation.accounts.owner_id);
+        
+      return data && data.length > 0 && data[0]?.name ? data[0].name : 'בעל החשבון';
+    } catch (err) {
+      console.error('Error fetching owner profile:', err);
+      return 'בעל החשבון';
+    }
+  };
+  
+  // Extract account name from the data
   const accountName = firstInvitation.accounts?.name || 'חשבון משותף';
   
   const handleViewInvitation = () => {
@@ -126,6 +138,16 @@ const PendingInvitationAlert = () => {
       duration: 5000
     });
   };
+  
+  // Get owner name using a React useState with initial value
+  const [ownerName, setOwnerName] = useState<string>('בעל החשבון');
+  
+  // Fetch the owner's name when component renders
+  useEffect(() => {
+    if (firstInvitation?.accounts?.owner_id) {
+      fetchOwnerProfile().then(name => setOwnerName(name));
+    }
+  }, [firstInvitation]);
   
   return (
     <Alert className="mb-6 bg-blue-50 border-blue-200 flex items-center justify-between">

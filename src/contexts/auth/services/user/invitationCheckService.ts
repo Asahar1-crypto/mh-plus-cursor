@@ -72,19 +72,24 @@ export const invitationCheckService = {
           console.error('Invitation has missing critical account data:', invitation);
           
           try {
-            // Fetch account data directly
+            // Use array notation for the accounts query to avoid the single item issue
             const { data: accountData, error: accountError } = await supabase
               .from('accounts')
               .select('*')
-              .eq('id', invitation.account_id)
-              .single();
+              .eq('id', invitation.account_id);
               
-            if (accountError || !accountData) {
+            if (accountError) {
               console.error('Failed to fetch account data:', accountError);
               continue;
             }
             
-            invitation.accounts = accountData;
+            if (!accountData || accountData.length === 0) {
+              console.error('No account data returned for id:', invitation.account_id);
+              continue;
+            }
+            
+            // Use the first account in the result array
+            invitation.accounts = accountData[0];
           } catch (err) {
             console.error('Error fetching additional account data:', err);
             continue;
@@ -104,11 +109,10 @@ export const invitationCheckService = {
             const { data: ownerProfile } = await supabase
               .from('profiles')
               .select('name')
-              .eq('id', invitation.accounts.owner_id)
-              .maybeSingle();
+              .eq('id', invitation.accounts.owner_id);
               
-            if (ownerProfile?.name) {
-              ownerName = ownerProfile.name;
+            if (ownerProfile && ownerProfile.length > 0 && ownerProfile[0]?.name) {
+              ownerName = ownerProfile[0].name;
             }
           }
         } catch (err) {
@@ -183,55 +187,63 @@ export const invitationCheckService = {
         `)
         .eq('invitation_id', invitationId)
         .is('accepted_at', null)
-        .gt('expires_at', 'now()')
-        .maybeSingle();
+        .gt('expires_at', 'now()');
         
       if (error) {
         console.error("Error checking invitation by ID:", error);
         return false;
       }
       
-      const exists = !!data;
+      // Convert to array if needed and check length
+      const invitationArray = Array.isArray(data) ? data : (data ? [data] : []);
+      const exists = invitationArray.length > 0;
+      
       console.log(`Invitation ${invitationId} exists in database: ${exists}`);
       
-      if (exists && data) {
+      if (exists && invitationArray[0]) {
+        const invitation = invitationArray[0];
+        
         // Extra validation to ensure account data is valid
-        if (!data.accounts || !data.accounts.id) {
-          console.error("Invitation found but account data is missing or invalid:", data);
+        if (!invitation.accounts || !invitation.accounts.id) {
+          console.error("Invitation found but account data is missing or invalid:", invitation);
           
           // Try to fetch the account data separately
           try {
             const { data: accountData, error: accountError } = await supabase
               .from('accounts')
               .select('*')
-              .eq('id', data.account_id)
-              .single();
+              .eq('id', invitation.account_id);
               
-            if (accountError || !accountData) {
-              console.error('Failed to fetch account data in fallback:', accountError || 'Missing account data');
+            if (accountError) {
+              console.error('Failed to fetch account data in fallback:', accountError);
+              return false;
+            }
+            
+            if (!accountData || accountData.length === 0) {
+              console.error('No account data found for account_id:', invitation.account_id);
               return false;
             }
             
             // Merge the fetched account data with the invitation data
-            data.accounts = accountData;
+            invitation.accounts = accountData[0];
             
             // Fetch owner profile separately to avoid join issues
-            if (accountData.owner_id) {
+            if (accountData[0].owner_id) {
               const { data: ownerData } = await supabase
                 .from('profiles')
                 .select('name')
-                .eq('id', accountData.owner_id)
-                .maybeSingle();
+                .eq('id', accountData[0].owner_id);
               
               // Create an owner_profile object for backward compatibility
-              const owner_profile = ownerData ? { name: ownerData.name } : { name: 'בעל החשבון' };
+              const owner_profile = (ownerData && ownerData.length > 0) ? 
+                { name: ownerData[0].name } : { name: 'בעל החשבון' };
               
               // Add owner_profile to the data using type assertion to avoid TypeScript errors
-              (data as InvitationData).owner_profile = owner_profile;
+              (invitation as InvitationData).owner_profile = owner_profile;
             }
             
             // Store the enriched invitation details in sessionStorage
-            sessionStorage.setItem('currentInvitationDetails', JSON.stringify(data));
+            sessionStorage.setItem('currentInvitationDetails', JSON.stringify(invitation));
             return true;
           } catch (err) {
             console.error('Error in account data fallback fetch:', err);
@@ -240,31 +252,31 @@ export const invitationCheckService = {
         }
         
         // Fetch profile data separately to avoid join issues
-        if (data.accounts.owner_id) {
+        if (invitation.accounts.owner_id) {
           try {
             const { data: ownerProfile } = await supabase
               .from('profiles')
               .select('name')
-              .eq('id', data.accounts.owner_id)
-              .maybeSingle();
+              .eq('id', invitation.accounts.owner_id);
               
             // Create an owner_profile object for backward compatibility
-            const owner_profile = ownerProfile ? { name: ownerProfile.name } : { name: 'בעל החשבון' };
+            const owner_profile = (ownerProfile && ownerProfile.length > 0) ? 
+              { name: ownerProfile[0].name } : { name: 'בעל החשבון' };
             
             // Add owner_profile to the data using type assertion
-            (data as InvitationData).owner_profile = owner_profile;
+            (invitation as InvitationData).owner_profile = owner_profile;
           } catch (err) {
             console.error('Error fetching owner profile separately:', err);
             // Provide a default owner_profile even if fetch fails
-            (data as InvitationData).owner_profile = { name: 'בעל החשבון' };
+            (invitation as InvitationData).owner_profile = { name: 'בעל החשבון' };
           }
         } else {
           // Add default owner_profile if owner_id is missing
-          (data as InvitationData).owner_profile = { name: 'בעל החשבון' };
+          (invitation as InvitationData).owner_profile = { name: 'בעל החשבון' };
         }
         
         // Temporarily store invitation details in sessionStorage for UI
-        sessionStorage.setItem('currentInvitationDetails', JSON.stringify(data));
+        sessionStorage.setItem('currentInvitationDetails', JSON.stringify(invitation));
         return true;
       }
       
