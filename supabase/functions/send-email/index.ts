@@ -34,7 +34,23 @@ serve(async (req) => {
 
   try {
     console.log("Received request to send email");
-    const { to, subject, text, html, templateId, dynamicTemplateData } = await req.json() as EmailRequest;
+    
+    // Parse request body
+    let requestBody;
+    try {
+      requestBody = await req.json() as EmailRequest;
+    } catch (parseError) {
+      console.error("Failed to parse request body:", parseError);
+      return new Response(
+        JSON.stringify({ error: "Invalid JSON in request body" }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
+    }
+    
+    const { to, subject, text, html, templateId, dynamicTemplateData } = requestBody;
 
     // Validate required fields
     if (!to || !subject || (!text && !html && !templateId)) {
@@ -69,13 +85,19 @@ serve(async (req) => {
       });
     }
 
+    console.log("Email configuration:", JSON.stringify(msg, null, 2));
+
     // Send the email
     try {
       const result = await sgMail.send(msg);
       console.log("Email sent successfully", result);
       
       return new Response(
-        JSON.stringify({ success: true, message: "Email sent successfully" }),
+        JSON.stringify({ 
+          success: true, 
+          message: "Email sent successfully",
+          details: { to, subject }
+        }),
         {
           status: 200,
           headers: { ...corsHeaders, "Content-Type": "application/json" },

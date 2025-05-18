@@ -18,11 +18,16 @@ const AccountSettings = () => {
     
     setIsProcessing(true);
     try {
+      console.log(`AccountSettings: Starting to send invitation to ${email}`);
       await sendInvitation(email);
       toast.success(`הזמנה נשלחה בהצלחה ל-${email}`);
-    } catch (error) {
-      console.error('Failed to send invitation:', error);
-      toast.error('שגיאה בשליחת ההזמנה, אנא נסה שוב');
+      console.log(`AccountSettings: Invitation sent successfully to ${email}`);
+    } catch (error: any) {
+      console.error('AccountSettings: Failed to send invitation:', error);
+      // Check if we already displayed an error in the service
+      if (!error.message?.includes('already exists')) {
+        toast.error('שגיאה בשליחת ההזמנה, אנא נסה שוב');
+      }
     } finally {
       setIsProcessing(false);
     }
@@ -33,12 +38,12 @@ const AccountSettings = () => {
     
     setIsProcessing(true);
     try {
-      console.log('Starting partner removal process');
+      console.log('AccountSettings: Starting partner removal process');
       await removeInvitation();
-      console.log('Partner removal completed successfully');
+      console.log('AccountSettings: Partner removal completed successfully');
       toast.success('השותף הוסר בהצלחה מהחשבון');
     } catch (error) {
-      console.error('Failed to remove partner:', error);
+      console.error('AccountSettings: Failed to remove partner:', error);
       toast.error('שגיאה בהסרת השותף, אנא נסה שוב');
     } finally {
       setIsProcessing(false);

@@ -6,6 +6,7 @@ import { authService } from './authService';
 import { supabase } from "@/integrations/supabase/client";
 import { invitationCheckService } from './services/user/invitationCheckService';
 import { checkForNewInvitations } from '@/utils/notifications';
+import { toast } from 'sonner';
 
 interface AuthProviderProps {
   children: ReactNode;
@@ -101,20 +102,32 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   };
 
   const sendInvitation = async (email: string) => {
-    if (!user || !account) throw new Error('User not authenticated');
+    if (!user || !account) {
+      console.error('Cannot send invitation: User not authenticated or no account available');
+      throw new Error('User not authenticated');
+    }
     
+    console.log(`AuthProvider: Starting invitation process for email ${email}`);
     setIsLoading(true);
+    
     try {
       const updatedAccount = await authService.sendInvitation(email, user, account);
+      console.log('AuthProvider: Invitation process completed successfully, updating account state');
       setAccount(updatedAccount);
       return Promise.resolve();
+    } catch (error) {
+      console.error('AuthProvider: Failed to send invitation:', error);
+      throw error;
     } finally {
       setIsLoading(false);
     }
   };
 
   const removeInvitation = async () => {
-    if (!user || !account) throw new Error('User not authenticated');
+    if (!user || !account) {
+      console.error('Cannot remove invitation: User not authenticated or no account available');
+      throw new Error('User not authenticated');
+    }
     
     setIsLoading(true);
     try {
@@ -132,12 +145,18 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   };
 
   const acceptInvitation = async (invitationId: string) => {
-    if (!user) throw new Error('User not authenticated');
+    if (!user) {
+      console.error('Cannot accept invitation: User not authenticated');
+      throw new Error('User not authenticated');
+    }
     
     setIsLoading(true);
     try {
       const updatedAccount = await authService.acceptInvitation(invitationId, user);
       setAccount(updatedAccount);
+    } catch (error) {
+      console.error('AuthProvider: Failed to accept invitation:', error);
+      throw error;
     } finally {
       setIsLoading(false);
     }

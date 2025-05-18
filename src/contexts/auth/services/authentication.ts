@@ -7,17 +7,22 @@ import { InvitationData } from './invitation/types';
 
 export async function login(email: string, password: string) {
   try {
+    console.log(`Attempting to log in user: ${email}`);
+    
     // Sign in with Supabase
     const user = await userService.login(email, password);
+    console.log('Login successful:', user);
     
     // ניקוי הזמנות לא רלוונטיות מהאחסון המקומי
     clearInvalidInvitations(email);
     
     // Get default account
     const account = await accountService.getDefaultAccount(user.id, user.name);
+    console.log('Retrieved account:', account);
     
     // בדיקת הזמנות חדשות
     await checkForNewInvitations(email);
+    console.log('Checked for new invitations');
     
     // Check if there's a pendingInvitationId in sessionStorage
     const pendingInvitationId = sessionStorage.getItem('pendingInvitationId');

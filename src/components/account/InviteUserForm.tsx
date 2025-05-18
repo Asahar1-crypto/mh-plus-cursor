@@ -30,9 +30,13 @@ const InviteUserForm: React.FC<InviteUserFormProps> = ({ account, onInvite }) =>
   });
   
   const onSubmitInvite = async (data: z.infer<typeof inviteSchema>) => {
+    if (isInviting) return;
+    
     setIsInviting(true);
     try {
+      console.log('Starting invitation process for email:', data.email);
       await onInvite(data.email);
+      console.log('Invitation sent successfully');
       inviteForm.reset();
     } catch (error) {
       console.error('Failed to send invitation:', error);
@@ -41,6 +45,7 @@ const InviteUserForm: React.FC<InviteUserFormProps> = ({ account, onInvite }) =>
     }
   };
 
+  // Don't display the form if the account is already shared
   if (account?.isSharedAccount || account?.sharedWithEmail) {
     return null;
   }

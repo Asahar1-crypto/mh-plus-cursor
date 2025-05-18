@@ -17,7 +17,7 @@ interface SendEmailOptions {
  */
 export async function sendEmail(options: SendEmailOptions) {
   try {
-    console.log('Sending email request to edge function:', options);
+    console.log('Sending email request to edge function with options:', options);
     const { data, error } = await supabase.functions.invoke('send-email', {
       body: options
     });
@@ -27,7 +27,7 @@ export async function sendEmail(options: SendEmailOptions) {
       throw error;
     }
     
-    console.log('Email sent successfully:', data);
+    console.log('Email sent successfully with response:', data);
     return data;
   } catch (error) {
     console.error('Failed to send email:', error);
@@ -49,6 +49,8 @@ export async function sendInvitationEmail(
   senderName: string, 
   accountName: string
 ) {
+  console.log(`Preparing invitation email to ${email} with link ${invitationLink}`);
+  
   // Basic HTML template for invitation
   const html = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; direction: rtl;">
@@ -66,10 +68,19 @@ export async function sendInvitationEmail(
     </div>
   `;
   
-  console.log(`Sending invitation email to ${email} with link ${invitationLink}`);
-  return sendEmail({
-    to: email,
-    subject: `הזמנה להצטרף לחשבון משותף "${accountName}"`,
-    html
-  });
+  console.log(`Sending invitation email to ${email}`);
+  
+  try {
+    const result = await sendEmail({
+      to: email,
+      subject: `הזמנה להצטרף לחשבון משותף "${accountName}"`,
+      html
+    });
+    
+    console.log('Invitation email sent successfully with result:', result);
+    return result;
+  } catch (error) {
+    console.error(`Failed to send invitation email to ${email}:`, error);
+    throw error;
+  }
 }
