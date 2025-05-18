@@ -10,25 +10,28 @@ import { sendInvitationEmail } from '@/utils/emailService';
  */
 export async function sendInvitation(email: string, user: User, account: Account) {
   try {
-    console.log(`User ${user.id} (${user.email}) sending invitation to ${email} for account ${account.id}`);
+    // Normalize email to lowercase for consistent comparison
+    const normalizedEmail = email.toLowerCase();
     
-    if (!email || !user || !account) {
+    console.log(`User ${user.id} (${user.email}) sending invitation to ${normalizedEmail} for account ${account.id}`);
+    
+    if (!normalizedEmail || !user || !account) {
       const errorMsg = 'חסרים פרטים הכרחיים לשליחת הזמנה';
-      console.error(errorMsg, { email, userId: user?.id, accountId: account?.id });
+      console.error(errorMsg, { email: normalizedEmail, userId: user?.id, accountId: account?.id });
       toast.error(errorMsg);
       throw new Error(errorMsg);
     }
     
     // Email validation
-    if (!/\S+@\S+\.\S+/.test(email)) {
+    if (!/\S+@\S+\.\S+/.test(normalizedEmail)) {
       const errorMsg = 'כתובת דוא״ל לא תקינה';
-      console.error(errorMsg, { email });
+      console.error(errorMsg, { email: normalizedEmail });
       toast.error(errorMsg);
       throw new Error(errorMsg);
     }
     
-    // Check if the email is the same as the current user
-    if (email.toLowerCase() === user.email.toLowerCase()) {
+    // Check if the email is the same as the current user (case-insensitive)
+    if (normalizedEmail === user.email.toLowerCase()) {
       const errorMsg = 'לא ניתן לשלוח הזמנה לעצמך';
       console.error(errorMsg);
       toast.error(errorMsg);
@@ -39,7 +42,7 @@ export async function sendInvitation(email: string, user: User, account: Account
     const { data: existingInvitations, error: checkError } = await supabase
       .from('invitations')
       .select('*')
-      .eq('email', email)
+      .eq('email', normalizedEmail)
       .eq('account_id', account.id)
       .is('accepted_at', null);
       
@@ -50,7 +53,7 @@ export async function sendInvitation(email: string, user: User, account: Account
     
     // If invitation already exists, don't create a new one
     if (existingInvitations && existingInvitations.length > 0) {
-      console.log(`Invitation already exists for ${email} and account ${account.id}`);
+      console.log(`Invitation already exists for ${normalizedEmail} and account ${account.id}`);
       toast.error('הזמנה כבר נשלחה למשתמש זה');
       throw new Error('Invitation already exists for this email');
     }
@@ -64,7 +67,7 @@ export async function sendInvitation(email: string, user: User, account: Account
     const { data: invitation, error: inviteError } = await supabase
       .from('invitations')
       .insert({
-        email,
+        email: normalizedEmail,
         account_id: account.id,
         invitation_id: invitationId
       })
@@ -83,7 +86,7 @@ export async function sendInvitation(email: string, user: User, account: Account
       .from('accounts')
       .update({
         invitation_id: invitationId,
-        shared_with_email: email
+        shared_with_email: normalizedEmail
       })
       .eq('id', account.id)
       .select()
@@ -101,16 +104,16 @@ export async function sendInvitation(email: string, user: User, account: Account
       const baseUrl = window.location.origin;
       const invitationLink = `${baseUrl}/invitation/${invitationId}`;
       
-      console.log(`Sending invitation email to ${email} with link ${invitationLink}`);
+      console.log(`Sending invitation email to ${normalizedEmail} with link ${invitationLink}`);
       
       await sendInvitationEmail(
-        email,
+        normalizedEmail,
         invitationLink,
         user.name || user.email,
         account.name
       );
       
-      console.log(`Invitation email sent to ${email} with link ${invitationLink}`);
+      console.log(`Invitation email sent to ${normalizedEmail} with link ${invitationLink}`);
       
       // Store invitation in localStorage for client-side access
       try {
@@ -128,7 +131,7 @@ export async function sendInvitation(email: string, user: User, account: Account
           ownerId: user.id,
           ownerName: user.name || user.email,
           name: account.name,
-          sharedWithEmail: email,
+          sharedWithEmail: normalizedEmail,
           createdAt: new Date().toISOString()
         };
         
@@ -150,7 +153,7 @@ export async function sendInvitation(email: string, user: User, account: Account
     const updatedAccount = {
       ...account,
       invitationId,
-      sharedWithEmail: email
+      sharedWithEmail: normalizedEmail
     };
     
     console.log("Invitation process completed successfully");

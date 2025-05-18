@@ -12,6 +12,9 @@ export const invitationCheckService = {
     try {
       console.log(`Checking pending invitations for ${email}`);
       
+      // Normalize email to lowercase for consistent comparison
+      const normalizedEmail = email.toLowerCase();
+      
       // Get basic invitation data
       const { data: invitations, error } = await supabase
         .from('invitations')
@@ -28,7 +31,7 @@ export const invitationCheckService = {
             owner_id
           )
         `)
-        .eq('email', email)
+        .eq('email', normalizedEmail)
         .is('accepted_at', null)
         .gt('expires_at', 'now()');
         
