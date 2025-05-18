@@ -2,6 +2,24 @@
 import { supabase } from "@/integrations/supabase/client";
 import { Account } from '../types';
 
+// Define the AccountRPCResponse interface properly
+interface AccountRPCResponse {
+  id: string;
+  name: string;
+  owner_id: string;
+}
+
+// Type guard to verify if the response is AccountRPCResponse
+function isAccountRPCResponse(obj: any): obj is AccountRPCResponse {
+  return (
+    obj &&
+    typeof obj === 'object' &&
+    'id' in obj &&
+    'name' in obj &&
+    'owner_id' in obj
+  );
+}
+
 export const accountService = {
   // Get default account for a user
   getDefaultAccount: async (userId: string, userName: string): Promise<Account> => {
@@ -92,15 +110,7 @@ export const accountService = {
       // If no accounts found, use transaction to safely create a new one
       console.log('No accounts found, creating a new one with transaction');
       
-      // Use a transaction to prevent race conditions causing duplicate accounts
-      // Define the expected response type for the RPC call
-      interface AccountRPCResponse {
-        id: string;
-        name: string;
-        owner_id: string;
-      }
-      
-      // The rpc function needs both input and output type parameters
+      // Fixed RPC call with proper generic typing
       const { data, error: createError } = await supabase.rpc<AccountRPCResponse, { 
         user_id: string; 
         account_name: string; 
@@ -119,6 +129,11 @@ export const accountService = {
       
       if (!data) {
         throw new Error('No account data returned from account creation');
+      }
+      
+      // Use type guard to ensure data is of the expected type
+      if (!isAccountRPCResponse(data)) {
+        throw new Error('Unexpected data format returned from account creation');
       }
       
       console.log('Created or retrieved account via transaction:', data);
