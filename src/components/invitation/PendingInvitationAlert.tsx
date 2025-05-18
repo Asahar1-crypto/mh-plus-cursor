@@ -16,10 +16,10 @@ const PendingInvitationAlert = () => {
   const { user } = useAuth();
   
   useEffect(() => {
-    // בדיקת הזמנות בעת טעינת הקומפוננטה
+    // Check for invitations when component loads
     checkForInvitations();
     
-    // בדיקת הזמנות כל 15 שניות
+    // Check for invitations every 15 seconds
     const interval = setInterval(checkForInvitations, 15000);
     
     return () => clearInterval(interval);
@@ -34,12 +34,12 @@ const PendingInvitationAlert = () => {
     try {
       const pendingInvitations = JSON.parse(pendingInvitationsData) as Record<string, PendingInvitationRecord>;
       
-      // בדיקה אם יש הזמנות ששייכות למשתמש הנוכחי
+      // Check if there are invitations for the current user
       const currentUserInvitations: Record<string, PendingInvitationRecord> = {};
       let hasInvitationsForCurrentUser = false;
       
       Object.entries(pendingInvitations).forEach(([invitationId, invitation]) => {
-        // בודקים אם האימייל בהזמנה תואם לאימייל של המשתמש המחובר (ללא תלות ברישיות)
+        // Case-insensitive email comparison
         if (invitation.sharedWithEmail && 
             user.email && 
             invitation.sharedWithEmail.toLowerCase() === user.email.toLowerCase()) {
@@ -57,12 +57,12 @@ const PendingInvitationAlert = () => {
     }
   };
   
-  // אם המשתמש לא מחובר או אין הזמנות או שהמשתמש סגר את ההתראה, אין מה להציג
+  // If user is not logged in, or there are no invitations, or alert was dismissed, don't show anything
   if (!user || Object.keys(invitations).length === 0 || dismissed) {
     return null;
   }
   
-  // מקבלים את ההזמנה הראשונה להצגה
+  // Get the first invitation to display
   const firstInvitationId = Object.keys(invitations)[0];
   const firstInvitation = invitations[firstInvitationId];
   
@@ -77,7 +77,7 @@ const PendingInvitationAlert = () => {
   
   const handleDismiss = () => {
     setDismissed(true);
-    // הצגת התראה מוקטנת שנעלמת אחרי זמן קצר
+    // Show a smaller notification that disappears after a short time
     toast.info('הזמנה ממתינה לאישור', {
       description: 'תמיד תוכל לגשת להזמנות בעמוד הגדרות החשבון',
       duration: 5000

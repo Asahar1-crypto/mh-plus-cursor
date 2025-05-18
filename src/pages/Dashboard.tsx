@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -97,7 +98,7 @@ const Dashboard = () => {
   
   return (
     <div className="container mx-auto animate-fade-in">
-      {/* מעדכן את רכיב ההתראה לשלוח את האימייל של המשתמש הנוכחי */}
+      {/* Always show the PendingInvitationAlert component */}
       <PendingInvitationAlert />
       
       <div className="flex flex-col md:flex-row items-start justify-between mb-6">

@@ -1,25 +1,35 @@
 
-import React, { useState } from 'react';
-import { Outlet } from 'react-router-dom';
+import React from 'react';
+import { Navigate, Outlet } from 'react-router-dom';
+import { useAuth } from '@/contexts/auth';
 import AppHeader from './AppHeader';
 import AppSidebar from './AppSidebar';
-import { useIsMobile } from '@/hooks/use-mobile';
+import PendingInvitationAlert from './invitation/PendingInvitationAlert';
 
-const AppLayout: React.FC = () => {
-  const isMobile = useIsMobile();
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+const AppLayout = () => {
+  const { isAuthenticated, isLoading } = useAuth();
 
-  const toggleSidebar = () => setSidebarOpen(prev => !prev);
-  const closeSidebar = () => setSidebarOpen(false);
+  // Show loading state while checking auth
+  if (isLoading) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
+      </div>
+    );
+  }
+
+  // Redirect to login if not authenticated
+  if (!isAuthenticated) {
+    return <Navigate to="/login" />;
+  }
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
-      <AppHeader toggleSidebar={toggleSidebar} />
-      
-      <div className="flex flex-1 h-[calc(100vh-4rem)] pt-16">
-        <AppSidebar isMobile={isMobile} isOpen={sidebarOpen} onClose={closeSidebar} />
-        
-        <main className="flex-1 overflow-y-auto p-4 md:p-6 w-full md:w-[calc(100%-16rem)] transition-all duration-300">
+    <div className="flex min-h-screen bg-background">
+      <AppSidebar />
+      <div className="flex flex-col flex-1">
+        <AppHeader />
+        <main className="flex-1 p-4 md:p-8">
+          <PendingInvitationAlert />
           <Outlet />
         </main>
       </div>

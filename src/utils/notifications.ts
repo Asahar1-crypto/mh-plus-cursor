@@ -3,10 +3,10 @@ import { toast } from 'sonner';
 import { PendingInvitationRecord } from '@/contexts/auth/services/invitation/types';
 
 /**
- * מציג התראה על הזמנה חדשה
+ * Shows notification for a new invitation
  */
 export const showInvitationNotification = (invitationId: string) => {
-  // בדיקה אם יש פרטי הזמנה ב-localStorage
+  // Check for invitation details in localStorage
   const pendingInvitationsData = localStorage.getItem('pendingInvitations');
   if (!pendingInvitationsData) return;
   
@@ -16,11 +16,11 @@ export const showInvitationNotification = (invitationId: string) => {
     
     if (!invitation) return;
     
-    // הצגת התראה עם פרטי ההזמנה
+    // Show notification with invitation details
     toast.info(
       `יש לך הזמנה לחשבון משותף מ-${invitation.ownerName}!`,
       {
-        description: `לצפייה בהזמנה וקבלתה: /invitation/${invitationId}`,
+        description: `לצפייה בהזמנה וקבלתה, לחץ על הכפתור למטה`,
         duration: 15000,
         action: {
           label: "צפה בהזמנה",
@@ -36,7 +36,7 @@ export const showInvitationNotification = (invitationId: string) => {
 };
 
 /**
- * בודק אם יש הזמנות ממתינות למשתמש הנוכחי
+ * Checks if there are pending invitations for the current user
  */
 export const hasPendingInvitations = (currentUserEmail?: string): boolean => {
   const pendingInvitationsData = localStorage.getItem('pendingInvitations');
@@ -45,12 +45,12 @@ export const hasPendingInvitations = (currentUserEmail?: string): boolean => {
   try {
     const pendingInvitations = JSON.parse(pendingInvitationsData) as Record<string, PendingInvitationRecord>;
     
-    // אם לא סופק אימייל משתמש, נבדוק רק אם יש הזמנות כלשהן
+    // If no user email provided, just check if there are any invitations
     if (!currentUserEmail) {
       return Object.keys(pendingInvitations).length > 0;
     }
     
-    // בדיקה אם יש הזמנה שמתאימה לאימייל המשתמש הנוכחי
+    // Check if there are invitations matching the current user's email
     return Object.values(pendingInvitations).some(
       invitation => 
         invitation.sharedWithEmail && 
@@ -63,7 +63,7 @@ export const hasPendingInvitations = (currentUserEmail?: string): boolean => {
 };
 
 /**
- * מסיר הזמנה ספציפית מ-localStorage
+ * Removes a specific invitation from localStorage
  */
 export const removePendingInvitation = (invitationId: string): void => {
   const pendingInvitationsData = localStorage.getItem('pendingInvitations');
@@ -82,7 +82,7 @@ export const removePendingInvitation = (invitationId: string): void => {
 };
 
 /**
- * מנקה הזמנות שלא מתאימות למשתמש הנוכחי
+ * Clears invitations that don't match the current user
  */
 export const clearInvalidInvitations = (currentUserEmail: string): void => {
   const pendingInvitationsData = localStorage.getItem('pendingInvitations');
@@ -93,7 +93,7 @@ export const clearInvalidInvitations = (currentUserEmail: string): void => {
     let hasChanges = false;
     
     Object.entries(pendingInvitations).forEach(([invitationId, invitation]) => {
-      // אם ההזמנה שייכת למשתמש אחר, מוחקים אותה
+      // If the invitation belongs to another user, delete it
       if (invitation.sharedWithEmail && 
           invitation.sharedWithEmail.toLowerCase() !== currentUserEmail.toLowerCase()) {
         delete pendingInvitations[invitationId];
@@ -111,7 +111,7 @@ export const clearInvalidInvitations = (currentUserEmail: string): void => {
 };
 
 /**
- * מנקה את כל ההזמנות הממתינות
+ * Clears all pending invitations
  */
 export const clearAllPendingInvitations = (): void => {
   try {
@@ -128,19 +128,19 @@ export const clearAllPendingInvitations = (): void => {
 };
 
 /**
- * בדיקה אוטומטית של הזמנות חדשות
+ * Automatically checks for new invitations
  */
 export const checkForNewInvitations = async (email: string) => {
   if (!email) return;
   
   try {
-    // ייבוא שירות בדיקת ההזמנות
+    // Import the invitation check service
     const { invitationCheckService } = await import('@/contexts/auth/services/user/invitationCheckService');
     
-    // בדיקת הזמנות
+    // Check for invitations
     const invitations = await invitationCheckService.checkPendingInvitations(email);
     
-    // אם יש הזמנות חדשות, מציג התראה
+    // If there are new invitations, show notifications
     if (invitations && invitations.length > 0) {
       const firstInvitation = invitations[0];
       if (firstInvitation.invitation_id) {

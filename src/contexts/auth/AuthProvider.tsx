@@ -5,8 +5,6 @@ import { User, Account } from './types';
 import { authService } from './authService';
 import { supabase } from "@/integrations/supabase/client";
 import { invitationCheckService } from './services/user/invitationCheckService';
-import { checkForNewInvitations } from '@/utils/notifications';
-import { toast } from 'sonner';
 
 interface AuthProviderProps {
   children: ReactNode;
@@ -30,7 +28,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
           // Check for pending invitations after sign in
           if (session?.user?.email) {
             setTimeout(async () => {
-              await checkForNewInvitations(session.user.email || '');
+              await invitationCheckService.checkPendingInvitations(session.user.email || '');
             }, 1000);
           }
         } else if (event === 'SIGNED_OUT') {
@@ -44,11 +42,21 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     // Check for an existing session
     checkAndSetUserData();
 
-    // Cleanup subscription
     return () => {
       subscription.unsubscribe();
     };
   }, []);
+
+  useEffect(() => {
+    // Set up periodic invitation checking for logged-in users
+    if (user?.email) {
+      const checkInvitationsInterval = setInterval(async () => {
+        await invitationCheckService.checkPendingInvitations(user.email);
+      }, 30000); // Check every 30 seconds
+      
+      return () => clearInterval(checkInvitationsInterval);
+    }
+  }, [user]);
 
   const checkAndSetUserData = async () => {
     setIsLoading(true);
@@ -57,10 +65,10 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       setUser(user);
       setAccount(account);
       
-      // בדיקת הזמנות חדשות כשמשתמש מתחבר
+      // Check for new invitations when user data is loaded
       if (user?.email) {
         setTimeout(async () => {
-          await checkForNewInvitations(user.email);
+          await invitationCheckService.checkPendingInvitations(user.email);
         }, 1000);
       }
     } catch (error) {
