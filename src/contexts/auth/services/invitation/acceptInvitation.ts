@@ -20,31 +20,18 @@ export async function acceptInvitation(invitationId: string, user: User): Promis
       throw new Error('נתוני משתמש חסרים');
     }
     
-    // Get the invitation from the database with improved query using !inner join
+    // Get the invitation from the database with explicit join conditions and simplified query
     console.log("Querying database for invitation:", invitationId);
     const { data: invitationData, error: findError } = await supabase
       .from('invitations')
       .select(`
-        id, 
-        account_id, 
-        email, 
-        invitation_id, 
-        accepted_at, 
-        expires_at,
-        accounts!inner (
-          id,
-          name,
-          owner_id,
-          profiles!accounts_owner_id_fkey (
-            id,
-            name
-          )
-        )
+        *,
+        accounts:account_id (*)
       `)
       .eq('invitation_id', invitationId)
       .is('accepted_at', null)
       .gt('expires_at', 'now()')
-      .maybeSingle(); // Use maybeSingle instead of single to avoid errors when no data is found
+      .maybeSingle();
       
     if (findError) {
       console.error("Error finding invitation:", findError);
@@ -67,14 +54,14 @@ export async function acceptInvitation(invitationId: string, user: User): Promis
     }
     
     // Enhanced validation for account data
-    if (!invitation.accounts || !invitation.account_id || !invitation.accounts.id || !invitation.accounts.owner_id) {
+    if (!invitation.accounts || !invitation.account_id) {
       console.error("Invitation found but account data is missing or incomplete");
       
-      // Try to fetch account data directly
+      // Try to fetch account data directly with a simpler query
       try {
         const { data: accountData, error: accountError } = await supabase
           .from('accounts')
-          .select('*, profiles!accounts_owner_id_fkey(id, name)')
+          .select('*, profiles:owner_id(*)')
           .eq('id', invitation.account_id)
           .single();
           
@@ -85,15 +72,15 @@ export async function acceptInvitation(invitationId: string, user: User): Promis
         
         // Replace with complete account data
         invitation.accounts = accountData;
-        
-        // Double check we have valid data
-        if (!invitation.accounts.id || !invitation.accounts.owner_id) {
-          throw new Error('חסר מידע חיוני על החשבון, אנא בקש הזמנה חדשה');
-        }
       } catch (err) {
         console.error("Error in account data fallback fetch:", err);
         throw new Error('חסר מידע חיוני על החשבון, אנא בקש הזמנה חדשה');
       }
+    }
+    
+    if (!invitation.accounts.id || !invitation.accounts.owner_id) {
+      console.error("Critical account data still missing after fetch attempt");
+      throw new Error('חסר מידע חיוני על החשבון, אנא בקש הזמנה חדשה');
     }
     
     const accountId = invitation.account_id;
@@ -127,21 +114,23 @@ export async function acceptInvitation(invitationId: string, user: User): Promis
       .update({ accepted_at: new Date().toISOString() })
       .eq('invitation_id', invitation.invitation_id);
       
-    // Get owner name
+    // Get owner profile data
     let ownerName = 'בעל החשבון';
     
-    // Handle both array and object structures for profiles
-    if (invitation.accounts.profiles) {
-      // Check if profiles is an array 
-      if (Array.isArray(invitation.accounts.profiles)) {
-        if (invitation.accounts.profiles.length > 0) {
-          ownerName = invitation.accounts.profiles[0]?.name || 'בעל החשבון';
-        }
-      } 
-      // Or if it's a single object (common with single() queries)
-      else if (typeof invitation.accounts.profiles === 'object') {
-        ownerName = invitation.accounts.profiles.name || 'בעל החשבון';
+    // Fetch owner profile directly for reliability
+    try {
+      const { data: ownerProfile } = await supabase
+        .from('profiles')
+        .select('name')
+        .eq('id', invitation.accounts.owner_id)
+        .maybeSingle();
+        
+      if (ownerProfile && ownerProfile.name) {
+        ownerName = ownerProfile.name;
       }
+    } catch (error) {
+      console.error("Could not fetch owner profile:", error);
+      // Continue with default name
     }
     
     // Create account object to return

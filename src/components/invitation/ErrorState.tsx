@@ -13,6 +13,15 @@ interface ErrorStateProps {
 const ErrorState = ({ message = 'ההזמנה לא נמצאה או שפג תוקפה' }: ErrorStateProps) => {
   const navigate = useNavigate();
   
+  // Clear all invitation storage data on error
+  const cleanupInvitationData = () => {
+    sessionStorage.removeItem('pendingInvitationId');
+    sessionStorage.removeItem('pendingInvitationAccountId');
+    sessionStorage.removeItem('pendingInvitationOwnerId');
+    sessionStorage.removeItem('currentInvitationDetails');
+    sessionStorage.removeItem('pendingInvitationRedirectChecked');
+  };
+  
   return (
     <Card className="w-full max-w-md border-border shadow-lg animate-fade-in">
       <CardHeader className="text-center">
@@ -43,7 +52,12 @@ const ErrorState = ({ message = 'ההזמנה לא נמצאה או שפג תוק
       </CardContent>
       
       <CardFooter className="flex justify-end">
-        <Button onClick={() => navigate('/')}>
+        <Button 
+          onClick={() => {
+            cleanupInvitationData();
+            navigate('/');
+          }}
+        >
           {"חזרה לדף הבית"}
         </Button>
       </CardFooter>

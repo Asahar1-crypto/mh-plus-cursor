@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/auth';
@@ -60,30 +59,20 @@ const AcceptInvitation = () => {
         setFetchAttempted(true);
         console.log(`Fetching invitation details for ID: ${invitationId}`);
         
-        // Improved query with INNER JOIN to ensure accounts data is present
+        // Simplified query with better structure
         const { data: invitation, error } = await supabase
           .from('invitations')
           .select(`
-            id, 
-            account_id, 
-            email, 
-            invitation_id, 
-            expires_at, 
-            accepted_at,
-            accounts!inner (
-              id,
-              name,
-              owner_id,
-              profiles!accounts_owner_id_fkey (
-                id,
-                name
-              )
+            *,
+            accounts:account_id (
+              *,
+              profiles:owner_id (*)
             )
           `)
           .eq('invitation_id', invitationId)
           .is('accepted_at', null)
           .gt('expires_at', 'now()')
-          .maybeSingle(); // Use maybeSingle to prevent errors when no data is found
+          .maybeSingle();
           
         if (error) {
           console.error("Error fetching invitation from Supabase:", error);
@@ -99,18 +88,14 @@ const AcceptInvitation = () => {
         console.log("Found invitation in database:", invitationRecord);
         
         // Enhanced validation for account data
-        if (!invitationRecord.accounts || 
-            !invitationRecord.accounts.id || 
-            !invitationRecord.account_id || 
-            !invitationRecord.accounts.owner_id) {
+        if (!invitationRecord.accounts || !invitationRecord.accounts.id) {
+          console.error("Invitation found but account data is missing");
           
-          console.error("Invitation found but account data is missing or incomplete");
-          
-          // Try fetching account data separately as a fallback
+          // Fetch account data directly with a simpler query
           try {
             const { data: accountData, error: accountError } = await supabase
               .from('accounts')
-              .select('*, profiles!accounts_owner_id_fkey(id, name)')
+              .select('*, profiles:owner_id(*)')
               .eq('id', invitationRecord.account_id)
               .single();
               
@@ -121,29 +106,31 @@ const AcceptInvitation = () => {
             
             // Replace the existing account data with the complete data
             invitationRecord.accounts = accountData;
-            
-            // Double-check we now have valid account data
-            if (!invitationRecord.accounts.id || !invitationRecord.accounts.owner_id) {
-              throw new Error("הזמנה לא תקפה - חסרים פרטי חשבון חיוניים");
-            }
           } catch (err) {
             console.error("Error in account fallback fetch:", err);
             throw new Error("הזמנה לא תקפה - חסרים פרטי חשבון");
           }
         }
         
-        // Get owner name from the nested profiles data
+        // Fallback for owner profile
         let ownerName = 'בעל החשבון';
         
-        // Handle different profile data structures
-        if (invitationRecord.accounts.profiles) {
-          if (Array.isArray(invitationRecord.accounts.profiles)) {
-            if (invitationRecord.accounts.profiles.length > 0) {
-              ownerName = invitationRecord.accounts.profiles[0]?.name || 'בעל החשבון';
+        try {
+          if (invitationRecord.accounts.owner_id) {
+            // Direct fetch of owner profile
+            const { data: ownerProfile } = await supabase
+              .from('profiles')
+              .select('name')
+              .eq('id', invitationRecord.accounts.owner_id)
+              .maybeSingle();
+            
+            if (ownerProfile?.name) {
+              ownerName = ownerProfile.name;
             }
-          } else if (typeof invitationRecord.accounts.profiles === 'object' && invitationRecord.accounts.profiles) {
-            ownerName = invitationRecord.accounts.profiles.name || 'בעל החשבון';
           }
+        } catch (err) {
+          console.error("Error fetching owner profile:", err);
+          // Continue with default name
         }
         
         // Set invitation details

@@ -32,30 +32,16 @@ export const invitationCheckService = {
       // Normalize email to lowercase for consistent comparison
       const normalizedEmail = email.toLowerCase();
       
-      // Get basic invitation data with full account and owner information
-      // Using a more robust query to ensure we get all the data we need
+      // Simplified and more direct query
       const { data: invitations, error } = await supabase
         .from('invitations')
         .select(`
-          id,
-          account_id,
-          email,
-          invitation_id,
-          expires_at,
-          accepted_at,
-          accounts:account_id (
-            id,
-            name,
-            owner_id,
-            profiles!accounts_owner_id_fkey (
-              id,
-              name
-            )
-          )
+          *,
+          accounts:account_id (*)
         `)
         .eq('email', normalizedEmail)
-        .is('accepted_at', null) // Explicitly check that it's not accepted
-        .gt('expires_at', 'now()'); // Explicitly check that it's not expired
+        .is('accepted_at', null) 
+        .gt('expires_at', 'now()');
         
       if (error) {
         console.error("Error checking pending invitations:", error);
@@ -74,21 +60,21 @@ export const invitationCheckService = {
       let shouldShowNotification = false;
       
       for (const invitation of invitations) {
-        // Validate that the invitation has all required data
-        if (!invitation.accounts || !invitation.account_id || !invitation.invitation_id) {
+        // Skip invitations with missing data
+        if (!invitation.account_id || !invitation.invitation_id) {
           console.warn(`Invitation has missing required data:`, invitation);
           continue;
         }
         
-        // Enhanced validation for account data
-        if (!invitation.accounts.id || !invitation.accounts.owner_id) {
+        // Fetch account and owner data if missing
+        if (!invitation.accounts || !invitation.accounts.id) {
           console.error('Invitation has missing critical account data:', invitation);
           
-          // Try to fetch more complete account data directly
           try {
+            // Fetch account data directly
             const { data: accountData, error: accountError } = await supabase
               .from('accounts')
-              .select('*, profiles!accounts_owner_id_fkey(id, name)')
+              .select('*')
               .eq('id', invitation.account_id)
               .single();
               
@@ -97,7 +83,6 @@ export const invitationCheckService = {
               continue;
             }
             
-            // Replace the incomplete account data with the complete data
             invitation.accounts = accountData;
           } catch (err) {
             console.error('Error fetching additional account data:', err);
@@ -105,28 +90,29 @@ export const invitationCheckService = {
           }
         }
         
-        // Double-check we now have valid account data
-        const hasValidAccountData = invitation.accounts && 
-                                   invitation.accounts.id && 
-                                   invitation.accounts.owner_id;
-                                   
-        if (!hasValidAccountData) {
+        // If still no valid account data, skip this invitation
+        if (!invitation.accounts || !invitation.accounts.id || !invitation.accounts.owner_id) {
           console.warn('Invitation still has invalid account data after retry:', invitation);
           continue;
         }
         
-        // Extract owner name from profiles
+        // Fetch owner profile separately for reliability
         let ownerName = 'בעל החשבון';
-        
-        // Handle different profile data structures
-        if (invitation.accounts.profiles) {
-          if (Array.isArray(invitation.accounts.profiles)) {
-            if (invitation.accounts.profiles.length > 0) {
-              ownerName = invitation.accounts.profiles[0]?.name || 'בעל החשבון';
+        try {
+          if (invitation.accounts.owner_id) {
+            const { data: ownerProfile } = await supabase
+              .from('profiles')
+              .select('name')
+              .eq('id', invitation.accounts.owner_id)
+              .maybeSingle();
+              
+            if (ownerProfile?.name) {
+              ownerName = ownerProfile.name;
             }
-          } else if (typeof invitation.accounts.profiles === 'object' && invitation.accounts.profiles) {
-            ownerName = invitation.accounts.profiles.name || 'בעל החשבון';
           }
+        } catch (err) {
+          console.error('Error fetching owner profile:', err);
+          // Continue with default name
         }
         
         // Check if we've already notified about this invitation
@@ -184,29 +170,17 @@ export const invitationCheckService = {
     try {
       console.log(`Checking if invitation exists with ID: ${invitationId}`);
       
-      // Using a more complete query to ensure we have all necessary data
+      // Simplified query structure
       const { data, error } = await supabase
         .from('invitations')
         .select(`
-          invitation_id,
-          account_id,
-          email,
-          expires_at,
-          accepted_at,
-          accounts!inner (
-            id,
-            name,
-            owner_id,
-            profiles!accounts_owner_id_fkey (
-              id,
-              name
-            )
-          )
+          *,
+          accounts:account_id (*)
         `)
         .eq('invitation_id', invitationId)
-        .is('accepted_at', null) // Must not be accepted
-        .gt('expires_at', 'now()') // Must not be expired
-        .maybeSingle(); // Use maybeSingle to avoid errors
+        .is('accepted_at', null)
+        .gt('expires_at', 'now()')
+        .maybeSingle();
         
       if (error) {
         console.error("Error checking invitation by ID:", error);
@@ -217,29 +191,39 @@ export const invitationCheckService = {
       console.log(`Invitation ${invitationId} exists in database: ${exists}`);
       
       if (exists && data) {
-        // Extra validation to ensure account data is valid and complete
-        const hasValidAccountData = data.accounts && 
-                                    data.accounts.id && 
-                                    data.accounts.owner_id;
-                                    
-        if (!hasValidAccountData) {
+        // Extra validation to ensure account data is valid
+        if (!data.accounts || !data.accounts.id) {
           console.error("Invitation found but account data is missing or invalid:", data);
           
-          // Try to fetch the account data separately as a fallback
+          // Try to fetch the account data separately
           try {
             const { data: accountData, error: accountError } = await supabase
               .from('accounts')
-              .select('*, profiles!accounts_owner_id_fkey(id, name)')
+              .select('*')
               .eq('id', data.account_id)
               .single();
               
-            if (accountError || !accountData || !accountData.id || !accountData.owner_id) {
+            if (accountError || !accountData) {
               console.error('Failed to fetch account data in fallback:', accountError || 'Missing account data');
               return false;
             }
             
             // Merge the fetched account data with the invitation data
             data.accounts = accountData;
+            
+            // Fetch owner profile separately
+            if (accountData.owner_id) {
+              const { data: ownerProfile } = await supabase
+                .from('profiles')
+                .select('name')
+                .eq('id', accountData.owner_id)
+                .maybeSingle();
+                
+              if (ownerProfile) {
+                // Add owner profile to account data
+                data.accounts.profiles = ownerProfile;
+              }
+            }
             
             // Store the enriched invitation details in sessionStorage
             sessionStorage.setItem('currentInvitationDetails', JSON.stringify(data));
