@@ -29,7 +29,7 @@ export async function removeInvitation(account: Account) {
     };
     
     const { data, error: transactionError } = await supabase
-      .rpc('remove_invitation_and_update_account', params);
+      .rpc('remove_invitation_and_update_account', params as any);
       
     if (transactionError) {
       console.error("Transaction error:", transactionError);

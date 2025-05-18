@@ -95,7 +95,7 @@ export async function sendInvitation(email: string, user: User, account: Account
     };
     
     const { data, error: transactionError } = await supabase
-      .rpc('create_invitation_and_update_account', params);
+      .rpc('create_invitation_and_update_account', params as any);
       
     if (transactionError) {
       console.error("Transaction error:", transactionError);

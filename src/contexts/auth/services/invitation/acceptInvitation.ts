@@ -41,7 +41,7 @@ export async function acceptInvitation(invitationId: string, user: User): Promis
     };
     
     const { data, error: transactionError } = await supabase
-      .rpc('accept_invitation_and_update_account', params);
+      .rpc('accept_invitation_and_update_account', params as any);
       
     if (transactionError) {
       console.error("Transaction error:", transactionError);
