@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Account } from '../../types';
 import { toast } from 'sonner';
 import { PendingInvitationRecord } from './types';
+import { RemoveInvitationParams, RemoveInvitationResult } from './rpcTypes';
 
 /**
  * Removes an invitation and updates the account

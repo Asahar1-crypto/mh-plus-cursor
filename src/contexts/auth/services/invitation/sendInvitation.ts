@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 import { v4 as uuidv4 } from 'uuid';
 import { User, Account } from '../../types';
 import { sendInvitationEmail } from '@/utils/emailService';
+import { SendInvitationParams, SendInvitationResult } from './rpcTypes';
 
 /**
  * Sends an invitation to a user to join an account

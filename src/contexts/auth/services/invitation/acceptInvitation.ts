@@ -2,6 +2,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { User, Account } from '../../types';
 import { toast } from 'sonner';
+import { AcceptInvitationParams, AcceptInvitationResult } from './rpcTypes';
 
 /**
  * Accepts an invitation and updates the account
