@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { User, Account } from '../../types';
 import { toast } from 'sonner';
@@ -144,9 +145,71 @@ export async function acceptInvitation(invitationId: string, user: User): Promis
     }
     
     // Process invitation data from the database
-    // ... keep existing code (database flow for accepting invitation)
+    console.log("Processing invitation from database:", invitationData);
     
-    return sharedAccount; // This is defined in the existing code
+    // Fetch account information
+    const { data: accountData, error: accountError } = await supabase
+      .from('accounts')
+      .select('*')
+      .eq('id', invitationData.account_id)
+      .single();
+      
+    if (accountError || !accountData) {
+      console.error("Error finding account:", accountError);
+      throw new Error('החשבון לא נמצא, אנא בקש הזמנה חדשה');
+    }
+    
+    // Update the account to link with the current user
+    const { error: updateError } = await supabase
+      .from('accounts')
+      .update({ 
+        shared_with_id: user.id,
+        shared_with_email: user.email,
+        invitation_id: invitationId
+      })
+      .eq('id', invitationData.account_id);
+      
+    if (updateError) {
+      console.error("Error updating account:", updateError);
+      throw updateError;
+    }
+    
+    // Mark invitation as accepted
+    await supabase
+      .from('invitations')
+      .update({ accepted_at: new Date().toISOString() })
+      .eq('invitation_id', invitationId);
+      
+    // Get owner name
+    let ownerName = 'בעל החשבון';
+    
+    if (accountData.owner_id) {
+      const { data: ownerData } = await supabase
+        .from('profiles')
+        .select('name')
+        .eq('id', accountData.owner_id)
+        .single();
+        
+      if (ownerData) {
+        ownerName = ownerData.name;
+      }
+    }
+    
+    // Create account object to return
+    const dbSharedAccount: Account = {
+      id: invitationData.account_id,
+      name: accountData.name || 'חשבון משותף',
+      ownerId: accountData.owner_id,
+      ownerName: ownerName,
+      sharedWithId: user.id,
+      sharedWithEmail: user.email,
+      invitationId: invitationId,
+      isSharedAccount: true
+    };
+    
+    removePendingInvitation(invitationId);
+    toast.success('הצטרפת לחשבון בהצלחה!');
+    return dbSharedAccount;
   } catch (error: any) {
     console.error('Failed to accept invitation:', error);
     toast.error(error.message || 'קבלת ההזמנה נכשלה, אנא נסה שוב');
