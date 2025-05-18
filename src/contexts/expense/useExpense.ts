@@ -1,7 +1,7 @@
 
 import { useContext } from 'react';
 import { ExpenseContext } from './ExpenseContext';
-import { ExpenseContextType } from './types';
+import type { ExpenseContextType } from './types';
 
 export const useExpense = (): ExpenseContextType => {
   const context = useContext(ExpenseContext);
