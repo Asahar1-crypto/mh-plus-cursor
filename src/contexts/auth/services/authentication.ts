@@ -2,7 +2,7 @@
 import { User, Account } from '../types';
 import { userService } from './user';
 import { accountService } from './accountService';
-import { showInvitationNotification, clearInvalidInvitations, checkForNewInvitations } from '@/utils/notifications';
+import { checkForNewInvitations } from '@/utils/notifications';
 import { InvitationData } from './invitation/types';
 
 export async function login(email: string, password: string) {
@@ -13,14 +13,11 @@ export async function login(email: string, password: string) {
     const user = await userService.login(email, password);
     console.log('Login successful:', user);
     
-    // ניקוי הזמנות לא רלוונטיות מהאחסון המקומי
-    clearInvalidInvitations(email);
-    
     // Get default account
     const account = await accountService.getDefaultAccount(user.id, user.name);
     console.log('Retrieved account:', account);
     
-    // בדיקת הזמנות חדשות
+    // Check for new invitations
     await checkForNewInvitations(email);
     console.log('Checked for new invitations');
     
