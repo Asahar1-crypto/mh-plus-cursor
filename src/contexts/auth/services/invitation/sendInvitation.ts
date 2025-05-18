@@ -5,6 +5,13 @@ import { v4 as uuidv4 } from 'uuid';
 import { User, Account } from '../../types';
 import { sendInvitationEmail } from '@/utils/emailService';
 
+interface SendInvitationResponse {
+  success: boolean;
+  invitation_id: string;
+  email: string;
+  account_id: string;
+}
+
 /**
  * Sends an invitation to a user to join an account
  */
@@ -76,14 +83,10 @@ export async function sendInvitation(email: string, user: User, account: Account
     
     // Transaction to ensure consistency between invitation and account update
     const { data: transaction, error: transactionError } = await supabase
-      .rpc('create_invitation_and_update_account', {
+      .rpc<SendInvitationResponse>('create_invitation_and_update_account', {
         p_email: normalizedEmail,
         p_account_id: account.id,
         p_invitation_id: invitationId
-      } as {
-        p_email: string;
-        p_account_id: string;
-        p_invitation_id: string;
       });
       
     if (transactionError) {

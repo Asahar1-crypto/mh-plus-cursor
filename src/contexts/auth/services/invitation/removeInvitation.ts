@@ -3,6 +3,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { Account } from '../../types';
 import { toast } from 'sonner';
 
+interface RemoveInvitationResponse {
+  success: boolean;
+  account_id: string;
+}
+
 /**
  * Removes an invitation and clears sharing information from an account
  */
@@ -16,10 +21,8 @@ export async function removeInvitation(account: Account) {
     
     // Transaction to ensure consistency between invitation update and account update
     const { data: transaction, error: transactionError } = await supabase
-      .rpc('remove_invitation_and_update_account', {
+      .rpc<RemoveInvitationResponse>('remove_invitation_and_update_account', {
         p_account_id: account.id
-      } as {
-        p_account_id: string;
       });
       
     if (transactionError) {
