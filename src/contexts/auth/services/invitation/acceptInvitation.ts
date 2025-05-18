@@ -34,8 +34,8 @@ export async function acceptInvitation(invitationId: string, user: User): Promis
     }
     
     // Transaction to ensure data consistency
-    const { data: transaction, error: transactionError } = await supabase
-      .rpc<AcceptInvitationResponse, AcceptInvitationParams>('accept_invitation_and_update_account', {
+    const { data, error: transactionError } = await supabase
+      .rpc('accept_invitation_and_update_account', {
         p_invitation_id: invitationId,
         p_user_id: user.id,
         p_user_email: user.email.toLowerCase()
@@ -45,6 +45,8 @@ export async function acceptInvitation(invitationId: string, user: User): Promis
       console.error("Transaction error:", transactionError);
       throw new Error(transactionError.message || 'שגיאה בקבלת ההזמנה');
     }
+    
+    const transaction = data as AcceptInvitationResponse;
     
     if (!transaction || !transaction.account_id) {
       throw new Error('חסר מידע חיוני על החשבון, אנא בקש הזמנה חדשה');
