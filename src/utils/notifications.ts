@@ -1,4 +1,3 @@
-
 import { toast } from 'sonner';
 import { PendingInvitationRecord } from '@/contexts/auth/services/invitation/types';
 import { supabase } from '@/integrations/supabase/client';
@@ -18,7 +17,7 @@ export const showInvitationNotification = (invitationId: string) => {
           accounts:account_id (
             name,
             owner_id,
-            profiles:owner_id (
+            owner:owner_id (
               name
             )
           )
@@ -35,7 +34,7 @@ export const showInvitationNotification = (invitationId: string) => {
       }
 
       // Found invitation in database
-      const ownerName = data.accounts?.profiles?.name || 'בעל החשבון';
+      const ownerName = data.accounts?.owner?.name || 'בעל החשבון';
       const accountName = data.accounts?.name || 'חשבון משותף';
       
       // Show notification
@@ -212,7 +211,7 @@ export const checkForNewInvitations = async (email: string) => {
         accounts:account_id (
           name,
           owner_id,
-          profiles:owner_id (
+          owner:owner_id (
             name
           )
         )
@@ -247,7 +246,7 @@ export const checkForNewInvitations = async (email: string) => {
         if (invitation.invitation_id && invitation.accounts) {
           pendingInvitations[invitation.invitation_id] = {
             name: invitation.accounts.name || 'חשבון משותף',
-            ownerName: invitation.accounts.profiles?.name || 'בעל החשבון',
+            ownerName: invitation.accounts.owner?.name || 'בעל החשבון',
             sharedWithEmail: invitation.email,
             invitationId: invitation.invitation_id,
             accountId: invitation.account_id,
