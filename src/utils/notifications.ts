@@ -16,9 +16,10 @@ export const showInvitationNotification = (invitationId: string) => {
           invitation_id,
           email,
           accounts:account_id (
+            id,
             name,
             owner_id,
-            owner:owner_id (
+            profiles:owner_id (
               id,
               name
             )
@@ -36,7 +37,7 @@ export const showInvitationNotification = (invitationId: string) => {
       }
 
       // Found invitation in database
-      const ownerName = data.accounts?.owner?.name || 'בעל החשבון';
+      const ownerName = data.accounts?.profiles?.name || 'בעל החשבון';
       const accountName = data.accounts?.name || 'חשבון משותף';
       
       // Show notification
@@ -211,9 +212,10 @@ export const checkForNewInvitations = async (email: string) => {
         email,
         account_id,
         accounts:account_id (
+          id,
           name,
           owner_id,
-          owner:owner_id (
+          profiles:owner_id (
             id,
             name
           )
@@ -249,7 +251,7 @@ export const checkForNewInvitations = async (email: string) => {
         if (invitation.invitation_id && invitation.accounts) {
           pendingInvitations[invitation.invitation_id] = {
             name: invitation.accounts.name || 'חשבון משותף',
-            ownerName: invitation.accounts.owner?.name || 'בעל החשבון',
+            ownerName: invitation.accounts.profiles?.name || 'בעל החשבון',
             sharedWithEmail: invitation.email,
             invitationId: invitation.invitation_id,
             accountId: invitation.account_id,
