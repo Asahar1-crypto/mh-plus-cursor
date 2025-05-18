@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { Account } from '../types';
 
@@ -110,11 +109,9 @@ export const accountService = {
       // If no accounts found, use transaction to safely create a new one
       console.log('No accounts found, creating a new one with transaction');
       
-      // Fixed RPC call with proper generic typing
-      const { data, error: createError } = await supabase.rpc<AccountRPCResponse, { 
-        user_id: string; 
-        account_name: string; 
-      }>(
+      // Fixed RPC call with proper generic typing - we need to fix the typing here
+      // The supabase.rpc function expects parameters in this order: <ReturnType, ParamsType>
+      const { data, error: createError } = await supabase.rpc(
         'create_account_if_not_exists',
         { 
           user_id: userId,
