@@ -44,20 +44,21 @@ export async function acceptInvitation(invitationId: string, user: User): Promis
       .eq('invitation_id', invitationId)
       .is('accepted_at', null)
       .gt('expires_at', 'now()')
-      .limit(1); // Make sure we only get one result
+      .limit(1)
+      .maybeSingle(); // Use maybeSingle instead of single to avoid errors when no data is found
       
     if (findError) {
       console.error("Error finding invitation:", findError);
       throw new Error('שגיאה בחיפוש ההזמנה: ' + findError.message);
     }
     
-    if (!invitationData || invitationData.length === 0) {
+    if (!invitationData) {
       console.error("No active invitation found with ID", invitationId);
       throw new Error('ההזמנה לא נמצאה או שפג תוקפה');
     }
     
     // Process invitation data from the database
-    const invitation = invitationData[0];
+    const invitation = invitationData;
     console.log("Processing invitation from database:", invitation);
     
     // Case insensitive comparison for email

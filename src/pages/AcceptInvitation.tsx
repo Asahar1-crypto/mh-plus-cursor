@@ -82,19 +82,20 @@ const AcceptInvitation = () => {
           `)
           .eq('invitation_id', invitationId)
           .is('accepted_at', null)
-          .gt('expires_at', 'now()');
+          .gt('expires_at', 'now()')
+          .maybeSingle(); // Use maybeSingle to prevent errors when no data is found
           
         if (error) {
           console.error("Error fetching invitation from Supabase:", error);
           throw new Error('אירעה שגיאה בעת חיפוש ההזמנה: ' + error.message);
         }
         
-        if (!invitation || invitation.length === 0) {
+        if (!invitation) {
           console.log("No active invitation found in database");
           throw new Error("הזמנה לא נמצאה או שפג תוקפה");
         }
         
-        const invitationRecord = invitation[0];
+        const invitationRecord = invitation;
         console.log("Found invitation in database:", invitationRecord);
         
         if (!invitationRecord.accounts || !invitationRecord.accounts.id) {
@@ -103,7 +104,18 @@ const AcceptInvitation = () => {
         }
         
         // Get owner name from the nested profiles data
-        const ownerName = invitationRecord.accounts.profiles?.[0]?.name || 'בעל החשבון';
+        let ownerName = 'בעל החשבון';
+        
+        // Handle different profile data structures
+        if (invitationRecord.accounts.profiles) {
+          if (Array.isArray(invitationRecord.accounts.profiles)) {
+            if (invitationRecord.accounts.profiles.length > 0) {
+              ownerName = invitationRecord.accounts.profiles[0]?.name || 'בעל החשבון';
+            }
+          } else if (typeof invitationRecord.accounts.profiles === 'object' && invitationRecord.accounts.profiles) {
+            ownerName = invitationRecord.accounts.profiles.name || 'בעל החשבון';
+          }
+        }
         
         // Set invitation details
         setInvitationDetails({
@@ -139,7 +151,7 @@ const AcceptInvitation = () => {
     }, 1000);
     
     return () => clearTimeout(timer);
-  }, [invitationId, isAuthenticated, fetchAttempted]);
+  }, [invitationId, isAuthenticated, fetchAttempted, navigate]);
   
   return (
     <div className="container mx-auto py-10 px-4 flex flex-col items-center justify-center min-h-[calc(100vh-4rem)]">

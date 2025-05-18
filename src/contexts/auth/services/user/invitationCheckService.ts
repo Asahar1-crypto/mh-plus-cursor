@@ -81,8 +81,30 @@ export const invitationCheckService = {
           continue;
         }
         
+        // Track whether valid account data exists
+        let hasValidAccountData = invitation.accounts && 
+                                   invitation.accounts.id && 
+                                   invitation.accounts.owner_id;
+                                   
+        if (!hasValidAccountData) {
+          console.warn('Invitation has invalid or missing account data:', invitation);
+          continue;
+        }
+        
         // Owner information is included directly in the query via the nested select
-        const ownerName = invitation.accounts.profiles?.[0]?.name || 'בעל החשבון';
+        let ownerName = 'בעל החשבון';
+        
+        // Extract owner name from profiles
+        if (invitation.accounts.profiles) {
+          // Handle different profile data structures
+          if (Array.isArray(invitation.accounts.profiles)) {
+            if (invitation.accounts.profiles.length > 0) {
+              ownerName = invitation.accounts.profiles[0]?.name || 'בעל החשבון';
+            }
+          } else if (typeof invitation.accounts.profiles === 'object' && invitation.accounts.profiles) {
+            ownerName = invitation.accounts.profiles.name || 'בעל החשבון';
+          }
+        }
         
         // Check if we've already notified about this invitation using sessionStorage
         // (minimizing notifications but not storing permanent state in localStorage)
@@ -160,28 +182,34 @@ export const invitationCheckService = {
         `)
         .eq('invitation_id', invitationId)
         .is('accepted_at', null) // Must not be accepted
-        .gt('expires_at', 'now()'); // Must not be expired
+        .gt('expires_at', 'now()') // Must not be expired
+        .maybeSingle(); // Use maybeSingle to avoid errors
         
       if (error) {
         console.error("Error checking invitation by ID:", error);
         return false;
       }
       
-      const exists = data && data.length > 0;
+      const exists = !!data;
       console.log(`Invitation ${invitationId} exists in database: ${exists}`);
       
-      if (exists && data[0]) {
+      if (exists && data) {
         // Validate account data exists
-        if (!data[0].accounts) {
-          console.error("Invitation found but account data is missing:", data[0]);
+        const hasValidAccountData = data.accounts && 
+                                    data.accounts.id && 
+                                    data.accounts.owner_id;
+                                    
+        if (!hasValidAccountData) {
+          console.error("Invitation found but account data is missing or invalid:", data);
           return false;
         }
         
         // Temporarily store invitation details in sessionStorage for UI
-        sessionStorage.setItem('currentInvitationDetails', JSON.stringify(data[0]));
+        sessionStorage.setItem('currentInvitationDetails', JSON.stringify(data));
+        return true;
       }
       
-      return exists && data[0]?.accounts !== null;
+      return false;
       
     } catch (error) {
       console.error("Error in checkInvitationById:", error);
