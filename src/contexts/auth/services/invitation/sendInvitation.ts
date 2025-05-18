@@ -5,19 +5,6 @@ import { v4 as uuidv4 } from 'uuid';
 import { User, Account } from '../../types';
 import { sendInvitationEmail } from '@/utils/emailService';
 
-interface SendInvitationResponse {
-  success: boolean;
-  invitation_id: string;
-  email: string;
-  account_id: string;
-}
-
-interface SendInvitationParams {
-  p_email: string;
-  p_account_id: string;
-  p_invitation_id: string;
-}
-
 /**
  * Sends an invitation to a user to join an account
  */
@@ -88,14 +75,12 @@ export async function sendInvitation(email: string, user: User, account: Account
     console.log(`Creating new invitation with ID ${invitationId}`);
     
     // Transaction to ensure consistency between invitation and account update
-    const params: SendInvitationParams = {
-      p_email: normalizedEmail,
-      p_account_id: account.id,
-      p_invitation_id: invitationId
-    };
-    
-    const { data, error: transactionError } = await supabase
-      .rpc('create_invitation_and_update_account', params as any);
+    const { data: transaction, error: transactionError } = await supabase
+      .rpc('create_invitation_and_update_account', {
+        p_email: normalizedEmail,
+        p_account_id: account.id,
+        p_invitation_id: invitationId
+      });
       
     if (transactionError) {
       console.error("Transaction error:", transactionError);
@@ -103,7 +88,6 @@ export async function sendInvitation(email: string, user: User, account: Account
       throw transactionError;
     }
     
-    const transaction = data as SendInvitationResponse;
     console.log('Invitation transaction completed successfully:', transaction);
     
     // Prepare invitation link and send email
