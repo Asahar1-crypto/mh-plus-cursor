@@ -6,7 +6,8 @@ const Index = () => {
   const navigate = useNavigate();
   
   React.useEffect(() => {
-    // Instead of just redirecting, add a condition to prevent potential loops
+    // Make sure we're only redirecting if we're actually on the /index route
+    // and not on the root route
     if (window.location.pathname === '/index') {
       navigate('/');
     }
