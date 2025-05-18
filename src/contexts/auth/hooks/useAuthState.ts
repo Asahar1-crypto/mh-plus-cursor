@@ -14,7 +14,7 @@ export const useAuthState = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [lastCheck, setLastCheck] = useState<number>(0);
 
-  const checkAndSetUserData = useCallback(async () => {
+  const checkAndSetUserData = useCallback(async (): Promise<void> => {
     // Avoid multiple simultaneous checks
     const now = Date.now();
     if (now - lastCheck < 1000) {
@@ -46,8 +46,6 @@ export const useAuthState = () => {
           }
         }, 1000);
       }
-      
-      return { user, account };
     } catch (error) {
       console.error("Failed to check auth state:", error);
       
@@ -61,8 +59,6 @@ export const useAuthState = () => {
       // Clear state on critical errors
       setUser(null);
       setAccount(null);
-      
-      return { user: null, account: null };
     } finally {
       setIsLoading(false);
     }
