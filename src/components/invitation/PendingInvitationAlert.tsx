@@ -40,7 +40,7 @@ const PendingInvitationAlert = () => {
             id,
             name,
             owner_id,
-            profiles:owner_id (
+            profiles!owner_id (
               id,
               name
             )
@@ -62,7 +62,7 @@ const PendingInvitationAlert = () => {
         
         data.forEach(invitation => {
           if (invitation.invitation_id && invitation.accounts) {
-            const ownerName = invitation.accounts.profiles?.name || 'בעל החשבון';
+            const ownerName = invitation.accounts.profiles?.[0]?.name || 'בעל החשבון';
             const accountName = invitation.accounts.name || 'חשבון משותף';
             
             dbInvitations[invitation.invitation_id] = {
