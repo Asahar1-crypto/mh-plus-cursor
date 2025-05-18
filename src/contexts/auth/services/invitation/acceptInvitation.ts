@@ -2,6 +2,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { User, Account } from '../../types';
 import { toast } from 'sonner';
+import { AcceptInvitationParams, AcceptInvitationReturn } from './rpcTypes';
 
 /**
  * Accepts an invitation and updates the account
@@ -21,12 +22,14 @@ export async function acceptInvitation(invitationId: string, user: User): Promis
     }
     
     // Transaction to ensure data consistency
+    const params: AcceptInvitationParams = {
+      p_invitation_id: invitationId,
+      p_user_id: user.id,
+      p_user_email: user.email.toLowerCase()
+    };
+    
     const { data: transaction, error: transactionError } = await supabase
-      .rpc('accept_invitation_and_update_account', {
-        p_invitation_id: invitationId,
-        p_user_id: user.id,
-        p_user_email: user.email.toLowerCase()
-      } as any);
+      .rpc<AcceptInvitationReturn>('accept_invitation_and_update_account', params);
       
     if (transactionError) {
       console.error("Transaction error:", transactionError);

@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 import { v4 as uuidv4 } from 'uuid';
 import { User, Account } from '../../types';
 import { sendInvitationEmail } from '@/utils/emailService';
+import { CreateInvitationParams, CreateInvitationReturn } from './rpcTypes';
 
 /**
  * Sends an invitation to a user to join an account
@@ -75,12 +76,14 @@ export async function sendInvitation(email: string, user: User, account: Account
     console.log(`Creating new invitation with ID ${invitationId}`);
     
     // Transaction to ensure consistency between invitation and account update
+    const params: CreateInvitationParams = {
+      p_email: normalizedEmail,
+      p_account_id: account.id,
+      p_invitation_id: invitationId
+    };
+    
     const { data: transaction, error: transactionError } = await supabase
-      .rpc('create_invitation_and_update_account', {
-        p_email: normalizedEmail,
-        p_account_id: account.id,
-        p_invitation_id: invitationId
-      } as any);
+      .rpc<CreateInvitationReturn>('create_invitation_and_update_account', params);
       
     if (transactionError) {
       console.error("Transaction error:", transactionError);
