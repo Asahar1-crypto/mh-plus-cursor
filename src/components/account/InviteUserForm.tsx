@@ -98,7 +98,7 @@ const InviteUserForm: React.FC<InviteUserFormProps> = ({ account, onInvite }) =>
             <Button 
               type="submit" 
               className="w-full" 
-              disabled={isInviting}
+              disabled={isInviting || !!account?.sharedWithEmail}
             >
               {isInviting ? (
                 <span className="flex items-center gap-2">

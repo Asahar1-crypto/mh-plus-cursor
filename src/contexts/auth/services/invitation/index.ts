@@ -1,6 +1,5 @@
 
 export * from './types';
-export * from './rpcTypes';
 export * from './sendInvitation';
 export * from './removeInvitation';
 export * from './acceptInvitation';

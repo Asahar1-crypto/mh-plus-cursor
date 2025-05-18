@@ -4,7 +4,6 @@ import { toast } from 'sonner';
 import { v4 as uuidv4 } from 'uuid';
 import { User, Account } from '../../types';
 import { sendInvitationEmail } from '@/utils/emailService';
-import { CreateInvitationParams, CreateInvitationReturn } from './rpcTypes';
 
 /**
  * Sends an invitation to a user to join an account
@@ -39,17 +38,6 @@ export async function sendInvitation(email: string, user: User, account: Account
       throw new Error(errorMsg);
     }
     
-    // First check if the account already has a shared user
-    if (account.sharedWithId || account.sharedWithEmail) {
-      const errorMsg = 'חשבון זה כבר משותף עם משתמש אחר';
-      console.error(errorMsg, { 
-        currentSharedWithId: account.sharedWithId, 
-        currentSharedWithEmail: account.sharedWithEmail 
-      });
-      toast.error(errorMsg);
-      throw new Error(errorMsg);
-    }
-    
     // Check if an invitation already exists for this email and account
     const { data: existingInvitations, error: checkError } = await supabase
       .from('invitations')
@@ -75,23 +63,41 @@ export async function sendInvitation(email: string, user: User, account: Account
     
     console.log(`Creating new invitation with ID ${invitationId}`);
     
-    // Transaction to ensure consistency between invitation and account update
-    const params: CreateInvitationParams = {
-      p_email: normalizedEmail,
-      p_account_id: account.id,
-      p_invitation_id: invitationId
-    };
-    
-    const { data: transaction, error: transactionError } = await supabase
-      .rpc<CreateInvitationReturn>('create_invitation_and_update_account', params);
+    // Create the invitation in Supabase
+    const { data: invitation, error: inviteError } = await supabase
+      .from('invitations')
+      .insert({
+        email: normalizedEmail,
+        account_id: account.id,
+        invitation_id: invitationId
+      })
+      .select()
+      .single();
       
-    if (transactionError) {
-      console.error("Transaction error:", transactionError);
-      toast.error('שגיאה בשליחת ההזמנה, אנא נסה שוב');
-      throw transactionError;
+    if (inviteError) {
+      console.error("Error creating invitation:", inviteError);
+      throw inviteError;
     }
     
-    console.log('Invitation transaction completed successfully:', transaction);
+    console.log('Invitation created successfully:', invitation);
+    
+    // Update the account with the invitation details
+    const { data: updatedAccountData, error: updateError } = await supabase
+      .from('accounts')
+      .update({
+        invitation_id: invitationId,
+        shared_with_email: normalizedEmail
+      })
+      .eq('id', account.id)
+      .select()
+      .single();
+      
+    if (updateError) {
+      console.error("Error updating account:", updateError);
+      throw updateError;
+    }
+    
+    console.log('Account updated with invitation details:', updatedAccountData);
     
     // Prepare invitation link and send email
     try {
