@@ -1,90 +1,80 @@
 
+import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { showInvitationNotification } from './invitationNotifier';
-import { toast } from 'sonner';
-
-// Throttling mechanism to prevent excessive API calls
-let lastCheckTime: number | null = null;
-const CHECK_INTERVAL = 30000; // 30 seconds
 
 /**
- * Automatically checks for new invitations - with throttling to prevent loops
+ * Checks for new invitations for the current user and shows notifications
  */
-export const checkForNewInvitations = async (email: string) => {
-  if (!email) return [];
-  
-  // Use a static timestamp to prevent multiple checks in short period
-  const now = Date.now();
-  if (lastCheckTime && now - lastCheckTime < CHECK_INTERVAL) {
-    console.log('Skipping invitation check - checked too recently');
-    return [];
+export async function checkForNewInvitations(userEmail?: string): Promise<boolean> {
+  if (!userEmail) {
+    console.log('No user email provided for invitation check');
+    return false;
   }
   
-  lastCheckTime = now;
-  
   try {
-    console.log(`Checking for new invitations for ${email}`);
+    console.log(`Checking for new invitations for user ${userEmail}`);
     
-    // Check for invitations in Supabase
+    // Get invitations from database that haven't been accepted yet and haven't expired
     const { data: invitations, error } = await supabase
       .from('invitations')
       .select(`
-        invitation_id,
-        email,
-        account_id,
+        *,
         accounts:account_id (
-          id,
-          name,
-          owner_id,
-          profiles!owner_id (
-            id,
+          *,
+          profiles:owner_id (
             name
           )
         )
       `)
-      .eq('email', email.toLowerCase())
+      .eq('email', userEmail.toLowerCase())
       .is('accepted_at', null)
       .gt('expires_at', 'now()');
       
     if (error) {
-      console.error('Error fetching invitations from Supabase:', error);
-      return [];
+      console.error('Error fetching invitations:', error);
+      return false;
     }
     
-    // If there are new invitations, show notifications
-    if (invitations && invitations.length > 0) {
-      console.log("Found invitations in database:", invitations);
-      
-      // Check if we've already notified about these invitations
-      const notifiedInvitationsStr = sessionStorage.getItem('notifiedInvitations') || '[]';
-      let notifiedIds: string[] = [];
-      
-      try {
-        notifiedIds = JSON.parse(notifiedInvitationsStr);
-      } catch (e) {
-        console.error('Error parsing notifiedInvitations:', e);
-      }
-      
-      // Show notification for the first invitation we haven't notified about yet
-      for (const invitation of invitations) {
-        if (invitation.invitation_id && !notifiedIds.includes(invitation.invitation_id)) {
-          showInvitationNotification(invitation.invitation_id);
-          
-          // Add to notified list
-          notifiedIds.push(invitation.invitation_id);
-          sessionStorage.setItem('notifiedInvitations', JSON.stringify(notifiedIds));
-          
-          // Only show one notification at a time
-          break;
-        }
-      }
-      
-      return invitations;
+    if (!invitations || invitations.length === 0) {
+      console.log('No pending invitations found');
+      return false;
     }
     
-    return [];
+    console.log(`Found ${invitations.length} pending invitations for ${userEmail}`);
+    
+    // Check if we've already shown notifications for these invitations
+    const notifiedInvitationsStr = sessionStorage.getItem('notifiedInvitations') || '[]';
+    let notifiedIds: string[] = [];
+    
+    try {
+      notifiedIds = JSON.parse(notifiedInvitationsStr);
+    } catch (e) {
+      console.error('Failed to parse notifiedInvitations:', e);
+      notifiedIds = [];
+    }
+    
+    // Show notifications for new invitations
+    let hasShownNotification = false;
+    for (const invitation of invitations) {
+      if (invitation.invitation_id && !notifiedIds.includes(invitation.invitation_id)) {
+        // Show notification
+        showInvitationNotification(invitation.invitation_id);
+        hasShownNotification = true;
+        
+        // Add to notified list
+        notifiedIds.push(invitation.invitation_id);
+      }
+    }
+    
+    // Update the notified list
+    if (hasShownNotification) {
+      sessionStorage.setItem('notifiedInvitations', JSON.stringify(notifiedIds));
+    }
+    
+    return invitations.length > 0;
   } catch (error) {
-    console.error('Failed to check for new invitations:', error);
-    return [];
+    console.error('Error checking for new invitations:', error);
+    return false;
   }
-};
+}

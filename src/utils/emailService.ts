@@ -37,7 +37,7 @@ export async function sendEmail(options: SendEmailOptions) {
     return data;
   } catch (error) {
     console.error('Failed to send email:', error);
-    toast.error('שגיאה בשליחת אימייל, אנא נסה שוב');
+    // Don't show toast here - we'll handle notifications at the caller level
     throw error;
   }
 }
@@ -88,10 +88,20 @@ export async function sendInvitationEmail(
       html
     });
     
-    console.log('Invitation email sent successfully with result:', result);
+    if (result && result.warning) {
+      console.warn('Warning from send-email function:', result.warning);
+      toast.warning('ההזמנה נוצרה אך שליחת האימייל נכשלה. המשתמש יוכל לראות את ההזמנה בכניסה למערכת.');
+    } else {
+      console.log('Invitation email sent successfully with result:', result);
+      toast.success(`הזמנה נשלחה ל-${email} בהצלחה!`);
+    }
+    
     return result;
   } catch (error) {
     console.error(`Failed to send invitation email to ${email}:`, error);
-    throw error;
+    toast.warning('ההזמנה נוצרה אך שליחת האימייל נכשלה. המשתמש יוכל לראות את ההזמנה בכניסה למערכת.');
+    // We don't re-throw the error because we want the invitation process to continue
+    // even if email sending fails
+    return { warning: 'Email sending failed but invitation created' };
   }
 }

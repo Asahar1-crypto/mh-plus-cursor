@@ -118,12 +118,14 @@ export async function sendInvitation(email: string, user: User, account: Account
       console.log('Account updated with invitation details:', updatedAccountData);
       
       // Prepare invitation link and send email
+      let emailSent = false;
       try {
         const baseUrl = window.location.origin;
         const invitationLink = `${baseUrl}/invitation/${invitationId}`;
         
         console.log(`Sending invitation email to ${normalizedEmail} with link ${invitationLink}`);
         
+        // Note: sendInvitationEmail will handle its own errors and show appropriate toasts
         await sendInvitationEmail(
           normalizedEmail,
           invitationLink,
@@ -131,12 +133,12 @@ export async function sendInvitation(email: string, user: User, account: Account
           account.name || 'Shared Account'
         );
         
+        emailSent = true;
         console.log(`Invitation email sent to ${normalizedEmail} with link ${invitationLink}`);
       } catch (emailError) {
         console.error('Failed to send invitation email:', emailError);
         // We don't throw here because the invitation was created successfully in the database
         // The user can still access it via the app when they log in
-        toast.warning('ההזמנה נוצרה בהצלחה אך שליחת האימייל נכשלה');
       }
       
       // Return the updated account object
@@ -147,7 +149,12 @@ export async function sendInvitation(email: string, user: User, account: Account
       };
       
       console.log("Invitation process completed successfully");
-      toast.success('ההזמנה נשלחה בהצלחה!');
+      if (!emailSent) {
+        toast.warning('ההזמנה נוצרה בהצלחה אך שליחת האימייל נכשלה');
+      } else {
+        toast.success('ההזמנה נשלחה בהצלחה!');
+      }
+      
       return updatedAccount;
       
     } catch (innerError) {

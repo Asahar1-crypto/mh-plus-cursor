@@ -76,10 +76,11 @@ serve(async (req) => {
 
     console.log(`Preparing to send email to ${to} with subject ${subject}`);
 
-    // Configure the email message - USING SENDGRID VERIFIED SENDER
+    // Configure the email message - USING YOUR OWN VERIFIED SENDER
+    // You should replace this with an email you've verified in SendGrid
     const msg = {
       to,
-      from: "onboarding@resend.dev", // Changed to use SendGrid verified email
+      from: "notification@machatziot.app", // Replace with YOUR verified sender email from SendGrid
       subject,
       text,
       html,
