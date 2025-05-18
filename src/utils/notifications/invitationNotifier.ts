@@ -39,7 +39,7 @@ export const showInvitationNotification = (invitationId: string) => {
       }
 
       // Found invitation in database
-      const ownerName = data.accounts?.profiles?.[0]?.name || 'בעל החשבון';
+      const ownerName = data.accounts?.profiles?.name || 'בעל החשבון';
       const accountName = data.accounts?.name || 'חשבון משותף';
       
       // Show notification
@@ -91,4 +91,3 @@ export const hasPendingInvitations = async (currentUserEmail?: string): Promise<
     return false;
   }
 };
-

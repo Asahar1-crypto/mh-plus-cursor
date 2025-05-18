@@ -1,108 +1,75 @@
 
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from '@/integrations/supabase/client';
+import { InvitationData } from './types';
 import { toast } from 'sonner';
 import { showInvitationNotification } from '@/utils/notifications';
-import { InvitationData } from './types';
-import { shouldCheckInvitations, updateLastCheckTime } from './invitationValidator';
-import { enhanceInvitation, cleanupInvalidInvitation } from './invitationFetcher';
 
 /**
- * Check for pending invitations for a user's email
+ * Checks for pending invitations for the current user
  */
-export const checkPendingInvitations = async (email: string): Promise<InvitationData[]> => {
-  if (!email) {
-    console.log('No email provided for invitation check');
+export async function checkPendingInvitations(userEmail: string): Promise<InvitationData[]> {
+  if (!userEmail) {
+    console.log('No user email provided, skipping invitation check');
     return [];
   }
   
-  // Prevent checking too frequently (throttle to once per 30 seconds)
-  if (!shouldCheckInvitations()) {
-    return [];
-  }
-  
-  updateLastCheckTime();
+  console.log(`Checking pending invitations for user with email: ${userEmail}`);
   
   try {
-    console.log(`Checking pending invitations for ${email}`);
-    
-    // Normalize email to lowercase for consistent comparison
-    const normalizedEmail = email.toLowerCase();
-    
-    // First, get valid invitations
+    // Check for invitations in database
     const { data: invitations, error } = await supabase
       .from('invitations')
-      .select('*')
-      .eq('email', normalizedEmail)
-      .is('accepted_at', null) 
+      .select(`
+        *,
+        accounts:account_id (
+          *,
+          profiles:owner_id (
+            name
+          )
+        )
+      `)
+      .eq('email', userEmail.toLowerCase())
+      .is('accepted_at', null)
       .gt('expires_at', 'now()');
       
     if (error) {
-      console.error("Error checking pending invitations:", error);
+      console.error('Error fetching pending invitations:', error);
       return [];
     }
-
+    
     if (!invitations || invitations.length === 0) {
-      console.log(`No pending invitations found for ${email}`);
+      console.log('No pending invitations found');
       return [];
     }
-
-    console.log(`Found ${invitations.length} pending invitations for ${email}:`, invitations);
     
-    // Process invitations one by one to ensure we have all required data
-    const processedInvitations: InvitationData[] = [];
-    let shouldShowNotification = false;
+    console.log(`Found ${invitations.length} pending invitations:`, invitations);
     
-    for (const invitation of invitations) {
-      // Get enhanced invitation with account and owner data
-      const enhancedInvitation = await enhanceInvitation(invitation);
-      
-      if (!enhancedInvitation) {
-        // Clean up invalid invitations that have no associated account
-        if (invitation.invitation_id) {
-          await cleanupInvalidInvitation(invitation.invitation_id);
-        }
-        continue;
-      }
-      
+    // Show notification for the first invitation
+    if (invitations.length > 0 && invitations[0].invitation_id) {
       // Check if we've already notified about this invitation
       const notifiedInvitationsStr = sessionStorage.getItem('notifiedInvitations') || '[]';
-      let notifiedIds: string[];
+      let notifiedIds: string[] = [];
       
       try {
         notifiedIds = JSON.parse(notifiedInvitationsStr);
-        if (!Array.isArray(notifiedIds)) {
-          notifiedIds = [];
-        }
       } catch (e) {
-        console.error('Error parsing notifiedInvitations:', e);
-        notifiedIds = [];
+        console.error('Failed to parse notifiedInvitations:', e);
       }
       
-      // Only show notification once per invitation
-      if (!notifiedIds.includes(invitation.invitation_id)) {
-        shouldShowNotification = true;
-        // Mark as notified
-        notifiedIds.push(invitation.invitation_id);
+      const firstInvitation = invitations[0];
+      if (firstInvitation.invitation_id && !notifiedIds.includes(firstInvitation.invitation_id)) {
+        // Show notification
+        showInvitationNotification(firstInvitation.invitation_id);
+        
+        // Add to notified list
+        notifiedIds.push(firstInvitation.invitation_id);
         sessionStorage.setItem('notifiedInvitations', JSON.stringify(notifiedIds));
-        
-        // Don't show notification if we're already on the invitation page
-        const currentPath = window.location.pathname;
-        const isOnInvitationPage = currentPath.includes('/invitation/');
-        
-        if (!isOnInvitationPage) {
-          // Show at most one notification per check
-          showInvitationNotification(invitation.invitation_id);
-          break;
-        }
       }
-      
-      processedInvitations.push(enhancedInvitation);
     }
-
-    console.log(`Processed ${processedInvitations.length} pending invitations for ${email}`);
-    return processedInvitations;
+    
+    return invitations as InvitationData[];
   } catch (error) {
-    console.error('Failed to check pending invitations:', error);
+    console.error('Error in checkPendingInvitations:', error);
     return [];
   }
-};
+}
