@@ -55,11 +55,11 @@ export async function acceptInvitation(invitationId: string, user: User): Promis
       throw new Error(`ההזמנה מיועדת ל-${invitation.email} אך אתה מחובר כ-${user.email}`);
     }
     
-    // Enhanced validation for account data
+    // Enhance account data validation
     if (!invitation.accounts || !invitation.account_id) {
       console.error("Invitation found but account data is missing or incomplete");
       
-      // Try to fetch account data directly with a simpler query
+      // Try to fetch account data directly
       try {
         const { data: accountData, error: accountError } = await supabase
           .from('accounts')
@@ -128,10 +128,11 @@ export async function acceptInvitation(invitationId: string, user: User): Promis
       const { data: ownerProfile } = await supabase
         .from('profiles')
         .select('name')
-        .eq('id', invitation.accounts.owner_id);
+        .eq('id', invitation.accounts.owner_id)
+        .maybeSingle();
         
-      if (ownerProfile && ownerProfile.length > 0 && ownerProfile[0]?.name) {
-        ownerName = ownerProfile[0].name;
+      if (ownerProfile && ownerProfile.name) {
+        ownerName = ownerProfile.name;
       }
     } catch (error) {
       console.error("Could not fetch owner profile:", error);

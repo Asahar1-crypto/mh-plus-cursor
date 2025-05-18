@@ -66,13 +66,21 @@ const PendingInvitationAlert = () => {
       if (data && Array.isArray(data)) {
         console.log('PendingInvitationAlert: Found pending invitations:', data);
 
-        // Validate invitations - ensure they have required properties
-        const validInvitations = data.filter(invitation => 
-          invitation && 
-          invitation.invitation_id && 
-          invitation.accounts && 
-          invitation.accounts.id
-        );
+        // Filter out invitations with missing account data
+        const validInvitations = data.filter(invitation => {
+          // Check if accounts data exists and has required properties
+          if (!invitation || !invitation.account_id) {
+            return false;
+          }
+          
+          // If accounts data is missing, try to fetch it separately
+          if (!invitation.accounts || !invitation.accounts.id) {
+            console.log("PendingInvitationAlert: Missing account data for invitation:", invitation.invitation_id);
+            return false;
+          }
+          
+          return true;
+        });
 
         // Set invitations in state
         setInvitations(validInvitations);
@@ -113,9 +121,10 @@ const PendingInvitationAlert = () => {
       const { data } = await supabase
         .from('profiles')
         .select('name')
-        .eq('id', firstInvitation.accounts.owner_id);
+        .eq('id', firstInvitation.accounts.owner_id)
+        .maybeSingle();
         
-      return data && data.length > 0 && data[0]?.name ? data[0].name : 'בעל החשבון';
+      return data && data.name ? data.name : 'בעל החשבון';
     } catch (err) {
       console.error('Error fetching owner profile:', err);
       return 'בעל החשבון';

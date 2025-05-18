@@ -60,75 +60,61 @@ const AcceptInvitation = () => {
         setFetchAttempted(true);
         console.log(`Fetching invitation details for ID: ${invitationId}`);
         
-        // Simplified query without problematic profile join
-        const { data: invitationData, error } = await supabase
+        // Get invitation data first
+        const { data: invitationData, error: invitationError } = await supabase
           .from('invitations')
-          .select(`
-            *,
-            accounts:account_id (*)
-          `)
+          .select('*')
           .eq('invitation_id', invitationId)
           .is('accepted_at', null)
           .gt('expires_at', 'now()');
           
-        if (error) {
-          console.error("Error fetching invitation from Supabase:", error);
-          throw new Error('אירעה שגיאה בעת חיפוש ההזמנה: ' + error.message);
+        if (invitationError) {
+          console.error("Error fetching invitation from Supabase:", invitationError);
+          throw new Error('אירעה שגיאה בעת חיפוש ההזמנה: ' + invitationError.message);
         }
         
-        // Convert to array if needed and check length
-        const invitationArray = Array.isArray(invitationData) ? invitationData : (invitationData ? [invitationData] : []);
+        // Check if we have valid invitation data
+        const invitationArray = Array.isArray(invitationData) ? invitationData : [];
         
         if (!invitationArray || invitationArray.length === 0) {
           console.log("No active invitation found in database");
           throw new Error("הזמנה לא נמצאה או שפג תוקפה");
         }
         
-        const invitationRecord = invitationArray[0];
-        console.log("Found invitation in database:", invitationRecord);
+        const invitation = invitationArray[0];
+        console.log("Found invitation in database:", invitation);
         
-        // Enhanced validation for account data
-        if (!invitationRecord.accounts || !invitationRecord.accounts.id) {
-          console.error("Invitation found but account data is missing");
+        // Now fetch account data separately
+        const { data: accountData, error: accountError } = await supabase
+          .from('accounts')
+          .select('*')
+          .eq('id', invitation.account_id);
           
-          // Fetch account data directly with a simpler query
-          try {
-            const { data: accountData, error: accountError } = await supabase
-              .from('accounts')
-              .select('*')
-              .eq('id', invitationRecord.account_id);
-              
-            if (accountError) {
-              console.error("Failed to fetch account data in fallback:", accountError);
-              throw new Error("הזמנה לא תקפה - חסרים פרטי חשבון");
-            }
-            
-            if (!accountData || accountData.length === 0) {
-              console.error("No account data found for account_id:", invitationRecord.account_id);
-              throw new Error("הזמנה לא תקפה - חסרים פרטי חשבון");
-            }
-            
-            // Replace the existing account data with the complete data
-            invitationRecord.accounts = accountData[0];
-          } catch (err) {
-            console.error("Error in account fallback fetch:", err);
-            throw new Error("הזמנה לא תקפה - חסרים פרטי חשבון");
-          }
+        if (accountError) {
+          console.error("Failed to fetch account data:", accountError);
+          throw new Error("הזמנה לא תקפה - חסרים פרטי חשבון");
         }
         
-        // Fallback for owner profile - fetch separately to avoid join issues
+        if (!accountData || accountData.length === 0) {
+          console.error("No account data found for account_id:", invitation.account_id);
+          throw new Error("הזמנה לא תקפה - חסרים פרטי חשבון");
+        }
+        
+        const account = accountData[0];
+        
+        // Fetch owner profile separately
         let ownerName = 'בעל החשבון';
         
         try {
-          if (invitationRecord.accounts.owner_id) {
-            // Direct fetch of owner profile
+          if (account.owner_id) {
             const { data: ownerProfile } = await supabase
               .from('profiles')
               .select('name')
-              .eq('id', invitationRecord.accounts.owner_id);
+              .eq('id', account.owner_id)
+              .maybeSingle();
             
-            if (ownerProfile && ownerProfile.length > 0 && ownerProfile[0]?.name) {
-              ownerName = ownerProfile[0].name;
+            if (ownerProfile && ownerProfile.name) {
+              ownerName = ownerProfile.name;
             }
           }
         } catch (err) {
@@ -139,21 +125,26 @@ const AcceptInvitation = () => {
         // Set invitation details
         setInvitationDetails({
           ownerName: ownerName,
-          accountName: invitationRecord.accounts.name || 'חשבון משותף',
-          email: invitationRecord.email || '',
+          accountName: account.name || 'חשבון משותף',
+          email: invitation.email || '',
         });
         
         // Store the account ID and owner ID in sessionStorage for use during acceptance
-        if (invitationRecord.account_id) {
-          sessionStorage.setItem('pendingInvitationAccountId', invitationRecord.account_id);
+        if (invitation.account_id) {
+          sessionStorage.setItem('pendingInvitationAccountId', invitation.account_id);
         }
         
-        if (invitationRecord.accounts.owner_id) {
-          sessionStorage.setItem('pendingInvitationOwnerId', invitationRecord.accounts.owner_id);
+        if (account.owner_id) {
+          sessionStorage.setItem('pendingInvitationOwnerId', account.owner_id);
         }
         
         // Store full details in sessionStorage for debugging
-        sessionStorage.setItem('currentInvitationDetails', JSON.stringify(invitationRecord));
+        const enrichedInvitation = {
+          ...invitation,
+          accounts: account,
+          owner_profile: { name: ownerName }
+        };
+        sessionStorage.setItem('currentInvitationDetails', JSON.stringify(enrichedInvitation));
         
         setStatus('success');
         
