@@ -12,9 +12,10 @@ interface UsersListCardProps {
   account: Account | null;
   user: UserType | null;
   onRemovePartner: () => Promise<void>;
+  isLoading?: boolean;
 }
 
-const UsersListCard: React.FC<UsersListCardProps> = ({ account, user, onRemovePartner }) => {
+const UsersListCard: React.FC<UsersListCardProps> = ({ account, user, onRemovePartner, isLoading }) => {
   const [isRemoving, setIsRemoving] = useState(false);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
 
@@ -94,9 +95,9 @@ const UsersListCard: React.FC<UsersListCardProps> = ({ account, user, onRemovePa
                       variant="outline" 
                       size="sm" 
                       className="text-destructive border-destructive hover:bg-destructive/10"
-                      disabled={isRemoving}
+                      disabled={isRemoving || isLoading}
                     >
-                      {isRemoving ? (
+                      {isRemoving || isLoading ? (
                         <Loader2 className="h-4 w-4 animate-spin" />
                       ) : (
                         <>
@@ -116,8 +117,8 @@ const UsersListCard: React.FC<UsersListCardProps> = ({ account, user, onRemovePa
                     </AlertDialogHeader>
                     <AlertDialogFooter>
                       <AlertDialogCancel>ביטול</AlertDialogCancel>
-                      <AlertDialogAction onClick={handleRemovePartner} disabled={isRemoving}>
-                        {isRemoving ? (
+                      <AlertDialogAction onClick={handleRemovePartner} disabled={isRemoving || isLoading}>
+                        {isRemoving || isLoading ? (
                           <>
                             <Loader2 className="mr-2 h-4 w-4 animate-spin" /> מסיר...
                           </>
