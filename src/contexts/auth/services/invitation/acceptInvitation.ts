@@ -26,6 +26,10 @@ export async function acceptInvitation(invitationId: string, user: User): Promis
         p_invitation_id: invitationId,
         p_user_id: user.id,
         p_user_email: user.email.toLowerCase()
+      } as {
+        p_invitation_id: string;
+        p_user_id: string;
+        p_user_email: string;
       });
       
     if (transactionError) {

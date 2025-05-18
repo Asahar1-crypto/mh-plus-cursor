@@ -80,6 +80,10 @@ export async function sendInvitation(email: string, user: User, account: Account
         p_email: normalizedEmail,
         p_account_id: account.id,
         p_invitation_id: invitationId
+      } as {
+        p_email: string;
+        p_account_id: string;
+        p_invitation_id: string;
       });
       
     if (transactionError) {
