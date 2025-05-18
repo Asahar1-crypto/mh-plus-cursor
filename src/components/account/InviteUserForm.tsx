@@ -7,8 +7,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { UserPlus, Loader2 } from 'lucide-react';
+import { UserPlus, Loader2, AlertCircle } from 'lucide-react';
 import { Account } from '@/contexts/auth/types';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 const inviteSchema = z.object({
   email: z.string().email({ message: 'אימייל לא תקין' }),
@@ -21,6 +22,7 @@ interface InviteUserFormProps {
 
 const InviteUserForm: React.FC<InviteUserFormProps> = ({ account, onInvite }) => {
   const [isInviting, setIsInviting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   
   const inviteForm = useForm<z.infer<typeof inviteSchema>>({
     resolver: zodResolver(inviteSchema),
@@ -33,13 +35,21 @@ const InviteUserForm: React.FC<InviteUserFormProps> = ({ account, onInvite }) =>
     if (isInviting) return;
     
     setIsInviting(true);
+    setError(null);
+    
     try {
       console.log('Starting invitation process for email:', data.email);
       await onInvite(data.email);
       console.log('Invitation sent successfully');
       inviteForm.reset();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to send invitation:', error);
+      
+      // Only set error if it's not about an existing invitation
+      // (that one is already shown by a toast)
+      if (!error.message?.includes('already exists')) {
+        setError('שגיאה בשליחת ההזמנה. אנא נסה שוב.');
+      }
     } finally {
       setIsInviting(false);
     }
@@ -59,6 +69,13 @@ const InviteUserForm: React.FC<InviteUserFormProps> = ({ account, onInvite }) =>
       <CardContent>
         <Form {...inviteForm}>
           <form onSubmit={inviteForm.handleSubmit(onSubmitInvite)} className="space-y-4">
+            {error && (
+              <Alert variant="destructive" className="mb-4">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
+            
             <FormField
               control={inviteForm.control}
               name="email"
@@ -66,7 +83,12 @@ const InviteUserForm: React.FC<InviteUserFormProps> = ({ account, onInvite }) =>
                 <FormItem>
                   <FormLabel>כתובת אימייל</FormLabel>
                   <FormControl>
-                    <Input placeholder="דוא״ל של המשתמש" {...field} />
+                    <Input 
+                      placeholder="דוא״ל של המשתמש" 
+                      {...field} 
+                      disabled={isInviting} 
+                      autoComplete="email"
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

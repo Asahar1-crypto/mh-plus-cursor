@@ -39,6 +39,14 @@ serve(async (req) => {
     let requestBody;
     try {
       requestBody = await req.json() as EmailRequest;
+      console.log("Request body parsed successfully:", JSON.stringify({
+        to: requestBody.to,
+        subject: requestBody.subject,
+        hasHtml: !!requestBody.html,
+        htmlLength: requestBody.html?.length,
+        hasText: !!requestBody.text,
+        hasTemplate: !!requestBody.templateId
+      }));
     } catch (parseError) {
       console.error("Failed to parse request body:", parseError);
       return new Response(
@@ -85,12 +93,18 @@ serve(async (req) => {
       });
     }
 
-    console.log("Email configuration:", JSON.stringify(msg, null, 2));
+    console.log("Email configuration:", JSON.stringify({
+      to: msg.to,
+      from: msg.from,
+      subject: msg.subject,
+      hasHtml: !!msg.html,
+      htmlLength: msg.html?.length
+    }));
 
     // Send the email
     try {
       const result = await sgMail.send(msg);
-      console.log("Email sent successfully", result);
+      console.log("Email sent successfully with status:", result[0]?.statusCode);
       
       return new Response(
         JSON.stringify({ 

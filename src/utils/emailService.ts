@@ -18,6 +18,12 @@ interface SendEmailOptions {
 export async function sendEmail(options: SendEmailOptions) {
   try {
     console.log('Sending email request to edge function with options:', options);
+    
+    // Make sure we have the required fields
+    if (!options.to || !options.subject || (!options.text && !options.html)) {
+      throw new Error('Missing required email fields');
+    }
+    
     const { data, error } = await supabase.functions.invoke('send-email', {
       body: options
     });
@@ -51,6 +57,11 @@ export async function sendInvitationEmail(
 ) {
   console.log(`Preparing invitation email to ${email} with link ${invitationLink}`);
   
+  if (!email || !invitationLink) {
+    console.error('Missing required parameters for invitation email');
+    throw new Error('Missing required parameters for invitation email');
+  }
+  
   // Basic HTML template for invitation
   const html = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; direction: rtl;">
@@ -68,7 +79,7 @@ export async function sendInvitationEmail(
     </div>
   `;
   
-  console.log(`Sending invitation email to ${email}`);
+  console.log(`Sending invitation email to ${email} with HTML content length: ${html.length}`);
   
   try {
     const result = await sendEmail({

@@ -12,6 +12,29 @@ export async function sendInvitation(email: string, user: User, account: Account
   try {
     console.log(`User ${user.id} (${user.email}) sending invitation to ${email} for account ${account.id}`);
     
+    if (!email || !user || !account) {
+      const errorMsg = 'חסרים פרטים הכרחיים לשליחת הזמנה';
+      console.error(errorMsg, { email, userId: user?.id, accountId: account?.id });
+      toast.error(errorMsg);
+      throw new Error(errorMsg);
+    }
+    
+    // Email validation
+    if (!/\S+@\S+\.\S+/.test(email)) {
+      const errorMsg = 'כתובת דוא״ל לא תקינה';
+      console.error(errorMsg, { email });
+      toast.error(errorMsg);
+      throw new Error(errorMsg);
+    }
+    
+    // Check if the email is the same as the current user
+    if (email.toLowerCase() === user.email.toLowerCase()) {
+      const errorMsg = 'לא ניתן לשלוח הזמנה לעצמך';
+      console.error(errorMsg);
+      toast.error(errorMsg);
+      throw new Error(errorMsg);
+    }
+    
     // Check if an invitation already exists for this email and account
     const { data: existingInvitations, error: checkError } = await supabase
       .from('invitations')
@@ -88,6 +111,34 @@ export async function sendInvitation(email: string, user: User, account: Account
       );
       
       console.log(`Invitation email sent to ${email} with link ${invitationLink}`);
+      
+      // Store invitation in localStorage for client-side access
+      try {
+        // Load existing invitations
+        let pendingInvitations = {};
+        const existingData = localStorage.getItem('pendingInvitations');
+        
+        if (existingData) {
+          pendingInvitations = JSON.parse(existingData);
+        }
+        
+        // Add new invitation
+        pendingInvitations[invitationId] = {
+          accountId: account.id,
+          ownerId: user.id,
+          ownerName: user.name || user.email,
+          name: account.name,
+          sharedWithEmail: email,
+          createdAt: new Date().toISOString()
+        };
+        
+        // Save back to localStorage
+        localStorage.setItem('pendingInvitations', JSON.stringify(pendingInvitations));
+        console.log(`Invitation stored in localStorage for ID ${invitationId}`);
+      } catch (storageError) {
+        console.error('Failed to store invitation in localStorage:', storageError);
+        // Non-critical error, continue execution
+      }
     } catch (emailError) {
       console.error('Failed to send invitation email:', emailError);
       // We don't throw here because the invitation was created successfully
