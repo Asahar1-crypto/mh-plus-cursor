@@ -76,10 +76,10 @@ serve(async (req) => {
 
     console.log(`Preparing to send email to ${to} with subject ${subject}`);
 
-    // Configure the email message
+    // Configure the email message - USING SENDGRID VERIFIED SENDER
     const msg = {
       to,
-      from: "noreply@mchatziot.plus", // This email domain should be verified in SendGrid
+      from: "onboarding@resend.dev", // Changed to use SendGrid verified email
       subject,
       text,
       html,
@@ -119,16 +119,17 @@ serve(async (req) => {
       );
     } catch (sendError: any) {
       console.error("Error sending email with SendGrid:", sendError);
-      // Return detailed error for debugging
+      
+      // Create a fallback response indicating the email wasn't sent but the invitation was created
       return new Response(
         JSON.stringify({
-          error: "Failed to send email via SendGrid",
-          details: sendError.message,
+          warning: "Failed to send email via SendGrid, but invitation was created",
+          details: "User can still access invitation via the app",
+          error: sendError.message,
           code: sendError.code,
-          response: sendError.response?.body || null,
         }),
         {
-          status: 500,
+          status: 200, // Return 200 so the invitation process continues
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         }
       );

@@ -10,6 +10,8 @@ export const showInvitationNotification = (invitationId: string) => {
   // First try to get invitation details from Supabase
   const checkDatabaseInvitation = async () => {
     try {
+      console.log(`Showing notification for invitation ID: ${invitationId}`);
+      
       const { data, error } = await supabase
         .from('invitations')
         .select(`
@@ -45,7 +47,7 @@ export const showInvitationNotification = (invitationId: string) => {
         `יש לך הזמנה לחשבון משותף מ-${ownerName}!`,
         {
           description: `הוזמנת להצטרף לחשבון "${accountName}". לצפייה בהזמנה וקבלתה, לחץ על הכפתור למטה`,
-          duration: 20000, // Longer duration for better visibility
+          duration: 30000, // Longer duration for better visibility
           action: {
             label: "צפה בהזמנה",
             onClick: () => {
@@ -65,19 +67,27 @@ export const showInvitationNotification = (invitationId: string) => {
     try {
       // Check for invitation details in localStorage
       const pendingInvitationsData = localStorage.getItem('pendingInvitations');
-      if (!pendingInvitationsData) return;
+      if (!pendingInvitationsData) {
+        console.error("No pending invitations in localStorage");
+        return;
+      }
       
       const pendingInvitations = JSON.parse(pendingInvitationsData) as Record<string, PendingInvitationRecord>;
       const invitation = pendingInvitations[invitationId];
       
-      if (!invitation) return;
+      if (!invitation) {
+        console.error(`Invitation ${invitationId} not found in localStorage`);
+        return;
+      }
+      
+      console.log("Found invitation in localStorage:", invitation);
       
       // Show notification with invitation details
       toast.info(
-        `יש לך הזמנה לחשבון משותף מ-${invitation.ownerName}!`,
+        `יש לך הזמנה לחשבון משותף מ-${invitation.ownerName || 'בעל החשבון'}!`,
         {
-          description: `לצפייה בהזמנה וקבלתה, לחץ על הכפתור למטה`,
-          duration: 20000, // Longer duration for better visibility
+          description: `הוזמנת להצטרף לחשבון "${invitation.name || 'חשבון משותף'}". לצפייה בהזמנה וקבלתה, לחץ על הכפתור למטה`,
+          duration: 30000, // Longer duration for better visibility
           action: {
             label: "צפה בהזמנה",
             onClick: () => {
@@ -111,6 +121,7 @@ export const hasPendingInvitations = async (currentUserEmail?: string): Promise<
       .gt('expires_at', 'now()');
     
     if (!error && data && data.length > 0) {
+      console.log(`Found ${data.length} pending invitations in database for ${currentUserEmail}`);
       return true;
     }
     
@@ -118,14 +129,25 @@ export const hasPendingInvitations = async (currentUserEmail?: string): Promise<
     const pendingInvitationsData = localStorage.getItem('pendingInvitations');
     if (!pendingInvitationsData) return false;
     
-    const pendingInvitations = JSON.parse(pendingInvitationsData) as Record<string, PendingInvitationRecord>;
-    
-    // Check if there are invitations matching the current user's email
-    return Object.values(pendingInvitations).some(
-      invitation => 
-        invitation.sharedWithEmail && 
-        invitation.sharedWithEmail.toLowerCase() === currentUserEmail.toLowerCase()
-    );
+    try {
+      const pendingInvitations = JSON.parse(pendingInvitationsData) as Record<string, PendingInvitationRecord>;
+      
+      // Check if there are invitations matching the current user's email
+      const hasLocalInvitations = Object.values(pendingInvitations).some(
+        invitation => 
+          invitation.sharedWithEmail && 
+          invitation.sharedWithEmail.toLowerCase() === currentUserEmail.toLowerCase()
+      );
+      
+      if (hasLocalInvitations) {
+        console.log(`Found pending invitations in localStorage for ${currentUserEmail}`);
+      }
+      
+      return hasLocalInvitations;
+    } catch (e) {
+      console.error("Error parsing localStorage invitations:", e);
+      return false;
+    }
   } catch (error) {
     console.error('Failed to check pending invitations:', error);
     return false;
@@ -186,6 +208,7 @@ export const clearInvalidInvitations = (currentUserEmail: string): void => {
 export const clearAllPendingInvitations = (): void => {
   try {
     localStorage.removeItem('pendingInvitations');
+    localStorage.removeItem('notifiedInvitations');
     localStorage.removeItem('pendingInvitationsAfterRegistration');
     sessionStorage.removeItem('pendingInvitationId');
     sessionStorage.removeItem('pendingInvitationAccountId');
@@ -263,6 +286,7 @@ export const checkForNewInvitations = async (email: string) => {
       });
       
       localStorage.setItem('pendingInvitations', JSON.stringify(pendingInvitations));
+      console.log("Updated localStorage with invitations:", pendingInvitations);
       
       // Show notification for the first invitation
       if (invitations[0]?.invitation_id) {
@@ -276,5 +300,29 @@ export const checkForNewInvitations = async (email: string) => {
   } catch (error) {
     console.error('Failed to check for new invitations:', error);
     return [];
+  }
+};
+
+/**
+ * Debug helper - Dumps all stored invitations to console
+ */
+export const debugInvitations = (): void => {
+  try {
+    console.log("--- DEBUG INVITATIONS ---");
+    
+    // Check localStorage
+    const pendingInvitations = localStorage.getItem('pendingInvitations');
+    console.log("pendingInvitations:", pendingInvitations ? JSON.parse(pendingInvitations) : null);
+    
+    const notifiedInvitations = localStorage.getItem('notifiedInvitations');
+    console.log("notifiedInvitations:", notifiedInvitations ? JSON.parse(notifiedInvitations) : null);
+    
+    // Check sessionStorage
+    console.log("pendingInvitationId:", sessionStorage.getItem('pendingInvitationId'));
+    console.log("pendingInvitationAccountId:", sessionStorage.getItem('pendingInvitationAccountId'));
+    
+    console.log("------------------------");
+  } catch (error) {
+    console.error("Error in debugInvitations:", error);
   }
 };

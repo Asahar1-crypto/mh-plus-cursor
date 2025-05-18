@@ -6,6 +6,40 @@ import { User, Account } from '../../types';
 import { sendInvitationEmail } from '@/utils/emailService';
 
 /**
+ * Helper function to store invitation data in localStorage
+ */
+function storeInvitationLocally(invitationId: string, accountId: string, userId: string, userEmail: string, userName: string, accountName: string, sharedWithEmail: string) {
+  try {
+    // Load existing invitations
+    let pendingInvitations = {};
+    const existingData = localStorage.getItem('pendingInvitations');
+    
+    if (existingData) {
+      pendingInvitations = JSON.parse(existingData);
+    }
+    
+    // Add new invitation
+    pendingInvitations[invitationId] = {
+      accountId: accountId,
+      ownerId: userId,
+      ownerName: userName || userEmail,
+      name: accountName,
+      sharedWithEmail: sharedWithEmail,
+      createdAt: new Date().toISOString(),
+      invitationId: invitationId
+    };
+    
+    // Save back to localStorage
+    localStorage.setItem('pendingInvitations', JSON.stringify(pendingInvitations));
+    console.log(`Invitation stored in localStorage for ID ${invitationId}`);
+    return true;
+  } catch (storageError) {
+    console.error('Failed to store invitation in localStorage:', storageError);
+    return false;
+  }
+}
+
+/**
  * Sends an invitation to a user to join an account
  */
 export async function sendInvitation(email: string, user: User, account: Account) {
@@ -99,6 +133,18 @@ export async function sendInvitation(email: string, user: User, account: Account
     
     console.log('Account updated with invitation details:', updatedAccountData);
     
+    // Store invitation in localStorage BEFORE trying to send email
+    console.log("Storing invitation in localStorage");
+    storeInvitationLocally(
+      invitationId, 
+      account.id, 
+      user.id, 
+      user.email, 
+      user.name || '', 
+      account.name, 
+      normalizedEmail
+    );
+    
     // Prepare invitation link and send email
     try {
       const baseUrl = window.location.origin;
@@ -114,34 +160,6 @@ export async function sendInvitation(email: string, user: User, account: Account
       );
       
       console.log(`Invitation email sent to ${normalizedEmail} with link ${invitationLink}`);
-      
-      // Store invitation in localStorage for client-side access
-      try {
-        // Load existing invitations
-        let pendingInvitations = {};
-        const existingData = localStorage.getItem('pendingInvitations');
-        
-        if (existingData) {
-          pendingInvitations = JSON.parse(existingData);
-        }
-        
-        // Add new invitation
-        pendingInvitations[invitationId] = {
-          accountId: account.id,
-          ownerId: user.id,
-          ownerName: user.name || user.email,
-          name: account.name,
-          sharedWithEmail: normalizedEmail,
-          createdAt: new Date().toISOString()
-        };
-        
-        // Save back to localStorage
-        localStorage.setItem('pendingInvitations', JSON.stringify(pendingInvitations));
-        console.log(`Invitation stored in localStorage for ID ${invitationId}`);
-      } catch (storageError) {
-        console.error('Failed to store invitation in localStorage:', storageError);
-        // Non-critical error, continue execution
-      }
     } catch (emailError) {
       console.error('Failed to send invitation email:', emailError);
       // We don't throw here because the invitation was created successfully

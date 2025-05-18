@@ -93,6 +93,18 @@ export const invitationCheckService = {
       // Store invitations in localStorage with complete account information
       const pendingInvitations: Record<string, PendingInvitationRecord> = {};
       
+      // First, try to load any existing invitations
+      const existingData = localStorage.getItem('pendingInvitations');
+      if (existingData) {
+        try {
+          const existing = JSON.parse(existingData);
+          Object.assign(pendingInvitations, existing);
+        } catch (e) {
+          console.error("Error parsing existing invitations:", e);
+        }
+      }
+      
+      // Then add/update with new data
       enrichedInvitations.forEach(inv => {
         if (inv.invitation_id) {
           pendingInvitations[inv.invitation_id] = {
@@ -107,6 +119,7 @@ export const invitationCheckService = {
       });
       
       // Save to localStorage
+      console.log("Storing invitations in localStorage:", pendingInvitations);
       localStorage.setItem('pendingInvitations', JSON.stringify(pendingInvitations));
       console.log("Updated localStorage with pending invitations:", pendingInvitations);
       
@@ -119,6 +132,35 @@ export const invitationCheckService = {
     } catch (error) {
       console.error('Failed to check pending invitations:', error);
       return [];
+    }
+  },
+  
+  // Debug helper - directly check if an invitation exists by ID
+  checkInvitationById: async (invitationId: string): Promise<boolean> => {
+    if (!invitationId) return false;
+    
+    try {
+      console.log(`Checking if invitation exists with ID: ${invitationId}`);
+      
+      const { data, error } = await supabase
+        .from('invitations')
+        .select('invitation_id')
+        .eq('invitation_id', invitationId)
+        .is('accepted_at', null)
+        .gt('expires_at', 'now()');
+        
+      if (error) {
+        console.error("Error checking invitation by ID:", error);
+        return false;
+      }
+      
+      const exists = data && data.length > 0;
+      console.log(`Invitation ${invitationId} exists in database: ${exists}`);
+      return exists;
+      
+    } catch (error) {
+      console.error("Error in checkInvitationById:", error);
+      return false;
     }
   }
 };

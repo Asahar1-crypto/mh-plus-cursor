@@ -4,6 +4,8 @@ import { useParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/auth';
 import { supabase } from '@/integrations/supabase/client';
 import { InvitationDetails } from '@/components/invitation/types';
+import { toast } from 'sonner';
+import { debugInvitations } from '@/utils/notifications';
 
 // Import the components
 import LoadingState from '@/components/invitation/LoadingState';
@@ -17,6 +19,12 @@ const AcceptInvitation = () => {
   const [invitationDetails, setInvitationDetails] = useState<InvitationDetails | null>(null);
   const [errorMessage, setErrorMessage] = useState<string>('');
   
+  // Debug function that displays invitation storage status to help troubleshoot
+  const debugInvitationStatus = () => {
+    debugInvitations();
+    toast.info('בדיקת נתוני הזמנה בוצעה. בדוק את הקונסול לפרטים.');
+  };
+  
   useEffect(() => {
     if (!invitationId) {
       setStatus('error');
@@ -29,7 +37,8 @@ const AcceptInvitation = () => {
       try {
         console.log(`Fetching invitation details for ID: ${invitationId}`);
         
-        // First try to get basic invitation info
+        // First try to get basic invitation info from the database
+        console.log("Querying database for invitation details");
         const { data: invitation, error } = await supabase
           .from('invitations')
           .select(`
@@ -47,28 +56,35 @@ const AcceptInvitation = () => {
           `)
           .eq('invitation_id', invitationId)
           .is('accepted_at', null)
-          .gt('expires_at', 'now()')
-          .single();
+          .gt('expires_at', 'now()');
           
         if (error) {
           console.error("Error fetching invitation from Supabase:", error);
           throw new Error('לא נמצאה הזמנה תקפה במערכת');
         }
         
-        console.log("Found invitation:", invitation);
+        if (!invitation || invitation.length === 0) {
+          console.log("No active invitation found in database, checking localStorage...");
+          throw new Error("הזמנה לא נמצאה בבסיס הנתונים");
+        }
         
-        if (!invitation || !invitation.accounts) {
+        const invitationRecord = invitation[0];
+        console.log("Found invitation in database:", invitationRecord);
+        
+        if (!invitationRecord.accounts) {
+          console.error("Invitation found but account data is missing");
           throw new Error("הזמנה לא תקפה או שפג תוקפה");
         }
         
         // Get owner profile
         let ownerName = 'בעל החשבון';
         
-        if (invitation.accounts.owner_id) {
+        if (invitationRecord.accounts.owner_id) {
+          console.log("Fetching owner profile information");
           const { data: ownerData } = await supabase
             .from('profiles')
             .select('name')
-            .eq('id', invitation.accounts.owner_id)
+            .eq('id', invitationRecord.accounts.owner_id)
             .single();
             
           if (ownerData) {
@@ -79,24 +95,25 @@ const AcceptInvitation = () => {
         // Set invitation details
         setInvitationDetails({
           ownerName: ownerName,
-          accountName: invitation.accounts.name || 'חשבון משותף',
-          email: invitation.email || '',
+          accountName: invitationRecord.accounts.name || 'חשבון משותף',
+          email: invitationRecord.email || '',
         });
         
         // Store IDs in sessionStorage for later use during acceptance
-        sessionStorage.setItem('pendingInvitationAccountId', invitation.account_id);
+        sessionStorage.setItem('pendingInvitationAccountId', invitationRecord.account_id);
         
-        if (invitation.accounts.owner_id) {
-          sessionStorage.setItem('pendingInvitationOwnerId', invitation.accounts.owner_id);
+        if (invitationRecord.accounts.owner_id) {
+          sessionStorage.setItem('pendingInvitationOwnerId', invitationRecord.accounts.owner_id);
         }
         
         setStatus('success');
         
-      } catch (error) {
-        console.error('Error fetching invitation details:', error);
+      } catch (dbError) {
+        console.error('Error fetching invitation from database:', dbError);
         
         // Fallback to localStorage
         try {
+          console.log("Checking localStorage for invitation");
           const pendingInvitationsData = localStorage.getItem('pendingInvitations');
           
           if (!pendingInvitationsData) {
@@ -107,6 +124,15 @@ const AcceptInvitation = () => {
           }
           
           const pendingInvitations = JSON.parse(pendingInvitationsData);
+          console.log("Invitations in localStorage:", pendingInvitations);
+          
+          if (!pendingInvitations || Object.keys(pendingInvitations).length === 0) {
+            console.error("Empty invitations object in localStorage");
+            setStatus('error');
+            setErrorMessage('לא נמצאו הזמנות פעילות עבורך');
+            return;
+          }
+          
           const localInvitation = pendingInvitations[invitationId];
           
           if (!localInvitation) {
@@ -154,7 +180,7 @@ const AcceptInvitation = () => {
   }, [invitationId]);
   
   return (
-    <div className="container mx-auto py-10 px-4 flex items-center justify-center min-h-[calc(100vh-4rem)]">
+    <div className="container mx-auto py-10 px-4 flex flex-col items-center justify-center min-h-[calc(100vh-4rem)]">
       {status === 'loading' && <LoadingState />}
       
       {status === 'error' && <ErrorState message={errorMessage} />}
@@ -167,6 +193,16 @@ const AcceptInvitation = () => {
           isAuthenticated={isAuthenticated}
           acceptInvitation={acceptInvitation}
         />
+      )}
+      
+      {/* Debug button - only shown in error state */}
+      {status === 'error' && (
+        <button 
+          onClick={debugInvitationStatus}
+          className="mt-4 text-sm text-gray-500 underline"
+        >
+          בדוק נתוני הזמנה (דיבאג)
+        </button>
       )}
     </div>
   );

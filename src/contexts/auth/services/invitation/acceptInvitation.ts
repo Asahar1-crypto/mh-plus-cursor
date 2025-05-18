@@ -12,10 +12,33 @@ export async function acceptInvitation(invitationId: string, user: User): Promis
   try {
     console.log(`User ${user.id} (${user.email}) attempting to accept invitation ${invitationId}`);
     
+    if (!invitationId) {
+      console.error("No invitation ID provided");
+      throw new Error('מזהה הזמנה חסר');
+    }
+
+    if (!user || !user.id || !user.email) {
+      console.error("Missing user data", user);
+      throw new Error('נתוני משתמש חסרים');
+    }
+    
     // First try to get the invitation from the database
+    console.log("Querying database for invitation:", invitationId);
     const { data: invitationData, error: findError } = await supabase
       .from('invitations')
-      .select('id, account_id, email, invitation_id, accepted_at, expires_at')
+      .select(`
+        id, 
+        account_id, 
+        email, 
+        invitation_id, 
+        accepted_at, 
+        expires_at,
+        accounts:account_id (
+          id,
+          name,
+          owner_id
+        )
+      `)
       .eq('invitation_id', invitationId)
       .is('accepted_at', null)
       .gt('expires_at', 'now()');
@@ -29,6 +52,7 @@ export async function acceptInvitation(invitationId: string, user: User): Promis
       console.warn("Could not find invitation in database, trying localStorage...");
       
       // Try to get invitation details from localStorage as backup
+      console.log("Checking localStorage for pending invitations");
       const pendingInvitationsData = localStorage.getItem('pendingInvitations');
       if (!pendingInvitationsData) {
         console.error("No pending invitations found in localStorage");
@@ -37,6 +61,8 @@ export async function acceptInvitation(invitationId: string, user: User): Promis
       
       try {
         const pendingInvitations = JSON.parse(pendingInvitationsData) as Record<string, PendingInvitationRecord>;
+        console.log("Local invitations found:", Object.keys(pendingInvitations));
+        
         const localInvitation = pendingInvitations[invitationId];
         
         if (!localInvitation) {
@@ -62,6 +88,7 @@ export async function acceptInvitation(invitationId: string, user: User): Promis
         }
         
         // Fetch account information
+        console.log("Fetching account information for:", accountId);
         const { data: accountData, error: accountError } = await supabase
           .from('accounts')
           .select('*')
@@ -87,6 +114,7 @@ export async function acceptInvitation(invitationId: string, user: User): Promis
         }
         
         // Update the account to link with the current user
+        console.log("Updating account with user information");
         const { error: updateError } = await supabase
           .from('accounts')
           .update({ 
@@ -103,14 +131,14 @@ export async function acceptInvitation(invitationId: string, user: User): Promis
         
         // Try to add or update the invitation in the database
         try {
-          // First check if the invitation exists
+          console.log("Checking if invitation exists in database");
           const { data: existingInv } = await supabase
             .from('invitations')
             .select('*')
             .eq('invitation_id', invitationId);
             
           if (!existingInv || existingInv.length === 0) {
-            // Create the invitation record
+            console.log("Creating invitation record in database");
             await supabase
               .from('invitations')
               .insert({
@@ -120,7 +148,7 @@ export async function acceptInvitation(invitationId: string, user: User): Promis
                 accepted_at: new Date().toISOString()
               });
           } else {
-            // Mark invitation as accepted
+            console.log("Marking invitation as accepted");
             await supabase
               .from('invitations')
               .update({ accepted_at: new Date().toISOString() })
@@ -135,6 +163,7 @@ export async function acceptInvitation(invitationId: string, user: User): Promis
         let ownerName = localInvitation.ownerName || 'בעל החשבון';
         
         if (account.owner_id) {
+          console.log("Fetching owner profile information");
           const { data: ownerData } = await supabase
             .from('profiles')
             .select('name')
@@ -159,6 +188,7 @@ export async function acceptInvitation(invitationId: string, user: User): Promis
         };
         
         // Clean up localStorage and sessionStorage
+        console.log("Clearing stored invitation data");
         removePendingInvitation(invitationId);
         sessionStorage.removeItem('pendingInvitationAccountId');
         sessionStorage.removeItem('pendingInvitationOwnerId');
@@ -183,6 +213,7 @@ export async function acceptInvitation(invitationId: string, user: User): Promis
     }
     
     // Fetch account information
+    console.log("Fetching account data for invitation");
     const { data: accountData, error: accountError } = await supabase
       .from('accounts')
       .select('*')
@@ -202,6 +233,7 @@ export async function acceptInvitation(invitationId: string, user: User): Promis
     }
     
     // Update the account to link with the current user
+    console.log("Updating account with user information");
     const { error: updateError } = await supabase
       .from('accounts')
       .update({ 
@@ -217,6 +249,7 @@ export async function acceptInvitation(invitationId: string, user: User): Promis
     }
     
     // Mark invitation as accepted
+    console.log("Marking invitation as accepted");
     await supabase
       .from('invitations')
       .update({ accepted_at: new Date().toISOString() })
@@ -226,6 +259,7 @@ export async function acceptInvitation(invitationId: string, user: User): Promis
     let ownerName = 'בעל החשבון';
     
     if (account.owner_id) {
+      console.log("Fetching owner profile");
       const { data: ownerData } = await supabase
         .from('profiles')
         .select('name')
@@ -249,6 +283,7 @@ export async function acceptInvitation(invitationId: string, user: User): Promis
       isSharedAccount: true
     };
     
+    console.log("Clearing invitation data");
     removePendingInvitation(invitation.invitation_id);
     toast.success('הצטרפת לחשבון בהצלחה!');
     return dbSharedAccount;
