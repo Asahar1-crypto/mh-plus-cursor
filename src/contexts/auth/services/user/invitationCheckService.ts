@@ -2,6 +2,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from 'sonner';
 import { showInvitationNotification } from '@/utils/notifications';
+import { InvitationData } from '@/contexts/auth/services/invitation/types';
 
 /**
  * Service for checking pending invitations for a user
@@ -225,8 +226,8 @@ export const invitationCheckService = {
               // Create an owner_profile object for backward compatibility
               const owner_profile = ownerData ? { name: ownerData.name } : { name: 'בעל החשבון' };
               
-              // Add owner_profile to the data
-              data.owner_profile = owner_profile;
+              // Add owner_profile to the data using type assertion to avoid TypeScript errors
+              (data as InvitationData).owner_profile = owner_profile;
             }
             
             // Store the enriched invitation details in sessionStorage
@@ -250,16 +251,16 @@ export const invitationCheckService = {
             // Create an owner_profile object for backward compatibility
             const owner_profile = ownerProfile ? { name: ownerProfile.name } : { name: 'בעל החשבון' };
             
-            // Add owner_profile to the data
-            data.owner_profile = owner_profile;
+            // Add owner_profile to the data using type assertion
+            (data as InvitationData).owner_profile = owner_profile;
           } catch (err) {
             console.error('Error fetching owner profile separately:', err);
             // Provide a default owner_profile even if fetch fails
-            data.owner_profile = { name: 'בעל החשבון' };
+            (data as InvitationData).owner_profile = { name: 'בעל החשבון' };
           }
         } else {
           // Add default owner_profile if owner_id is missing
-          data.owner_profile = { name: 'בעל החשבון' };
+          (data as InvitationData).owner_profile = { name: 'בעל החשבון' };
         }
         
         // Temporarily store invitation details in sessionStorage for UI
