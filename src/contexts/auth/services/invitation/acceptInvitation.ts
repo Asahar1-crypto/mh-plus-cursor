@@ -20,7 +20,7 @@ export async function acceptInvitation(invitationId: string, user: User): Promis
       throw new Error('נתוני משתמש חסרים');
     }
     
-    // Get the invitation from the database with improved query
+    // Get the invitation from the database with improved query using !inner join
     console.log("Querying database for invitation:", invitationId);
     const { data: invitationData, error: findError } = await supabase
       .from('invitations')
@@ -31,7 +31,7 @@ export async function acceptInvitation(invitationId: string, user: User): Promis
         invitation_id, 
         accepted_at, 
         expires_at,
-        accounts:account_id (
+        accounts!inner (
           id,
           name,
           owner_id,
@@ -44,7 +44,6 @@ export async function acceptInvitation(invitationId: string, user: User): Promis
       .eq('invitation_id', invitationId)
       .is('accepted_at', null)
       .gt('expires_at', 'now()')
-      .limit(1)
       .maybeSingle(); // Use maybeSingle instead of single to avoid errors when no data is found
       
     if (findError) {
@@ -67,9 +66,34 @@ export async function acceptInvitation(invitationId: string, user: User): Promis
       throw new Error(`ההזמנה מיועדת ל-${invitation.email} אך אתה מחובר כ-${user.email}`);
     }
     
-    if (!invitation.accounts || !invitation.account_id) {
-      console.error("Invitation found but account data is missing");
-      throw new Error('חסר מידע חיוני על החשבון, אנא בקש הזמנה חדשה');
+    // Enhanced validation for account data
+    if (!invitation.accounts || !invitation.account_id || !invitation.accounts.id || !invitation.accounts.owner_id) {
+      console.error("Invitation found but account data is missing or incomplete");
+      
+      // Try to fetch account data directly
+      try {
+        const { data: accountData, error: accountError } = await supabase
+          .from('accounts')
+          .select('*, profiles!accounts_owner_id_fkey(id, name)')
+          .eq('id', invitation.account_id)
+          .single();
+          
+        if (accountError || !accountData) {
+          console.error("Failed to fetch account data:", accountError);
+          throw new Error('חסר מידע חיוני על החשבון, אנא בקש הזמנה חדשה');
+        }
+        
+        // Replace with complete account data
+        invitation.accounts = accountData;
+        
+        // Double check we have valid data
+        if (!invitation.accounts.id || !invitation.accounts.owner_id) {
+          throw new Error('חסר מידע חיוני על החשבון, אנא בקש הזמנה חדשה');
+        }
+      } catch (err) {
+        console.error("Error in account data fallback fetch:", err);
+        throw new Error('חסר מידע חיוני על החשבון, אנא בקש הזמנה חדשה');
+      }
     }
     
     const accountId = invitation.account_id;
@@ -106,18 +130,17 @@ export async function acceptInvitation(invitationId: string, user: User): Promis
     // Get owner name
     let ownerName = 'בעל החשבון';
     
-    // Fix here: Check if profiles exists and if it's an array before accessing length
+    // Handle both array and object structures for profiles
     if (invitation.accounts.profiles) {
-      // Handle both array and object structures
+      // Check if profiles is an array 
       if (Array.isArray(invitation.accounts.profiles)) {
         if (invitation.accounts.profiles.length > 0) {
           ownerName = invitation.accounts.profiles[0]?.name || 'בעל החשבון';
         }
-      } else {
-        // If it's an object with an id property, it's a single profile
-        if (invitation.accounts.profiles.id) {
-          ownerName = invitation.accounts.profiles.name || 'בעל החשבון';
-        }
+      } 
+      // Or if it's a single object (common with single() queries)
+      else if (typeof invitation.accounts.profiles === 'object') {
+        ownerName = invitation.accounts.profiles.name || 'בעל החשבון';
       }
     }
     

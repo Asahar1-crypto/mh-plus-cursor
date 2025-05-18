@@ -60,7 +60,7 @@ const AcceptInvitation = () => {
         setFetchAttempted(true);
         console.log(`Fetching invitation details for ID: ${invitationId}`);
         
-        // Get invitation info from the database with improved query
+        // Improved query with INNER JOIN to ensure accounts data is present
         const { data: invitation, error } = await supabase
           .from('invitations')
           .select(`
@@ -70,7 +70,7 @@ const AcceptInvitation = () => {
             invitation_id, 
             expires_at, 
             accepted_at,
-            accounts:account_id (
+            accounts!inner (
               id,
               name,
               owner_id,
@@ -98,9 +98,38 @@ const AcceptInvitation = () => {
         const invitationRecord = invitation;
         console.log("Found invitation in database:", invitationRecord);
         
-        if (!invitationRecord.accounts || !invitationRecord.accounts.id) {
+        // Enhanced validation for account data
+        if (!invitationRecord.accounts || 
+            !invitationRecord.accounts.id || 
+            !invitationRecord.account_id || 
+            !invitationRecord.accounts.owner_id) {
+          
           console.error("Invitation found but account data is missing or incomplete");
-          throw new Error("הזמנה לא תקפה - חסרים פרטי חשבון");
+          
+          // Try fetching account data separately as a fallback
+          try {
+            const { data: accountData, error: accountError } = await supabase
+              .from('accounts')
+              .select('*, profiles!accounts_owner_id_fkey(id, name)')
+              .eq('id', invitationRecord.account_id)
+              .single();
+              
+            if (accountError || !accountData) {
+              console.error("Failed to fetch account data in fallback:", accountError || 'No account data returned');
+              throw new Error("הזמנה לא תקפה - חסרים פרטי חשבון");
+            }
+            
+            // Replace the existing account data with the complete data
+            invitationRecord.accounts = accountData;
+            
+            // Double-check we now have valid account data
+            if (!invitationRecord.accounts.id || !invitationRecord.accounts.owner_id) {
+              throw new Error("הזמנה לא תקפה - חסרים פרטי חשבון חיוניים");
+            }
+          } catch (err) {
+            console.error("Error in account fallback fetch:", err);
+            throw new Error("הזמנה לא תקפה - חסרים פרטי חשבון");
+          }
         }
         
         // Get owner name from the nested profiles data

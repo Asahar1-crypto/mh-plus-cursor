@@ -33,8 +33,7 @@ export const invitationCheckService = {
       const normalizedEmail = email.toLowerCase();
       
       // Get basic invitation data with full account and owner information
-      // Adding specific conditions to ensure we get only valid invitations
-      // Use FULL join syntax to ensure we get complete account data
+      // Using a more robust query to ensure we get all the data we need
       const { data: invitations, error } = await supabase
         .from('invitations')
         .select(`
@@ -81,22 +80,46 @@ export const invitationCheckService = {
           continue;
         }
         
-        // Track whether valid account data exists
-        let hasValidAccountData = invitation.accounts && 
+        // Enhanced validation for account data
+        if (!invitation.accounts.id || !invitation.accounts.owner_id) {
+          console.error('Invitation has missing critical account data:', invitation);
+          
+          // Try to fetch more complete account data directly
+          try {
+            const { data: accountData, error: accountError } = await supabase
+              .from('accounts')
+              .select('*, profiles!accounts_owner_id_fkey(id, name)')
+              .eq('id', invitation.account_id)
+              .single();
+              
+            if (accountError || !accountData) {
+              console.error('Failed to fetch account data:', accountError);
+              continue;
+            }
+            
+            // Replace the incomplete account data with the complete data
+            invitation.accounts = accountData;
+          } catch (err) {
+            console.error('Error fetching additional account data:', err);
+            continue;
+          }
+        }
+        
+        // Double-check we now have valid account data
+        const hasValidAccountData = invitation.accounts && 
                                    invitation.accounts.id && 
                                    invitation.accounts.owner_id;
                                    
         if (!hasValidAccountData) {
-          console.warn('Invitation has invalid or missing account data:', invitation);
+          console.warn('Invitation still has invalid account data after retry:', invitation);
           continue;
         }
         
-        // Owner information is included directly in the query via the nested select
+        // Extract owner name from profiles
         let ownerName = 'בעל החשבון';
         
-        // Extract owner name from profiles
+        // Handle different profile data structures
         if (invitation.accounts.profiles) {
-          // Handle different profile data structures
           if (Array.isArray(invitation.accounts.profiles)) {
             if (invitation.accounts.profiles.length > 0) {
               ownerName = invitation.accounts.profiles[0]?.name || 'בעל החשבון';
@@ -106,8 +129,7 @@ export const invitationCheckService = {
           }
         }
         
-        // Check if we've already notified about this invitation using sessionStorage
-        // (minimizing notifications but not storing permanent state in localStorage)
+        // Check if we've already notified about this invitation
         const notifiedInvitationsStr = sessionStorage.getItem('notifiedInvitations') || '[]';
         let notifiedIds: string[];
         
@@ -162,6 +184,7 @@ export const invitationCheckService = {
     try {
       console.log(`Checking if invitation exists with ID: ${invitationId}`);
       
+      // Using a more complete query to ensure we have all necessary data
       const { data, error } = await supabase
         .from('invitations')
         .select(`
@@ -170,7 +193,7 @@ export const invitationCheckService = {
           email,
           expires_at,
           accepted_at,
-          accounts:account_id (
+          accounts!inner (
             id,
             name,
             owner_id,
@@ -194,14 +217,37 @@ export const invitationCheckService = {
       console.log(`Invitation ${invitationId} exists in database: ${exists}`);
       
       if (exists && data) {
-        // Validate account data exists
+        // Extra validation to ensure account data is valid and complete
         const hasValidAccountData = data.accounts && 
                                     data.accounts.id && 
                                     data.accounts.owner_id;
                                     
         if (!hasValidAccountData) {
           console.error("Invitation found but account data is missing or invalid:", data);
-          return false;
+          
+          // Try to fetch the account data separately as a fallback
+          try {
+            const { data: accountData, error: accountError } = await supabase
+              .from('accounts')
+              .select('*, profiles!accounts_owner_id_fkey(id, name)')
+              .eq('id', data.account_id)
+              .single();
+              
+            if (accountError || !accountData || !accountData.id || !accountData.owner_id) {
+              console.error('Failed to fetch account data in fallback:', accountError || 'Missing account data');
+              return false;
+            }
+            
+            // Merge the fetched account data with the invitation data
+            data.accounts = accountData;
+            
+            // Store the enriched invitation details in sessionStorage
+            sessionStorage.setItem('currentInvitationDetails', JSON.stringify(data));
+            return true;
+          } catch (err) {
+            console.error('Error in account data fallback fetch:', err);
+            return false;
+          }
         }
         
         // Temporarily store invitation details in sessionStorage for UI
