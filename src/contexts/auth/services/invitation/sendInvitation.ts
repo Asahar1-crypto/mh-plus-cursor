@@ -123,7 +123,7 @@ export async function sendInvitation(email: string, user: User, account: Account
     }
     
     // Return the updated account object
-    const updatedAccount = {
+    const updatedAccount: Account = {
       ...account,
       invitationId,
       sharedWithEmail: normalizedEmail

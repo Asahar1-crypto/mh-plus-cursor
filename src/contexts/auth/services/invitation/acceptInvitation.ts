@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { User, Account } from '../../types';
 import { toast } from 'sonner';
@@ -96,6 +95,20 @@ export async function acceptInvitation(invitationId: string, user: User): Promis
     if (invitation.accounts.owner_id === user.id) {
       console.error("Cannot share account with self");
       throw new Error('לא ניתן לשתף חשבון עם עצמך');
+    }
+    
+    // IMPROVEMENT: Check if the user already has their own account, we might need to handle this special case
+    console.log("Checking if user has their own account before updating shared account");
+    const { data: existingUserAccounts } = await supabase
+      .from('accounts')
+      .select('*')
+      .eq('owner_id', user.id);
+    
+    // If the user has their own account and it's a default account (created automatically), 
+    // we'll keep it for now but make the shared account the primary one
+    if (existingUserAccounts && existingUserAccounts.length > 0) {
+      console.log(`User has ${existingUserAccounts.length} existing accounts`);
+      // We don't delete the account yet, but we could add functionality to merge or manage multiple accounts
     }
     
     // Update the account to link with the current user
