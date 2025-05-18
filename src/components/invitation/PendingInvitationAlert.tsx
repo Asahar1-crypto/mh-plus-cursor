@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Bell } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { hasPendingInvitations } from '@/utils/notifications';
+import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/auth';
 import { toast } from 'sonner';
 import { PendingInvitationRecord } from '@/contexts/auth/services/invitation/types';
@@ -25,35 +25,91 @@ const PendingInvitationAlert = () => {
     return () => clearInterval(interval);
   }, [user]);
   
-  const checkForInvitations = () => {
-    if (!user) return;
-    
-    const pendingInvitationsData = localStorage.getItem('pendingInvitations');
-    if (!pendingInvitationsData) return;
+  const checkForInvitations = async () => {
+    if (!user?.email) return;
     
     try {
-      const pendingInvitations = JSON.parse(pendingInvitationsData) as Record<string, PendingInvitationRecord>;
+      // First check database for invitations
+      const { data, error } = await supabase
+        .from('invitations')
+        .select(`
+          invitation_id,
+          email,
+          account_id,
+          accounts:account_id (
+            name,
+            owner_id,
+            profiles:owner_id (
+              name
+            )
+          )
+        `)
+        .eq('email', user.email.toLowerCase())
+        .is('accepted_at', null)
+        .gt('expires_at', 'now()');
       
-      // Check if there are invitations for the current user
-      const currentUserInvitations: Record<string, PendingInvitationRecord> = {};
-      let hasInvitationsForCurrentUser = false;
+      if (error) {
+        console.error('Error fetching invitations:', error);
+      }
       
-      Object.entries(pendingInvitations).forEach(([invitationId, invitation]) => {
-        // Case-insensitive email comparison
-        if (invitation.sharedWithEmail && 
-            user.email && 
-            invitation.sharedWithEmail.toLowerCase() === user.email.toLowerCase()) {
-          currentUserInvitations[invitationId] = invitation;
-          hasInvitationsForCurrentUser = true;
+      // Process database invitations
+      if (data && data.length > 0) {
+        console.log('Found pending invitations in database:', data);
+        
+        const dbInvitations: Record<string, PendingInvitationRecord> = {};
+        
+        data.forEach(invitation => {
+          if (invitation.invitation_id && invitation.accounts) {
+            const ownerName = invitation.accounts.profiles?.name || 'בעל החשבון';
+            const accountName = invitation.accounts.name || 'חשבון משותף';
+            
+            dbInvitations[invitation.invitation_id] = {
+              name: accountName,
+              ownerName: ownerName,
+              sharedWithEmail: invitation.email,
+              invitationId: invitation.invitation_id,
+              accountId: invitation.account_id,
+              ownerId: invitation.accounts.owner_id
+            };
+          }
+        });
+        
+        if (Object.keys(dbInvitations).length > 0) {
+          setInvitations(dbInvitations);
+          return;
         }
-      });
+      }
       
-      if (hasInvitationsForCurrentUser) {
-        console.log('Found pending invitations for the current user:', currentUserInvitations);
-        setInvitations(currentUserInvitations);
+      // Fallback to localStorage
+      const pendingInvitationsData = localStorage.getItem('pendingInvitations');
+      if (!pendingInvitationsData) return;
+      
+      try {
+        const pendingInvitations = JSON.parse(pendingInvitationsData) as Record<string, PendingInvitationRecord>;
+        
+        // Check if there are invitations for the current user
+        const currentUserInvitations: Record<string, PendingInvitationRecord> = {};
+        let hasInvitationsForCurrentUser = false;
+        
+        Object.entries(pendingInvitations).forEach(([invitationId, invitation]) => {
+          // Case-insensitive email comparison
+          if (invitation.sharedWithEmail && 
+              user.email && 
+              invitation.sharedWithEmail.toLowerCase() === user.email.toLowerCase()) {
+            currentUserInvitations[invitationId] = invitation;
+            hasInvitationsForCurrentUser = true;
+          }
+        });
+        
+        if (hasInvitationsForCurrentUser) {
+          console.log('Found pending invitations for the current user in localStorage:', currentUserInvitations);
+          setInvitations(currentUserInvitations);
+        }
+      } catch (error) {
+        console.error('Failed to parse pending invitations from localStorage:', error);
       }
     } catch (error) {
-      console.error('Failed to parse pending invitations:', error);
+      console.error('Error checking for invitations:', error);
     }
   };
   

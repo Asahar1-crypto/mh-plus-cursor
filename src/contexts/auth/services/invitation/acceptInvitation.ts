@@ -22,7 +22,7 @@ export async function acceptInvitation(invitationId: string, user: User): Promis
       .single();
       
     if (findError || !invitationData) {
-      console.warn("Could not find invitation in database, checking localStorage:", findError);
+      console.warn("Could not find invitation in database:", findError);
       
       // Try to get invitation details from localStorage as backup
       const pendingInvitationsData = localStorage.getItem('pendingInvitations');
