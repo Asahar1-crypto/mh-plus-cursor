@@ -105,3 +105,45 @@ export async function sendInvitationEmail(
     return { warning: 'Email sending failed but invitation created' };
   }
 }
+
+/**
+ * Send a test email to verify the email sending functionality
+ * @param email Recipient email
+ */
+export async function sendTestEmail(email: string) {
+  console.log(`Sending test email to ${email}`);
+  
+  // Test email HTML template
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; direction: rtl;">
+      <h2 style="color: #4a5568;">בדיקת מערכת שליחת אימיילים</h2>
+      <p>שלום,</p>
+      <p>זהו אימייל בדיקה ממערכת מחציות פלוס.</p>
+      <p>אם קיבלת אימייל זה, מערכת שליחת האימיילים פועלת כראוי.</p>
+      <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 20px 0;" />
+      <p style="color: #718096; font-size: 14px;">מחציות פלוס - האפליקציה המובילה לניהול הוצאות משותפות</p>
+    </div>
+  `;
+  
+  try {
+    const result = await sendEmail({
+      to: email,
+      subject: `בדיקת מערכת - מחציות פלוס`,
+      html
+    });
+    
+    if (result && result.warning) {
+      console.warn('Warning from send-email function:', result.warning);
+      toast.warning('שליחת אימייל הבדיקה נכשלה.');
+      return { success: false, message: 'שליחת אימייל הבדיקה נכשלה.' };
+    } else {
+      console.log('Test email sent successfully with result:', result);
+      toast.success(`אימייל בדיקה נשלח ל-${email} בהצלחה!`);
+      return { success: true, message: `אימייל בדיקה נשלח ל-${email} בהצלחה!` };
+    }
+  } catch (error) {
+    console.error(`Failed to send test email to ${email}:`, error);
+    toast.error('שליחת אימייל הבדיקה נכשלה.');
+    return { success: false, message: 'שליחת אימייל הבדיקה נכשלה.' };
+  }
+}
