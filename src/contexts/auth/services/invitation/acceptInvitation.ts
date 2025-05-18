@@ -61,7 +61,7 @@ export async function acceptInvitation(invitationId: string, user: User): Promis
       try {
         const { data: accountData, error: accountError } = await supabase
           .from('accounts')
-          .select('*, profiles:owner_id(*)')
+          .select('*')
           .eq('id', invitation.account_id)
           .single();
           
@@ -152,6 +152,7 @@ export async function acceptInvitation(invitationId: string, user: User): Promis
     sessionStorage.removeItem('pendingInvitationOwnerId');
     sessionStorage.removeItem('currentInvitationDetails');
     sessionStorage.removeItem('pendingInvitationRedirectChecked');
+    sessionStorage.removeItem('notifiedInvitations');
     
     console.log("Invitation accepted successfully");
     toast.success('הצטרפת לחשבון בהצלחה!');

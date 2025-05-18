@@ -20,6 +20,7 @@ const ErrorState = ({ message = 'ההזמנה לא נמצאה או שפג תוק
     sessionStorage.removeItem('pendingInvitationOwnerId');
     sessionStorage.removeItem('currentInvitationDetails');
     sessionStorage.removeItem('pendingInvitationRedirectChecked');
+    sessionStorage.removeItem('notifiedInvitations');
   };
   
   return (

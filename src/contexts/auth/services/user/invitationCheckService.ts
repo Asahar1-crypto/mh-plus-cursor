@@ -32,7 +32,7 @@ export const invitationCheckService = {
       // Normalize email to lowercase for consistent comparison
       const normalizedEmail = email.toLowerCase();
       
-      // Simplified and more direct query
+      // Modified query with explicit profile join
       const { data: invitations, error } = await supabase
         .from('invitations')
         .select(`
@@ -170,7 +170,7 @@ export const invitationCheckService = {
     try {
       console.log(`Checking if invitation exists with ID: ${invitationId}`);
       
-      // Simplified query structure
+      // Simplified query structure without problematic profiles join
       const { data, error } = await supabase
         .from('invitations')
         .select(`
@@ -211,17 +211,17 @@ export const invitationCheckService = {
             // Merge the fetched account data with the invitation data
             data.accounts = accountData;
             
-            // Fetch owner profile separately
+            // Fetch owner profile separately to avoid join issues
             if (accountData.owner_id) {
-              const { data: ownerProfile } = await supabase
+              const { data: ownerData } = await supabase
                 .from('profiles')
                 .select('name')
                 .eq('id', accountData.owner_id)
                 .maybeSingle();
                 
-              if (ownerProfile) {
-                // Add owner profile to account data
-                data.accounts.profiles = ownerProfile;
+              if (ownerData) {
+                // Add owner data separately, not as profiles property
+                data.owner_profile = ownerData;
               }
             }
             
@@ -231,6 +231,24 @@ export const invitationCheckService = {
           } catch (err) {
             console.error('Error in account data fallback fetch:', err);
             return false;
+          }
+        }
+        
+        // Fetch profile data separately to avoid join issues
+        if (data.accounts.owner_id) {
+          try {
+            const { data: ownerProfile } = await supabase
+              .from('profiles')
+              .select('name')
+              .eq('id', data.accounts.owner_id)
+              .maybeSingle();
+              
+            if (ownerProfile) {
+              // Store profile data separately instead of on accounts.profiles
+              data.owner_profile = ownerProfile;
+            }
+          } catch (err) {
+            console.error('Error fetching owner profile separately:', err);
           }
         }
         

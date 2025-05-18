@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/auth';
@@ -59,15 +60,12 @@ const AcceptInvitation = () => {
         setFetchAttempted(true);
         console.log(`Fetching invitation details for ID: ${invitationId}`);
         
-        // Simplified query with better structure
+        // Simplified query without problematic profile join
         const { data: invitation, error } = await supabase
           .from('invitations')
           .select(`
             *,
-            accounts:account_id (
-              *,
-              profiles:owner_id (*)
-            )
+            accounts:account_id (*)
           `)
           .eq('invitation_id', invitationId)
           .is('accepted_at', null)
@@ -95,7 +93,7 @@ const AcceptInvitation = () => {
           try {
             const { data: accountData, error: accountError } = await supabase
               .from('accounts')
-              .select('*, profiles:owner_id(*)')
+              .select('*')
               .eq('id', invitationRecord.account_id)
               .single();
               
@@ -112,7 +110,7 @@ const AcceptInvitation = () => {
           }
         }
         
-        // Fallback for owner profile
+        // Fallback for owner profile - fetch separately to avoid join issues
         let ownerName = 'בעל החשבון';
         
         try {
