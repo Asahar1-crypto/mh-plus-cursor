@@ -93,7 +93,7 @@ export async function sendInvitation(email: string, user: User, account: Account
         p_email: normalizedEmail,
         p_account_id: account.id,
         p_invitation_id: invitationId
-      });
+      } as SendInvitationParams);
       
     if (transactionError) {
       console.error("Transaction error:", transactionError);
@@ -101,7 +101,7 @@ export async function sendInvitation(email: string, user: User, account: Account
       throw transactionError;
     }
     
-    const transaction = data as SendInvitationResponse;
+    const transaction = data as unknown as SendInvitationResponse;
     console.log('Invitation transaction completed successfully:', transaction);
     
     // Prepare invitation link and send email

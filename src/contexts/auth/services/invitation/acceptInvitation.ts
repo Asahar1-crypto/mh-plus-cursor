@@ -39,14 +39,14 @@ export async function acceptInvitation(invitationId: string, user: User): Promis
         p_invitation_id: invitationId,
         p_user_id: user.id,
         p_user_email: user.email.toLowerCase()
-      });
+      } as AcceptInvitationParams);
       
     if (transactionError) {
       console.error("Transaction error:", transactionError);
       throw new Error(transactionError.message || 'שגיאה בקבלת ההזמנה');
     }
     
-    const transaction = data as AcceptInvitationResponse;
+    const transaction = data as unknown as AcceptInvitationResponse;
     
     if (!transaction || !transaction.account_id) {
       throw new Error('חסר מידע חיוני על החשבון, אנא בקש הזמנה חדשה');
