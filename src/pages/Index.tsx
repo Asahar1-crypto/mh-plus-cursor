@@ -12,8 +12,8 @@ const IndexPage = () => {
         </CardHeader>
         <CardContent>
           <div className="flex flex-col space-y-4">
-            <p>לחץ על הכפתור כדי לשלוח אימייל בדיקה ל-ariel.sahar1@gmail.ocm</p>
-            <TestEmailButton email="ariel.sahar1@gmail.ocm" />
+            <p>לחץ על הכפתור כדי לשלוח אימייל בדיקה ל-ariel.sahar1@gmail.com</p>
+            <TestEmailButton email="ariel.sahar1@gmail.com" />
           </div>
         </CardContent>
       </Card>
