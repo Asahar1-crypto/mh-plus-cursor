@@ -10,44 +10,62 @@ export const useAuthSubscriptions = (
 ) => {
   // Set up auth state listener and check for saved session
   useEffect(() => {
+    console.log('Setting up auth state listener');
+    
     // First set up the auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        console.log('Auth state changed:', event);
+        
         // Handle auth state changes
         if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
-          // User signed in or token refreshed, update session
-          await checkAndSetUserData();
-          
-          // Check for pending invitations after sign in
-          if (session?.user?.email) {
-            setTimeout(async () => {
-              await invitationCheckService.checkPendingInvitations(session.user.email || '');
-            }, 1000);
-          }
+          console.log('User signed in or token refreshed, updating session');
+          // Wrap in setTimeout to prevent any potential recursion issues
+          setTimeout(() => {
+            checkAndSetUserData().catch(err => {
+              console.error('Error checking auth state after event:', err);
+            });
+            
+            // Check for pending invitations after sign in
+            if (session?.user?.email) {
+              setTimeout(async () => {
+                try {
+                  await invitationCheckService.checkPendingInvitations(session.user.email || '');
+                } catch (error) {
+                  console.error('Error checking pending invitations:', error);
+                }
+              }, 1000);
+            }
+          }, 0);
         } else if (event === 'SIGNED_OUT') {
-          // User signed out, clear session
-          // We'll handle this in the parent component
+          console.log('User signed out');
+          // No need to do anything here as the AuthProvider will handle this
         }
       }
     );
 
-    // Check for an existing session
-    checkAndSetUserData();
-
     return () => {
+      console.log('Cleaning up auth state listener');
       subscription.unsubscribe();
     };
   }, [checkAndSetUserData]);
 
   // Set up periodic invitation checking for logged-in users
   useEffect(() => {
-    // Set up periodic invitation checking for logged-in users
-    if (user?.email) {
-      const checkInvitationsInterval = setInterval(async () => {
+    if (!user?.email) return;
+    
+    console.log('Setting up periodic invitation checking for', user.email);
+    const checkInvitationsInterval = setInterval(async () => {
+      try {
         await invitationCheckService.checkPendingInvitations(user.email);
-      }, 30000); // Check every 30 seconds
-      
-      return () => clearInterval(checkInvitationsInterval);
-    }
+      } catch (error) {
+        console.error('Error during periodic invitation check:', error);
+      }
+    }, 30000); // Check every 30 seconds
+    
+    return () => {
+      console.log('Cleaning up invitation check interval');
+      clearInterval(checkInvitationsInterval);
+    };
   }, [user]);
 };

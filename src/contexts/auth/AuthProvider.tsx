@@ -1,5 +1,5 @@
 
-import React, { ReactNode } from 'react';
+import React, { ReactNode, useEffect } from 'react';
 import { AuthContext } from './AuthContext';
 import { useAuthState } from './hooks/useAuthState';
 import { useAuthActions } from './hooks/useAuthActions';
@@ -40,6 +40,14 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
   // Set up subscriptions for auth state changes and invitation checking
   useAuthSubscriptions(user, checkAndSetUserData);
+
+  // Perform initial auth check when component mounts
+  useEffect(() => {
+    console.log('AuthProvider: Performing initial auth check');
+    checkAndSetUserData().catch(err => {
+      console.error('Error during initial auth check:', err);
+    });
+  }, []);
 
   const authContextValue = {
     user,

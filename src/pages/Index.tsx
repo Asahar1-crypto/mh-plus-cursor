@@ -1,17 +1,21 @@
 
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 const Index = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   
   React.useEffect(() => {
-    // Make sure we're only redirecting if we're actually on the /index route
-    // and not on the root route
-    if (window.location.pathname === '/index') {
-      navigate('/');
+    // Only redirect from "/index" to "/" to prevent loops
+    // Don't redirect if we're already at the root
+    if (location.pathname === '/index') {
+      console.log("Redirecting from /index to /");
+      navigate('/', { replace: true });
+    } else {
+      console.log("Current path:", location.pathname);
     }
-  }, [navigate]);
+  }, [navigate, location.pathname]);
   
   return (
     <div className="min-h-screen flex items-center justify-center">
