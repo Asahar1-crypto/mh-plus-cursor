@@ -72,74 +72,98 @@ export async function sendInvitation(email: string, user: User, account: Account
     
     console.log(`Creating new invitation with ID ${invitationId}`);
     
-    // Create the invitation in Supabase
-    const { data: invitation, error: inviteError } = await supabase
-      .from('invitations')
-      .insert({
-        email: normalizedEmail,
-        account_id: account.id,
-        invitation_id: invitationId
-      })
-      .select()
-      .single();
-      
-    if (inviteError) {
-      console.error("Error creating invitation:", inviteError);
-      throw inviteError;
+    // We'll use a database transaction to ensure consistency
+    // Start a transaction block
+    const { error: transactionError } = await supabase.rpc('begin_transaction');
+    if (transactionError) {
+      console.error("Transaction error:", transactionError);
+      throw transactionError;
     }
     
-    console.log('Invitation created successfully:', invitation);
-    
-    // Update the account with the invitation details
-    const { data: updatedAccountData, error: updateError } = await supabase
-      .from('accounts')
-      .update({
-        invitation_id: invitationId,
-        shared_with_email: normalizedEmail
-      })
-      .eq('id', account.id)
-      .select()
-      .single();
-      
-    if (updateError) {
-      console.error("Error updating account:", updateError);
-      throw updateError;
-    }
-    
-    console.log('Account updated with invitation details:', updatedAccountData);
-    
-    // Prepare invitation link and send email
     try {
-      const baseUrl = window.location.origin;
-      const invitationLink = `${baseUrl}/invitation/${invitationId}`;
+      // Create the invitation in Supabase
+      const { data: invitation, error: inviteError } = await supabase
+        .from('invitations')
+        .insert({
+          email: normalizedEmail,
+          account_id: account.id,
+          invitation_id: invitationId
+        })
+        .select()
+        .single();
+        
+      if (inviteError) {
+        console.error("Error creating invitation:", inviteError);
+        throw inviteError;
+      }
       
-      console.log(`Sending invitation email to ${normalizedEmail} with link ${invitationLink}`);
+      console.log('Invitation created successfully:', invitation);
       
-      await sendInvitationEmail(
-        normalizedEmail,
-        invitationLink,
-        user.name || user.email,
-        account.name
-      );
+      // Update the account with the invitation details
+      const { data: updatedAccountData, error: updateError } = await supabase
+        .from('accounts')
+        .update({
+          invitation_id: invitationId,
+          shared_with_email: normalizedEmail
+        })
+        .eq('id', account.id)
+        .select()
+        .single();
+        
+      if (updateError) {
+        console.error("Error updating account:", updateError);
+        throw updateError;
+      }
       
-      console.log(`Invitation email sent to ${normalizedEmail} with link ${invitationLink}`);
-    } catch (emailError) {
-      console.error('Failed to send invitation email:', emailError);
-      // We don't throw here because the invitation was created successfully in the database
-      // The user can still access it via the app when they log in
-      toast.warning('ההזמנה נוצרה בהצלחה אך שליחת האימייל נכשלה');
+      // Commit the transaction
+      const { error: commitError } = await supabase.rpc('commit_transaction');
+      if (commitError) {
+        console.error("Error committing transaction:", commitError);
+        throw commitError;
+      }
+      
+      console.log('Account updated with invitation details:', updatedAccountData);
+      
+      // Prepare invitation link and send email
+      try {
+        const baseUrl = window.location.origin;
+        const invitationLink = `${baseUrl}/invitation/${invitationId}`;
+        
+        console.log(`Sending invitation email to ${normalizedEmail} with link ${invitationLink}`);
+        
+        await sendInvitationEmail(
+          normalizedEmail,
+          invitationLink,
+          user.name || user.email,
+          account.name
+        );
+        
+        console.log(`Invitation email sent to ${normalizedEmail} with link ${invitationLink}`);
+      } catch (emailError) {
+        console.error('Failed to send invitation email:', emailError);
+        // We don't throw here because the invitation was created successfully in the database
+        // The user can still access it via the app when they log in
+        toast.warning('ההזמנה נוצרה בהצלחה אך שליחת האימייל נכשלה');
+      }
+      
+      // Return the updated account object
+      const updatedAccount: Account = {
+        ...account,
+        invitationId,
+        sharedWithEmail: normalizedEmail
+      };
+      
+      console.log("Invitation process completed successfully");
+      toast.success('ההזמנה נשלחה בהצלחה!');
+      return updatedAccount;
+    } catch (innerError) {
+      // If any error occurs during the transaction, roll it back
+      const { error: rollbackError } = await supabase.rpc('rollback_transaction');
+      if (rollbackError) {
+        console.error("Error rolling back transaction:", rollbackError);
+      }
+      throw innerError;
     }
-    
-    // Return the updated account object
-    const updatedAccount: Account = {
-      ...account,
-      invitationId,
-      sharedWithEmail: normalizedEmail
-    };
-    
-    console.log("Invitation process completed successfully");
-    toast.success('ההזמנה נשלחה בהצלחה!');
-    return updatedAccount;
   } catch (error: any) {
     console.error('Failed to send invitation:', error);
     

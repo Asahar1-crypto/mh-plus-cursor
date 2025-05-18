@@ -1,8 +1,12 @@
 
-/**
- * Notifications utility module - exports all notification functions
- */
-export * from './invitationNotifier';
-export * from './notificationManager';
-export * from './debugUtils';
-export * from './types';
+import { checkAndNotifyPendingInvitations } from './invitationNotifier';
+import { debugInvitations, debugAuthState } from './debugUtils';
+import { clearAllPendingInvitations } from './clearInvitations';
+
+// Export all notification utilities
+export {
+  checkAndNotifyPendingInvitations,
+  debugInvitations,
+  debugAuthState,
+  clearAllPendingInvitations
+};
