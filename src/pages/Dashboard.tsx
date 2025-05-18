@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -8,7 +9,14 @@ import { CheckCircle, Clock, CreditCard, Plus, XCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import PendingInvitationAlert from '@/components/invitation/PendingInvitationAlert';
 
-const ExpenseCard = ({ expense, onApprove, onReject, onMarkPaid }) => {
+interface ExpenseCardProps {
+  expense: any;
+  onApprove?: () => void;
+  onReject?: () => void;
+  onMarkPaid?: () => void;
+}
+
+const ExpenseCard = ({ expense, onApprove, onReject, onMarkPaid }: ExpenseCardProps) => {
   return (
     <Card className="mb-4 overflow-hidden">
       <div className="flex border-b border-border p-4">
@@ -34,7 +42,7 @@ const ExpenseCard = ({ expense, onApprove, onReject, onMarkPaid }) => {
           {expense.creatorName}
         </div>
         <div className="flex items-center gap-2">
-          {expense.status === 'pending' && (
+          {expense.status === 'pending' && onApprove && onReject && (
             <>
               <Button variant="ghost" size="sm" onClick={onReject} className="text-red-500 h-8">
                 <XCircle className="h-4 w-4 mr-1" />
@@ -46,7 +54,7 @@ const ExpenseCard = ({ expense, onApprove, onReject, onMarkPaid }) => {
               </Button>
             </>
           )}
-          {expense.status === 'approved' && (
+          {expense.status === 'approved' && onMarkPaid && (
             <Button variant="outline" size="sm" onClick={onMarkPaid} className="h-8">
               <CreditCard className="h-4 w-4 mr-1" />
               <span>סמן כשולם</span>
@@ -70,20 +78,25 @@ const ExpenseCard = ({ expense, onApprove, onReject, onMarkPaid }) => {
 
 const Dashboard = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   
-  let expenseData = {
+  // Define a default fallback for expenseData
+  const defaultExpenseData = {
     expenses: [],
     getPendingExpenses: () => [],
     getApprovedExpenses: () => [],
     getPaidExpenses: () => [],
     getTotalPending: () => 0,
     getTotalApproved: () => 0,
-    approveExpense: () => {},
-    rejectExpense: () => {},
-    markAsPaid: () => {}
+    approveExpense: async (id: string) => {},
+    rejectExpense: async (id: string) => {},
+    markAsPaid: async (id: string) => {}
   };
   
+  let expenseData = defaultExpenseData;
+  
   try {
+    // Try to use the expense context
     expenseData = useExpense();
   } catch (error) {
     console.error("Failed to use expense context:", error);
@@ -100,8 +113,6 @@ const Dashboard = () => {
     markAsPaid
   } = expenseData;
   
-  const navigate = useNavigate();
-
   const pendingExpenses = getPendingExpenses();
   const approvedExpenses = getApprovedExpenses();
   const paidExpenses = getPaidExpenses();
@@ -183,6 +194,7 @@ const Dashboard = () => {
                 expense={expense} 
                 onApprove={() => approveExpense(expense.id)}
                 onReject={() => rejectExpense(expense.id)}
+                onMarkPaid={() => {}}
               />
             ))
           ) : (
@@ -197,7 +209,9 @@ const Dashboard = () => {
             approvedExpenses.map((expense) => (
               <ExpenseCard 
                 key={expense.id} 
-                expense={expense} 
+                expense={expense}
+                onApprove={() => {}} 
+                onReject={() => {}}
                 onMarkPaid={() => markAsPaid(expense.id)}
               />
             ))
@@ -211,7 +225,13 @@ const Dashboard = () => {
         <TabsContent value="paid">
           {paidExpenses.length > 0 ? (
             paidExpenses.map((expense) => (
-              <ExpenseCard key={expense.id} expense={expense} />
+              <ExpenseCard 
+                key={expense.id} 
+                expense={expense}
+                onApprove={() => {}} 
+                onReject={() => {}} 
+                onMarkPaid={() => {}}
+              />
             ))
           ) : (
             <div className="text-center py-8 text-muted-foreground">
