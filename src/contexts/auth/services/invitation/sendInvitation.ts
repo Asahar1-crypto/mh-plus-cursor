@@ -39,6 +39,14 @@ export async function sendInvitation(email: string, user: User, account: Account
       throw new Error(errorMsg);
     }
     
+    // Check if the account already has a partner
+    if (account.sharedWithId || account.sharedWithEmail) {
+      const errorMsg = 'חשבון זה כבר משותף עם משתמש אחר';
+      console.error(errorMsg, { sharedWithId: account.sharedWithId, sharedWithEmail: account.sharedWithEmail });
+      toast.error(errorMsg);
+      throw new Error(errorMsg);
+    }
+    
     // Check if an invitation already exists for this email and account
     const { data: existingInvitations, error: checkError } = await supabase
       .from('invitations')
@@ -132,9 +140,17 @@ export async function sendInvitation(email: string, user: User, account: Account
     console.log("Invitation process completed successfully");
     toast.success('ההזמנה נשלחה בהצלחה!');
     return updatedAccount;
-  } catch (error) {
+  } catch (error: any) {
     console.error('Failed to send invitation:', error);
-    toast.error('שליחת ההזמנה נכשלה, אנא נסה שוב');
+    
+    // Don't show toast error for cases where we already displayed specific error messages
+    if (!error.message?.includes('Invitation already exists') && 
+        !error.message?.includes('לא ניתן לשלוח הזמנה לעצמך') && 
+        !error.message?.includes('כתובת דוא״ל לא תקינה') &&
+        !error.message?.includes('חשבון זה כבר משותף עם משתמש אחר')) {
+      toast.error('שליחת ההזמנה נכשלה, אנא נסה שוב');
+    }
+    
     throw error;
   }
 }

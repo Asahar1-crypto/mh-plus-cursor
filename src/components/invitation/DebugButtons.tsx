@@ -2,7 +2,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
-import { debugInvitations, clearAllPendingInvitations } from '@/utils/notifications';
+import { debugInvitations, debugAuthState, clearAllPendingInvitations } from '@/utils/notifications';
 
 interface DebugButtonsProps {
   show: boolean;
@@ -16,6 +16,7 @@ const DebugButtons: React.FC<DebugButtonsProps> = ({ show }) => {
   // Debug function that displays invitation status to help troubleshoot
   const debugInvitationStatus = () => {
     debugInvitations();
+    debugAuthState();
     toast.info('בדיקת נתוני הזמנה בוצעה. בדוק את הקונסול לפרטים.');
   };
 
