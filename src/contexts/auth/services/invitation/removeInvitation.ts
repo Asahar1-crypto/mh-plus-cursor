@@ -15,14 +15,14 @@ export async function removeInvitation(account: Account): Promise<Account> {
       throw new Error("Cannot remove invitation: No account provided");
     }
     
-    // In a real implementation with Supabase, we'd mark the invitation as deleted or remove it
+    // First delete the invitation from the database if it exists
     if (account.invitationId) {
       console.log(`Removing invitation with ID: ${account.invitationId}`);
       
-      // Remove the invitation from Supabase
+      // Delete the invitation from Supabase
       const { error: invitationError } = await supabase
         .from('invitations')
-        .delete() // Changed from update to delete for proper removal
+        .delete()
         .eq('invitation_id', account.invitationId);
         
       if (invitationError) {
@@ -32,7 +32,7 @@ export async function removeInvitation(account: Account): Promise<Account> {
       
       console.log("Successfully deleted invitation from database");
       
-      // Remove from localStorage for the demo
+      // Clean up localStorage for the demo
       try {
         const pendingInvitationsData = localStorage.getItem('pendingInvitations');
         if (pendingInvitationsData) {
@@ -48,10 +48,33 @@ export async function removeInvitation(account: Account): Promise<Account> {
         // Continue execution even if localStorage operation fails
       }
     } else {
-      console.log("No invitation ID found in the account, skipping invitation deletion");
+      console.log("No invitation ID found in the account, querying for invitations by account ID");
+      
+      // Try to find and delete any invitations associated with this account
+      const { data: invitations, error: findError } = await supabase
+        .from('invitations')
+        .select('invitation_id')
+        .eq('account_id', account.id);
+        
+      if (!findError && invitations && invitations.length > 0) {
+        console.log(`Found ${invitations.length} invitations to delete for account ${account.id}`);
+        
+        // Delete all invitations for this account
+        const { error: deleteError } = await supabase
+          .from('invitations')
+          .delete()
+          .eq('account_id', account.id);
+          
+        if (deleteError) {
+          console.error("Error deleting invitations:", deleteError);
+          // Continue execution even if deletion fails
+        } else {
+          console.log("Successfully deleted all invitations for this account");
+        }
+      }
     }
     
-    // Update the account in Supabase if there's a shared user
+    // Update the account in Supabase to remove sharing information
     if (account.sharedWithId || account.sharedWithEmail || account.invitationId) {
       console.log(`Updating account ${account.id} to remove sharing information`);
       

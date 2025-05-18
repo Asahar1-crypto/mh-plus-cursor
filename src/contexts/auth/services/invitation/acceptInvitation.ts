@@ -105,8 +105,8 @@ export async function acceptInvitation(invitationId: string, user: User): Promis
     // Get owner name
     let ownerName = 'בעל החשבון';
     
-    if (invitation.accounts.profiles && invitation.accounts.profiles.length > 0) {
-      ownerName = invitation.accounts.profiles[0].name || 'בעל החשבון';
+    if (invitation.accounts.profiles && invitation.accounts.profiles.id) {
+      ownerName = invitation.accounts.profiles.name || 'בעל החשבון';
     }
     
     // Create account object to return

@@ -72,9 +72,25 @@ export const useAuthActions = (
     setIsLoading(true);
     try {
       console.log("AuthProvider: Starting to remove invitation for account:", account);
+      
+      // Check if we're removing a shared account we've joined or removing a partner from our account
+      if (account.isSharedAccount) {
+        console.log("Removing ourselves from a shared account we've joined");
+        // In this case, we're just removing our association with the account
+        // We don't want to delete the account, just our connection to it
+      }
+      
       const updatedAccount = await authService.removeInvitation(account);
       console.log("AuthProvider: Updated account after removing invitation:", updatedAccount);
-      setAccount(updatedAccount);
+      
+      // If this was a shared account we've joined, we should reload the user's default account
+      if (account.isSharedAccount) {
+        console.log("Reloading user data after leaving a shared account");
+        await checkAndSetUserData();
+      } else {
+        setAccount(updatedAccount);
+      }
+      
       return Promise.resolve();
     } catch (error) {
       console.error("AuthProvider: Error removing invitation:", error);

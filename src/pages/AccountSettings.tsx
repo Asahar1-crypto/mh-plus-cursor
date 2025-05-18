@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/contexts/auth';
@@ -48,6 +47,10 @@ const AccountSettings = () => {
       await removeInvitation();
       console.log('AccountSettings: Partner removal completed successfully');
       toast.success('השותף הוסר בהצלחה מהחשבון');
+      
+      // If we're in a shared account and removing ourselves, we should redirect to dashboard
+      // This will be handled by the useAuthActions hook which will reload the user data
+      
     } catch (error) {
       console.error('AccountSettings: Failed to remove partner:', error);
       setProcessError('שגיאה בהסרת השותף, אנא נסה שוב');
