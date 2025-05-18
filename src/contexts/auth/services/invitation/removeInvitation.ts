@@ -25,7 +25,7 @@ export async function removeInvitation(account: Account) {
     
     // Transaction to ensure consistency between invitation update and account update
     const { data, error: transactionError } = await supabase
-      .rpc('remove_invitation_and_update_account', {
+      .rpc<RemoveInvitationResponse>('remove_invitation_and_update_account', {
         p_account_id: account.id
       } as RemoveInvitationParams);
       
@@ -34,7 +34,7 @@ export async function removeInvitation(account: Account) {
       throw transactionError;
     }
     
-    const transaction = data as unknown as RemoveInvitationResponse;
+    const transaction = data as RemoveInvitationResponse;
     console.log('Invitation removal transaction completed successfully:', transaction);
     
     // Return the updated account object
