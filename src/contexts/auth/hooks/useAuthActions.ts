@@ -1,4 +1,3 @@
-
 import { authService } from '../authService';
 import { User, Account } from '../types';
 import { invitationCheckService } from '../services/user/invitationCheckService';
