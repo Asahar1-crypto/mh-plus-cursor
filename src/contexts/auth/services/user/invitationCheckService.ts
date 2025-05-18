@@ -147,10 +147,13 @@ export const invitationCheckService = {
           }
         }
         
-        // Add processed invitation to list
+        // Create an owner_profile object if needed for backward compatibility
+        const owner_profile = { name: ownerName };
+        
+        // Add processed invitation to list with the owner_profile property
         processedInvitations.push({
           ...invitation,
-          owner_profile: { name: ownerName }
+          owner_profile
         });
       }
 
@@ -218,11 +221,12 @@ export const invitationCheckService = {
                 .select('name')
                 .eq('id', accountData.owner_id)
                 .maybeSingle();
-                
-              if (ownerData) {
-                // Add owner data separately, not as profiles property
-                data.owner_profile = ownerData;
-              }
+              
+              // Create an owner_profile object for backward compatibility
+              const owner_profile = ownerData ? { name: ownerData.name } : { name: 'בעל החשבון' };
+              
+              // Add owner_profile to the data
+              data.owner_profile = owner_profile;
             }
             
             // Store the enriched invitation details in sessionStorage
@@ -243,13 +247,19 @@ export const invitationCheckService = {
               .eq('id', data.accounts.owner_id)
               .maybeSingle();
               
-            if (ownerProfile) {
-              // Store profile data separately instead of on accounts.profiles
-              data.owner_profile = ownerProfile;
-            }
+            // Create an owner_profile object for backward compatibility
+            const owner_profile = ownerProfile ? { name: ownerProfile.name } : { name: 'בעל החשבון' };
+            
+            // Add owner_profile to the data
+            data.owner_profile = owner_profile;
           } catch (err) {
             console.error('Error fetching owner profile separately:', err);
+            // Provide a default owner_profile even if fetch fails
+            data.owner_profile = { name: 'בעל החשבון' };
           }
+        } else {
+          // Add default owner_profile if owner_id is missing
+          data.owner_profile = { name: 'בעל החשבון' };
         }
         
         // Temporarily store invitation details in sessionStorage for UI
