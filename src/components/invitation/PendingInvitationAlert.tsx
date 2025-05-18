@@ -40,6 +40,7 @@ const PendingInvitationAlert = () => {
             name,
             owner_id,
             owner:owner_id (
+              id,
               name
             )
           )

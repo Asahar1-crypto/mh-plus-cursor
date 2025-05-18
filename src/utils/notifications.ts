@@ -1,3 +1,4 @@
+
 import { toast } from 'sonner';
 import { PendingInvitationRecord } from '@/contexts/auth/services/invitation/types';
 import { supabase } from '@/integrations/supabase/client';
@@ -18,6 +19,7 @@ export const showInvitationNotification = (invitationId: string) => {
             name,
             owner_id,
             owner:owner_id (
+              id,
               name
             )
           )
@@ -212,6 +214,7 @@ export const checkForNewInvitations = async (email: string) => {
           name,
           owner_id,
           owner:owner_id (
+            id,
             name
           )
         )
