@@ -1,19 +1,30 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from 'sonner';
-import { PendingInvitationRecord } from '../../services/invitation/types';
 import { showInvitationNotification } from '@/utils/notifications';
 
 /**
  * Service for checking pending invitations for a user
  */
 export const invitationCheckService = {
+  // Track when we last checked for invitations to prevent excessive checking
+  lastCheckTime: 0,
+  
   // Check for pending invitations for a user
   checkPendingInvitations: async (email: string): Promise<any[]> => {
     if (!email) {
       console.log('No email provided for invitation check');
       return [];
     }
+    
+    // Prevent checking too frequently (throttle to once per 10 seconds)
+    const now = Date.now();
+    if (now - invitationCheckService.lastCheckTime < 10000) {
+      console.log('Skipping invitation check - checked too recently');
+      return [];
+    }
+    
+    invitationCheckService.lastCheckTime = now;
     
     try {
       console.log(`Checking pending invitations for ${email}`);
@@ -105,12 +116,18 @@ export const invitationCheckService = {
       
       // Show notification for first invitation if we haven't shown it before
       if (shouldShowNotification && processedInvitations.length > 0 && processedInvitations[0].invitation_id) {
-        // Temporarily store active invitation ID in sessionStorage (not localStorage)
-        // This is just for UI purposes, not for permanent storage
-        sessionStorage.setItem('currentActiveInvitationId', processedInvitations[0].invitation_id);
+        // Don't show notification if we're already on the invitation page
+        const currentPath = window.location.pathname;
+        const isOnInvitationPage = currentPath.includes('/invitation/');
         
-        // Show notification with valid invitation_id
-        showInvitationNotification(processedInvitations[0].invitation_id);
+        if (!isOnInvitationPage) {
+          // Temporarily store active invitation ID in sessionStorage (not localStorage)
+          // This is just for UI purposes, not for permanent storage
+          sessionStorage.setItem('currentActiveInvitationId', processedInvitations[0].invitation_id);
+          
+          // Show notification with valid invitation_id
+          showInvitationNotification(processedInvitations[0].invitation_id);
+        }
       }
       
       return processedInvitations;

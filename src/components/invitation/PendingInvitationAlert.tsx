@@ -1,5 +1,4 @@
-
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Bell } from "lucide-react";
@@ -12,6 +11,7 @@ const PendingInvitationAlert = () => {
   const [dismissed, setDismissed] = useState(false);
   const [invitations, setInvitations] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const checkTimeoutRef = useRef<number | null>(null);
   const navigate = useNavigate();
   const { user } = useAuth();
   
@@ -24,14 +24,12 @@ const PendingInvitationAlert = () => {
       setLoading(true);
     }
     
-    // Check for invitations more frequently to ensure notifications are shown
-    const interval = setInterval(() => {
-      if (user?.email) {
-        checkForInvitations();
+    // We'll use a ref to keep track of the timeout
+    return () => {
+      if (checkTimeoutRef.current) {
+        clearTimeout(checkTimeoutRef.current);
       }
-    }, 30000); // Check every 30 seconds (reduced from 10s to reduce DB load)
-    
-    return () => clearInterval(interval);
+    };
   }, [user]);
   
   const checkForInvitations = async () => {

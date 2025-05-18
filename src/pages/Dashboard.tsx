@@ -1,20 +1,14 @@
-
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useExpense, Expense } from '@/contexts/ExpenseContext';
-import { useAuth } from '@/contexts/AuthContext';
+import { useExpense } from '@/contexts/ExpenseContext';
+import { useAuth } from '@/contexts/auth';
 import { CheckCircle, Clock, CreditCard, Plus, XCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import PendingInvitationAlert from '@/components/invitation/PendingInvitationAlert';
 
-const ExpenseCard: React.FC<{ expense: Expense; onApprove?: () => void; onReject?: () => void; onMarkPaid?: () => void }> = ({ 
-  expense, 
-  onApprove, 
-  onReject,
-  onMarkPaid
-}) => {
+const ExpenseCard = ({ expense, onApprove, onReject, onMarkPaid }) => {
   return (
     <Card className="mb-4 overflow-hidden">
       <div className="flex border-b border-border p-4">
@@ -76,8 +70,26 @@ const ExpenseCard: React.FC<{ expense: Expense; onApprove?: () => void; onReject
 
 const Dashboard = () => {
   const { user } = useAuth();
+  
+  let expenseData = {
+    expenses: [],
+    getPendingExpenses: () => [],
+    getApprovedExpenses: () => [],
+    getPaidExpenses: () => [],
+    getTotalPending: () => 0,
+    getTotalApproved: () => 0,
+    approveExpense: () => {},
+    rejectExpense: () => {},
+    markAsPaid: () => {}
+  };
+  
+  try {
+    expenseData = useExpense();
+  } catch (error) {
+    console.error("Failed to use expense context:", error);
+  }
+  
   const { 
-    expenses, 
     getPendingExpenses, 
     getApprovedExpenses, 
     getPaidExpenses, 
@@ -86,7 +98,8 @@ const Dashboard = () => {
     approveExpense,
     rejectExpense,
     markAsPaid
-  } = useExpense();
+  } = expenseData;
+  
   const navigate = useNavigate();
 
   const pendingExpenses = getPendingExpenses();

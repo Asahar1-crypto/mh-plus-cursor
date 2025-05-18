@@ -1,8 +1,8 @@
+
 import { useEffect } from 'react';
 import { User } from '../types';
 import { supabase } from "@/integrations/supabase/client";
 import { invitationCheckService } from '../services/user/invitationCheckService';
-import { showInvitationNotification } from '@/utils/notifications';
 
 export const useAuthSubscriptions = (
   user: User | null,
@@ -25,25 +25,7 @@ export const useAuthSubscriptions = (
             checkAndSetUserData().catch(err => {
               console.error('Error checking auth state after event:', err);
             });
-            
-            // Check for pending invitations after sign in
-            if (session?.user?.email) {
-              setTimeout(async () => {
-                try {
-                  const invitations = await invitationCheckService.checkPendingInvitations(session.user.email || '');
-                  // Show notification for first invitation if exists
-                  if (invitations && invitations.length > 0 && invitations[0].invitation_id) {
-                    showInvitationNotification(invitations[0].invitation_id);
-                  }
-                } catch (error) {
-                  console.error('Error checking pending invitations:', error);
-                }
-              }, 1000);
-            }
           }, 0);
-        } else if (event === 'SIGNED_OUT') {
-          console.log('User signed out');
-          // No need to do anything here as the AuthProvider will handle this
         }
       }
     );
@@ -54,34 +36,27 @@ export const useAuthSubscriptions = (
     };
   }, [checkAndSetUserData]);
 
-  // Set up periodic invitation checking for logged-in users
+  // Set up ONE TIME invitation check for logged-in users, not recurring checks
   useEffect(() => {
     if (!user?.email) return;
     
-    console.log('Setting up periodic invitation checking for', user.email);
+    console.log('Setting up one-time invitation check for', user.email);
     
-    // Do an immediate check when component loads
-    setTimeout(async () => {
+    // Only do an initial check when component loads
+    const checkInvitationsOnce = async () => {
       try {
         const invitations = await invitationCheckService.checkPendingInvitations(user.email);
         console.log('Initial invitation check result:', invitations);
       } catch (error) {
         console.error('Error during initial invitation check:', error);
       }
-    }, 2000);
+    };
     
-    // Then set up periodic checking
-    const checkInvitationsInterval = setInterval(async () => {
-      try {
-        await invitationCheckService.checkPendingInvitations(user.email);
-      } catch (error) {
-        console.error('Error during periodic invitation check:', error);
-      }
-    }, 30000); // Check every 30 seconds
+    // Delay the check slightly to avoid any race conditions
+    const timer = setTimeout(checkInvitationsOnce, 2000);
     
     return () => {
-      console.log('Cleaning up invitation check interval');
-      clearInterval(checkInvitationsInterval);
+      clearTimeout(timer);
     };
   }, [user]);
 };

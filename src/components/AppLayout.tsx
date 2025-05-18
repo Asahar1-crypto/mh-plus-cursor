@@ -4,7 +4,6 @@ import { Navigate, Outlet } from 'react-router-dom';
 import { useAuth } from '@/contexts/auth';
 import AppHeader from './AppHeader';
 import AppSidebar from './AppSidebar';
-import PendingInvitationAlert from './invitation/PendingInvitationAlert';
 
 const AppLayout = () => {
   const { isAuthenticated, isLoading } = useAuth();
@@ -29,7 +28,6 @@ const AppLayout = () => {
       <div className="flex flex-col flex-1">
         <AppHeader />
         <main className="flex-1 p-4 md:p-8">
-          <PendingInvitationAlert />
           <Outlet />
         </main>
       </div>
