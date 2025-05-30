@@ -49,21 +49,32 @@ export async function acceptInvitation(invitationId: string, user: User): Promis
     
     const accountId = invitation.account_id;
     
-    // Get the existing account that sent the invitation
+    // Get the existing account that sent the invitation - use maybeSingle instead of single
+    console.log(`Looking for account with ID: ${accountId}`);
     const { data: accountData, error: accountError } = await supabase
       .from('accounts')
       .select('*')
       .eq('id', accountId)
-      .single();
+      .maybeSingle();
         
     if (accountError) {
       console.error("Error fetching account:", accountError);
-      throw new Error('החשבון שהזמין אותך לא נמצא');
+      throw new Error('שגיאה בטעינת החשבון: ' + accountError.message);
     }
     
     if (!accountData) {
-      throw new Error('החשבון שהזמין אותך לא נמצא');
+      console.error(`No account found with ID: ${accountId}`);
+      // Check if the account exists at all
+      const { data: allAccounts, error: allAccountsError } = await supabase
+        .from('accounts')
+        .select('id, name, owner_id')
+        .limit(10);
+      
+      console.log("Available accounts:", allAccounts);
+      throw new Error('החשבון שהזמין אותך לא נמצא במערכת');
     }
+    
+    console.log("Found account:", accountData);
     
     // Check if this is the user's own account
     if (accountData.owner_id === user.id) {
@@ -89,11 +100,16 @@ export async function acceptInvitation(invitationId: string, user: User): Promis
     
     // Mark invitation as accepted
     console.log("Marking invitation as accepted");
-    await supabase
+    const { error: acceptError } = await supabase
       .from('invitations')
       .update({ accepted_at: new Date().toISOString() })
       .eq('invitation_id', invitation.invitation_id);
       
+    if (acceptError) {
+      console.error("Error accepting invitation:", acceptError);
+      throw new Error('שגיאה בסימון ההזמנה כמתקבלת: ' + acceptError.message);
+    }
+    
     // Get owner profile data
     let ownerName = 'בעל החשבון';
     
