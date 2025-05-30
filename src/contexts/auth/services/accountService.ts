@@ -110,14 +110,16 @@ export const accountService = {
       // If no accounts found, use transaction to safely create a new one
       console.log('No accounts found, creating a new one with transaction');
       
-      // Use type assertion to tell TypeScript what type we expect
-      const { data, error: createError } = await supabase.rpc(
+      // Use any type to bypass strict TypeScript checking for the RPC call
+      const rpcResult = await (supabase.rpc as any)(
         'create_account_if_not_exists',
         { 
           user_id: userId,
           account_name: `${userName}'s Account`
         }
-      ) as { data: AccountRPCResponse | null, error: any };
+      );
+      
+      const { data, error: createError } = rpcResult;
       
       if (createError) {
         console.error('Error creating new account:', createError);
