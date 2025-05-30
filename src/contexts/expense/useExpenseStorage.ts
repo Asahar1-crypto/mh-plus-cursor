@@ -18,6 +18,7 @@ export const useExpenseStorage = (user: User | null, account: Account | null): E
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [childrenList, setChildrenList] = useState<Child[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const currentAccountRef = useRef<string | null>(null);
 
   const refreshData = async () => {
     if (!user || !account) {
@@ -39,6 +40,9 @@ export const useExpenseStorage = (user: User | null, account: Account | null): E
       const fetchedChildren = await expenseService.getChildren(user, account);
       console.log(`Loaded ${fetchedChildren.length} children for account ${account.name}`);
       setChildrenList(fetchedChildren);
+      
+      // Update the current account reference
+      currentAccountRef.current = account.id;
     } catch (error) {
       console.error('Failed to load data:', error);
       // Clear data on error
@@ -49,23 +53,34 @@ export const useExpenseStorage = (user: User | null, account: Account | null): E
     }
   };
 
-  // Load data when user or account changes - use JSON.stringify to ensure deep comparison
+  // Load data when user or account changes
   useEffect(() => {
     console.log('useExpenseStorage effect triggered', { 
       userId: user?.id, 
       accountId: account?.id,
-      accountName: account?.name 
+      accountName: account?.name,
+      previousAccountId: currentAccountRef.current
     });
     
-    // Always refresh data when user or account changes
+    // Check if account actually changed
+    const accountChanged = account?.id !== currentAccountRef.current;
+    
     if (user && account) {
-      refreshData();
+      if (accountChanged || currentAccountRef.current === null) {
+        console.log('Account changed or first load, refreshing data...');
+        // Clear data immediately when switching accounts
+        setExpenses([]);
+        setChildrenList([]);
+        refreshData();
+      }
     } else {
       // Clear data if no user or account
+      console.log('No user or account, clearing data');
       setExpenses([]);
       setChildrenList([]);
+      currentAccountRef.current = null;
     }
-  }, [user?.id, account?.id]); // Simple dependency array
+  }, [user?.id, account?.id]);
 
   return {
     expenses,

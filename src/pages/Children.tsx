@@ -10,19 +10,38 @@ import AddChildForm from '@/components/children/AddChildForm';
 import EmptyChildrenState from '@/components/children/EmptyChildrenState';
 
 const Children = () => {
-  const { childrenList } = useExpense();
-  const { user } = useAuth();
+  const { childrenList, isLoading } = useExpense();
+  const { user, account } = useAuth();
   const [open, setOpen] = useState(false);
 
-  useEffect(() => {
-    // Force refresh when component mounts to ensure we have the latest data
-    console.log("Children page mounted, user:", user?.id, "childrenCount:", childrenList.length);
-  }, [user, childrenList.length]);
+  console.log('Children page - current account:', account?.name, 'children count:', childrenList.length);
+
+  if (!user || !account) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent mx-auto mb-4"></div>
+          <p>טוען נתוני המשתמש...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent mx-auto mb-4"></div>
+          <p>טוען נתונים עבור {account.name}...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto animate-fade-in py-6">
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-3xl font-bold">ילדים</h1>
+        <h1 className="text-3xl font-bold">ילדים - {account.name}</h1>
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
             <Button>
