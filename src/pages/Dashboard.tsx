@@ -1,51 +1,33 @@
 
 import React from 'react';
 import { useAuth } from '@/contexts/auth';
+import DashboardHeader from '@/components/dashboard/DashboardHeader';
+import ExpensesSummary from '@/components/dashboard/ExpensesSummary';
+import ExpensesTabs from '@/components/dashboard/ExpensesTabs';
 import PendingInvitationAlert from '@/components/invitation/PendingInvitationAlert';
-import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
-import { ExpensesSummary } from '@/components/dashboard/ExpensesSummary';
-import { ExpensesTabs } from '@/components/dashboard/ExpensesTabs';
-import { useExpenseManager } from '@/hooks/useExpenseManager';
+import AccountDebugInfo from '@/components/debug/AccountDebugInfo';
 
 const Dashboard = () => {
-  const { user } = useAuth();
-  
-  const {
-    pendingExpenses,
-    approvedExpenses,
-    paidExpenses,
-    pendingTotal,
-    approvedTotal,
-    paidTotal,
-    approveExpense,
-    rejectExpense,
-    markAsPaid
-  } = useExpenseManager();
-  
+  const { user, account } = useAuth();
+
+  if (!user || !account) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent mx-auto mb-4"></div>
+          <p>טוען נתוני המשתמש...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="container mx-auto animate-fade-in">
-      {/* Always show the PendingInvitationAlert component */}
+    <div className="container mx-auto p-4 space-y-6">
       <PendingInvitationAlert />
-      
-      <DashboardHeader userName={user?.name} />
-
-      <ExpensesSummary
-        pendingTotal={pendingTotal}
-        pendingCount={pendingExpenses.length}
-        approvedTotal={approvedTotal}
-        approvedCount={approvedExpenses.length}
-        paidTotal={paidTotal}
-        paidCount={paidExpenses.length}
-      />
-
-      <ExpensesTabs
-        pendingExpenses={pendingExpenses}
-        approvedExpenses={approvedExpenses}
-        paidExpenses={paidExpenses}
-        onApprove={approveExpense}
-        onReject={rejectExpense}
-        onMarkPaid={markAsPaid}
-      />
+      <DashboardHeader />
+      <ExpensesSummary />
+      <ExpensesTabs />
+      <AccountDebugInfo />
     </div>
   );
 };
