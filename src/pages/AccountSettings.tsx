@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/contexts/auth';
@@ -7,6 +8,7 @@ import AccountDetailsCard from '@/components/account/AccountDetailsCard';
 import UsersListCard from '@/components/account/UsersListCard';
 import InviteUserForm from '@/components/account/InviteUserForm';
 import NotificationsCard from '@/components/account/NotificationsCard';
+import PendingInvitationsCard from '@/components/account/PendingInvitationsCard';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertTriangle } from 'lucide-react';
 
@@ -77,6 +79,7 @@ const AccountSettings = () => {
         <TabsList className="mb-4">
           <TabsTrigger value="account">חשבון</TabsTrigger>
           <TabsTrigger value="users">משתמשים</TabsTrigger>
+          <TabsTrigger value="invitations">הזמנות</TabsTrigger>
           <TabsTrigger value="notifications">התראות</TabsTrigger>
         </TabsList>
         
@@ -98,6 +101,10 @@ const AccountSettings = () => {
               onInvite={handleSendInvitation}
             />
           </div>
+        </TabsContent>
+        
+        <TabsContent value="invitations">
+          <PendingInvitationsCard />
         </TabsContent>
         
         <TabsContent value="notifications">
