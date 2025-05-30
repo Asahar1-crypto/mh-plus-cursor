@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { User, Account, UserAccounts } from '../types';
@@ -159,11 +158,13 @@ export const useAuthActions = (
       return;
     }
 
+    const previousAccount = account;
     setIsLoading(true);
+    
     try {
-      console.log(`Switching from account ${account?.id} to account ${accountId} for user ${user.id}`);
+      console.log(`Switching from account ${account?.id} (${account?.name}) to account ${accountId} for user ${user.id}`);
       
-      // Clear current account immediately to trigger data refresh
+      // Immediately clear current account to force UI update
       setAccount(null);
       
       const result = await authService.switchAccount(user.id, accountId);
@@ -174,16 +175,16 @@ export const useAuthActions = (
       setAccount(result.account);
       setUserAccounts(result.userAccounts);
       
-      console.log('Account switched successfully, new account:', result.account);
+      console.log('Account switched successfully to:', result.account.name);
       toast.success(`עבר לחשבון: ${result.account.name}`);
       
     } catch (error: any) {
       console.error('Failed to switch account:', error);
       toast.error(`שגיאה במעבר בין חשבונות: ${error.message}`);
       
-      // Try to restore previous state if switch failed
-      if (account) {
-        setAccount(account);
+      // Restore previous account if switch failed
+      if (previousAccount) {
+        setAccount(previousAccount);
       }
     } finally {
       setIsLoading(false);

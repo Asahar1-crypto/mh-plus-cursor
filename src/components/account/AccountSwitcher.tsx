@@ -42,7 +42,7 @@ const AccountSwitcher = () => {
 
   const handleAccountChange = async (accountId: string) => {
     if (accountId !== account?.id) {
-      console.log(`AccountSwitcher: Switching from ${account?.id} to ${accountId}`);
+      console.log(`AccountSwitcher: Switching from ${account?.id} (${account?.name}) to ${accountId}`);
       try {
         await switchAccount(accountId);
       } catch (error) {
@@ -53,10 +53,17 @@ const AccountSwitcher = () => {
     }
   };
 
+  // Force re-render when account changes by using a key
+  const currentAccountValue = account?.id || '';
+  
   return (
     <div className="flex items-center space-x-2">
       <Building2 className="h-4 w-4 text-muted-foreground" />
-      <Select value={account?.id || ''} onValueChange={handleAccountChange}>
+      <Select 
+        key={`account-switcher-${currentAccountValue}`} 
+        value={currentAccountValue} 
+        onValueChange={handleAccountChange}
+      >
         <SelectTrigger className="w-[200px]">
           <SelectValue placeholder="בחר חשבון" />
         </SelectTrigger>
