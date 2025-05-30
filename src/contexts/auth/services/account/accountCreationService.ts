@@ -8,8 +8,42 @@ export const accountCreationService = {
   createNewAccount: async (userId: string, userName: string): Promise<Account> => {
     console.log('Creating new account for user:', userId, 'with name:', userName);
     
-    // First, do a final check to make sure no account exists
-    // This is an extra safety check before calling the RPC
+    // First, ensure the user profile exists
+    console.log('Checking if user profile exists...');
+    const { data: existingProfile, error: profileCheckError } = await supabase
+      .from('profiles')
+      .select('id, name')
+      .eq('id', userId)
+      .maybeSingle();
+    
+    if (profileCheckError) {
+      console.error('Error checking user profile:', profileCheckError);
+      throw new Error(`Failed to check user profile: ${profileCheckError.message}`);
+    }
+    
+    // If profile doesn't exist, create it
+    if (!existingProfile) {
+      console.log('User profile does not exist, creating it...');
+      const { error: profileCreateError } = await supabase
+        .from('profiles')
+        .insert([
+          {
+            id: userId,
+            name: userName
+          }
+        ]);
+      
+      if (profileCreateError) {
+        console.error('Error creating user profile:', profileCreateError);
+        throw new Error(`Failed to create user profile: ${profileCreateError.message}`);
+      }
+      
+      console.log('User profile created successfully');
+    } else {
+      console.log('User profile already exists:', existingProfile);
+    }
+    
+    // Now check for existing accounts after ensuring profile exists
     const { data: existingAccounts, error: checkError } = await supabase
       .from('accounts')
       .select('id, name, owner_id')
