@@ -123,7 +123,15 @@ export const determineActiveAccount = async (userId: string, userAccounts: UserA
   // Priority 4: Create new account if none exists
   console.log('No accounts found, creating new account');
   try {
-    const newAccount = await accountCreationService.createAccountForUser(userId);
+    // Get user profile to get name
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('name')
+      .eq('id', userId)
+      .single();
+    
+    const userName = profile?.name || 'User';
+    const newAccount = await accountCreationService.createNewAccount(userId, userName);
     return newAccount;
   } catch (error) {
     console.error('Failed to create new account:', error);
