@@ -18,7 +18,6 @@ export const useExpenseStorage = (user: User | null, account: Account | null): E
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [childrenList, setChildrenList] = useState<Child[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const previousAccountId = useRef<string | null>(null);
 
   const refreshData = async () => {
     if (!user || !account) {
@@ -50,23 +49,23 @@ export const useExpenseStorage = (user: User | null, account: Account | null): E
     }
   };
 
-  // Load data when user or account changes
+  // Load data when user or account changes - use JSON.stringify to ensure deep comparison
   useEffect(() => {
-    const currentAccountId = account?.id || null;
+    console.log('useExpenseStorage effect triggered', { 
+      userId: user?.id, 
+      accountId: account?.id,
+      accountName: account?.name 
+    });
     
-    // Always load data if there's a user and account
+    // Always refresh data when user or account changes
     if (user && account) {
-      console.log(`Account changed from ${previousAccountId.current} to ${currentAccountId}, refreshing data`);
       refreshData();
     } else {
       // Clear data if no user or account
       setExpenses([]);
       setChildrenList([]);
     }
-    
-    // Update the previous account ID
-    previousAccountId.current = currentAccountId;
-  }, [user?.id, account?.id]); // Track both user ID and account ID changes
+  }, [user?.id, account?.id]); // Simple dependency array
 
   return {
     expenses,

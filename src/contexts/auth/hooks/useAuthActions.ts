@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { User, Account, UserAccounts } from '../types';
@@ -159,6 +158,8 @@ export const useAuthActions = (
       console.log(`Switching to account ${accountId} for user ${user.id}`);
       const result = await authService.switchAccount(user.id, accountId);
       
+      console.log('Account switch result:', result);
+      
       // Update state immediately
       setAccount(result.account);
       setUserAccounts(result.userAccounts);
@@ -166,10 +167,6 @@ export const useAuthActions = (
       console.log('Account switched successfully, new account:', result.account);
       toast.success(`עבר לחשבון: ${result.account.name}`);
       
-      // Force a complete data refresh after a short delay to ensure the UI updates
-      setTimeout(() => {
-        checkAndSetUserData();
-      }, 100);
     } catch (error: any) {
       console.error('Failed to switch account:', error);
       toast.error(`שגיאה במעבר בין חשבונות: ${error.message}`);
