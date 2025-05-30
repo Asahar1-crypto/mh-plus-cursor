@@ -39,24 +39,54 @@ const InviteUserForm: React.FC<InviteUserFormProps> = ({ account, onInvite }) =>
     
     try {
       console.log('Starting invitation process for email:', data.email);
+      console.log('Current account:', account);
+      
+      if (!account) {
+        setError('אין חשבון פעיל. אנא רענן את הדף ונסה שוב.');
+        return;
+      }
+      
       await onInvite(data.email);
       console.log('Invitation sent successfully');
       inviteForm.reset();
     } catch (error: any) {
       console.error('Failed to send invitation:', error);
       
-      // Only set error if it's not about an existing invitation
-      // (that one is already shown by a toast)
-      if (!error.message?.includes('already exists')) {
-        setError('שגיאה בשליחת ההזמנה. אנא נסה שוב.');
+      // Set more specific error messages
+      if (error.message?.includes('User or account not found')) {
+        setError('שגיאה: המשתמש או החשבון לא נמצאו. אנא רענן את הדף ונסה שוב.');
+      } else if (error.message?.includes('already exists')) {
+        setError('הזמנה כבר נשלחה לכתובת אימייל זו.');
+      } else {
+        setError(error.message || 'שגיאה בשליחת ההזמנה. אנא נסה שוב.');
       }
     } finally {
       setIsInviting(false);
     }
   };
 
+  // Show message if no account is available
+  if (!account) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>הזמנת משתמש לחשבון</CardTitle>
+          <CardDescription>הזמן משתמש נוסף לצפייה וניהול החשבון</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Alert>
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              אין חשבון פעיל זמין. אנא רענן את הדף או צור קשר עם התמיכה.
+            </AlertDescription>
+          </Alert>
+        </CardContent>
+      </Card>
+    );
+  }
+
   // Don't display the form if the account is already shared
-  if (account?.isSharedAccount || account?.sharedWithEmail) {
+  if (account.isSharedAccount || account.sharedWithEmail) {
     return null;
   }
 

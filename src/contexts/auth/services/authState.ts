@@ -69,18 +69,27 @@ export const checkAuth = async (): Promise<AuthStateResult> => {
       const allAccounts = [...userAccounts.ownedAccounts, ...userAccounts.sharedAccounts];
       
       if (allAccounts.length === 0) {
-        console.log('No accounts found, will create default account');
-        // Create default account if none exist
-        activeAccount = await accountService.getDefaultAccount(user.id, user.name);
-        console.log('Created default account:', activeAccount);
-        
-        // Refresh user accounts after creating default account
-        const refreshedAccounts = await accountService.getUserAccounts(user.id);
-        
-        const result = { user, account: activeAccount, userAccounts: refreshedAccounts };
-        lastAuthCheck = result;
-        lastCheckTime = Date.now();
-        return result;
+        console.log('No accounts found, creating default account for user:', user.id);
+        try {
+          // Create default account if none exist
+          activeAccount = await accountService.getDefaultAccount(user.id, user.name);
+          console.log('Created default account:', activeAccount);
+          
+          // Refresh user accounts after creating default account
+          const refreshedAccounts = await accountService.getUserAccounts(user.id);
+          
+          const result = { user, account: activeAccount, userAccounts: refreshedAccounts };
+          lastAuthCheck = result;
+          lastCheckTime = Date.now();
+          return result;
+        } catch (createError) {
+          console.error('Failed to create default account:', createError);
+          // Continue without account instead of failing completely
+          const result = { user, account: null, userAccounts: { ownedAccounts: [], sharedAccounts: [] } };
+          lastAuthCheck = result;
+          lastCheckTime = Date.now();
+          return result;
+        }
       }
 
       // Get selected account ID from user preference
@@ -112,6 +121,7 @@ export const checkAuth = async (): Promise<AuthStateResult> => {
       
       // Try to create a default account as fallback
       try {
+        console.log('Attempting to create fallback account for user:', user.id);
         const defaultAccount = await accountService.getDefaultAccount(user.id, user.name);
         const fallbackAccounts = await accountService.getUserAccounts(user.id);
         
@@ -121,6 +131,7 @@ export const checkAuth = async (): Promise<AuthStateResult> => {
         return result;
       } catch (fallbackError) {
         console.error('Failed to create fallback account:', fallbackError);
+        // Return user without account instead of failing completely
         const result = { user, account: null, userAccounts: { ownedAccounts: [], sharedAccounts: [] } };
         lastAuthCheck = result;
         lastCheckTime = Date.now();

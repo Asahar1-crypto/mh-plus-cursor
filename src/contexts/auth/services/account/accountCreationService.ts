@@ -6,7 +6,7 @@ import { isAccountRPCResponse } from './types';
 export const accountCreationService = {
   // Create new account using RPC function with additional safeguards
   createNewAccount: async (userId: string, userName: string): Promise<Account> => {
-    console.log('No accounts found, creating a new one with transaction');
+    console.log('Creating new account for user:', userId, 'with name:', userName);
     
     // First, do a final check to make sure no account exists
     // This is an extra safety check before calling the RPC
@@ -31,36 +31,76 @@ export const accountCreationService = {
       };
     }
     
-    // Use any type to bypass strict TypeScript checking for the RPC call
-    const rpcResult = await (supabase.rpc as any)(
-      'create_account_if_not_exists',
-      { 
-        user_id: userId,
-        account_name: `${userName}'s Account`
+    try {
+      console.log('Calling RPC create_account_if_not_exists...');
+      
+      // Use the RPC function to create account safely
+      const { data, error: createError } = await supabase.rpc(
+        'create_account_if_not_exists',
+        { 
+          user_id: userId,
+          account_name: `${userName}'s Account`
+        }
+      );
+      
+      if (createError) {
+        console.error('RPC Error creating new account:', createError);
+        throw createError;
       }
-    );
-    
-    const { data, error: createError } = rpcResult;
-    
-    if (createError) {
-      console.error('Error creating new account:', createError);
-      throw createError;
+      
+      if (!data) {
+        throw new Error('No account data returned from account creation');
+      }
+      
+      console.log('RPC returned data:', data);
+      
+      // Handle both single object and array responses
+      const accountData = Array.isArray(data) ? data[0] : data;
+      
+      // Use type guard to ensure data is of the expected type
+      if (!isAccountRPCResponse(accountData)) {
+        console.error('Unexpected data format:', accountData);
+        throw new Error('Unexpected data format returned from account creation');
+      }
+      
+      console.log('Successfully created/retrieved account via RPC:', accountData);
+      return {
+        id: accountData.id,
+        name: accountData.name,
+        ownerId: accountData.owner_id
+      };
+    } catch (rpcError) {
+      console.error('Failed to create account via RPC:', rpcError);
+      
+      // Fallback: try direct insert as last resort
+      try {
+        console.log('Attempting fallback direct insert...');
+        const { data: insertData, error: insertError } = await supabase
+          .from('accounts')
+          .insert([
+            {
+              name: `${userName}'s Account`,
+              owner_id: userId
+            }
+          ])
+          .select('id, name, owner_id')
+          .single();
+        
+        if (insertError) {
+          console.error('Fallback insert also failed:', insertError);
+          throw insertError;
+        }
+        
+        console.log('Fallback insert succeeded:', insertData);
+        return {
+          id: insertData.id,
+          name: insertData.name,
+          ownerId: insertData.owner_id
+        };
+      } catch (fallbackError) {
+        console.error('Both RPC and fallback insert failed:', fallbackError);
+        throw new Error(`Failed to create account: ${rpcError.message || rpcError}`);
+      }
     }
-    
-    if (!data) {
-      throw new Error('No account data returned from account creation');
-    }
-    
-    // Use type guard to ensure data is of the expected type
-    if (!isAccountRPCResponse(data)) {
-      throw new Error('Unexpected data format returned from account creation');
-    }
-    
-    console.log('Created or retrieved account via transaction:', data);
-    return {
-      id: data.id,
-      name: data.name,
-      ownerId: data.owner_id
-    };
   }
 };
