@@ -49,67 +49,42 @@ export async function acceptInvitation(invitationId: string, user: User): Promis
     
     const accountId = invitation.account_id;
     
-    // Try to get account data, but proceed even if missing
-    let accountData = null;
-    try {
-      const { data: fetchedAccount, error: accountError } = await supabase
-        .from('accounts')
-        .select('*')
-        .eq('id', accountId)
-        .single();
+    // Get the existing account that sent the invitation
+    const { data: accountData, error: accountError } = await supabase
+      .from('accounts')
+      .select('*')
+      .eq('id', accountId)
+      .single();
         
-      if (!accountError && fetchedAccount) {
-        accountData = fetchedAccount;
-      } else {
-        console.warn("Account data not found, but proceeding with invitation acceptance");
-      }
-    } catch (err) {
-      console.warn("Error fetching account data, but proceeding:", err);
+    if (accountError) {
+      console.error("Error fetching account:", accountError);
+      throw new Error('החשבון שהזמין אותך לא נמצא');
     }
     
-    // Check if this is the user's own account (if we have account data)
-    if (accountData && accountData.owner_id === user.id) {
+    if (!accountData) {
+      throw new Error('החשבון שהזמין אותך לא נמצא');
+    }
+    
+    // Check if this is the user's own account
+    if (accountData.owner_id === user.id) {
       console.error("Cannot share account with self");
       throw new Error('לא ניתן לשתף חשבון עם עצמך');
     }
     
-    // If account exists, update it with shared information
-    if (accountData) {
-      console.log("Updating existing account with user information");
-      const { error: updateError } = await supabase
-        .from('accounts')
-        .update({ 
-          shared_with_id: user.id,
-          shared_with_email: user.email,
-          invitation_id: invitation.invitation_id
-        })
-        .eq('id', accountId);
-        
-      if (updateError) {
-        console.error("Error updating account:", updateError);
-        throw new Error('שגיאה בעדכון החשבון: ' + updateError.message);
-      }
-    } else {
-      // If account doesn't exist, create a new shared account for this user
-      console.log("Creating new account for shared access");
-      const { data: newAccount, error: createError } = await supabase
-        .from('accounts')
-        .insert({
-          name: `חשבון משותף (${invitation.email})`,
-          owner_id: user.id,
-          shared_with_id: user.id,
-          shared_with_email: user.email,
-          invitation_id: invitation.invitation_id
-        })
-        .select()
-        .single();
-        
-      if (createError) {
-        console.error("Error creating new account:", createError);
-        throw new Error('שגיאה ביצירת חשבון חדש: ' + createError.message);
-      }
+    // Update the existing account to include the shared user (don't create a new account)
+    console.log("Updating existing account with shared user information");
+    const { error: updateError } = await supabase
+      .from('accounts')
+      .update({ 
+        shared_with_id: user.id,
+        shared_with_email: user.email,
+        invitation_id: invitation.invitation_id
+      })
+      .eq('id', accountId);
       
-      accountData = newAccount;
+    if (updateError) {
+      console.error("Error updating account:", updateError);
+      throw new Error('שגיאה בעדכון החשבון: ' + updateError.message);
     }
     
     // Mark invitation as accepted
@@ -119,30 +94,28 @@ export async function acceptInvitation(invitationId: string, user: User): Promis
       .update({ accepted_at: new Date().toISOString() })
       .eq('invitation_id', invitation.invitation_id);
       
-    // Get owner profile data if we have owner_id
+    // Get owner profile data
     let ownerName = 'בעל החשבון';
     
-    if (accountData && accountData.owner_id) {
-      try {
-        const { data: ownerProfile } = await supabase
-          .from('profiles')
-          .select('name')
-          .eq('id', accountData.owner_id)
-          .maybeSingle();
-          
-        if (ownerProfile && ownerProfile.name) {
-          ownerName = ownerProfile.name;
-        }
-      } catch (error) {
-        console.error("Could not fetch owner profile:", error);
+    try {
+      const { data: ownerProfile } = await supabase
+        .from('profiles')
+        .select('name')
+        .eq('id', accountData.owner_id)
+        .maybeSingle();
+        
+      if (ownerProfile && ownerProfile.name) {
+        ownerName = ownerProfile.name;
       }
+    } catch (error) {
+      console.error("Could not fetch owner profile:", error);
     }
     
-    // Create account object to return
+    // Create account object to return (the existing account, not a new one)
     const sharedAccount: Account = {
-      id: accountId,
-      name: accountData?.name || 'חשבון משותף',
-      ownerId: accountData?.owner_id || user.id,
+      id: accountData.id,
+      name: accountData.name,
+      ownerId: accountData.owner_id,
       ownerName: ownerName,
       sharedWithId: user.id,
       sharedWithEmail: user.email,

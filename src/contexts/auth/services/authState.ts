@@ -54,7 +54,7 @@ export const checkAuth = async (): Promise<{
     const userAccounts = await getUserAccounts(user.id);
     console.log('User accounts loaded:', userAccounts);
     
-    // Determine active account with priority for shared accounts
+    // Determine active account with improved logic
     const activeAccount = await determineActiveAccount(user.id, userAccounts);
     console.log('Active account determined:', activeAccount);
     
@@ -91,20 +91,16 @@ export const getUserAccounts = async (userId: string): Promise<UserAccounts> => 
 
 /**
  * Determine which account should be active
- * Priority: 1. Shared accounts (most recent activity), 2. Selected account, 3. First owned account
+ * Improved logic to prevent wrong account selection
  */
 export const determineActiveAccount = async (userId: string, userAccounts: UserAccounts): Promise<Account | null> => {
-  // Priority 1: If user has shared accounts, use the most recent one (indicates recent invitation acceptance)
-  if (userAccounts.sharedAccounts.length > 0) {
-    console.log('User has shared accounts, prioritizing the first shared account');
-    return userAccounts.sharedAccounts[0];
-  }
-  
-  // Priority 2: Check user's selected account preference
+  // Priority 1: Check user's selected account preference first
   try {
     const selectedAccountId = await selectedAccountService.getSelectedAccountId(userId);
     if (selectedAccountId) {
-      const selectedAccount = userAccounts.ownedAccounts.find(acc => acc.id === selectedAccountId);
+      // Look for the selected account in both owned and shared accounts
+      const allAccounts = [...userAccounts.ownedAccounts, ...userAccounts.sharedAccounts];
+      const selectedAccount = allAccounts.find(acc => acc.id === selectedAccountId);
       if (selectedAccount) {
         console.log('Found selected account from preference:', selectedAccount.name);
         return selectedAccount;
@@ -112,6 +108,12 @@ export const determineActiveAccount = async (userId: string, userAccounts: UserA
     }
   } catch (error) {
     console.error('Error getting selected account:', error);
+  }
+  
+  // Priority 2: If user has shared accounts, use the most recent one ONLY if no preference is set
+  if (userAccounts.sharedAccounts.length > 0) {
+    console.log('User has shared accounts, using the first shared account');
+    return userAccounts.sharedAccounts[0];
   }
   
   // Priority 3: Use first owned account
