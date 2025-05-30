@@ -10,7 +10,15 @@ import PendingInvitationsCard from '@/components/account/PendingInvitationsCard'
 import NotificationsCard from '@/components/account/NotificationsCard';
 
 const AccountSettings = () => {
-  const { user, account, isLoading } = useAuth();
+  const { user, account, isLoading, sendInvitation, removeInvitation } = useAuth();
+
+  const handleInvite = async (email: string) => {
+    await sendInvitation(email);
+  };
+
+  const handleRemovePartner = async () => {
+    await removeInvitation();
+  };
 
   if (isLoading) {
     return (
@@ -39,18 +47,23 @@ const AccountSettings = () => {
         <h1 className="text-3xl font-bold">הגדרות חשבון</h1>
       </div>
 
-      <AccountStatusAlert />
+      <AccountStatusAlert account={account} />
 
       <div className="grid gap-6 md:grid-cols-2">
         <div className="space-y-6">
           <UserAccountsCard />
-          <AccountDetailsCard />
+          <AccountDetailsCard account={account} />
           <PendingInvitationsCard />
         </div>
         
         <div className="space-y-6">
-          <InviteUserForm />
-          <UsersListCard />
+          <InviteUserForm account={account} onInvite={handleInvite} />
+          <UsersListCard 
+            account={account} 
+            user={user} 
+            onRemovePartner={handleRemovePartner}
+            isLoading={isLoading}
+          />
           <NotificationsCard />
         </div>
       </div>
