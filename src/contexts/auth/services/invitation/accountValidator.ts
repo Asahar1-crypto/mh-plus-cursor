@@ -41,20 +41,7 @@ export const getAccountDetails = async (accountId: string): Promise<any> => {
     
     const { data: account, error } = await supabase
       .from('accounts')
-      .select(`
-        id,
-        name,
-        owner_id,
-        shared_with_id,
-        shared_with_email,
-        invitation_id,
-        created_at,
-        updated_at,
-        profiles:owner_id (
-          id,
-          name
-        )
-      `)
+      .select('id, name, owner_id, shared_with_id, shared_with_email, invitation_id, created_at, updated_at')
       .eq('id', accountId)
       .single();
       
@@ -80,17 +67,7 @@ export const debugListAllAccounts = async (): Promise<void> => {
     
     const { data: accounts, error } = await supabase
       .from('accounts')
-      .select(`
-        id,
-        name,
-        owner_id,
-        shared_with_id,
-        shared_with_email,
-        created_at,
-        profiles:owner_id (
-          name
-        )
-      `)
+      .select('id, name, owner_id, shared_with_id, shared_with_email, created_at')
       .order('created_at', { ascending: false })
       .limit(20);
       
@@ -101,8 +78,25 @@ export const debugListAllAccounts = async (): Promise<void> => {
     
     console.log(`debugListAllAccounts: Found ${accounts?.length || 0} accounts:`);
     accounts?.forEach((account, index) => {
-      console.log(`  ${index + 1}. ${account.id} - "${account.name}" (Owner: ${account.profiles?.name || 'Unknown'})`);
+      console.log(`  ${index + 1}. ${account.id} - "${account.name}" (Owner: ${account.owner_id})`);
     });
+
+    // Get owner names separately
+    if (accounts && accounts.length > 0) {
+      const ownerIds = [...new Set(accounts.map(acc => acc.owner_id))];
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('id, name')
+        .in('id', ownerIds);
+        
+      console.log('debugListAllAccounts: Owner profiles:', profiles);
+      
+      accounts.forEach((account, index) => {
+        const ownerProfile = profiles?.find(p => p.id === account.owner_id);
+        const ownerName = ownerProfile?.name || 'Unknown';
+        console.log(`  ${index + 1}. ${account.id} - "${account.name}" (Owner: ${ownerName})`);
+      });
+    }
   } catch (error) {
     console.error('debugListAllAccounts: Exception listing accounts:', error);
   }
