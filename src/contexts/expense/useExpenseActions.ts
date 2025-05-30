@@ -21,7 +21,8 @@ export const useExpenseActions = (
   expenses: Expense[], 
   setExpenses: React.Dispatch<React.SetStateAction<Expense[]>>,
   childrenList: Child[],
-  setChildrenList: React.Dispatch<React.SetStateAction<Child[]>>
+  setChildrenList: React.Dispatch<React.SetStateAction<Child[]>>,
+  refreshData: () => Promise<void>
 ): ExpenseActions => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   
@@ -38,28 +39,8 @@ export const useExpenseActions = (
 
     setIsSubmitting(true);
     try {
-      // Pass both user and account to the service
       await expenseService.addExpense(user, account, newExpense);
-      
-      // Create a client-side representation of the expense with the data we need
-      const expense: Expense = {
-        id: `temp-${Date.now()}`, // Temporary ID until we get the real one
-        amount: newExpense.amount,
-        description: newExpense.description,
-        date: newExpense.date,
-        category: newExpense.category,
-        childId: newExpense.childId,
-        childName: newExpense.childName,
-        createdBy: user.id,
-        creatorName: user.name,
-        status: 'pending',
-        receipt: newExpense.receipt,
-        isRecurring: newExpense.isRecurring || false,
-        frequency: newExpense.frequency,
-        includeInMonthlyBalance: newExpense.includeInMonthlyBalance || true
-      };
-      
-      setExpenses(prevExpenses => [...prevExpenses, expense]);
+      await refreshData(); // Refresh data instead of manual state update
       toast.success('ההוצאה נוספה בהצלחה');
     } catch (error) {
       console.error('Failed to add expense:', error);
@@ -82,17 +63,8 @@ export const useExpenseActions = (
 
     setIsSubmitting(true);
     try {
-      // Pass both user and account to the service
       await expenseService.addChild(user, account, newChild);
-      
-      // Create a client-side representation with temp ID
-      const child: Child = {
-        id: `temp-${Date.now()}`,
-        name: newChild.name,
-        birthDate: newChild.birthDate
-      };
-      
-      setChildrenList(prevChildren => [...prevChildren, child]);
+      await refreshData(); // Refresh data instead of manual state update
       toast.success('הילד/ה נוספ/ה בהצלחה');
     } catch (error: any) {
       console.error('Failed to add child:', error);

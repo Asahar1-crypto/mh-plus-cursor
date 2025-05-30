@@ -1,117 +1,182 @@
 
-import { useCallback } from 'react';
-import { authService } from '../authService';
-import { User, Account, UserAccounts } from '../types';
+import { useState } from 'react';
 import { toast } from 'sonner';
+import { User, Account, UserAccounts } from '../types';
+import { authService } from '../authService';
 
-/**
- * Custom hook for authentication actions
- */
 export const useAuthActions = (
   user: User | null,
   account: Account | null,
   setUser: (user: User | null) => void,
   setAccount: (account: Account | null) => void,
   setUserAccounts: (userAccounts: UserAccounts | null) => void,
-  setIsLoading: (loading: boolean) => void,
+  setIsLoading: (isLoading: boolean) => void,
   checkAndSetUserData: () => Promise<void>
 ) => {
-  const login = useCallback(async (email: string, password: string) => {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const login = async (email: string, password: string): Promise<void> => {
     setIsLoading(true);
     try {
-      const result = await authService.login(email, password);
-      setUser(result.user);
-      setAccount(result.account);
-      // userAccounts will be set by the checkAndSetUserData call triggered by auth state change
-      toast.success('התחברת בהצלחה!');
-    } catch (error) {
+      await authService.login(email, password);
+      // After successful login, check auth state
+      await checkAndSetUserData();
+      toast.success('התחברת בהצלחה');
+    } catch (error: any) {
       console.error('Login failed:', error);
+      toast.error(`שגיאה בהתחברות: ${error.message}`);
       throw error;
     } finally {
       setIsLoading(false);
     }
-  }, [setUser, setAccount, setIsLoading]);
+  };
 
-  const register = useCallback(async (name: string, email: string, password: string) => {
+  const register = async (name: string, email: string, password: string): Promise<void> => {
     setIsLoading(true);
     try {
       await authService.register(name, email, password);
-      toast.success('נרשמת בהצלחה! בדוק את המייל שלך לאישור');
-    } catch (error) {
+      toast.success('נרשמת בהצלחה! בדוק את האימייל לאישור החשבון');
+    } catch (error: any) {
       console.error('Registration failed:', error);
+      toast.error(`שגיאה ברישום: ${error.message}`);
       throw error;
     } finally {
       setIsLoading(false);
     }
-  }, [setIsLoading]);
+  };
 
-  const logout = useCallback(async () => {
+  const logout = async (): Promise<void> => {
     setIsLoading(true);
     try {
       await authService.logout();
       setUser(null);
       setAccount(null);
       setUserAccounts(null);
-    } catch (error) {
+      toast.success('התנתקת בהצלחה');
+    } catch (error: any) {
       console.error('Logout failed:', error);
-      throw error;
+      toast.error(`שגיאה בהתנתקות: ${error.message}`);
     } finally {
       setIsLoading(false);
     }
-  }, [setUser, setAccount, setUserAccounts, setIsLoading]);
+  };
 
-  const sendInvitation = useCallback(async (email: string) => {
+  const sendInvitation = async (email: string): Promise<void> => {
     if (!user || !account) {
-      throw new Error('User or account not found');
+      toast.error('יש להתחבר כדי לשלוח הזמנה');
+      return;
     }
-    await authService.sendInvitation(email, user, account);
-  }, [user, account]);
 
-  const removeInvitation = useCallback(async () => {
+    setIsSubmitting(true);
+    try {
+      await authService.sendInvitation(email, user, account);
+      toast.success('ההזמנה נשלחה בהצלחה');
+    } catch (error: any) {
+      console.error('Failed to send invitation:', error);
+      toast.error(`שגיאה בשליחת ההזמנה: ${error.message}`);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const removeInvitation = async (): Promise<void> => {
     if (!account) {
-      throw new Error('Account not found');
+      toast.error('לא נמצא חשבון פעיל');
+      return;
     }
-    await authService.removeInvitation(account);
-    // Refresh user data after removing invitation
-    await checkAndSetUserData();
-  }, [account, checkAndSetUserData]);
 
-  const acceptInvitation = useCallback(async (invitationId: string) => {
+    setIsSubmitting(true);
+    try {
+      await authService.removeInvitation(account);
+      await checkAndSetUserData(); // Refresh data after removing invitation
+      toast.success('ההזמנה הוסרה בהצלחה');
+    } catch (error: any) {
+      console.error('Failed to remove invitation:', error);
+      toast.error(`שגיאה בהסרת ההזמנה: ${error.message}`);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const acceptInvitation = async (invitationId: string): Promise<void> => {
     if (!user) {
-      throw new Error('User not found');
+      toast.error('יש להתחבר כדי לקבל הזמנה');
+      return;
     }
-    await authService.acceptInvitation(invitationId, user);
-    // Refresh user data after accepting invitation
-    await checkAndSetUserData();
-  }, [user, checkAndSetUserData]);
 
-  const verifyEmail = useCallback(async (token: string) => {
-    return authService.verifyEmail(token);
-  }, []);
-
-  const resetPassword = useCallback(async (email: string) => {
-    await authService.resetPassword(email);
-  }, []);
-
-  const switchAccount = useCallback(async (accountId: string) => {
-    if (!user) {
-      throw new Error('User not found');
+    setIsSubmitting(true);
+    try {
+      await authService.acceptInvitation(invitationId, user);
+      await checkAndSetUserData(); // Refresh data after accepting invitation
+      toast.success('ההזמנה התקבלה בהצלחה');
+    } catch (error: any) {
+      console.error('Failed to accept invitation:', error);
+      toast.error(`שגיאה בקבלת ההזמנה: ${error.message}`);
+    } finally {
+      setIsSubmitting(false);
     }
-    
+  };
+
+  const verifyEmail = async (token: string): Promise<boolean> => {
     setIsLoading(true);
     try {
-      const result = await authService.switchAccount(user.id, accountId);
-      setAccount(result.account);
-      setUserAccounts(result.userAccounts);
-      toast.success(`עברת לחשבון: ${result.account.name}`);
-    } catch (error) {
-      console.error('Switch account failed:', error);
-      toast.error('שגיאה במעבר בין חשבונות');
-      throw error;
+      const result = await authService.verifyEmail(token);
+      if (result) {
+        await checkAndSetUserData();
+        toast.success('האימייל אומת בהצלחה');
+      }
+      return result;
+    } catch (error: any) {
+      console.error('Email verification failed:', error);
+      toast.error(`שגיאה באימות האימייל: ${error.message}`);
+      return false;
     } finally {
       setIsLoading(false);
     }
-  }, [user, setAccount, setUserAccounts, setIsLoading]);
+  };
+
+  const resetPassword = async (email: string): Promise<void> => {
+    setIsLoading(true);
+    try {
+      await authService.resetPassword(email);
+      toast.success('נשלח אימייל לאיפוס סיסמה');
+    } catch (error: any) {
+      console.error('Password reset failed:', error);
+      toast.error(`שגיאה באיפוס סיסמה: ${error.message}`);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const switchAccount = async (accountId: string): Promise<void> => {
+    if (!user) {
+      toast.error('יש להתחבר כדי לשנות חשבון');
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      console.log(`Switching to account ${accountId} for user ${user.id}`);
+      const result = await authService.switchAccount(user.id, accountId);
+      
+      // Update state immediately
+      setAccount(result.account);
+      setUserAccounts(result.userAccounts);
+      
+      console.log('Account switched successfully, new account:', result.account);
+      toast.success(`עבר לחשבון: ${result.account.name}`);
+      
+      // Force a complete data refresh after a short delay to ensure the UI updates
+      setTimeout(() => {
+        checkAndSetUserData();
+      }, 100);
+    } catch (error: any) {
+      console.error('Failed to switch account:', error);
+      toast.error(`שגיאה במעבר בין חשבונות: ${error.message}`);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return {
     login,

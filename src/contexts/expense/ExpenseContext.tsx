@@ -13,7 +13,7 @@ interface ExpenseProviderProps {
 }
 
 export const ExpenseProvider = ({ children }: ExpenseProviderProps) => {
-  const { user, account } = useAuth(); // Now also get account
+  const { user, account } = useAuth();
   
   // Use our custom hooks to manage state and logic - pass both user and account
   const { 
@@ -21,8 +21,9 @@ export const ExpenseProvider = ({ children }: ExpenseProviderProps) => {
     setExpenses, 
     childrenList, 
     setChildrenList,
-    isLoading
-  } = useExpenseStorage(user, account); // Pass account too
+    isLoading,
+    refreshData
+  } = useExpenseStorage(user, account);
   
   const { 
     addExpense,
@@ -32,7 +33,7 @@ export const ExpenseProvider = ({ children }: ExpenseProviderProps) => {
     addChild,
     uploadReceipt,
     isSubmitting
-  } = useExpenseActions(user, account, expenses, setExpenses, childrenList, setChildrenList); // Pass account
+  } = useExpenseActions(user, account, expenses, setExpenses, childrenList, setChildrenList, refreshData);
   
   const { 
     getPendingExpenses,
