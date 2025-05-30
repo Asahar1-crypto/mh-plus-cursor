@@ -56,11 +56,25 @@ export const useInvitationActions = (
 
     setIsSubmitting(true);
     try {
-      await authService.acceptInvitation(invitationId, user);
-      await checkAndSetUserData(); // Refresh data after accepting invitation
-      toast.success('ההזמנה התקבלה בהצלחה');
+      console.log('useInvitationActions: Starting invitation acceptance for:', invitationId);
+      
+      const sharedAccount = await authService.acceptInvitation(invitationId, user);
+      console.log('useInvitationActions: Invitation accepted, shared account:', sharedAccount);
+      
+      // Refresh all user data to include the new shared account
+      await checkAndSetUserData();
+      console.log('useInvitationActions: User data refreshed after accepting invitation');
+      
+      toast.success('הצטרפת לחשבון בהצלחה!');
+      
+      // Give a moment for the UI to update, then reload the page to ensure fresh state
+      setTimeout(() => {
+        console.log('useInvitationActions: Reloading page to show shared account');
+        window.location.reload();
+      }, 1500);
+      
     } catch (error: any) {
-      console.error('Failed to accept invitation:', error);
+      console.error('useInvitationActions: Failed to accept invitation:', error);
       toast.error(`שגיאה בקבלת ההזמנה: ${error.message}`);
     } finally {
       setIsSubmitting(false);
