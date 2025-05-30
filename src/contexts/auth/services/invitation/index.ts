@@ -7,6 +7,7 @@ export * from './acceptInvitation';
 export * from './invitationValidator';
 export * from './invitationFetcher';
 export * from './accountFetcher';
+export * from './accountValidator';
 export * from './profileFetcher';
 export * from './invitationCleaner';
 export * from './invitationEnhancer';
