@@ -1,141 +1,139 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { User, Account, UserAccounts } from '../types';
-import { accountService } from './accountService';
 import { userService } from './user';
-import { clearAllPendingInvitations } from '@/utils/notifications';
-import { toast } from 'sonner';
+import { accountService } from './accountService';
 
-/**
- * Checks the current auth state and returns user, account, and userAccounts if authenticated
- */
-export async function checkAuth(): Promise<{ 
-  user: User | null, 
-  account: Account | null, 
-  userAccounts: UserAccounts | null 
-}> {
+interface AuthStateResult {
+  user: User | null;
+  account: Account | null;
+  userAccounts: UserAccounts | null;
+}
+
+// Add a simple cache to prevent multiple concurrent auth checks
+let authCheckInProgress = false;
+let lastAuthCheck: AuthStateResult | null = null;
+let lastCheckTime = 0;
+
+export const checkAuth = async (): Promise<AuthStateResult> => {
+  // Prevent multiple concurrent checks
+  if (authCheckInProgress) {
+    console.log('Auth check already in progress, waiting...');
+    // Wait for ongoing check and return its result
+    while (authCheckInProgress) {
+      await new Promise(resolve => setTimeout(resolve, 100));
+    }
+    if (lastAuthCheck && Date.now() - lastCheckTime < 1000) {
+      return lastAuthCheck;
+    }
+  }
+
+  authCheckInProgress = true;
+  console.log('Starting auth check...');
+
   try {
     const { data: { session } } = await supabase.auth.getSession();
     
-    if (!session) {
-      return { user: null, account: null, userAccounts: null };
+    if (!session?.user) {
+      console.log('No session found');
+      const result = { user: null, account: null, userAccounts: null };
+      lastAuthCheck = result;
+      lastCheckTime = Date.now();
+      return result;
     }
-    
-    // Create user object based on Supabase session
+
+    console.log('Session found for user:', session.user.id);
+
+    // Get user profile
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('name, selected_account_id')
+      .eq('id', session.user.id)
+      .single();
+
     const user: User = {
       id: session.user.id,
-      email: session.user.email || '',
-      name: session.user.user_metadata?.name || session.user.email?.split('@')[0] || 'User'
+      email: session.user.email!,
+      name: profile?.name || session.user.email!.split('@')[0]
     };
-    
-    console.log("User authenticated:", user);
-    
-    // Check if there is a pending invitation ID in session storage
-    const pendingInvitationId = sessionStorage.getItem('pendingInvitationId');
-    
-    // Use a flag to avoid redirection loops
-    let redirectChecked = sessionStorage.getItem('pendingInvitationRedirectChecked');
-    
-    if (pendingInvitationId && !redirectChecked && user.email) {
-      console.log(`Found pendingInvitationId ${pendingInvitationId} in sessionStorage`);
-      sessionStorage.setItem('pendingInvitationRedirectChecked', 'true');
-      
-      try {
-        // Verify that the invitation exists and is valid
-        const { data: invitation } = await supabase
-          .from('invitations')
-          .select(`
-            invitation_id,
-            email,
-            account_id,
-            accepted_at,
-            expires_at
-          `)
-          .eq('invitation_id', pendingInvitationId)
-          .eq('email', user.email.toLowerCase())
-          .is('accepted_at', null)
-          .gt('expires_at', 'now()');
-          
-        if (invitation && invitation.length > 0) {
-          console.log(`Verified that invitation ${pendingInvitationId} is valid for user ${user.email}`);
-          
-          // If the user just registered or logged in, redirect to the invitation page
-          // but we'll only do this once per session to avoid loops
-          const currentPath = window.location.pathname;
-          if (!currentPath.includes(`/invitation/${pendingInvitationId}`)) {
-            setTimeout(() => {
-              window.location.href = `/invitation/${pendingInvitationId}`;
-            }, 1000);
-            return { user, account: null, userAccounts: null };
-          }
-        } else {
-          console.log("Invitation not found or not valid, clearing pendingInvitationId");
-          sessionStorage.removeItem('pendingInvitationId');
-          sessionStorage.removeItem('pendingInvitationRedirectChecked');
-        }
-      } catch (error) {
-        console.error("Error verifying invitation:", error);
-        sessionStorage.removeItem('pendingInvitationId');
-        sessionStorage.removeItem('pendingInvitationRedirectChecked');
-      }
-    }
-    
-    // Get all user accounts
-    const userAccounts = await accountService.getUserAccounts(user.id);
-    console.log("User accounts retrieved:", userAccounts);
-    
-    // Determine active account based on user preference
-    let activeAccount: Account | null = null;
-    
-    // Get user's selected account preference
-    const selectedAccountId = await userService.getSelectedAccountId(user.id);
-    console.log("User's selected account ID:", selectedAccountId);
-    
-    if (selectedAccountId) {
-      // Try to find the selected account in user's available accounts
+
+    console.log('User profile loaded:', user);
+
+    try {
+      // Get user accounts with improved error handling
+      const userAccounts = await accountService.getUserAccounts(user.id);
+      console.log('User accounts loaded:', userAccounts);
+
+      // Determine active account with better logic
+      let activeAccount: Account | null = null;
       const allAccounts = [...userAccounts.ownedAccounts, ...userAccounts.sharedAccounts];
-      activeAccount = allAccounts.find(acc => acc.id === selectedAccountId) || null;
+      
+      if (allAccounts.length === 0) {
+        console.log('No accounts found, will create default account');
+        // Create default account if none exist
+        activeAccount = await accountService.getDefaultAccount(user.id, user.name);
+        console.log('Created default account:', activeAccount);
+        
+        // Refresh user accounts after creating default account
+        const refreshedAccounts = await accountService.getUserAccounts(user.id);
+        
+        const result = { user, account: activeAccount, userAccounts: refreshedAccounts };
+        lastAuthCheck = result;
+        lastCheckTime = Date.now();
+        return result;
+      }
+
+      // Get selected account ID from user preference
+      const selectedAccountId = profile?.selected_account_id;
+      
+      if (selectedAccountId) {
+        // Try to find the selected account
+        activeAccount = allAccounts.find(acc => acc.id === selectedAccountId) || null;
+        console.log('Found selected account from preference:', activeAccount?.name);
+      }
       
       if (!activeAccount) {
-        console.log("Selected account not found in user's available accounts, clearing preference");
-        // Clear invalid preference
-        try {
-          await userService.setSelectedAccountId(user.id, '');
-        } catch (error) {
-          console.error("Error clearing invalid selected account:", error);
-        }
-      }
-    }
-    
-    // If no valid selected account, use default logic
-    if (!activeAccount) {
-      if (userAccounts.sharedAccounts.length > 0) {
-        activeAccount = userAccounts.sharedAccounts[0];
-      } else if (userAccounts.ownedAccounts.length > 0) {
-        activeAccount = userAccounts.ownedAccounts[0];
-      } else {
-        // Create new account if none exist
-        activeAccount = await accountService.getDefaultAccount(user.id, user.name);
-        // Refresh user accounts after creating new account
-        const updatedUserAccounts = await accountService.getUserAccounts(user.id);
-        console.log("Updated user accounts after creation:", updatedUserAccounts);
-        return { user, account: activeAccount, userAccounts: updatedUserAccounts };
-      }
-      
-      // Save the default choice as user preference
-      if (activeAccount) {
-        try {
+        // Fallback: use the first owned account, or first shared account if no owned accounts
+        activeAccount = userAccounts.ownedAccounts[0] || userAccounts.sharedAccounts[0] || null;
+        console.log('Using fallback account:', activeAccount?.name);
+        
+        // Save this choice as user preference
+        if (activeAccount) {
           await userService.setSelectedAccountId(user.id, activeAccount.id);
-        } catch (error) {
-          console.error("Error saving default account preference:", error);
         }
       }
+
+      const result = { user, account: activeAccount, userAccounts };
+      lastAuthCheck = result;
+      lastCheckTime = Date.now();
+      return result;
+    } catch (accountError) {
+      console.error('Error loading account data:', accountError);
+      
+      // Try to create a default account as fallback
+      try {
+        const defaultAccount = await accountService.getDefaultAccount(user.id, user.name);
+        const fallbackAccounts = await accountService.getUserAccounts(user.id);
+        
+        const result = { user, account: defaultAccount, userAccounts: fallbackAccounts };
+        lastAuthCheck = result;
+        lastCheckTime = Date.now();
+        return result;
+      } catch (fallbackError) {
+        console.error('Failed to create fallback account:', fallbackError);
+        const result = { user, account: null, userAccounts: { ownedAccounts: [], sharedAccounts: [] } };
+        lastAuthCheck = result;
+        lastCheckTime = Date.now();
+        return result;
+      }
     }
-    
-    console.log("Active account selected:", activeAccount);
-    return { user, account: activeAccount, userAccounts };
   } catch (error) {
-    console.error('Error checking authentication:', error);
-    return { user: null, account: null, userAccounts: null };
+    console.error('Auth check failed:', error);
+    const result = { user: null, account: null, userAccounts: null };
+    lastAuthCheck = result;
+    lastCheckTime = Date.now();
+    return result;
+  } finally {
+    authCheckInProgress = false;
   }
-}
+};

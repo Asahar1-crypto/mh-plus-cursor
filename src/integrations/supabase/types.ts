@@ -246,7 +246,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      create_account_if_not_exists: {
+        Args: { user_id: string; account_name: string }
+        Returns: {
+          id: string
+          name: string
+          owner_id: string
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never

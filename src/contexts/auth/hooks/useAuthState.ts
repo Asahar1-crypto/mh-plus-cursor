@@ -17,9 +17,9 @@ export const useAuthState = () => {
   const [isCheckingAuth, setIsCheckingAuth] = useState(false);
 
   const checkAndSetUserData = useCallback(async (): Promise<void> => {
-    // Avoid multiple simultaneous checks
+    // Avoid multiple simultaneous checks with stronger protection
     const now = Date.now();
-    if (now - lastCheck < 1000 || isCheckingAuth) {
+    if (now - lastCheck < 2000 || isCheckingAuth) {
       console.log('Skipping auth check - too soon since last check or already checking');
       return;
     }
@@ -42,8 +42,8 @@ export const useAuthState = () => {
       setAccount(authResult.account);
       setUserAccounts(authResult.userAccounts);
       
-      // Check for new invitations when user data is loaded
-      if (authResult.user?.email) {
+      // Check for new invitations when user data is loaded - but only once
+      if (authResult.user?.email && now - lastCheck > 5000) {
         setTimeout(async () => {
           try {
             await invitationCheckService.checkPendingInvitations(authResult.user.email);
