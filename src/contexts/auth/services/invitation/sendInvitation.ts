@@ -1,177 +1,128 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from 'sonner';
 import { v4 as uuidv4 } from 'uuid';
 import { User, Account } from '../../types';
-import { sendInvitationEmail } from '@/utils/emailService';
-import { SendInvitationParams, SendInvitationResult } from './rpcTypes';
+import { toast } from 'sonner';
 
-/**
- * Sends an invitation to a user to join an account
- */
-export async function sendInvitation(email: string, user: User, account: Account) {
+export async function sendInvitation(email: string, user: User, account: Account): Promise<void> {
   try {
-    // Normalize email to lowercase for consistent comparison
-    const normalizedEmail = email.toLowerCase();
+    console.log(`sendInvitation: User ${user.id} (${user.email}) sending invitation to ${email} for account ${account.id}`);
     
-    console.log(`User ${user.id} (${user.email}) sending invitation to ${normalizedEmail} for account ${account.id}`);
-    
-    if (!normalizedEmail || !user || !account) {
-      const errorMsg = 'חסרים פרטים הכרחיים לשליחת הזמנה';
-      console.error(errorMsg, { email: normalizedEmail, userId: user?.id, accountId: account?.id });
-      toast.error(errorMsg);
-      throw new Error(errorMsg);
+    if (!email || !user || !account) {
+      console.error("sendInvitation: Missing required parameters", { email, user: user?.id, account: account?.id });
+      throw new Error('נתונים חסרים לשליחת ההזמנה');
+    }
+
+    // Verify the account exists and belongs to the user before sending invitation
+    console.log(`sendInvitation: Verifying account ${account.id} exists and belongs to user ${user.id}`);
+    const { data: accountExists, error: accountCheckError } = await supabase
+      .from('accounts')
+      .select('id, name, owner_id')
+      .eq('id', account.id)
+      .eq('owner_id', user.id)
+      .single();
+      
+    if (accountCheckError || !accountExists) {
+      console.error("sendInvitation: Account verification failed", { accountCheckError, accountExists });
+      throw new Error('החשבון לא נמצא או שאינך הבעלים שלו');
     }
     
-    // Email validation
-    if (!/\S+@\S+\.\S+/.test(normalizedEmail)) {
-      const errorMsg = 'כתובת דוא״ל לא תקינה';
-      console.error(errorMsg, { email: normalizedEmail });
-      toast.error(errorMsg);
-      throw new Error(errorMsg);
+    console.log("sendInvitation: Account verified successfully:", accountExists);
+
+    // Check if user is trying to invite themselves
+    if (email.toLowerCase() === user.email.toLowerCase()) {
+      console.error("sendInvitation: User trying to invite themselves");
+      throw new Error('לא ניתן להזמין את עצמך');
     }
-    
-    // Check if the email is the same as the current user (case-insensitive)
-    if (normalizedEmail === user.email.toLowerCase()) {
-      const errorMsg = 'לא ניתן לשלוח הזמנה לעצמך';
-      console.error(errorMsg);
-      toast.error(errorMsg);
-      throw new Error(errorMsg);
-    }
-    
-    // Check if the account already has a partner
-    if (account.sharedWithId || account.sharedWithEmail) {
-      const errorMsg = 'חשבון זה כבר משותף עם משתמש אחר';
-      console.error(errorMsg, { sharedWithId: account.sharedWithId, sharedWithEmail: account.sharedWithEmail });
-      toast.error(errorMsg);
-      throw new Error(errorMsg);
-    }
-    
-    // Check if an invitation already exists for this email and account
-    const { data: existingInvitations, error: checkError } = await supabase
+
+    // Check if there's already an active invitation for this email and account
+    console.log("sendInvitation: Checking for existing invitations");
+    const { data: existingInvitation, error: existingError } = await supabase
       .from('invitations')
       .select('*')
-      .eq('email', normalizedEmail)
+      .eq('email', email.toLowerCase())
       .eq('account_id', account.id)
-      .is('accepted_at', null);
-      
-    if (checkError) {
-      console.error("Error checking existing invitations:", checkError);
-      throw checkError;
+      .is('accepted_at', null)
+      .gt('expires_at', 'now()');
+
+    if (existingError) {
+      console.error("sendInvitation: Error checking existing invitations:", existingError);
+      throw new Error('שגיאה בבדיקת הזמנות קיימות: ' + existingError.message);
     }
-    
-    // If invitation already exists, don't create a new one
-    if (existingInvitations && existingInvitations.length > 0) {
-      console.log(`Invitation already exists for ${normalizedEmail} and account ${account.id}`);
-      toast.error('הזמנה כבר נשלחה למשתמש זה');
-      throw new Error('Invitation already exists for this email');
+
+    if (existingInvitation && existingInvitation.length > 0) {
+      console.log("sendInvitation: Active invitation already exists");
+      throw new Error('כבר נשלחה הזמנה פעילה לכתובת האימייל הזו');
     }
-    
-    // Generate a unique invitation ID
+
+    // Check if account is already shared with someone else
+    if (account.sharedWithEmail && account.sharedWithEmail.toLowerCase() !== email.toLowerCase()) {
+      console.error("sendInvitation: Account already shared with someone else");
+      throw new Error(`החשבון כבר משותף עם ${account.sharedWithEmail}`);
+    }
+
+    // Generate unique invitation ID
     const invitationId = uuidv4();
-    
-    console.log(`Creating new invitation with ID ${invitationId}`);
-    
-    // Start a transaction
+    console.log(`sendInvitation: Generated invitation ID: ${invitationId}`);
+
+    // Create invitation record
+    console.log("sendInvitation: Creating invitation record");
+    const { error: invitationError } = await supabase
+      .from('invitations')
+      .insert({
+        account_id: account.id, // Make sure we use the verified account ID
+        email: email.toLowerCase(),
+        invitation_id: invitationId,
+        expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString() // 7 days from now
+      });
+
+    if (invitationError) {
+      console.error("sendInvitation: Error creating invitation:", invitationError);
+      throw new Error('שגיאה ביצירת ההזמנה: ' + invitationError.message);
+    }
+
+    console.log("sendInvitation: Invitation created successfully");
+
+    // Try to send email (this might fail if email service is not configured)
     try {
-      // Create the invitation in Supabase
-      const { data: invitation, error: inviteError } = await supabase
-        .from('invitations')
-        .insert({
-          email: normalizedEmail,
-          account_id: account.id,
-          invitation_id: invitationId
-        })
-        .select()
-        .single();
-        
-      if (inviteError) {
-        console.error("Error creating invitation:", inviteError);
-        throw inviteError;
-      }
+      const invitationUrl = `${window.location.origin}/accept-invitation/${invitationId}`;
       
-      console.log('Invitation created successfully:', invitation);
-      
-      // Update the account with the invitation details
-      const { data: updatedAccountData, error: updateError } = await supabase
-        .from('accounts')
-        .update({
-          invitation_id: invitationId,
-          shared_with_email: normalizedEmail
-        })
-        .eq('id', account.id)
-        .select()
-        .single();
-        
-      if (updateError) {
-        console.error("Error updating account:", updateError);
-        
-        // Clean up the invitation if account update fails
-        await supabase
-          .from('invitations')
-          .delete()
-          .eq('invitation_id', invitationId);
-          
-        throw updateError;
-      }
-      
-      console.log('Account updated with invitation details:', updatedAccountData);
-      
-      // Prepare invitation link and send email
-      let emailSent = false;
-      try {
-        const baseUrl = window.location.origin;
-        const invitationLink = `${baseUrl}/invitation/${invitationId}`;
-        
-        console.log(`Sending invitation email to ${normalizedEmail} with link ${invitationLink}`);
-        
-        // Note: sendInvitationEmail will handle its own errors and show appropriate toasts
-        await sendInvitationEmail(
-          normalizedEmail,
-          invitationLink,
-          user.name || user.email,
-          account.name || 'Shared Account'
-        );
-        
-        emailSent = true;
-        console.log(`Invitation email sent to ${normalizedEmail} with link ${invitationLink}`);
-      } catch (emailError) {
-        console.error('Failed to send invitation email:', emailError);
-        // We don't throw here because the invitation was created successfully in the database
-        // The user can still access it via the app when they log in
-      }
-      
-      // Return the updated account object
-      const updatedAccount: Account = {
-        ...account,
-        invitationId,
-        sharedWithEmail: normalizedEmail
-      };
-      
-      console.log("Invitation process completed successfully");
-      if (!emailSent) {
-        toast.warning('ההזמנה נוצרה בהצלחה אך שליחת האימייל נכשלה');
+      // Try to send email using the edge function
+      const { data, error } = await supabase.functions.invoke('send-email', {
+        body: {
+          to: email,
+          subject: 'הוזמנת לחשבון משותף - מחציות פלוס',
+          html: `
+            <div style="direction: rtl; text-align: right; font-family: Arial, sans-serif;">
+              <h2>הוזמנת לחשבון משותף!</h2>
+              <p>שלום,</p>
+              <p>${user.name || user.email} הזמין/ה אותך להצטרף לחשבון "${account.name}" באפליקציית מחציות פלוס.</p>
+              <p>כדי לקבל את ההזמנה, לחץ/י על הקישור הבא:</p>
+              <a href="${invitationUrl}" style="background-color: #4CAF50; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block; margin: 10px 0;">קבל/י הזמנה</a>
+              <p>אם הקישור לא עובד, העתק/י והדבק/י את הכתובת הבאה לדפדפן:</p>
+              <p style="background-color: #f5f5f5; padding: 10px; border-radius: 3px; word-break: break-all;">${invitationUrl}</p>
+              <p>ההזמנה תפוג תוך 7 ימים.</p>
+              <p>בברכה,<br>צוות מחציות פלוס</p>
+            </div>
+          `
+        }
+      });
+
+      if (error) {
+        console.warn("sendInvitation: Email sending failed:", error);
+        console.log("sendInvitation: Invitation created but email not sent. User can still accept via the app.");
       } else {
-        toast.success('ההזמנה נשלחה בהצלחה!');
+        console.log("sendInvitation: Email sent successfully");
       }
-      
-      return updatedAccount;
-      
-    } catch (innerError) {
-      console.error("Error in invitation transaction:", innerError);
-      throw innerError;
+    } catch (emailError) {
+      console.warn("sendInvitation: Email service error:", emailError);
+      console.log("sendInvitation: Invitation created but email not sent. User can still accept via the app.");
     }
+
+    console.log("sendInvitation: Invitation process completed successfully");
+    
   } catch (error: any) {
-    console.error('Failed to send invitation:', error);
-    
-    // Don't show toast error for cases where we already displayed specific error messages
-    if (!error.message?.includes('Invitation already exists') && 
-        !error.message?.includes('לא ניתן לשלוח הזמנה לעצמך') && 
-        !error.message?.includes('כתובת דוא״ל לא תקינה') &&
-        !error.message?.includes('חשבון זה כבר משותף עם משתמש אחר')) {
-      toast.error('שליחת ההזמנה נכשלה, אנא נסה שוב');
-    }
-    
+    console.error('sendInvitation: Failed to send invitation:', error);
     throw error;
   }
 }

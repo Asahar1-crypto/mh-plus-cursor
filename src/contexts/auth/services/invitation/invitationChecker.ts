@@ -1,28 +1,25 @@
 
-import { supabase } from '@/integrations/supabase/client';
-import { InvitationData } from './types';
-import { toast } from 'sonner';
-import { showInvitationNotification } from '@/utils/notifications';
+import { supabase } from "@/integrations/supabase/client";
+import { cleanupOrphanedInvitations } from './invitationCleaner';
 
 /**
- * Checks for pending invitations for the current user
+ * Check for pending invitations for a user
  */
-export async function checkPendingInvitations(userEmail: string): Promise<InvitationData[]> {
-  if (!userEmail) {
-    console.log('No user email provided, skipping invitation check');
-    return [];
-  }
-  
-  console.log(`Checking pending invitations for user with email: ${userEmail}`);
-  
+export const checkPendingInvitations = async (userEmail: string): Promise<any[]> => {
   try {
-    // Check for invitations in database
+    console.log(`checkPendingInvitations: Checking for invitations for ${userEmail}`);
+    
+    // First, cleanup any orphaned invitations
+    await cleanupOrphanedInvitations();
+    
     const { data: invitations, error } = await supabase
       .from('invitations')
       .select(`
         *,
         accounts:account_id (
-          *,
+          id,
+          name,
+          owner_id,
           profiles:owner_id (
             name
           )
@@ -33,43 +30,22 @@ export async function checkPendingInvitations(userEmail: string): Promise<Invita
       .gt('expires_at', 'now()');
       
     if (error) {
-      console.error('Error fetching pending invitations:', error);
+      console.error('checkPendingInvitations: Error fetching invitations:', error);
       return [];
     }
     
-    if (!invitations || invitations.length === 0) {
-      console.log('No pending invitations found');
-      return [];
+    // Filter out invitations where the account doesn't exist (shouldn't happen after cleanup, but just in case)
+    const validInvitations = (invitations || []).filter(invitation => invitation.accounts);
+    
+    if (validInvitations.length !== (invitations || []).length) {
+      console.warn(`checkPendingInvitations: Filtered out ${(invitations || []).length - validInvitations.length} invitations with missing accounts`);
     }
     
-    console.log(`Found ${invitations.length} pending invitations:`, invitations);
+    console.log(`checkPendingInvitations: Found ${validInvitations.length} valid pending invitations`);
     
-    // Show notification for the first invitation
-    if (invitations.length > 0 && invitations[0].invitation_id) {
-      // Check if we've already notified about this invitation
-      const notifiedInvitationsStr = sessionStorage.getItem('notifiedInvitations') || '[]';
-      let notifiedIds: string[] = [];
-      
-      try {
-        notifiedIds = JSON.parse(notifiedInvitationsStr);
-      } catch (e) {
-        console.error('Failed to parse notifiedInvitations:', e);
-      }
-      
-      const firstInvitation = invitations[0];
-      if (firstInvitation.invitation_id && !notifiedIds.includes(firstInvitation.invitation_id)) {
-        // Show notification
-        showInvitationNotification(firstInvitation.invitation_id);
-        
-        // Add to notified list
-        notifiedIds.push(firstInvitation.invitation_id);
-        sessionStorage.setItem('notifiedInvitations', JSON.stringify(notifiedIds));
-      }
-    }
-    
-    return invitations as InvitationData[];
+    return validInvitations;
   } catch (error) {
-    console.error('Error in checkPendingInvitations:', error);
+    console.error('checkPendingInvitations: Error:', error);
     return [];
   }
-}
+};
