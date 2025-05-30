@@ -3,6 +3,7 @@ import { authenticationService } from './authenticationService';
 import { registrationService } from './registrationService';
 import { accountVerificationService } from './accountVerificationService';
 import { invitationCheckService } from './invitationCheckService';
+import { selectedAccountService } from './selectedAccountService';
 import { User } from '../../types';
 import { InvitationData } from '../invitation/types';
 
@@ -36,5 +37,14 @@ export const userService = {
   // Invitation Checking
   checkPendingInvitations: (email: string): Promise<InvitationData[]> => {
     return invitationCheckService.checkPendingInvitations(email);
+  },
+
+  // Selected Account Management
+  getSelectedAccountId: (userId: string): Promise<string | null> => {
+    return selectedAccountService.getSelectedAccountId(userId);
+  },
+
+  setSelectedAccountId: (userId: string, accountId: string): Promise<void> => {
+    return selectedAccountService.setSelectedAccountId(userId, accountId);
   }
 };

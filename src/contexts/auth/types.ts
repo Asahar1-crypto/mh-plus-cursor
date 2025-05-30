@@ -17,9 +17,15 @@ export interface Account {
   isSharedAccount?: boolean;
 }
 
+export interface UserAccounts {
+  ownedAccounts: Account[];
+  sharedAccounts: Account[];
+}
+
 export interface AuthContextType {
   user: User | null;
   account: Account | null;
+  userAccounts: UserAccounts | null;
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
@@ -30,4 +36,5 @@ export interface AuthContextType {
   acceptInvitation: (invitationId: string) => Promise<void>;
   verifyEmail: (token: string) => Promise<boolean>;
   resetPassword: (email: string) => Promise<void>;
+  switchAccount: (accountId: string) => Promise<void>;
 }

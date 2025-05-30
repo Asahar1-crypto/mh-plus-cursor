@@ -1,8 +1,10 @@
 
-import { User, Account } from './types';
+import { User, Account, UserAccounts } from './types';
 import { checkAuth } from './services/authState';
 import { login, register, logout, verifyEmail, resetPassword } from './services/authentication';
 import { invitationService } from './services/invitationService';
+import { userService } from './services/user';
+import { accountService } from './services/accountService';
 
 export const authService = {
   // Check for saved session
@@ -36,5 +38,25 @@ export const authService = {
   verifyEmail,
 
   // Reset password function
-  resetPassword
+  resetPassword,
+
+  // Switch active account function
+  switchAccount: async (userId: string, accountId: string): Promise<{ account: Account, userAccounts: UserAccounts }> => {
+    console.log(`Switching to account ${accountId} for user ${userId}`);
+    
+    // Save user preference
+    await userService.setSelectedAccountId(userId, accountId);
+    
+    // Get updated accounts and find the selected one
+    const userAccounts = await accountService.getUserAccounts(userId);
+    const allAccounts = [...userAccounts.ownedAccounts, ...userAccounts.sharedAccounts];
+    const selectedAccount = allAccounts.find(acc => acc.id === accountId);
+    
+    if (!selectedAccount) {
+      throw new Error('Selected account not found');
+    }
+    
+    console.log('Account switched successfully:', selectedAccount);
+    return { account: selectedAccount, userAccounts };
+  }
 };

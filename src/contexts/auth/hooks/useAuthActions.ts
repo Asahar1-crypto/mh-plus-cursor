@@ -1,140 +1,117 @@
-import { authService } from '../authService';
-import { User, Account } from '../types';
-import { invitationCheckService } from '../services/user/invitationCheckService';
 
+import { useCallback } from 'react';
+import { authService } from '../authService';
+import { User, Account, UserAccounts } from '../types';
+import { toast } from 'sonner';
+
+/**
+ * Custom hook for authentication actions
+ */
 export const useAuthActions = (
   user: User | null,
   account: Account | null,
   setUser: (user: User | null) => void,
   setAccount: (account: Account | null) => void,
-  setIsLoading: (isLoading: boolean) => void,
+  setUserAccounts: (userAccounts: UserAccounts | null) => void,
+  setIsLoading: (loading: boolean) => void,
   checkAndSetUserData: () => Promise<void>
 ) => {
-  const login = async (email: string, password: string) => {
+  const login = useCallback(async (email: string, password: string) => {
     setIsLoading(true);
     try {
-      const { user, account } = await authService.login(email, password);
-      setUser(user);
-      setAccount(account);
+      const result = await authService.login(email, password);
+      setUser(result.user);
+      setAccount(result.account);
+      // userAccounts will be set by the checkAndSetUserData call triggered by auth state change
+      toast.success('התחברת בהצלחה!');
+    } catch (error) {
+      console.error('Login failed:', error);
+      throw error;
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [setUser, setAccount, setIsLoading]);
 
-  const register = async (name: string, email: string, password: string) => {
+  const register = useCallback(async (name: string, email: string, password: string) => {
     setIsLoading(true);
     try {
       await authService.register(name, email, password);
+      toast.success('נרשמת בהצלחה! בדוק את המייל שלך לאישור');
+    } catch (error) {
+      console.error('Registration failed:', error);
+      throw error;
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [setIsLoading]);
 
-  const logout = async () => {
+  const logout = useCallback(async () => {
     setIsLoading(true);
     try {
       await authService.logout();
       setUser(null);
       setAccount(null);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const sendInvitation = async (email: string) => {
-    if (!user || !account) {
-      console.error('Cannot send invitation: User not authenticated or no account available');
-      throw new Error('User not authenticated');
-    }
-    
-    console.log(`AuthProvider: Starting invitation process for email ${email}`);
-    setIsLoading(true);
-    
-    try {
-      const updatedAccount = await authService.sendInvitation(email, user, account);
-      console.log('AuthProvider: Invitation process completed successfully, updating account state');
-      setAccount(updatedAccount);
-      return Promise.resolve();
+      setUserAccounts(null);
     } catch (error) {
-      console.error('AuthProvider: Failed to send invitation:', error);
+      console.error('Logout failed:', error);
       throw error;
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [setUser, setAccount, setUserAccounts, setIsLoading]);
 
-  const removeInvitation = async () => {
+  const sendInvitation = useCallback(async (email: string) => {
     if (!user || !account) {
-      console.error('Cannot remove invitation: User not authenticated or no account available');
-      throw new Error('User not authenticated');
+      throw new Error('User or account not found');
     }
-    
-    setIsLoading(true);
-    try {
-      console.log("AuthProvider: Starting to remove invitation for account:", account);
-      
-      // Check if we're removing a shared account we've joined or removing a partner from our account
-      if (account.isSharedAccount) {
-        console.log("Removing ourselves from a shared account we've joined");
-        // In this case, we're just removing our association with the account
-        // We don't want to delete the account, just our connection to it
-      }
-      
-      const updatedAccount = await authService.removeInvitation(account);
-      console.log("AuthProvider: Updated account after removing invitation:", updatedAccount);
-      
-      // If this was a shared account we've joined, we should reload the user's default account
-      if (account.isSharedAccount) {
-        console.log("Reloading user data after leaving a shared account");
-        await checkAndSetUserData();
-      } else {
-        setAccount(updatedAccount);
-      }
-      
-      return Promise.resolve();
-    } catch (error) {
-      console.error("AuthProvider: Error removing invitation:", error);
-      throw error;
-    } finally {
-      setIsLoading(false);
-    }
-  };
+    await authService.sendInvitation(email, user, account);
+  }, [user, account]);
 
-  const acceptInvitation = async (invitationId: string) => {
+  const removeInvitation = useCallback(async () => {
+    if (!account) {
+      throw new Error('Account not found');
+    }
+    await authService.removeInvitation(account);
+    // Refresh user data after removing invitation
+    await checkAndSetUserData();
+  }, [account, checkAndSetUserData]);
+
+  const acceptInvitation = useCallback(async (invitationId: string) => {
     if (!user) {
-      console.error('Cannot accept invitation: User not authenticated');
-      throw new Error('User not authenticated');
+      throw new Error('User not found');
+    }
+    await authService.acceptInvitation(invitationId, user);
+    // Refresh user data after accepting invitation
+    await checkAndSetUserData();
+  }, [user, checkAndSetUserData]);
+
+  const verifyEmail = useCallback(async (token: string) => {
+    return authService.verifyEmail(token);
+  }, []);
+
+  const resetPassword = useCallback(async (email: string) => {
+    await authService.resetPassword(email);
+  }, []);
+
+  const switchAccount = useCallback(async (accountId: string) => {
+    if (!user) {
+      throw new Error('User not found');
     }
     
     setIsLoading(true);
     try {
-      const updatedAccount = await authService.acceptInvitation(invitationId, user);
-      setAccount(updatedAccount);
+      const result = await authService.switchAccount(user.id, accountId);
+      setAccount(result.account);
+      setUserAccounts(result.userAccounts);
+      toast.success(`עברת לחשבון: ${result.account.name}`);
     } catch (error) {
-      console.error('AuthProvider: Failed to accept invitation:', error);
+      console.error('Switch account failed:', error);
+      toast.error('שגיאה במעבר בין חשבונות');
       throw error;
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const verifyEmail = async (token: string) => {
-    setIsLoading(true);
-    try {
-      return await authService.verifyEmail(token);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const resetPassword = async (email: string) => {
-    setIsLoading(true);
-    try {
-      await authService.resetPassword(email);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  }, [user, setAccount, setUserAccounts, setIsLoading]);
 
   return {
     login,
@@ -144,6 +121,7 @@ export const useAuthActions = (
     removeInvitation,
     acceptInvitation,
     verifyEmail,
-    resetPassword
+    resetPassword,
+    switchAccount
   };
 };

@@ -17,6 +17,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     setUser,
     account,
     setAccount,
+    userAccounts,
+    setUserAccounts,
     isLoading,
     setIsLoading,
     checkAndSetUserData
@@ -30,12 +32,14 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     removeInvitation,
     acceptInvitation,
     verifyEmail,
-    resetPassword
+    resetPassword,
+    switchAccount
   } = useAuthActions(
     user,
     account,
     setUser,
     setAccount,
+    setUserAccounts,
     setIsLoading,
     checkAndSetUserData
   );
@@ -63,6 +67,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const authContextValue = {
     user,
     account,
+    userAccounts,
     isAuthenticated: !!user,
     isLoading: isLoading || !isInitialized,
     login,
@@ -72,7 +77,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     removeInvitation,
     acceptInvitation,
     verifyEmail,
-    resetPassword
+    resetPassword,
+    switchAccount
   };
 
   return (

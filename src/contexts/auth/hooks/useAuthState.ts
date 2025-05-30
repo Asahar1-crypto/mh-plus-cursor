@@ -1,6 +1,6 @@
 
 import { useState, useCallback } from 'react';
-import { User, Account } from '../types';
+import { User, Account, UserAccounts } from '../types';
 import { authService } from '../authService';
 import { invitationCheckService } from '../services/user/invitationCheckService';
 import { toast } from 'sonner';
@@ -11,6 +11,7 @@ import { toast } from 'sonner';
 export const useAuthState = () => {
   const [user, setUser] = useState<User | null>(null);
   const [account, setAccount] = useState<Account | null>(null);
+  const [userAccounts, setUserAccounts] = useState<UserAccounts | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [lastCheck, setLastCheck] = useState<number>(0);
   const [isCheckingAuth, setIsCheckingAuth] = useState(false);
@@ -29,20 +30,23 @@ export const useAuthState = () => {
     setIsLoading(true);
     
     try {
-      const { user, account } = await authService.checkAuth();
+      const authResult = await authService.checkAuth();
       console.log('Auth check result:', { 
-        user: user ? `${user.id} (${user.email})` : null, 
-        account: account ? `${account.id} (${account.name})` : null
+        user: authResult.user ? `${authResult.user.id} (${authResult.user.email})` : null, 
+        account: authResult.account ? `${authResult.account.id} (${authResult.account.name})` : null,
+        userAccounts: authResult.userAccounts ? 
+          `${authResult.userAccounts.ownedAccounts.length} owned, ${authResult.userAccounts.sharedAccounts.length} shared` : null
       });
       
-      setUser(user);
-      setAccount(account);
+      setUser(authResult.user);
+      setAccount(authResult.account);
+      setUserAccounts(authResult.userAccounts);
       
       // Check for new invitations when user data is loaded
-      if (user?.email) {
+      if (authResult.user?.email) {
         setTimeout(async () => {
           try {
-            await invitationCheckService.checkPendingInvitations(user.email);
+            await invitationCheckService.checkPendingInvitations(authResult.user.email);
           } catch (error) {
             console.error("Failed to check pending invitations:", error);
           }
@@ -61,6 +65,7 @@ export const useAuthState = () => {
       // Clear state on critical errors
       setUser(null);
       setAccount(null);
+      setUserAccounts(null);
     } finally {
       setIsLoading(false);
       setIsCheckingAuth(false);
@@ -72,6 +77,8 @@ export const useAuthState = () => {
     setUser,
     account,
     setAccount,
+    userAccounts,
+    setUserAccounts,
     isLoading,
     setIsLoading,
     checkAndSetUserData
