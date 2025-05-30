@@ -25,11 +25,11 @@ export const usePendingInvitations = () => {
           email,
           account_id,
           expires_at,
-          accounts:account_id (
+          accounts!inner (
             id,
             name,
             owner_id,
-            profiles:owner_id (
+            profiles!accounts_owner_id_fkey (
               name
             )
           )
