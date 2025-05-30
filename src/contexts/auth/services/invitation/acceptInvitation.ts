@@ -3,9 +3,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { User, Account } from '../../types';
 import { toast } from 'sonner';
 
-/**
- * Accepts an invitation and updates the account
- */
 export async function acceptInvitation(invitationId: string, user: User): Promise<Account> {
   try {
     console.log(`User ${user.id} (${user.email}) attempting to accept invitation ${invitationId}`);
@@ -24,10 +21,7 @@ export async function acceptInvitation(invitationId: string, user: User): Promis
     console.log("Querying database for invitation:", invitationId);
     const { data: invitationData, error: findError } = await supabase
       .from('invitations')
-      .select(`
-        *,
-        accounts:account_id (*)
-      `)
+      .select('*')
       .eq('invitation_id', invitationId)
       .is('accepted_at', null)
       .gt('expires_at', 'now()');
@@ -37,7 +31,6 @@ export async function acceptInvitation(invitationId: string, user: User): Promis
       throw new Error('שגיאה בחיפוש ההזמנה: ' + findError.message);
     }
     
-    // Convert to array if needed and check length
     const invitationArray = Array.isArray(invitationData) ? invitationData : (invitationData ? [invitationData] : []);
     
     if (!invitationArray || invitationArray.length === 0) {
@@ -45,7 +38,6 @@ export async function acceptInvitation(invitationId: string, user: User): Promis
       throw new Error('ההזמנה לא נמצאה או שפג תוקפה');
     }
     
-    // Process invitation data from the database
     const invitation = invitationArray[0];
     console.log("Processing invitation from database:", invitation);
     
@@ -55,62 +47,69 @@ export async function acceptInvitation(invitationId: string, user: User): Promis
       throw new Error(`ההזמנה מיועדת ל-${invitation.email} אך אתה מחובר כ-${user.email}`);
     }
     
-    // Enhance account data validation
-    if (!invitation.accounts || !invitation.account_id) {
-      console.error("Invitation found but account data is missing or incomplete");
-      
-      // Try to fetch account data directly
-      try {
-        const { data: accountData, error: accountError } = await supabase
-          .from('accounts')
-          .select('*')
-          .eq('id', invitation.account_id);
-          
-        if (accountError) {
-          console.error("Failed to fetch account data:", accountError);
-          throw new Error('חסר מידע חיוני על החשבון, אנא בקש הזמנה חדשה');
-        }
-        
-        if (!accountData || accountData.length === 0) {
-          console.error("No account data found for account_id:", invitation.account_id);
-          throw new Error('חסר מידע חיוני על החשבון, אנא בקש הזמנה חדשה');
-        }
-        
-        // Replace with complete account data
-        invitation.accounts = accountData[0];
-      } catch (err) {
-        console.error("Error in account data fallback fetch:", err);
-        throw new Error('חסר מידע חיוני על החשבון, אנא בקש הזמנה חדשה');
-      }
-    }
-    
-    if (!invitation.accounts.id || !invitation.accounts.owner_id) {
-      console.error("Critical account data still missing after fetch attempt");
-      throw new Error('חסר מידע חיוני על החשבון, אנא בקש הזמנה חדשה');
-    }
-    
     const accountId = invitation.account_id;
     
-    // Check if this account already belongs to the current user
-    if (invitation.accounts.owner_id === user.id) {
+    // Try to get account data, but proceed even if missing
+    let accountData = null;
+    try {
+      const { data: fetchedAccount, error: accountError } = await supabase
+        .from('accounts')
+        .select('*')
+        .eq('id', accountId)
+        .single();
+        
+      if (!accountError && fetchedAccount) {
+        accountData = fetchedAccount;
+      } else {
+        console.warn("Account data not found, but proceeding with invitation acceptance");
+      }
+    } catch (err) {
+      console.warn("Error fetching account data, but proceeding:", err);
+    }
+    
+    // Check if this is the user's own account (if we have account data)
+    if (accountData && accountData.owner_id === user.id) {
       console.error("Cannot share account with self");
       throw new Error('לא ניתן לשתף חשבון עם עצמך');
     }
     
-    // Update the account to link with the current user
-    console.log("Updating account with user information");
-    const { error: updateError } = await supabase
-      .from('accounts')
-      .update({ 
-        shared_with_id: user.id,
-        shared_with_email: user.email,
-        invitation_id: invitation.invitation_id
-      })
-      .eq('id', accountId);
+    // If account exists, update it with shared information
+    if (accountData) {
+      console.log("Updating existing account with user information");
+      const { error: updateError } = await supabase
+        .from('accounts')
+        .update({ 
+          shared_with_id: user.id,
+          shared_with_email: user.email,
+          invitation_id: invitation.invitation_id
+        })
+        .eq('id', accountId);
+        
+      if (updateError) {
+        console.error("Error updating account:", updateError);
+        throw new Error('שגיאה בעדכון החשבון: ' + updateError.message);
+      }
+    } else {
+      // If account doesn't exist, create a new shared account for this user
+      console.log("Creating new account for shared access");
+      const { data: newAccount, error: createError } = await supabase
+        .from('accounts')
+        .insert({
+          name: `חשבון משותף (${invitation.email})`,
+          owner_id: user.id,
+          shared_with_id: user.id,
+          shared_with_email: user.email,
+          invitation_id: invitation.invitation_id
+        })
+        .select()
+        .single();
+        
+      if (createError) {
+        console.error("Error creating new account:", createError);
+        throw new Error('שגיאה ביצירת חשבון חדש: ' + createError.message);
+      }
       
-    if (updateError) {
-      console.error("Error updating account:", updateError);
-      throw new Error('שגיאה בעדכון החשבון: ' + updateError.message);
+      accountData = newAccount;
     }
     
     // Mark invitation as accepted
@@ -120,30 +119,30 @@ export async function acceptInvitation(invitationId: string, user: User): Promis
       .update({ accepted_at: new Date().toISOString() })
       .eq('invitation_id', invitation.invitation_id);
       
-    // Get owner profile data
+    // Get owner profile data if we have owner_id
     let ownerName = 'בעל החשבון';
     
-    // Fetch owner profile directly for reliability
-    try {
-      const { data: ownerProfile } = await supabase
-        .from('profiles')
-        .select('name')
-        .eq('id', invitation.accounts.owner_id)
-        .maybeSingle();
-        
-      if (ownerProfile && ownerProfile.name) {
-        ownerName = ownerProfile.name;
+    if (accountData && accountData.owner_id) {
+      try {
+        const { data: ownerProfile } = await supabase
+          .from('profiles')
+          .select('name')
+          .eq('id', accountData.owner_id)
+          .maybeSingle();
+          
+        if (ownerProfile && ownerProfile.name) {
+          ownerName = ownerProfile.name;
+        }
+      } catch (error) {
+        console.error("Could not fetch owner profile:", error);
       }
-    } catch (error) {
-      console.error("Could not fetch owner profile:", error);
-      // Continue with default name
     }
     
     // Create account object to return
     const sharedAccount: Account = {
       id: accountId,
-      name: invitation.accounts.name || 'חשבון משותף',
-      ownerId: invitation.accounts.owner_id,
+      name: accountData?.name || 'חשבון משותף',
+      ownerId: accountData?.owner_id || user.id,
       ownerName: ownerName,
       sharedWithId: user.id,
       sharedWithEmail: user.email,

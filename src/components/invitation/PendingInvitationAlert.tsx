@@ -18,7 +18,6 @@ const PendingInvitationAlert = () => {
   const { user } = useAuth();
   
   useEffect(() => {
-    // Check for invitations only once when component loads
     if (user?.email && !checkPerformed) {
       checkForInvitations();
       setCheckPerformed(true);
@@ -40,98 +39,92 @@ const PendingInvitationAlert = () => {
     try {
       console.log("PendingInvitationAlert: Checking for pending invitations for", user.email);
       
-      // Check database for invitations with explicit conditions
-      const { data, error } = await supabase
+      // First get all pending invitations
+      const { data: rawInvitations, error } = await supabase
         .from('invitations')
-        .select(`
-          invitation_id,
-          email,
-          account_id,
-          accounts (
-            id,
-            name,
-            owner_id
-          )
-        `)
+        .select('*')
         .eq('email', user.email.toLowerCase())
-        .is('accepted_at', null) // Must not be accepted
-        .gt('expires_at', 'now()'); // Must not be expired
+        .is('accepted_at', null)
+        .gt('expires_at', 'now()');
       
       if (error) {
         console.error('PendingInvitationAlert: Error fetching invitations:', error);
         return;
       }
       
-      // Only update state if there's a change in invitations
-      if (data && Array.isArray(data)) {
-        console.log('PendingInvitationAlert: Found pending invitations:', data);
-
-        // Filter out invitations with missing account data
-        const validInvitations = data.filter(invitation => {
-          // Check if accounts data exists and has required properties
-          if (!invitation || !invitation.account_id) {
-            return false;
-          }
-          
-          // If accounts data is missing, try to fetch it separately
-          if (!invitation.accounts || !invitation.accounts.id) {
-            console.log("PendingInvitationAlert: Missing account data for invitation:", invitation.invitation_id);
-            return false;
-          }
-          
-          return true;
-        });
-
-        // Set invitations in state
-        setInvitations(validInvitations);
-        
-        // Ensure the UI is not in dismissed state if there are invitations
-        if (dismissed && validInvitations.length > 0) {
-          setDismissed(false);
-        }
-      } else {
-        // No invitations found or invalid data format
-        console.log('PendingInvitationAlert: No valid invitations found');
+      if (!rawInvitations || rawInvitations.length === 0) {
+        console.log('PendingInvitationAlert: No pending invitations found');
         setInvitations([]);
+        return;
+      }
+
+      console.log('PendingInvitationAlert: Found raw invitations:', rawInvitations);
+
+      // For each invitation, try to get account data but don't filter out if missing
+      const enrichedInvitations = await Promise.all(
+        rawInvitations.map(async (invitation) => {
+          try {
+            const { data: accountData } = await supabase
+              .from('accounts')
+              .select(`
+                id,
+                name,
+                owner_id,
+                profiles!accounts_owner_id_fkey (
+                  name
+                )
+              `)
+              .eq('id', invitation.account_id)
+              .single();
+
+            return {
+              ...invitation,
+              accounts: accountData || {
+                id: invitation.account_id,
+                name: 'חשבון שותף',
+                owner_id: null,
+                profiles: { name: 'בעל החשבון' }
+              }
+            };
+          } catch (err) {
+            console.warn(`PendingInvitationAlert: Could not fetch account for invitation ${invitation.invitation_id}:`, err);
+            // Return invitation with fallback data instead of filtering out
+            return {
+              ...invitation,
+              accounts: {
+                id: invitation.account_id,
+                name: 'חשבון שותף',
+                owner_id: null,
+                profiles: { name: 'בעל החשבון' }
+              }
+            };
+          }
+        })
+      );
+
+      console.log('PendingInvitationAlert: Enriched invitations:', enrichedInvitations);
+      setInvitations(enrichedInvitations);
+      
+      if (dismissed && enrichedInvitations.length > 0) {
+        setDismissed(false);
       }
     } catch (error) {
       console.error('PendingInvitationAlert: Error checking for invitations:', error);
-      // Set empty array in case of error
       setInvitations([]);
     }
   };
   
-  // If user is not logged in, or there are no invitations, or alert was dismissed, don't show anything
   if (!user || invitations.length === 0 || dismissed || loading) {
     return null;
   }
   
-  // Get the first invitation to display
   const firstInvitation = invitations[0];
   
   if (!firstInvitation || !firstInvitation.invitation_id) {
     return null;
   }
   
-  // Fetch owner profile information for display
-  const fetchOwnerProfile = async () => {
-    if (!firstInvitation.accounts?.owner_id) return 'בעל החשבון';
-    
-    try {
-      const { data } = await supabase
-        .from('profiles')
-        .select('name')
-        .eq('id', firstInvitation.accounts.owner_id)
-        .maybeSingle();
-        
-      return data && data.name ? data.name : 'בעל החשבון';
-    } catch (err) {
-      console.error('Error fetching owner profile:', err);
-      return 'בעל החשבון';
-    }
-  };
-  
-  // Extract account name from the data
+  const ownerName = firstInvitation.accounts?.profiles?.name || 'בעל החשבון';
   const accountName = firstInvitation.accounts?.name || 'חשבון משותף';
   
   const handleViewInvitation = () => {
@@ -141,22 +134,11 @@ const PendingInvitationAlert = () => {
   
   const handleDismiss = () => {
     setDismissed(true);
-    // Show a smaller notification that disappears after a short time
     toast.info('הזמנה ממתינה לאישור', {
       description: 'תמיד תוכל לגשת להזמנות בעמוד הגדרות החשבון',
       duration: 5000
     });
   };
-  
-  // Get owner name using a React useState with initial value
-  const [ownerName, setOwnerName] = useState<string>('בעל החשבון');
-  
-  // Fetch the owner's name when component renders
-  useEffect(() => {
-    if (firstInvitation?.accounts?.owner_id) {
-      fetchOwnerProfile().then(name => setOwnerName(name));
-    }
-  }, [firstInvitation]);
   
   return (
     <Alert className="mb-6 bg-blue-50 border-blue-200 flex items-center justify-between">

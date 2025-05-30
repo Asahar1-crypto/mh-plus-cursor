@@ -16,15 +16,12 @@ export function useInvitationDetails(invitationId: string | undefined) {
       return;
     }
     
-    // Only fetch once to avoid loops
     if (fetchAttempted) {
       return;
     }
     
-    // Store invitationId in sessionStorage so we can retrieve it post-login if needed
     sessionStorage.setItem('pendingInvitationId', invitationId);
     
-    // Fetch invitation details
     const fetchInvitationDetails = async () => {
       try {
         setFetchAttempted(true);
@@ -43,7 +40,6 @@ export function useInvitationDetails(invitationId: string | undefined) {
           throw new Error('אירעה שגיאה בעת חיפוש ההזמנה: ' + invitationError.message);
         }
         
-        // Check if we have valid invitation data
         const invitationArray = Array.isArray(invitationData) ? invitationData : [];
         
         if (!invitationArray || invitationArray.length === 0) {
@@ -54,25 +50,36 @@ export function useInvitationDetails(invitationId: string | undefined) {
         const invitation = invitationArray[0];
         console.log("Found invitation in database:", invitation);
         
-        // Now fetch account data separately
+        // Try to get account data
         const { data: accountData, error: accountError } = await supabase
           .from('accounts')
           .select('*')
           .eq('id', invitation.account_id);
           
-        if (accountError) {
-          console.error("Failed to fetch account data:", accountError);
-          throw new Error("הזמנה לא תקפה - חסרים פרטי חשבון");
-        }
-        
-        if (!accountData || accountData.length === 0) {
-          console.error("No account data found for account_id:", invitation.account_id);
-          throw new Error("הזמנה לא תקפה - חסרים פרטי חשבון");
+        if (accountError || !accountData || accountData.length === 0) {
+          console.warn("Account not found or error fetching account:", accountError);
+          // Instead of throwing error, create a fallback account info
+          setInvitationDetails({
+            ownerName: 'בעל החשבון',
+            accountName: 'חשבון שותף (נתונים לא זמינים)',
+            email: invitation.email || '',
+          });
+          
+          // Store minimal data for acceptance
+          sessionStorage.setItem('pendingInvitationAccountId', invitation.account_id);
+          sessionStorage.setItem('currentInvitationDetails', JSON.stringify({
+            ...invitation,
+            accounts: { name: 'חשבון שותף (נתונים לא זמינים)' },
+            owner_profile: { name: 'בעל החשבון' }
+          }));
+          
+          setStatus('success');
+          return;
         }
         
         const account = accountData[0];
         
-        // Fetch owner profile separately
+        // Fetch owner profile
         let ownerName = 'בעל החשבון';
         
         try {
@@ -89,17 +96,15 @@ export function useInvitationDetails(invitationId: string | undefined) {
           }
         } catch (err) {
           console.error("Error fetching owner profile:", err);
-          // Continue with default name
         }
         
-        // Set invitation details
         setInvitationDetails({
           ownerName: ownerName,
           accountName: account.name || 'חשבון משותף',
           email: invitation.email || '',
         });
         
-        // Store the account ID and owner ID in sessionStorage for use during acceptance
+        // Store data for acceptance
         if (invitation.account_id) {
           sessionStorage.setItem('pendingInvitationAccountId', invitation.account_id);
         }
@@ -108,7 +113,6 @@ export function useInvitationDetails(invitationId: string | undefined) {
           sessionStorage.setItem('pendingInvitationOwnerId', account.owner_id);
         }
         
-        // Store full details in sessionStorage for debugging
         const enrichedInvitation = {
           ...invitation,
           accounts: account,
@@ -125,7 +129,6 @@ export function useInvitationDetails(invitationId: string | undefined) {
       }
     };
     
-    // Add a short delay to simulate loading
     const timer = setTimeout(() => {
       fetchInvitationDetails();
     }, 1000);

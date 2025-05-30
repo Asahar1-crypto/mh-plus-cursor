@@ -18,22 +18,10 @@ export const usePendingInvitations = () => {
       setLoading(true);
       console.log('Fetching pending invitations for:', user.email);
 
-      const { data, error } = await supabase
+      // First get all pending invitations for this user
+      const { data: rawInvitations, error } = await supabase
         .from('invitations')
-        .select(`
-          invitation_id,
-          email,
-          account_id,
-          expires_at,
-          accounts!inner (
-            id,
-            name,
-            owner_id,
-            profiles!accounts_owner_id_fkey (
-              name
-            )
-          )
-        `)
+        .select('*')
         .eq('email', user.email.toLowerCase())
         .is('accepted_at', null)
         .gt('expires_at', 'now()');
@@ -44,15 +32,71 @@ export const usePendingInvitations = () => {
         return;
       }
 
-      console.log('Found pending invitations:', data);
+      console.log('Raw invitations found:', rawInvitations);
       
-      // Filter out invitations with missing account data
-      const validInvitations = (data || []).filter(invitation => 
-        invitation.accounts && invitation.accounts.id
+      if (!rawInvitations || rawInvitations.length === 0) {
+        setInvitations([]);
+        return;
+      }
+
+      // For each invitation, try to get account data
+      const enrichedInvitations = await Promise.all(
+        rawInvitations.map(async (invitation) => {
+          try {
+            // Try to get account data
+            const { data: accountData } = await supabase
+              .from('accounts')
+              .select(`
+                id,
+                name,
+                owner_id,
+                profiles!accounts_owner_id_fkey (
+                  name
+                )
+              `)
+              .eq('id', invitation.account_id)
+              .single();
+
+            if (accountData) {
+              return {
+                ...invitation,
+                accounts: accountData
+              };
+            } else {
+              // If account data is missing, create a fallback
+              console.warn(`Account data missing for invitation ${invitation.invitation_id}, creating fallback`);
+              return {
+                ...invitation,
+                accounts: {
+                  id: invitation.account_id,
+                  name: 'חשבון שותף (נתונים לא זמינים)',
+                  owner_id: null,
+                  profiles: {
+                    name: 'בעל החשבון'
+                  }
+                }
+              };
+            }
+          } catch (err) {
+            console.error(`Error fetching account for invitation ${invitation.invitation_id}:`, err);
+            // Return invitation with fallback data
+            return {
+              ...invitation,
+              accounts: {
+                id: invitation.account_id,
+                name: 'חשבון שותף (נתונים לא זמינים)',
+                owner_id: null,
+                profiles: {
+                  name: 'בעל החשבון'
+                }
+              }
+            };
+          }
+        })
       );
-      
-      console.log('Valid invitations after filtering:', validInvitations);
-      setInvitations(validInvitations);
+
+      console.log('Enriched invitations:', enrichedInvitations);
+      setInvitations(enrichedInvitations);
     } catch (error) {
       console.error('Error in fetchPendingInvitations:', error);
       toast.error('שגיאה בטעינת ההזמנות');
@@ -73,7 +117,6 @@ export const usePendingInvitations = () => {
       setInvitations(prev => prev.filter(inv => inv.invitation_id !== invitationId));
       toast.success('הצטרפת לחשבון בהצלחה!');
       
-      // Force page reload to update the account context properly
       setTimeout(() => {
         window.location.reload();
       }, 1500);
