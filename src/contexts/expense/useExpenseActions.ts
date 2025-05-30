@@ -1,8 +1,8 @@
-
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { Expense, Child } from './types';
 import { User } from '@/contexts/AuthContext';
+import { Account } from '@/contexts/auth/types';
 import { expenseService } from '@/integrations/supabase/expenseService';
 
 export interface ExpenseActions {
@@ -17,6 +17,7 @@ export interface ExpenseActions {
 
 export const useExpenseActions = (
   user: User | null, 
+  account: Account | null,
   expenses: Expense[], 
   setExpenses: React.Dispatch<React.SetStateAction<Expense[]>>,
   childrenList: Child[],
@@ -30,10 +31,15 @@ export const useExpenseActions = (
       return;
     }
 
+    if (!account) {
+      toast.error('לא נמצא חשבון פעיל');
+      return;
+    }
+
     setIsSubmitting(true);
     try {
-      // Fix parameter order: user first, then expense
-      await expenseService.addExpense(user, newExpense);
+      // Pass both user and account to the service
+      await expenseService.addExpense(user, account, newExpense);
       
       // Create a client-side representation of the expense with the data we need
       const expense: Expense = {
@@ -69,10 +75,15 @@ export const useExpenseActions = (
       return;
     }
 
+    if (!account) {
+      toast.error('לא נמצא חשבון פעיל');
+      return;
+    }
+
     setIsSubmitting(true);
     try {
-      // Fix parameter order: user first, then child
-      await expenseService.addChild(user, newChild);
+      // Pass both user and account to the service
+      await expenseService.addChild(user, account, newChild);
       
       // Create a client-side representation with temp ID
       const child: Child = {

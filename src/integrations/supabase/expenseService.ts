@@ -2,55 +2,13 @@
 import { supabase } from './client';
 import { Expense, Child } from '@/contexts/expense/types';
 import { User } from '@/contexts/AuthContext';
+import { Account } from '@/contexts/auth/types';
 
 export const expenseService = {
-  async getExpenses(user: User): Promise<Expense[]> {
-    console.log('Getting expenses for user:', user.id);
+  async getExpenses(user: User, account: Account): Promise<Expense[]> {
+    console.log(`Getting expenses for user ${user.id} in account ${account.id} (${account.name})`);
     
-    // Get user's current account to determine which expenses to fetch
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session?.user) {
-      console.log('No session found');
-      return [];
-    }
-    
-    // Get user's current account
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('selected_account_id')
-      .eq('id', user.id)
-      .single();
-    
-    let accountIds: string[] = [];
-    
-    // Get owned accounts
-    const { data: ownedAccounts } = await supabase
-      .from('accounts')
-      .select('id')
-      .eq('owner_id', user.id);
-    
-    if (ownedAccounts) {
-      accountIds.push(...ownedAccounts.map(acc => acc.id));
-    }
-    
-    // Get shared accounts  
-    const { data: sharedAccounts } = await supabase
-      .from('accounts')
-      .select('id')
-      .eq('shared_with_id', user.id);
-    
-    if (sharedAccounts) {
-      accountIds.push(...sharedAccounts.map(acc => acc.id));
-    }
-    
-    console.log('Found accounts:', accountIds);
-    
-    if (accountIds.length === 0) {
-      console.log('No accounts found for user');
-      return [];
-    }
-    
-    // Fetch expenses from all accounts the user has access to
+    // Fetch expenses from the specific account
     const { data: rawExpenses, error } = await supabase
       .from('expenses')
       .select(`
@@ -62,7 +20,7 @@ export const expenseService = {
           )
         )
       `)
-      .in('account_id', accountIds)
+      .eq('account_id', account.id)
       .order('created_at', { ascending: false });
 
     if (error) {
@@ -70,10 +28,10 @@ export const expenseService = {
       throw error;
     }
 
-    console.log('Raw expenses data:', rawExpenses);
+    console.log(`Raw expenses data for account ${account.name}:`, rawExpenses);
 
     if (!rawExpenses || rawExpenses.length === 0) {
-      console.log('No expenses found');
+      console.log(`No expenses found for account ${account.name}`);
       return [];
     }
 
@@ -100,45 +58,17 @@ export const expenseService = {
       };
     });
 
-    console.log(`Transformed ${transformedExpenses.length} expenses`);
+    console.log(`Transformed ${transformedExpenses.length} expenses for account ${account.name}`);
     return transformedExpenses;
   },
 
-  async getChildren(user: User): Promise<Child[]> {
-    console.log('Getting children for user:', user.id);
-    
-    // Get all account IDs that the user has access to
-    let accountIds: string[] = [];
-    
-    // Get owned accounts
-    const { data: ownedAccounts } = await supabase
-      .from('accounts')
-      .select('id')
-      .eq('owner_id', user.id);
-    
-    if (ownedAccounts) {
-      accountIds.push(...ownedAccounts.map(acc => acc.id));
-    }
-    
-    // Get shared accounts  
-    const { data: sharedAccounts } = await supabase
-      .from('accounts')
-      .select('id')
-      .eq('shared_with_id', user.id);
-    
-    if (sharedAccounts) {
-      accountIds.push(...sharedAccounts.map(acc => acc.id));
-    }
-    
-    if (accountIds.length === 0) {
-      console.log('No accounts found for user');
-      return [];
-    }
+  async getChildren(user: User, account: Account): Promise<Child[]> {
+    console.log(`Getting children for user ${user.id} in account ${account.id} (${account.name})`);
     
     const { data: children, error } = await supabase
       .from('children')
       .select('*')
-      .in('account_id', accountIds)
+      .eq('account_id', account.id)
       .order('created_at', { ascending: false });
 
     if (error) {
@@ -147,10 +77,11 @@ export const expenseService = {
     }
 
     if (!children || children.length === 0) {
-      console.log('No children found');
+      console.log(`No children found for account ${account.name}`);
       return [];
     }
 
+    console.log(`Found ${children.length} children for account ${account.name}`);
     return children.map((child: any) => ({
       id: child.id,
       name: child.name,
@@ -158,45 +89,9 @@ export const expenseService = {
     }));
   },
 
-  async addExpense(user: User, expense: Omit<Expense, 'id' | 'createdBy' | 'creatorName' | 'status'>): Promise<void> {
-    // Get user's active account
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('selected_account_id')
-      .eq('id', user.id)
-      .single();
+  async addExpense(user: User, account: Account, expense: Omit<Expense, 'id' | 'createdBy' | 'creatorName' | 'status'>): Promise<void> {
+    console.log(`Adding expense to account ${account.id} (${account.name})`);
     
-    // Determine which account to use
-    let accountId = profile?.selected_account_id;
-    
-    if (!accountId) {
-      // If no selected account, get the first available account
-      const { data: ownedAccounts } = await supabase
-        .from('accounts')
-        .select('id')
-        .eq('owner_id', user.id)
-        .limit(1);
-      
-      if (ownedAccounts && ownedAccounts.length > 0) {
-        accountId = ownedAccounts[0].id;
-      } else {
-        // Check shared accounts
-        const { data: sharedAccounts } = await supabase
-          .from('accounts')
-          .select('id')
-          .eq('shared_with_id', user.id)
-          .limit(1);
-        
-        if (sharedAccounts && sharedAccounts.length > 0) {
-          accountId = sharedAccounts[0].id;
-        }
-      }
-    }
-    
-    if (!accountId) {
-      throw new Error('No account found to add expense to');
-    }
-
     const { data: newExpense, error } = await supabase
       .from('expenses')
       .insert({
@@ -204,7 +99,7 @@ export const expenseService = {
         description: expense.description,
         date: expense.date,
         category: expense.category,
-        account_id: accountId,
+        account_id: account.id,
         paid_by_id: user.id,
         status: 'pending'
       })
@@ -232,51 +127,15 @@ export const expenseService = {
     }
   },
 
-  async addChild(user: User, child: Omit<Child, 'id'>): Promise<void> {
-    // Get user's active account
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('selected_account_id')
-      .eq('id', user.id)
-      .single();
+  async addChild(user: User, account: Account, child: Omit<Child, 'id'>): Promise<void> {
+    console.log(`Adding child to account ${account.id} (${account.name})`);
     
-    // Determine which account to use
-    let accountId = profile?.selected_account_id;
-    
-    if (!accountId) {
-      // If no selected account, get the first available account
-      const { data: ownedAccounts } = await supabase
-        .from('accounts')
-        .select('id')
-        .eq('owner_id', user.id)
-        .limit(1);
-      
-      if (ownedAccounts && ownedAccounts.length > 0) {
-        accountId = ownedAccounts[0].id;
-      } else {
-        // Check shared accounts
-        const { data: sharedAccounts } = await supabase
-          .from('accounts')
-          .select('id')
-          .eq('shared_with_id', user.id)
-          .limit(1);
-        
-        if (sharedAccounts && sharedAccounts.length > 0) {
-          accountId = sharedAccounts[0].id;
-        }
-      }
-    }
-    
-    if (!accountId) {
-      throw new Error('No account found to add child to');
-    }
-
     const { error } = await supabase
       .from('children')
       .insert({
         name: child.name,
         birth_date: child.birthDate,
-        account_id: accountId
+        account_id: account.id
       });
 
     if (error) {
