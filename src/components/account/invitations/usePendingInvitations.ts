@@ -45,7 +45,14 @@ export const usePendingInvitations = () => {
       }
 
       console.log('Found pending invitations:', data);
-      setInvitations(data || []);
+      
+      // Filter out invitations with missing account data
+      const validInvitations = (data || []).filter(invitation => 
+        invitation.accounts && invitation.accounts.id
+      );
+      
+      console.log('Valid invitations after filtering:', validInvitations);
+      setInvitations(validInvitations);
     } catch (error) {
       console.error('Error in fetchPendingInvitations:', error);
       toast.error('שגיאה בטעינת ההזמנות');
@@ -66,9 +73,10 @@ export const usePendingInvitations = () => {
       setInvitations(prev => prev.filter(inv => inv.invitation_id !== invitationId));
       toast.success('הצטרפת לחשבון בהצלחה!');
       
+      // Force page reload to update the account context properly
       setTimeout(() => {
-        fetchPendingInvitations();
-      }, 1000);
+        window.location.reload();
+      }, 1500);
       
     } catch (error: any) {
       console.error('Error accepting invitation:', error);

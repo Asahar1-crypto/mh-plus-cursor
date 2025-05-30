@@ -26,7 +26,40 @@ export const accountService = {
     try {
       console.log(`Getting default account for user ${userId}`);
       
-      // First try to find an existing account where user is owner
+      // First check for shared accounts (accounts where user is shared_with_id)
+      const { data: sharedAccounts, error: sharedError } = await supabase
+        .from('accounts')
+        .select(`
+          *,
+          owner_profile:profiles!accounts_owner_id_fkey(name)
+        `)
+        .eq('shared_with_id', userId)
+        .limit(1);
+        
+      if (sharedError) {
+        console.error('Error getting shared accounts:', sharedError);
+        throw sharedError;
+      }
+      
+      // If user has a shared account, prioritize it (this is likely the most recent action)
+      if (sharedAccounts && sharedAccounts.length > 0) {
+        console.log('Found existing shared account:', sharedAccounts[0]);
+        
+        // Get owner name from joined profile data
+        const ownerName = sharedAccounts[0]?.owner_profile?.name;
+        
+        return {
+          id: sharedAccounts[0].id,
+          name: sharedAccounts[0].name,
+          ownerId: sharedAccounts[0].owner_id,
+          ownerName: ownerName, 
+          sharedWithId: userId,
+          sharedWithEmail: sharedAccounts[0].shared_with_email,
+          isSharedAccount: true
+        };
+      }
+      
+      // If no shared account, try to find an existing account where user is owner
       const { data: ownedAccounts, error: ownedError } = await supabase
         .from('accounts')
         .select('*')
@@ -71,39 +104,6 @@ export const accountService = {
           name: ownedAccounts[0].name,
           ownerId: ownedAccounts[0].owner_id,
           sharedWithEmail: sharedWithEmail
-        };
-      }
-      
-      // If no owned account, check for shared accounts
-      const { data: sharedAccounts, error: sharedError } = await supabase
-        .from('accounts')
-        .select(`
-          *,
-          owner_profile:profiles!accounts_owner_id_fkey(name)
-        `)
-        .eq('shared_with_id', userId)
-        .limit(1);
-        
-      if (sharedError) {
-        console.error('Error getting shared accounts:', sharedError);
-        throw sharedError;
-      }
-      
-      // If user has a shared account, return it
-      if (sharedAccounts && sharedAccounts.length > 0) {
-        console.log('Found existing shared account:', sharedAccounts[0]);
-        
-        // Get owner name from joined profile data
-        const ownerName = sharedAccounts[0]?.owner_profile?.name;
-        
-        return {
-          id: sharedAccounts[0].id,
-          name: sharedAccounts[0].name,
-          ownerId: sharedAccounts[0].owner_id,
-          ownerName: ownerName, 
-          sharedWithId: userId,
-          sharedWithEmail: sharedAccounts[0].shared_with_email,
-          isSharedAccount: true
         };
       }
       
