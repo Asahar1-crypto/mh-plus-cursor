@@ -49,8 +49,26 @@ export async function acceptInvitation(invitationId: string, user: User): Promis
     
     const accountId = invitation.account_id;
     
-    // Get the existing account that sent the invitation
+    // Get the existing account that sent the invitation - WITH MORE DETAILS
     console.log(`acceptInvitation: Looking for account with ID: ${accountId}`);
+    
+    // First, let's check if ANY account exists with this ID
+    const { data: allAccountsCheck, error: allAccountsError } = await supabase
+      .from('accounts')
+      .select('id, name, owner_id')
+      .eq('id', accountId);
+    
+    console.log(`acceptInvitation: All accounts check result:`, { allAccountsCheck, allAccountsError });
+    
+    // Also check what accounts DO exist for debugging
+    const { data: debugAccounts } = await supabase
+      .from('accounts')
+      .select('id, name, owner_id, shared_with_email')
+      .limit(10);
+    
+    console.log(`acceptInvitation: Debug - existing accounts in system:`, debugAccounts);
+    
+    // Now get the specific account data
     const { data: accountData, error: accountError } = await supabase
       .from('accounts')
       .select('*')
@@ -64,6 +82,21 @@ export async function acceptInvitation(invitationId: string, user: User): Promis
     
     if (!accountData) {
       console.error(`acceptInvitation: No account found with ID: ${accountId}`);
+      
+      // Let's see what accounts exist for the inviting user
+      console.log("acceptInvitation: Checking accounts by owner email from invitation...");
+      
+      // Try to find accounts that might belong to the inviter
+      const { data: inviterAccounts } = await supabase
+        .from('accounts')
+        .select(`
+          id, 
+          name, 
+          owner_id,
+          profiles!accounts_owner_id_fkey(name, id)
+        `);
+      
+      console.log("acceptInvitation: All accounts with profiles:", inviterAccounts);
       
       // Clean up the invalid invitation since the account doesn't exist
       console.log("acceptInvitation: Cleaning up invalid invitation - account doesn't exist");
@@ -80,7 +113,7 @@ export async function acceptInvitation(invitationId: string, user: User): Promis
       sessionStorage.removeItem('pendingInvitationRedirectChecked');
       sessionStorage.removeItem('notifiedInvitations');
       
-      throw new Error('החשבון שהזמין אותך לא קיים יותר במערכת. ההזמנה הוסרה אוטומטית. אנא בקש הזמנה חדשה.');
+      throw new Error(`החשבון שהזמין אותך (ID: ${accountId}) לא נמצא במערכת. ייתכן שהחשבון נמחק או שיש בעיה בהזמנה. ההזמנה הוסרה אוטומטית.`);
     }
     
     console.log("acceptInvitation: Found account:", accountData);
@@ -135,7 +168,7 @@ export async function acceptInvitation(invitationId: string, user: User): Promis
         isSharedAccount: true
       };
       
-      // Clean up sessionStorage
+      // Clear sessionStorage
       console.log("acceptInvitation: Clearing temporary invitation data");
       sessionStorage.removeItem('pendingInvitationId');
       sessionStorage.removeItem('pendingInvitationAccountId');
@@ -205,7 +238,7 @@ export async function acceptInvitation(invitationId: string, user: User): Promis
       isSharedAccount: true
     };
     
-    // Clean up sessionStorage
+    // Clear sessionStorage
     console.log("acceptInvitation: Clearing temporary invitation data");
     sessionStorage.removeItem('pendingInvitationId');
     sessionStorage.removeItem('pendingInvitationAccountId');

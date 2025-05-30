@@ -6,9 +6,11 @@ import { supabase } from "@/integrations/supabase/client";
  */
 export const fetchAccountData = async (accountId: string): Promise<any | null> => {
   if (!accountId) {
-    console.error('No account ID provided');
+    console.error('fetchAccountData: No account ID provided');
     return null;
   }
+  
+  console.log(`fetchAccountData: Looking for account with ID: ${accountId}`);
   
   // First verify the account exists
   const { data: accountExists, error: accountCheckError } = await supabase
@@ -18,7 +20,15 @@ export const fetchAccountData = async (accountId: string): Promise<any | null> =
     .single();
     
   if (accountCheckError || !accountExists) {
-    console.warn(`No account found for ID ${accountId}`);
+    console.warn(`fetchAccountData: No account found for ID ${accountId}. Error:`, accountCheckError);
+    
+    // Debug: Let's see what accounts DO exist
+    const { data: debugAccounts } = await supabase
+      .from('accounts')
+      .select('id, name, owner_id')
+      .limit(10);
+    console.log('fetchAccountData: Debug - existing accounts:', debugAccounts);
+    
     return null;
   }
   
@@ -30,9 +40,10 @@ export const fetchAccountData = async (accountId: string): Promise<any | null> =
     .single();
     
   if (accountError || !accountData) {
-    console.error('Failed to fetch account data:', accountError);
+    console.error('fetchAccountData: Failed to fetch account data:', accountError);
     return null;
   }
   
+  console.log('fetchAccountData: Successfully fetched account:', accountData);
   return accountData;
 };
