@@ -1,150 +1,132 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { User, Account, UserAccounts } from '../types';
-import { userService } from './user';
-import { accountService } from './accountService';
+import { accountCreationService } from './account/accountCreationService';
+import { ownedAccountService } from './account/ownedAccountService';
+import { sharedAccountService } from './account/sharedAccountService';
+import { selectedAccountService } from './user/selectedAccountService';
 
-interface AuthStateResult {
+/**
+ * Check authentication state and load user data
+ */
+export const checkAuth = async (): Promise<{
   user: User | null;
   account: Account | null;
   userAccounts: UserAccounts | null;
-}
-
-// Add a simple cache to prevent multiple concurrent auth checks
-let authCheckInProgress = false;
-let lastAuthCheck: AuthStateResult | null = null;
-let lastCheckTime = 0;
-
-export const checkAuth = async (): Promise<AuthStateResult> => {
-  // Prevent multiple concurrent checks
-  if (authCheckInProgress) {
-    console.log('Auth check already in progress, waiting...');
-    // Wait for ongoing check and return its result
-    while (authCheckInProgress) {
-      await new Promise(resolve => setTimeout(resolve, 100));
-    }
-    if (lastAuthCheck && Date.now() - lastCheckTime < 1000) {
-      return lastAuthCheck;
-    }
-  }
-
-  authCheckInProgress = true;
-  console.log('Starting auth check...');
-
+}> => {
   try {
-    const { data: { session } } = await supabase.auth.getSession();
+    console.log('Getting current session...');
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+    
+    if (sessionError) {
+      console.error('Session error:', sessionError);
+      throw sessionError;
+    }
     
     if (!session?.user) {
-      console.log('No session found');
-      const result = { user: null, account: null, userAccounts: null };
-      lastAuthCheck = result;
-      lastCheckTime = Date.now();
-      return result;
+      console.log('No active session found');
+      return { user: null, account: null, userAccounts: null };
     }
-
+    
     console.log('Session found for user:', session.user.id);
-
+    
     // Get user profile
-    const { data: profile } = await supabase
+    const { data: profile, error: profileError } = await supabase
       .from('profiles')
-      .select('name, selected_account_id')
+      .select('*')
       .eq('id', session.user.id)
       .single();
-
+      
+    if (profileError) {
+      console.error('Profile error:', profileError);
+      throw new Error('Failed to load user profile');
+    }
+    
     const user: User = {
       id: session.user.id,
       email: session.user.email!,
       name: profile?.name || session.user.email!.split('@')[0]
     };
-
+    
     console.log('User profile loaded:', user);
+    
+    // Get all user accounts
+    const userAccounts = await getUserAccounts(user.id);
+    console.log('User accounts loaded:', userAccounts);
+    
+    // Determine active account with priority for shared accounts
+    const activeAccount = await determineActiveAccount(user.id, userAccounts);
+    console.log('Active account determined:', activeAccount);
+    
+    return {
+      user,
+      account: activeAccount,
+      userAccounts
+    };
+  } catch (error) {
+    console.error('Auth check failed:', error);
+    throw error;
+  }
+};
 
-    try {
-      // Get user accounts with improved error handling
-      const userAccounts = await accountService.getUserAccounts(user.id);
-      console.log('User accounts loaded:', userAccounts);
+/**
+ * Get all accounts for a user (owned and shared)
+ */
+export const getUserAccounts = async (userId: string): Promise<UserAccounts> => {
+  console.log('Getting accounts for user', userId);
+  
+  // Get owned accounts
+  const ownedAccounts = await ownedAccountService.getAllOwnedAccounts(userId);
+  
+  // Get shared accounts
+  const sharedAccounts = await sharedAccountService.getAllSharedAccounts(userId);
+  
+  console.log(`Found ${ownedAccounts.length} owned accounts and ${sharedAccounts.length} shared accounts`);
+  
+  return {
+    ownedAccounts,
+    sharedAccounts
+  };
+};
 
-      // Determine active account with better logic
-      let activeAccount: Account | null = null;
-      const allAccounts = [...userAccounts.ownedAccounts, ...userAccounts.sharedAccounts];
-      
-      if (allAccounts.length === 0) {
-        console.log('No accounts found, creating default account for user:', user.id);
-        try {
-          // Create default account if none exist
-          activeAccount = await accountService.getDefaultAccount(user.id, user.name);
-          console.log('Created default account:', activeAccount);
-          
-          // Refresh user accounts after creating default account
-          const refreshedAccounts = await accountService.getUserAccounts(user.id);
-          
-          const result = { user, account: activeAccount, userAccounts: refreshedAccounts };
-          lastAuthCheck = result;
-          lastCheckTime = Date.now();
-          return result;
-        } catch (createError) {
-          console.error('Failed to create default account:', createError);
-          // Continue without account instead of failing completely
-          const result = { user, account: null, userAccounts: { ownedAccounts: [], sharedAccounts: [] } };
-          lastAuthCheck = result;
-          lastCheckTime = Date.now();
-          return result;
-        }
-      }
-
-      // Get selected account ID from user preference
-      const selectedAccountId = profile?.selected_account_id;
-      
-      if (selectedAccountId) {
-        // Try to find the selected account
-        activeAccount = allAccounts.find(acc => acc.id === selectedAccountId) || null;
-        console.log('Found selected account from preference:', activeAccount?.name);
-      }
-      
-      if (!activeAccount) {
-        // Fallback: use the first owned account, or first shared account if no owned accounts
-        activeAccount = userAccounts.ownedAccounts[0] || userAccounts.sharedAccounts[0] || null;
-        console.log('Using fallback account:', activeAccount?.name);
-        
-        // Save this choice as user preference
-        if (activeAccount) {
-          await userService.setSelectedAccountId(user.id, activeAccount.id);
-        }
-      }
-
-      const result = { user, account: activeAccount, userAccounts };
-      lastAuthCheck = result;
-      lastCheckTime = Date.now();
-      return result;
-    } catch (accountError) {
-      console.error('Error loading account data:', accountError);
-      
-      // Try to create a default account as fallback
-      try {
-        console.log('Attempting to create fallback account for user:', user.id);
-        const defaultAccount = await accountService.getDefaultAccount(user.id, user.name);
-        const fallbackAccounts = await accountService.getUserAccounts(user.id);
-        
-        const result = { user, account: defaultAccount, userAccounts: fallbackAccounts };
-        lastAuthCheck = result;
-        lastCheckTime = Date.now();
-        return result;
-      } catch (fallbackError) {
-        console.error('Failed to create fallback account:', fallbackError);
-        // Return user without account instead of failing completely
-        const result = { user, account: null, userAccounts: { ownedAccounts: [], sharedAccounts: [] } };
-        lastAuthCheck = result;
-        lastCheckTime = Date.now();
-        return result;
+/**
+ * Determine which account should be active
+ * Priority: 1. Shared accounts (most recent activity), 2. Selected account, 3. First owned account
+ */
+export const determineActiveAccount = async (userId: string, userAccounts: UserAccounts): Promise<Account | null> => {
+  // Priority 1: If user has shared accounts, use the most recent one (indicates recent invitation acceptance)
+  if (userAccounts.sharedAccounts.length > 0) {
+    console.log('User has shared accounts, prioritizing the first shared account');
+    return userAccounts.sharedAccounts[0];
+  }
+  
+  // Priority 2: Check user's selected account preference
+  try {
+    const selectedAccountId = await selectedAccountService.getSelectedAccountId(userId);
+    if (selectedAccountId) {
+      const selectedAccount = userAccounts.ownedAccounts.find(acc => acc.id === selectedAccountId);
+      if (selectedAccount) {
+        console.log('Found selected account from preference:', selectedAccount.name);
+        return selectedAccount;
       }
     }
   } catch (error) {
-    console.error('Auth check failed:', error);
-    const result = { user: null, account: null, userAccounts: null };
-    lastAuthCheck = result;
-    lastCheckTime = Date.now();
-    return result;
-  } finally {
-    authCheckInProgress = false;
+    console.error('Error getting selected account:', error);
+  }
+  
+  // Priority 3: Use first owned account
+  if (userAccounts.ownedAccounts.length > 0) {
+    console.log('Using first owned account as default');
+    return userAccounts.ownedAccounts[0];
+  }
+  
+  // Priority 4: Create new account if none exists
+  console.log('No accounts found, creating new account');
+  try {
+    const newAccount = await accountCreationService.createAccountForUser(userId);
+    return newAccount;
+  } catch (error) {
+    console.error('Failed to create new account:', error);
+    return null;
   }
 };

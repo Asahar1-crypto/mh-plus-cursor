@@ -1,343 +1,286 @@
 
-import { toast } from 'sonner';
 import { supabase } from './client';
 import { Expense, Child } from '@/contexts/expense/types';
-import { User } from '@/contexts/auth/types';
+import { User } from '@/contexts/AuthContext';
 
 export const expenseService = {
-  // Fetch all expenses for the current user
-  getExpenses: async (user: User) => {
-    try {
-      if (!user) return [];
-      
-      console.log("Getting expenses for user:", user.id);
-      
-      // Get accounts the user is part of (either as owner or shared)
-      const { data: accountsData, error: accountsError } = await supabase
-        .from('accounts')
-        .select('id')
-        .or(`owner_id.eq.${user.id},shared_with_id.eq.${user.id}`);
-      
-      if (accountsError) {
-        console.error("Error fetching accounts:", accountsError);
-        throw accountsError;
-      }
-      
-      if (!accountsData || accountsData.length === 0) {
-        console.log("No accounts found for user:", user.id);
-        return [];
-      }
-      
-      console.log("Found accounts:", accountsData);
-      const accountIds = accountsData.map(acc => acc.id);
-      
-      // Get expenses for those accounts
-      const { data, error } = await supabase
-        .from('expenses')
-        .select(`
-          *,
-          profiles:paid_by_id (name),
-          children:expense_children (
-            child:child_id (
-              id,
-              name
-            )
+  async getExpenses(user: User): Promise<Expense[]> {
+    console.log('Getting expenses for user:', user.id);
+    
+    // Get user's current account to determine which expenses to fetch
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.user) {
+      console.log('No session found');
+      return [];
+    }
+    
+    // Get user's current account
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('selected_account_id')
+      .eq('id', user.id)
+      .single();
+    
+    let accountIds: string[] = [];
+    
+    // Get owned accounts
+    const { data: ownedAccounts } = await supabase
+      .from('accounts')
+      .select('id')
+      .eq('owner_id', user.id);
+    
+    if (ownedAccounts) {
+      accountIds.push(...ownedAccounts.map(acc => acc.id));
+    }
+    
+    // Get shared accounts  
+    const { data: sharedAccounts } = await supabase
+      .from('accounts')
+      .select('id')
+      .eq('shared_with_id', user.id);
+    
+    if (sharedAccounts) {
+      accountIds.push(...sharedAccounts.map(acc => acc.id));
+    }
+    
+    console.log('Found accounts:', accountIds);
+    
+    if (accountIds.length === 0) {
+      console.log('No accounts found for user');
+      return [];
+    }
+    
+    // Fetch expenses from all accounts the user has access to
+    const { data: rawExpenses, error } = await supabase
+      .from('expenses')
+      .select(`
+        *,
+        expense_children!inner(
+          child_id,
+          children!inner(
+            name
           )
-        `)
-        .in('account_id', accountIds);
-      
-      if (error) {
-        console.error("Error fetching expenses:", error);
-        throw error;
-      }
-      
-      if (!data) {
-        console.log("No expenses found for accounts:", accountIds);
-        return [];
-      }
+        )
+      `)
+      .in('account_id', accountIds)
+      .order('created_at', { ascending: false });
 
-      console.log("Raw expenses data:", data);
-      
-      // Transform data to match our app's Expense type
-      const expenses: Expense[] = data.map(exp => {
-        // Get child info if available
-        let childId = null;
-        let childName = null;
-        
-        if (exp.children && exp.children.length > 0 && exp.children[0].child) {
-          childId = exp.children[0].child.id;
-          childName = exp.children[0].child.name;
-        }
-        
-        return {
-          id: exp.id,
-          amount: exp.amount,
-          description: exp.description,
-          date: exp.date,
-          category: exp.category || '',
-          createdBy: exp.paid_by_id,
-          creatorName: exp.profiles?.name || 'Unknown',
-          status: exp.status as 'pending' | 'approved' | 'rejected' | 'paid',
-          receipt: exp.receipt_url || undefined,
-          childId: childId,
-          childName: childName,
-          isRecurring: false, // TODO: Add recurring expense support
-          includeInMonthlyBalance: true
-        };
-      });
-      
-      console.log(`Transformed ${expenses.length} expenses`);
-      return expenses;
-    } catch (error: any) {
-      console.error('Failed to fetch expenses:', error);
-      toast.error('לא ניתן היה להביא את ההוצאות, אנא נסה שוב מאוחר יותר');
-      return [];
-    }
-  },
-  
-  // Add a new expense
-  addExpense: async (expense: Omit<Expense, 'id' | 'createdBy' | 'creatorName' | 'status' | 'approvedBy' | 'approvedAt'>, user: User) => {
-    try {
-      if (!user) {
-        toast.error('יש להתחבר כדי להוסיף הוצאה');
-        throw new Error('User not authenticated');
-      }
-      
-      // Get the first account the user is part of
-      // In a real app, you might want to let the user choose which account to add the expense to
-      const { data: accountsData, error: accountsError } = await supabase
-        .from('accounts')
-        .select('id')
-        .or(`owner_id.eq.${user.id},shared_with_id.eq.${user.id}`)
-        .limit(1);
-      
-      if (accountsError) throw accountsError;
-      
-      let accountId;
-      
-      if (!accountsData || accountsData.length === 0) {
-        // Create a new account if the user doesn't have one
-        const { data: newAccount, error: newAccountError } = await supabase
-          .from('accounts')
-          .insert({
-            name: `משפחת ${user.name}`,
-            owner_id: user.id
-          })
-          .select()
-          .single();
-        
-        if (newAccountError) throw newAccountError;
-        accountId = newAccount.id;
-      } else {
-        accountId = accountsData[0].id;
-      }
-      
-      // Insert the expense
-      const { data, error } = await supabase
-        .from('expenses')
-        .insert({
-          account_id: accountId,
-          amount: expense.amount,
-          description: expense.description,
-          date: expense.date,
-          category: expense.category,
-          paid_by_id: user.id,
-          status: 'pending',
-          receipt_url: expense.receipt
-        })
-        .select('*')
-        .single();
-      
-      if (error) throw error;
-      
-      // If there's a child associated with the expense, create the relationship
-      if (expense.childId) {
-        const { error: childRelError } = await supabase
-          .from('expense_children')
-          .insert({
-            expense_id: data.id,
-            child_id: expense.childId
-          });
-        
-        if (childRelError) throw childRelError;
-      }
-      
-      toast.success('ההוצאה נוספה בהצלחה');
-      return data;
-    } catch (error: any) {
-      console.error('Failed to add expense:', error);
-      toast.error('הוספת ההוצאה נכשלה, אנא נסה שוב');
+    if (error) {
+      console.error('Error fetching expenses:', error);
       throw error;
     }
-  },
-  
-  // Get all children for the user's accounts
-  getChildren: async (user: User) => {
-    try {
-      if (!user) return [];
-      
-      // Get accounts the user is part of
-      const { data: accountsData, error: accountsError } = await supabase
-        .from('accounts')
-        .select('id')
-        .or(`owner_id.eq.${user.id},shared_with_id.eq.${user.id}`);
-      
-      if (accountsError) throw accountsError;
-      if (!accountsData || accountsData.length === 0) return [];
-      
-      const accountIds = accountsData.map(acc => acc.id);
-      
-      // Get children for those accounts
-      const { data, error } = await supabase
-        .from('children')
-        .select('*')
-        .in('account_id', accountIds);
-      
-      if (error) throw error;
-      if (!data) return [];
-      
-      // Transform data to match our app's Child type
-      const children: Child[] = data.map(child => ({
-        id: child.id,
-        name: child.name,
-        birthDate: child.birth_date || new Date().toISOString().split('T')[0]
-      }));
-      
-      return children;
-    } catch (error: any) {
-      console.error('Failed to fetch children:', error);
-      toast.error('לא ניתן היה להביא את רשימת הילדים, אנא נסה שוב מאוחר יותר');
+
+    console.log('Raw expenses data:', rawExpenses);
+
+    if (!rawExpenses || rawExpenses.length === 0) {
+      console.log('No expenses found');
       return [];
     }
-  },
-  
-  // Add a new child
-  addChild: async (child: Omit<Child, 'id'>, user: User) => {
-    try {
-      if (!user) {
-        toast.error('יש להתחבר כדי להוסיף ילד/ה');
-        throw new Error('User not authenticated');
-      }
-      
-      console.log("Adding child for user:", user.id, "name:", user.name);
-      
-      // Get the first account the user owns or is part of
-      const { data: accountsData, error: accountsError } = await supabase
-        .from('accounts')
-        .select('id')
-        .or(`owner_id.eq.${user.id},shared_with_id.eq.${user.id}`)
-        .limit(1);
-      
-      if (accountsError) {
-        console.error("Error fetching accounts:", accountsError);
-        throw accountsError;
-      }
-      
-      let accountId;
-      
-      if (!accountsData || accountsData.length === 0) {
-        console.log("No accounts found, creating a new one");
-        // Create a new account if the user doesn't have one
-        const { data: newAccount, error: newAccountError } = await supabase
-          .from('accounts')
-          .insert({
-            name: `משפחת ${user.name}`,
-            owner_id: user.id
-          })
-          .select()
-          .single();
-        
-        if (newAccountError) {
-          console.error("Error creating account:", newAccountError);
-          throw newAccountError;
-        }
-        
-        console.log("Created new account:", newAccount.id);
-        accountId = newAccount.id;
-      } else {
-        console.log("Using existing account:", accountsData[0].id);
-        accountId = accountsData[0].id;
-      }
-      
-      console.log("Adding child to account:", accountId);
-      
-      // Insert the child
-      const { data, error } = await supabase
-        .from('children')
-        .insert({
-          account_id: accountId,
-          name: child.name,
-          birth_date: child.birthDate
-        })
-        .select()
-        .single();
-      
-      if (error) {
-        console.error("Error adding child:", error);
-        throw error;
-      }
-      
+
+    // Transform the data to match our Expense interface
+    const transformedExpenses: Expense[] = rawExpenses.map((expense: any) => {
+      // Get child name from the joined data
+      const childName = expense.expense_children?.[0]?.children?.name || null;
+      const childId = expense.expense_children?.[0]?.child_id || null;
+
       return {
-        id: data.id,
-        name: data.name,
-        birthDate: data.birth_date || new Date().toISOString().split('T')[0]
+        id: expense.id,
+        amount: parseFloat(expense.amount),
+        description: expense.description,
+        date: expense.date,
+        category: expense.category || 'כללי',
+        childId: childId,
+        childName: childName,
+        createdBy: expense.paid_by_id,
+        creatorName: 'Unknown', // We'll need to join with profiles to get this
+        status: expense.status as 'pending' | 'approved' | 'rejected' | 'paid',
+        receipt: expense.receipt_url,
+        isRecurring: false, // Default value, can be updated based on your schema
+        includeInMonthlyBalance: true // Default value
       };
-    } catch (error: any) {
-      console.error('Failed to add child:', error);
-      throw new Error(error.message || 'הוספת הילד/ה נכשלה, אנא נסה שוב');
-    }
+    });
+
+    console.log(`Transformed ${transformedExpenses.length} expenses`);
+    return transformedExpenses;
   },
-  
-  // Update an expense's status
-  updateExpenseStatus: async (id: string, status: 'pending' | 'approved' | 'rejected' | 'paid', user: User) => {
-    try {
-      if (!user) {
-        toast.error('יש להתחבר כדי לעדכן סטטוס הוצאה');
-        throw new Error('User not authenticated');
-      }
-      
-      // Update the status
-      const { error } = await supabase
-        .from('expenses')
-        .update({ status })
-        .eq('id', id);
-      
-      if (error) throw error;
-      
-      const statusMessages = {
-        approved: 'ההוצאה אושרה בהצלחה',
-        rejected: 'ההוצאה נדחתה',
-        paid: 'ההוצאה סומנה כשולמה',
-        pending: 'סטטוס ההוצאה עודכן בהצלחה'
-      };
-      
-      toast.success(statusMessages[status]);
-    } catch (error: any) {
-      console.error('Failed to update expense status:', error);
-      toast.error('עדכון סטטוס ההוצאה נכשל, אנא נסה שוב');
+
+  async getChildren(user: User): Promise<Child[]> {
+    console.log('Getting children for user:', user.id);
+    
+    // Get all account IDs that the user has access to
+    let accountIds: string[] = [];
+    
+    // Get owned accounts
+    const { data: ownedAccounts } = await supabase
+      .from('accounts')
+      .select('id')
+      .eq('owner_id', user.id);
+    
+    if (ownedAccounts) {
+      accountIds.push(...ownedAccounts.map(acc => acc.id));
+    }
+    
+    // Get shared accounts  
+    const { data: sharedAccounts } = await supabase
+      .from('accounts')
+      .select('id')
+      .eq('shared_with_id', user.id);
+    
+    if (sharedAccounts) {
+      accountIds.push(...sharedAccounts.map(acc => acc.id));
+    }
+    
+    if (accountIds.length === 0) {
+      console.log('No accounts found for user');
+      return [];
+    }
+    
+    const { data: children, error } = await supabase
+      .from('children')
+      .select('*')
+      .in('account_id', accountIds)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching children:', error);
       throw error;
     }
+
+    if (!children || children.length === 0) {
+      console.log('No children found');
+      return [];
+    }
+
+    return children.map((child: any) => ({
+      id: child.id,
+      name: child.name,
+      birthDate: child.birth_date
+    }));
   },
-  
-  // Upload a receipt for an expense
-  uploadReceipt: async (expenseId: string, receiptUrl: string, user: User) => {
-    try {
-      if (!user) {
-        toast.error('יש להתחבר כדי להעלות קבלה');
-        throw new Error('User not authenticated');
+
+  async addExpense(user: User, expense: Omit<Expense, 'id' | 'createdBy' | 'creatorName' | 'status'>): Promise<void> {
+    // Get user's active account
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('selected_account_id')
+      .eq('id', user.id)
+      .single();
+    
+    // Determine which account to use
+    let accountId = profile?.selected_account_id;
+    
+    if (!accountId) {
+      // If no selected account, get the first available account
+      const { data: ownedAccounts } = await supabase
+        .from('accounts')
+        .select('id')
+        .eq('owner_id', user.id)
+        .limit(1);
+      
+      if (ownedAccounts && ownedAccounts.length > 0) {
+        accountId = ownedAccounts[0].id;
+      } else {
+        // Check shared accounts
+        const { data: sharedAccounts } = await supabase
+          .from('accounts')
+          .select('id')
+          .eq('shared_with_id', user.id)
+          .limit(1);
+        
+        if (sharedAccounts && sharedAccounts.length > 0) {
+          accountId = sharedAccounts[0].id;
+        }
       }
+    }
+    
+    if (!accountId) {
+      throw new Error('No account found to add expense to');
+    }
+
+    const { data: newExpense, error } = await supabase
+      .from('expenses')
+      .insert({
+        amount: expense.amount,
+        description: expense.description,
+        date: expense.date,
+        category: expense.category,
+        account_id: accountId,
+        paid_by_id: user.id,
+        status: 'pending'
+      })
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error adding expense:', error);
+      throw error;
+    }
+
+    // If there's a child associated, add the relationship
+    if (expense.childId && newExpense) {
+      const { error: childError } = await supabase
+        .from('expense_children')
+        .insert({
+          expense_id: newExpense.id,
+          child_id: expense.childId
+        });
+
+      if (childError) {
+        console.error('Error linking expense to child:', childError);
+        // Don't throw here, the expense was created successfully
+      }
+    }
+  },
+
+  async addChild(user: User, child: Omit<Child, 'id'>): Promise<void> {
+    // Get user's active account
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('selected_account_id')
+      .eq('id', user.id)
+      .single();
+    
+    // Determine which account to use
+    let accountId = profile?.selected_account_id;
+    
+    if (!accountId) {
+      // If no selected account, get the first available account
+      const { data: ownedAccounts } = await supabase
+        .from('accounts')
+        .select('id')
+        .eq('owner_id', user.id)
+        .limit(1);
       
-      const { error } = await supabase
-        .from('expenses')
-        .update({ receipt_url: receiptUrl })
-        .eq('id', expenseId);
-      
-      if (error) throw error;
-      
-      toast.success('הקבלה הועלתה בהצלחה');
-    } catch (error: any) {
-      console.error('Failed to upload receipt:', error);
-      toast.error('העלאת הקבלה נכשלה, אנא נסה שוב');
+      if (ownedAccounts && ownedAccounts.length > 0) {
+        accountId = ownedAccounts[0].id;
+      } else {
+        // Check shared accounts
+        const { data: sharedAccounts } = await supabase
+          .from('accounts')
+          .select('id')
+          .eq('shared_with_id', user.id)
+          .limit(1);
+        
+        if (sharedAccounts && sharedAccounts.length > 0) {
+          accountId = sharedAccounts[0].id;
+        }
+      }
+    }
+    
+    if (!accountId) {
+      throw new Error('No account found to add child to');
+    }
+
+    const { error } = await supabase
+      .from('children')
+      .insert({
+        name: child.name,
+        birth_date: child.birthDate,
+        account_id: accountId
+      });
+
+    if (error) {
+      console.error('Error adding child:', error);
       throw error;
     }
   }
