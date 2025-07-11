@@ -8,14 +8,35 @@ export const validateAccountExists = async (accountId: string): Promise<boolean>
   try {
     console.log(`validateAccountExists: Checking if account ${accountId} exists`);
     
+    // First try to get the account with RLS - if user has access
     const { data: account, error } = await supabase
       .from('accounts')
       .select('id, name, owner_id')
       .eq('id', accountId)
-      .single();
+      .maybeSingle();
       
     if (error) {
       console.error(`validateAccountExists: Error checking account ${accountId}:`, error);
+      
+      // If there's an RLS error, the account might exist but user doesn't have access yet
+      // This is expected for invitation acceptance, so let's check differently
+      if (error.code === 'PGRST116' || error.message?.includes('multiple (or no) rows returned')) {
+        console.log(`validateAccountExists: Account ${accountId} exists but user doesn't have RLS access yet (normal for invitations)`);
+        
+        // For invitation acceptance, we need to verify the account exists via the invitation table
+        // The invitation table should allow us to see accounts we're invited to
+        const { data: invitation, error: invitationError } = await supabase
+          .from('invitations')
+          .select('account_id')
+          .eq('account_id', accountId)
+          .maybeSingle();
+          
+        if (!invitationError && invitation) {
+          console.log(`validateAccountExists: Account ${accountId} verified via invitation table`);
+          return true;
+        }
+      }
+      
       return false;
     }
     
@@ -43,7 +64,7 @@ export const getAccountDetails = async (accountId: string): Promise<any> => {
       .from('accounts')
       .select('id, name, owner_id, shared_with_id, shared_with_email, invitation_id, created_at, updated_at')
       .eq('id', accountId)
-      .single();
+      .maybeSingle();
       
     if (error) {
       console.error(`getAccountDetails: Error getting account details:`, error);
