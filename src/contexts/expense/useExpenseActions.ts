@@ -40,7 +40,8 @@ export const useExpenseActions = (
     setIsSubmitting(true);
     try {
       await expenseService.addExpense(user, account, newExpense);
-      await refreshData(); // Refresh data instead of manual state update
+      console.log('Expense added successfully, refreshing data...');
+      await refreshData(); // Refresh data to show new expense
       toast.success('ההוצאה נוספה בהצלחה');
     } catch (error) {
       console.error('Failed to add expense:', error);
