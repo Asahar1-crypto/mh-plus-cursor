@@ -43,8 +43,8 @@ export const MonthlyFoodPaymentCard: React.FC = () => {
     });
     
     // Separate expenses that split equally from personal expenses
-    const splitEquallyExpenses = currentMonthExpenses.filter(expense => expense.splitEqually);
-    const personalExpenses = currentMonthExpenses.filter(expense => !expense.splitEqually);
+    const splitEquallyExpenses = currentMonthExpenses.filter(expense => expense.splitEqually === true);
+    const personalExpenses = currentMonthExpenses.filter(expense => expense.splitEqually !== true);
     
     // Calculate totals
     const totalSplitEquallyExpenses = splitEquallyExpenses.reduce((sum, expense) => sum + expense.amount, 0);
