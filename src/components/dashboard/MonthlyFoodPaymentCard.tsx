@@ -32,41 +32,66 @@ export const MonthlyFoodPaymentCard: React.FC = () => {
     const currentMonth = currentDate.getMonth();
     const currentYear = currentDate.getFullYear();
     
-    // Filter food expenses for current month
-    const currentMonthFoodExpenses = expenses.filter(expense => {
+    // Filter current month expenses
+    const currentMonthExpenses = expenses.filter(expense => {
       const expenseDate = new Date(expense.date);
       return (
         expenseDate.getMonth() === currentMonth &&
         expenseDate.getFullYear() === currentYear &&
-        (expense.category === 'מזון' || expense.category === 'מזונות') &&
         expense.status !== 'rejected'
       );
     });
     
-    // Calculate total food expenses
-    const totalFoodExpenses = currentMonthFoodExpenses.reduce((sum, expense) => sum + expense.amount, 0);
+    // Separate food expenses from other expenses
+    const foodExpenses = currentMonthExpenses.filter(expense => 
+      expense.category === 'מזון' || expense.category === 'מזונות'
+    );
     
-    // Calculate fair share per person
-    const fairSharePerPerson = totalFoodExpenses / accountMembers.length;
+    const otherExpenses = currentMonthExpenses.filter(expense => 
+      expense.category !== 'מזון' && expense.category !== 'מזונות'
+    );
     
-    // Calculate what each person paid
+    // Calculate totals
+    const totalFoodExpenses = foodExpenses.reduce((sum, expense) => sum + expense.amount, 0);
+    const totalOtherExpenses = otherExpenses.reduce((sum, expense) => sum + expense.amount, 0);
+    
+    // For food expenses: each person should pay what they owe (based on paidById)
+    // For other expenses: split equally among all members
+    const otherExpensesPerPerson = totalOtherExpenses / accountMembers.length;
+    
+    // Calculate what each person should pay and what they actually paid
     const breakdown: PaymentBreakdown[] = accountMembers.map(member => {
-      const memberExpenses = currentMonthFoodExpenses.filter(expense => expense.paidById === member.user_id);
-      const totalPaid = memberExpenses.reduce((sum, expense) => sum + expense.amount, 0);
-      const balance = fairSharePerPerson - totalPaid;
+      // Food expenses: what this person should pay (their own food expenses)
+      const memberFoodExpenses = foodExpenses.filter(expense => expense.paidById === member.user_id);
+      const shouldPayFood = memberFoodExpenses.reduce((sum, expense) => sum + expense.amount, 0);
+      
+      // Other expenses: equal share for everyone
+      const shouldPayOther = otherExpensesPerPerson;
+      
+      // Total what this person should pay
+      const totalShouldPay = shouldPayFood + shouldPayOther;
+      
+      // What this person actually paid (regardless of category)
+      const memberPaidExpenses = currentMonthExpenses.filter(expense => expense.createdBy === member.user_id);
+      const totalActuallyPaid = memberPaidExpenses.reduce((sum, expense) => sum + expense.amount, 0);
+      
+      // Balance: negative means they overpaid, positive means they owe money
+      const balance = totalShouldPay - totalActuallyPaid;
       
       return {
         userId: member.user_id,
         userName: member.user_name,
-        totalPaid,
-        shouldPay: fairSharePerPerson,
+        totalPaid: totalActuallyPaid,
+        shouldPay: totalShouldPay,
         balance
       };
     });
     
     return {
-      totalExpenses: totalFoodExpenses,
-      fairSharePerPerson,
+      totalExpenses: totalFoodExpenses + totalOtherExpenses,
+      totalFoodExpenses,
+      totalOtherExpenses,
+      otherExpensesPerPerson,
       breakdown
     };
   }, [expenses, accountMembers]);
@@ -86,22 +111,26 @@ export const MonthlyFoodPaymentCard: React.FC = () => {
     );
   }
   
-  const { totalExpenses, fairSharePerPerson, breakdown } = paymentBreakdown;
+  const { totalExpenses, totalFoodExpenses, totalOtherExpenses, otherExpensesPerPerson, breakdown } = paymentBreakdown;
   
   return (
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          💰 חלוקת תשלומי מזונות - חודש נוכחי
+          💰 חלוקת תשלומים חודשיים
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         {/* Total expenses summary */}
         <div className="text-center p-4 bg-muted rounded-lg">
-          <div className="text-sm text-muted-foreground">סה״כ הוצאות מזונות החודש</div>
+          <div className="text-sm text-muted-foreground">סה״כ הוצאות החודש</div>
           <div className="text-2xl font-bold text-primary">₪{Math.round(totalExpenses)}</div>
-          <div className="text-sm text-muted-foreground">
-            חלק הוגן לאדם: ₪{Math.round(fairSharePerPerson)}
+          <div className="text-xs text-muted-foreground grid grid-cols-2 gap-4 mt-2">
+            <div>מזונות: ₪{Math.round(totalFoodExpenses)}</div>
+            <div>אחר: ₪{Math.round(totalOtherExpenses)}</div>
+          </div>
+          <div className="text-xs text-muted-foreground mt-1">
+            חלק אחר לאדם: ₪{Math.round(otherExpensesPerPerson)}
           </div>
         </div>
         
