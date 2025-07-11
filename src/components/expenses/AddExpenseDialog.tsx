@@ -31,7 +31,17 @@ export const AddExpenseDialog: React.FC<{ onSubmitSuccess?: () => void }> = ({ o
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+    <Dialog open={isOpen} onOpenChange={(open) => {
+      // Prevent closing during receipt upload process
+      if (!open && currentStep === 'upload') {
+        return;
+      }
+      if (!open) {
+        handleCancel();
+      } else {
+        setIsOpen(true);
+      }
+    }}>
       <DialogTrigger asChild>
         <Button onClick={() => {
           setCurrentStep('select');
