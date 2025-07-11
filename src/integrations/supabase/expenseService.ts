@@ -31,6 +31,11 @@ export const expenseService = {
     }
 
     console.log(`Raw expenses data for account ${account.name}:`, rawExpenses);
+    
+    // Debug specific expense to see what we get
+    if (rawExpenses && rawExpenses.length > 0) {
+      console.log('First expense detailed debug:', JSON.stringify(rawExpenses[0], null, 2));
+    }
 
     if (!rawExpenses || rawExpenses.length === 0) {
       console.log(`No expenses found for account ${account.name}`);
