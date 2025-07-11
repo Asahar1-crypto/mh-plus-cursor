@@ -55,6 +55,7 @@ export const registrationService = {
         // If there are pending invitations, store them for later use
         if (invitations && invitations.length > 0) {
           console.log(`Found ${invitations.length} pending invitations for ${email} during registration`);
+          console.log('Invitations details:', invitations);
           
           // CRITICAL FIX: Save complete invitation data to localStorage
           const pendingInvitations = {
@@ -68,6 +69,7 @@ export const registrationService = {
             skipAccountCreation: true // Flag to prevent automatic account creation
           };
           
+          console.log('Preparing to store pending invitations:', pendingInvitations);
           localStorage.setItem('pendingInvitationsAfterRegistration', JSON.stringify(pendingInvitations));
           
           console.log('User has pending invitations - will not create new account automatically');

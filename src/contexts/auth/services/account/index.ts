@@ -41,13 +41,23 @@ export const accountService = {
       }
       
       // Check if user has pending invitations and should skip account creation
+      console.log('Checking for pending invitations from registration...');
       const pendingInvitations = localStorage.getItem('pendingInvitationsAfterRegistration');
+      console.log('Pending invitations data from localStorage:', pendingInvitations);
+      
       if (pendingInvitations) {
+        console.log('Found pending invitations data, parsing...');
         const invitationData = JSON.parse(pendingInvitations);
+        console.log('Parsed invitation data:', invitationData);
+        
         if (invitationData.skipAccountCreation) {
           console.log('User has pending invitations - skipping automatic account creation');
           throw new Error('User should accept invitations first - no personal account needed');
+        } else {
+          console.log('Invitation data exists but skipAccountCreation is false');
         }
+      } else {
+        console.log('No pending invitations found in localStorage');
       }
       
       // If no accounts found and no skip flag, create a new one
