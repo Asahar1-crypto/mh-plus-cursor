@@ -135,12 +135,9 @@ const Dashboard = () => {
       </Card>
       
       <ExpensesSummary 
-        pendingTotal={pendingTotal}
-        pendingCount={filteredPending.length}
-        approvedTotal={approvedTotal}
-        approvedCount={filteredApproved.length}
-        paidTotal={paidTotal}
-        paidCount={filteredPaid.length}
+        pendingExpenses={filteredPending}
+        approvedExpenses={filteredApproved}
+        paidExpenses={filteredPaid}
       />
       
       <MonthlyFoodPaymentCard selectedMonth={selectedMonth} />
