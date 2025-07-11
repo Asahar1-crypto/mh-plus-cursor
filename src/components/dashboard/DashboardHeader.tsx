@@ -41,7 +41,9 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({ userName }) =>
                 })}
               </div>
             </div>
-            <AddExpenseModal />
+            <div className="flex-1 sm:flex-none">
+              <AddExpenseModal />
+            </div>
           </div>
         </div>
       </div>
