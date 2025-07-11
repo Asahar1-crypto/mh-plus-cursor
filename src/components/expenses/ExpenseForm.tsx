@@ -438,7 +438,7 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({ onSubmitSuccess }) => 
               <div className="space-y-0.5">
                 <FormLabel className="text-base">חלק שווה בין כולם</FormLabel>
                 <FormDescription>
-                  כאשר מופעל: ההוצאה תתחלק שווה בין כל חברי החשבון. כאשר כבוי: מי שהוצאה מוגדרת עליו ישלם את המלוא
+                  כאשר מופעל: הסכום יתחלק בחצי בין שני חברי החשבון. כאשר כבוי: מי שנבחר ב"מי צריך לשלם" ישלם את מלוא הסכום
                 </FormDescription>
               </div>
               <FormControl>

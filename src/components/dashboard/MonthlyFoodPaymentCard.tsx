@@ -26,31 +26,21 @@ export const MonthlyFoodPaymentCard: React.FC = () => {
   });
   
   const paymentBreakdown = useMemo(() => {
-    console.log('=== MonthlyFoodPaymentCard Debug ===');
-    console.log('accountMembers:', accountMembers);
-    
-    if (!accountMembers || accountMembers.length === 0) {
-      console.log('No account members found');
-      return null;
-    }
+    if (!accountMembers || accountMembers.length === 0) return null;
     
     const currentDate = new Date();
     const currentMonth = currentDate.getMonth();
     const currentYear = currentDate.getFullYear();
-    console.log('Current date filter:', { currentMonth, currentYear });
-    
-    console.log('All expenses:', expenses);
     
     // Filter current month expenses - only include approved expenses (not paid or rejected)
     const currentMonthExpenses = expenses.filter(expense => {
       const expenseDate = new Date(expense.date);
-      const isCurrentMonth = expenseDate.getMonth() === currentMonth && expenseDate.getFullYear() === currentYear;
-      const isApproved = expense.status === 'approved';
-      console.log(`Expense ${expense.id}: date=${expense.date}, month=${expenseDate.getMonth()}, year=${expenseDate.getFullYear()}, status=${expense.status}, isCurrentMonth=${isCurrentMonth}, isApproved=${isApproved}`);
-      return isCurrentMonth && isApproved;
+      return (
+        expenseDate.getMonth() === currentMonth &&
+        expenseDate.getFullYear() === currentYear &&
+        expense.status === 'approved'
+      );
     });
-    
-    console.log('Current month approved expenses:', currentMonthExpenses);
     
     // Separate expenses that split equally from personal expenses
     const splitEquallyExpenses = currentMonthExpenses.filter(expense => expense.splitEqually === true);
@@ -66,21 +56,21 @@ export const MonthlyFoodPaymentCard: React.FC = () => {
     
     // Calculate what each person should pay and what they actually paid
     const breakdown: PaymentBreakdown[] = accountMembers.map(member => {
-      // Personal expenses: what this person should pay (their own personal expenses)
+      // Personal expenses: what this person should pay (expenses assigned to them)
       const memberPersonalExpenses = personalExpenses.filter(expense => expense.paidById === member.user_id);
       const shouldPayPersonal = memberPersonalExpenses.reduce((sum, expense) => sum + expense.amount, 0);
       
       // Split equally expenses: equal share for everyone
       const shouldPaySplitEqually = splitEquallyPerPerson;
       
-      // Total what this person should pay
+      // Total what this person should pay (their debt)
       const totalShouldPay = shouldPayPersonal + shouldPaySplitEqually;
       
-      // What this person actually paid (regardless of category)
-      const memberPaidExpenses = currentMonthExpenses.filter(expense => expense.paidById === member.user_id);
-      const totalActuallyPaid = memberPaidExpenses.reduce((sum, expense) => sum + expense.amount, 0);
+      // What this person actually paid (what they contributed by creating expenses)
+      const memberCreatedExpenses = currentMonthExpenses.filter(expense => expense.createdBy === member.user_id);
+      const totalActuallyPaid = memberCreatedExpenses.reduce((sum, expense) => sum + expense.amount, 0);
       
-      // Balance: negative means they overpaid, positive means they owe money
+      // Balance: positive means they owe money, negative means they overpaid (others owe them)
       const balance = totalShouldPay - totalActuallyPaid;
       
       return {
@@ -105,8 +95,8 @@ export const MonthlyFoodPaymentCard: React.FC = () => {
     return (
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            💰 חלוקת תשלומי מזונות
+         <CardTitle className="flex items-center gap-2">
+            💰 חלוקת תשלומים חודשיים
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -149,7 +139,7 @@ export const MonthlyFoodPaymentCard: React.FC = () => {
               <div className="flex-1">
                 <div className="font-medium">{person.userName}</div>
                 <div className="text-sm text-muted-foreground">
-                  שילם: ₪{Math.round(person.totalPaid)}
+                  תרם: ₪{Math.round(person.totalPaid)}
                 </div>
               </div>
               
