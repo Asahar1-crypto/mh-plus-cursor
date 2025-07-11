@@ -85,9 +85,24 @@ const InviteUserForm: React.FC<InviteUserFormProps> = ({ account, onInvite }) =>
     );
   }
 
-  // Don't display the form if the account is already shared
-  if (account.isSharedAccount || account.sharedWithEmail) {
-    return null;
+  // Don't display the form if the user doesn't have admin role
+  if (account.userRole !== 'admin') {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>הזמנת משתמש לחשבון</CardTitle>
+          <CardDescription>הזמן משתמש נוסף לצפייה וניהול החשבון</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Alert>
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              רק מנהלי החשבון יכולים לשלוח הזמנות למשתמשים חדשים.
+            </AlertDescription>
+          </Alert>
+        </CardContent>
+      </Card>
+    );
   }
 
   return (
@@ -128,7 +143,7 @@ const InviteUserForm: React.FC<InviteUserFormProps> = ({ account, onInvite }) =>
             <Button 
               type="submit" 
               className="w-full" 
-              disabled={isInviting || !!account?.sharedWithEmail}
+              disabled={isInviting}
             >
               {isInviting ? (
                 <span className="flex items-center gap-2">

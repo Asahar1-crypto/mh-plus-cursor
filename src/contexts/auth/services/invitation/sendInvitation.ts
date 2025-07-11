@@ -13,21 +13,22 @@ export async function sendInvitation(email: string, user: User, account: Account
       throw new Error('נתונים חסרים לשליחת ההזמנה');
     }
 
-    // Verify the account exists and belongs to the user before sending invitation
-    console.log(`sendInvitation: Verifying account ${account.id} exists and belongs to user ${user.id}`);
-    const { data: accountExists, error: accountCheckError } = await supabase
-      .from('accounts')
-      .select('id, name, owner_id')
-      .eq('id', account.id)
-      .eq('owner_id', user.id)
-      .single();
+    // Verify the account exists and user is admin (member-based architecture)
+    console.log(`sendInvitation: Verifying user ${user.id} is admin of account ${account.id}`);
+    const { data: membershipData, error: membershipError } = await supabase
+      .from('account_members')
+      .select('role')
+      .eq('account_id', account.id)
+      .eq('user_id', user.id)
+      .eq('role', 'admin')
+      .maybeSingle();
       
-    if (accountCheckError || !accountExists) {
-      console.error("sendInvitation: Account verification failed", { accountCheckError, accountExists });
-      throw new Error('החשבון לא נמצא או שאינך הבעלים שלו');
+    if (membershipError || !membershipData) {
+      console.error("sendInvitation: Admin verification failed", { membershipError, membershipData });
+      throw new Error('רק מנהלי החשבון יכולים לשלוח הזמנות');
     }
     
-    console.log("sendInvitation: Account verified successfully:", accountExists);
+    console.log("sendInvitation: Admin verification successful");
 
     // Check if user is trying to invite themselves
     if (email.toLowerCase() === user.email.toLowerCase()) {
@@ -55,23 +56,9 @@ export async function sendInvitation(email: string, user: User, account: Account
       throw new Error('כבר נשלחה הזמנה פעילה לכתובת האימייל הזו');
     }
 
-    // Check if account is already shared with someone else by querying the database
-    console.log("sendInvitation: Checking if account is already shared");
-    const { data: currentAccount, error: currentAccountError } = await supabase
-      .from('accounts')
-      .select('shared_with_email, shared_with_id')
-      .eq('id', account.id)
-      .single();
-      
-    if (currentAccountError) {
-      console.error("sendInvitation: Error checking current account state:", currentAccountError);
-      throw new Error('שגיאה בבדיקת מצב החשבון: ' + currentAccountError.message);
-    }
-    
-    if (currentAccount.shared_with_email && currentAccount.shared_with_email.toLowerCase() !== email.toLowerCase()) {
-      console.error("sendInvitation: Account already shared with someone else");
-      throw new Error(`החשבון כבר משותף עם ${currentAccount.shared_with_email}`);
-    }
+    // Note: In the new member-based architecture, we'll check for existing membership 
+    // when the invitation is accepted, not here. This allows inviting users who 
+    // haven't registered yet.
 
     // Generate unique invitation ID
     const invitationId = uuidv4();
@@ -95,22 +82,7 @@ export async function sendInvitation(email: string, user: User, account: Account
 
     console.log("sendInvitation: Invitation created successfully");
 
-    // Update the account to include the shared_with_email
-    console.log("sendInvitation: Updating account with shared_with_email");
-    const { error: updateAccountError } = await supabase
-      .from('accounts')
-      .update({ 
-        shared_with_email: email.toLowerCase(),
-        invitation_id: invitationId
-      })
-      .eq('id', account.id);
-
-    if (updateAccountError) {
-      console.error("sendInvitation: Error updating account:", updateAccountError);
-      // This is not critical, continue with email sending
-    } else {
-      console.log("sendInvitation: Account updated with shared email and invitation ID");
-    }
+    console.log("sendInvitation: Invitation created successfully - no account update needed in member-based architecture");
 
     // Try to send email (this might fail if email service is not configured)
     try {
