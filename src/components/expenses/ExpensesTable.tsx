@@ -9,8 +9,8 @@ import {
   TableHeader, 
   TableRow 
 } from '@/components/ui/table';
-import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { StatusBadge } from './StatusBadge';
 import { Expense } from '@/contexts/expense/types';
 import { useToast } from '@/hooks/use-toast';
@@ -29,34 +29,40 @@ export const ExpensesTable: React.FC<ExpensesTableProps> = ({
   rejectExpense, 
   markAsPaid 
 }) => {
-  const handleApproveExpense = async (id: string) => {
+  const handleStatusChange = async (expenseId: string, newStatus: Expense['status']) => {
     try {
-      await approveExpense(id);
-      console.log('Expense approved successfully', id);
+      switch (newStatus) {
+        case 'approved':
+          await approveExpense(expenseId);
+          toast.success('ההוצאה אושרה בהצלחה');
+          break;
+        case 'rejected':
+          await rejectExpense(expenseId);
+          toast.success('ההוצאה נדחתה');
+          break;
+        case 'paid':
+          await markAsPaid(expenseId);
+          toast.success('ההוצאה סומנה כשולמה');
+          break;
+        default:
+          break;
+      }
     } catch (error) {
-      console.error('Error approving expense:', error);
-      toast.error('אירעה שגיאה בעת אישור ההוצאה');
+      console.error('Error updating expense status:', error);
+      toast.error('אירעה שגיאה בעת עדכון הסטטוס');
     }
   };
 
-  const handleRejectExpense = async (id: string) => {
-    try {
-      await rejectExpense(id);
-      console.log('Expense rejected successfully', id);
-    } catch (error) {
-      console.error('Error rejecting expense:', error);
-      toast.error('אירעה שגיאה בעת דחיית ההוצאה');
-    }
-  };
+  const getStatusOptions = (currentStatus: Expense['status']) => {
+    const allStatuses = [
+      { value: 'pending', label: 'ממתין' },
+      { value: 'approved', label: 'מאושר' },
+      { value: 'rejected', label: 'נדחה' },
+      { value: 'paid', label: 'שולם' }
+    ];
 
-  const handleMarkAsPaid = async (id: string) => {
-    try {
-      await markAsPaid(id);
-      console.log('Expense marked as paid successfully', id);
-    } catch (error) {
-      console.error('Error marking expense as paid:', error);
-      toast.error('אירעה שגיאה בעת סימון ההוצאה כשולמה');
-    }
+    // Return all options except the current status
+    return allStatuses.filter(status => status.value !== currentStatus);
   };
 
   return (
@@ -100,38 +106,23 @@ export const ExpensesTable: React.FC<ExpensesTableProps> = ({
                       <StatusBadge status={expense.status} />
                     </TableCell>
                     <TableCell>
-                      <div className="flex space-x-2">
-                        {expense.status === 'pending' && (
-                          <>
-                            <Button 
-                              variant="ghost" 
-                              size="sm"
-                              onClick={() => handleApproveExpense(expense.id)}
-                              className="text-green-600 hover:text-green-800 hover:bg-green-50 h-7 px-2"
-                            >
-                              אישור
-                            </Button>
-                            <Button 
-                              variant="ghost" 
-                              size="sm"
-                              onClick={() => handleRejectExpense(expense.id)}
-                              className="text-red-600 hover:text-red-800 hover:bg-red-50 h-7 px-2"
-                            >
-                              דחייה
-                            </Button>
-                          </>
-                        )}
-                        {expense.status === 'approved' && (
-                          <Button 
-                            variant="ghost" 
-                            size="sm"
-                            onClick={() => handleMarkAsPaid(expense.id)}
-                            className="text-blue-600 hover:text-blue-800 hover:bg-blue-50 h-7 px-2"
-                          >
-                            סמן כשולם
-                          </Button>
-                        )}
-                      </div>
+                      <Select
+                        value=""
+                        onValueChange={(newStatus: Expense['status']) => 
+                          handleStatusChange(expense.id, newStatus)
+                        }
+                      >
+                        <SelectTrigger className="w-32 h-8">
+                          <SelectValue placeholder="בחר פעולה" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {getStatusOptions(expense.status).map((option) => (
+                            <SelectItem key={option.value} value={option.value}>
+                              {option.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </TableCell>
                   </TableRow>
                 ))
