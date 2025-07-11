@@ -7,6 +7,7 @@ import { memberService } from '../account/memberService';
 
 export async function acceptInvitation(invitationId: string, user: User): Promise<Account> {
   try {
+    console.log(`acceptInvitation: Starting invitation acceptance process`);
     console.log(`acceptInvitation: User ${user.id} (${user.email}) attempting to accept invitation ${invitationId}`);
     
     if (!invitationId) {
