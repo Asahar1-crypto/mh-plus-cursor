@@ -13,29 +13,14 @@ export const AddExpenseDialog: React.FC<{ onSubmitSuccess?: () => void }> = ({ o
   const [scanResult, setScanResult] = useState<any>(null);
   const [currentStep, setCurrentStep] = useState<'select' | 'upload' | 'validate'>('select');
 
-  const handleAddExpenseClick = (isManual: boolean) => {
-    setIsManualForm(isManual);
-    if (isManual) {
-      setCurrentStep('select');
-    } else {
-      setCurrentStep('upload');
-    }
-    setScanResult(null);
-    setIsOpen(true);
-  };
-
   const handleScanComplete = (result: any) => {
     setScanResult(result);
     setCurrentStep('validate');
   };
 
   const handleScanApprove = () => {
-    setIsOpen(false);
+    handleCancel();
     if (onSubmitSuccess) onSubmitSuccess();
-    // Reset state
-    setCurrentStep('select');
-    setScanResult(null);
-    setIsManualForm(true);
   };
 
   const handleCancel = () => {
@@ -46,9 +31,19 @@ export const AddExpenseDialog: React.FC<{ onSubmitSuccess?: () => void }> = ({ o
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+    <Dialog open={isOpen} onOpenChange={(open) => {
+      if (!open) {
+        handleCancel();
+      } else {
+        setIsOpen(true);
+      }
+    }}>
       <DialogTrigger asChild>
-        <Button>
+        <Button onClick={() => {
+          setCurrentStep('select');
+          setIsManualForm(true);
+          setIsOpen(true);
+        }}>
           <PlusCircle className="mr-2 h-4 w-4" /> הוצאה חדשה
         </Button>
       </DialogTrigger>
@@ -67,29 +62,37 @@ export const AddExpenseDialog: React.FC<{ onSubmitSuccess?: () => void }> = ({ o
         </DialogHeader>
         
         {currentStep === 'select' && (
-          <div className="flex gap-4 mb-4">
-            <Button 
-              variant="default"
-              onClick={() => handleAddExpenseClick(true)}
-              className="flex-1"
-            >
-              <FileText className="mr-2 h-4 w-4" /> הזנה ידנית
-            </Button>
-            <Button 
-              variant="outline"
-              onClick={() => handleAddExpenseClick(false)}
-              className="flex-1"
-            >
-              <ScanLine className="mr-2 h-4 w-4" /> סריקת חשבונית
-            </Button>
-          </div>
-        )}
-        
-        {currentStep === 'select' && isManualForm && (
-          <ExpenseForm onSubmitSuccess={() => {
-            if (onSubmitSuccess) onSubmitSuccess();
-            setIsOpen(false);
-          }} />
+          <>
+            <div className="flex gap-4 mb-4">
+              <Button 
+                variant="default"
+                onClick={() => {
+                  setIsManualForm(true);
+                  setCurrentStep('select');
+                }}
+                className="flex-1"
+              >
+                <FileText className="mr-2 h-4 w-4" /> הזנה ידנית
+              </Button>
+              <Button 
+                variant="outline"
+                onClick={() => {
+                  setIsManualForm(false);
+                  setCurrentStep('upload');
+                }}
+                className="flex-1"
+              >
+                <ScanLine className="mr-2 h-4 w-4" /> סריקת חשבונית
+              </Button>
+            </div>
+
+            {isManualForm && (
+              <ExpenseForm onSubmitSuccess={() => {
+                if (onSubmitSuccess) onSubmitSuccess();
+                handleCancel();
+              }} />
+            )}
+          </>
         )}
 
         {currentStep === 'upload' && (

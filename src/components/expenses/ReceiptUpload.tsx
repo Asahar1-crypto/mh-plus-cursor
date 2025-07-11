@@ -78,9 +78,13 @@ export const ReceiptUpload: React.FC<ReceiptUploadProps> = ({ onScanComplete, on
   }, [handleFileSelect]);
 
   const uploadFileToStorage = async (file: File): Promise<string> => {
+    if (!account?.id) {
+      throw new Error('לא נמצא חשבון פעיל');
+    }
+
     const fileExt = file.name.split('.').pop();
     const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
-    const filePath = `${account?.id}/${fileName}`;
+    const filePath = `${account.id}/${fileName}`;
 
     const { error: uploadError } = await supabase.storage
       .from('receipts')
