@@ -161,17 +161,13 @@ export const MonthlyFoodPaymentCard: React.FC = () => {
               </div>
               
               <div className="text-right">
-                {person.balance > 0 ? (
+                {person.shouldPay > 0 ? (
                   <div className="text-red-600 font-semibold">
-                    חייב: ₪{Math.round(person.balance)}
-                  </div>
-                ) : person.balance < 0 ? (
-                  <div className="text-green-600 font-semibold">
-                    זכאי: ₪{Math.round(Math.abs(person.balance))}
+                    חייב: ₪{Math.round(person.shouldPay)}
                   </div>
                 ) : (
                   <div className="text-gray-600 font-semibold">
-                    מאוזן ✓
+                    אין חוב ✓
                   </div>
                 )}
               </div>
