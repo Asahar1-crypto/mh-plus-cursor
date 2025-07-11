@@ -36,7 +36,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     acceptInvitation,
     verifyEmail,
     resetPassword,
-    switchAccount
+    switchAccount,
+    updateAccountName
   } = useAuthActions(
     user,
     account,
@@ -83,6 +84,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     verifyEmail,
     resetPassword,
     switchAccount,
+    updateAccountName,
     refreshProfile
   };
 

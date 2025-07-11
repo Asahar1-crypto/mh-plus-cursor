@@ -127,6 +127,41 @@ export const accountService = {
       console.error('Error getting user accounts:', error);
       throw error;
     }
+  },
+
+  // Update account name
+  updateAccountName: async (accountId: string, newName: string): Promise<Account> => {
+    try {
+      console.log(`Updating account ${accountId} name to "${newName}"`);
+      
+      // Update the account name in the database
+      const { data: updatedAccount, error } = await supabase
+        .from('accounts')
+        .update({ name: newName })
+        .eq('id', accountId)
+        .select('id, name')
+        .single();
+      
+      if (error) {
+        console.error('Error updating account name:', error);
+        throw error;
+      }
+
+      if (!updatedAccount) {
+        throw new Error('Failed to update account name');
+      }
+      
+      console.log('Account name updated successfully:', updatedAccount);
+      
+      return {
+        id: updatedAccount.id,
+        name: updatedAccount.name,
+        userRole: 'admin' // User must be admin to update account name
+      };
+    } catch (error) {
+      console.error('Error updating account name:', error);
+      throw error;
+    }
   }
 };
 

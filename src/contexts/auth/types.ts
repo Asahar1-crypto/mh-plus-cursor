@@ -57,5 +57,6 @@ export interface AuthContextType {
   verifyEmail: (token: string) => Promise<boolean>;
   resetPassword: (email: string) => Promise<void>;
   switchAccount: (accountId: string) => Promise<void>;
+  updateAccountName: (newName: string) => Promise<void>;
   refreshProfile: () => Promise<void>;
 }

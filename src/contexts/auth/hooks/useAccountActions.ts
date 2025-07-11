@@ -54,7 +54,34 @@ export const useAccountActions = (
     }
   };
 
+  const updateAccountName = async (newName: string): Promise<void> => {
+    if (!user || !account) {
+      toast.error('יש להתחבר ולבחור חשבון כדי לעדכן שם');
+      return;
+    }
+
+    if (account.userRole !== 'admin') {
+      toast.error('רק אדמין יכול לעדכן את שם החשבון');
+      return;
+    }
+
+    try {
+      console.log(`Updating account name from "${account.name}" to "${newName}"`);
+      
+      const updatedAccount = await authService.updateAccountName(account.id, newName);
+      
+      // Update the account in state
+      setAccount(updatedAccount);
+      
+      console.log('Account name updated successfully');
+    } catch (error: any) {
+      console.error('Failed to update account name:', error);
+      throw error; // Re-throw so the component can handle it
+    }
+  };
+
   return {
-    switchAccount
+    switchAccount,
+    updateAccountName
   };
 };

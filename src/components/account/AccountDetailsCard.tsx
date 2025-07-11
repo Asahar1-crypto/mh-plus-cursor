@@ -1,16 +1,60 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Account } from '@/contexts/auth/types';
+import { useAuth } from '@/contexts/auth';
+import { toast } from 'sonner';
+import { Edit2, Check, X } from 'lucide-react';
 
 interface AccountDetailsCardProps {
   account: Account | null;
 }
 
 const AccountDetailsCard: React.FC<AccountDetailsCardProps> = ({ account }) => {
+  const { updateAccountName } = useAuth();
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedName, setEditedName] = useState(account?.name || '');
+  const [isUpdating, setIsUpdating] = useState(false);
+
   if (!account) return null;
+
+  const isAdmin = account.userRole === 'admin';
+
+  const handleEdit = () => {
+    setEditedName(account.name || '');
+    setIsEditing(true);
+  };
+
+  const handleCancel = () => {
+    setEditedName(account.name || '');
+    setIsEditing(false);
+  };
+
+  const handleSave = async () => {
+    if (!editedName.trim()) {
+      toast.error('שם החשבון לא יכול להיות רק');
+      return;
+    }
+
+    if (editedName === account.name) {
+      setIsEditing(false);
+      return;
+    }
+
+    setIsUpdating(true);
+    try {
+      await updateAccountName(editedName.trim());
+      setIsEditing(false);
+      toast.success('שם החשבון עודכן בהצלחה');
+    } catch (error) {
+      toast.error('שגיאה בעדכון שם החשבון');
+      console.error('Error updating account name:', error);
+    } finally {
+      setIsUpdating(false);
+    }
+  };
 
   return (
     <Card className="mb-6">
@@ -23,7 +67,54 @@ const AccountDetailsCard: React.FC<AccountDetailsCardProps> = ({ account }) => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <label className="text-sm font-medium">שם החשבון</label>
-              <Input value={account.name || ''} readOnly />
+              <div className="flex gap-2">
+                {isEditing ? (
+                  <>
+                    <Input 
+                      value={editedName} 
+                      onChange={(e) => setEditedName(e.target.value)}
+                      placeholder="הכנס שם חשבון"
+                      disabled={isUpdating}
+                    />
+                    <Button
+                      size="sm"
+                      onClick={handleSave}
+                      disabled={isUpdating}
+                      className="px-3"
+                    >
+                      <Check className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={handleCancel}
+                      disabled={isUpdating}
+                      className="px-3"
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <Input value={account.name || ''} readOnly />
+                    {isAdmin && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={handleEdit}
+                        className="px-3"
+                      >
+                        <Edit2 className="h-4 w-4" />
+                      </Button>
+                    )}
+                  </>
+                )}
+              </div>
+              {isAdmin && !isEditing && (
+                <p className="text-xs text-muted-foreground">
+                  כאדמין, אתה יכול לערוך את שם החשבון
+                </p>
+              )}
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium">סוג חשבון</label>
@@ -41,9 +132,6 @@ const AccountDetailsCard: React.FC<AccountDetailsCardProps> = ({ account }) => {
               </div>
             </div>
           )}
-          <div className="mt-4">
-            <Button>שמור שינויים</Button>
-          </div>
         </div>
       </CardContent>
     </Card>

@@ -58,5 +58,15 @@ export const authService = {
     
     console.log('Account switched successfully:', selectedAccount);
     return { account: selectedAccount, userAccounts };
+  },
+
+  // Update account name function
+  updateAccountName: async (accountId: string, newName: string): Promise<Account> => {
+    console.log(`Updating account ${accountId} name to "${newName}"`);
+    
+    const updatedAccount = await accountService.updateAccountName(accountId, newName);
+    
+    console.log('Account name updated successfully:', updatedAccount);
+    return updatedAccount;
   }
 };
