@@ -166,7 +166,9 @@ export const ReceiptUpload: React.FC<ReceiptUploadProps> = ({ onScanComplete, on
           onDrop={handleDrop}
           onDragOver={(e) => e.preventDefault()}
           onClick={(e) => {
+            e.preventDefault();
             e.stopPropagation();
+            console.log('Card clicked, triggering file input');
             document.getElementById('file-input')?.click();
           }}
         >
