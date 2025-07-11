@@ -15,7 +15,7 @@ export const debugInvitations = () => {
     const pendingInvitationOwnerId = sessionStorage.getItem('pendingInvitationOwnerId');
     const notifiedInvitationsStr = sessionStorage.getItem('notifiedInvitations');
     const currentInvitationDetailsStr = sessionStorage.getItem('currentInvitationDetails');
-    const pendingInvitationsAfterRegistrationStr = sessionStorage.getItem('pendingInvitationsAfterRegistration');
+    const pendingInvitationsAfterRegistrationStr = localStorage.getItem('pendingInvitationsAfterRegistration');
     
     // Structured debug output
     console.log("== Current Session Storage State ==");

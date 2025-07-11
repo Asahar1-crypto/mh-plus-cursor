@@ -14,7 +14,7 @@ export const clearAllPendingInvitations = () => {
     sessionStorage.removeItem('pendingInvitationOwnerId');
     sessionStorage.removeItem('notifiedInvitations');
     sessionStorage.removeItem('currentInvitationDetails');
-    sessionStorage.removeItem('pendingInvitationsAfterRegistration');
+    localStorage.removeItem('pendingInvitationsAfterRegistration');
     
     console.log('All invitation data cleared from sessionStorage');
     toast.success('נתוני ההזמנות נוקו בהצלחה');

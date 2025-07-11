@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { User, Account, UserAccounts } from '../types';
 import { accountService } from './account';
 import { selectedAccountService } from './user/selectedAccountService';
+import { autoAcceptRegistrationInvitations, hasPendingRegistrationInvitations } from './invitation/autoAcceptInvitations';
 
 /**
  * Check authentication state and load user data
@@ -48,7 +49,18 @@ export const checkAuth = async (): Promise<{
     
     console.log('User profile loaded:', user);
     
-    // Get all user accounts
+    // Check for pending invitations from registration and auto-accept them
+    if (hasPendingRegistrationInvitations()) {
+      console.log('Found pending registration invitations, auto-accepting...');
+      try {
+        await autoAcceptRegistrationInvitations(user);
+        console.log('Auto-acceptance completed, refreshing account data...');
+      } catch (error) {
+        console.error('Error during auto-acceptance:', error);
+      }
+    }
+    
+    // Get all user accounts (this will be refreshed after auto-acceptance)
     const userAccounts = await getUserAccounts(user.id);
     console.log('User accounts loaded:', userAccounts);
     
