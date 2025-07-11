@@ -39,7 +39,14 @@ export const ExpensesSummary: React.FC<ExpensesSummaryProps> = ({
 
       const breakdown = accountMembers.map(member => {
         const userExpenses = expenses.filter(exp => exp.paidById === member.user_id);
-        const userTotal = userExpenses.reduce((sum, exp) => sum + exp.amount, 0);
+        // Calculate amount based on split_equally flag
+        const userTotal = userExpenses.reduce((sum, exp) => {
+          if (exp.splitEqually) {
+            return sum + (exp.amount / 2); // Only half if split equally
+          } else {
+            return sum + exp.amount; // Full amount if not split equally
+          }
+        }, 0);
         return {
           userName: member.user_name,
           amount: userTotal,
