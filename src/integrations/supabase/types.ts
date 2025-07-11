@@ -357,6 +357,51 @@ export type Database = {
         }
         Relationships: []
       }
+      scanned_receipts: {
+        Row: {
+          account_id: string
+          confidence_score: number | null
+          created_at: string
+          file_name: string
+          file_size: number
+          file_type: string
+          file_url: string
+          gpt_response: Json | null
+          id: string
+          processed_at: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          account_id: string
+          confidence_score?: number | null
+          created_at?: string
+          file_name: string
+          file_size: number
+          file_type: string
+          file_url: string
+          gpt_response?: Json | null
+          id?: string
+          processed_at?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          account_id?: string
+          confidence_score?: number | null
+          created_at?: string
+          file_name?: string
+          file_size?: number
+          file_type?: string
+          file_url?: string
+          gpt_response?: Json | null
+          id?: string
+          processed_at?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
