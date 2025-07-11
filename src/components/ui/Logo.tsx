@@ -45,7 +45,7 @@ export const Logo: React.FC<LogoProps> = ({
             textSizeClasses[size],
             "font-bold text-foreground"
           )}>
-            Family Budget
+            מחציות פלוס
           </h1>
           <p className="text-xs text-muted-foreground font-medium">
             ניהול תקציב משפחתי
