@@ -1,9 +1,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { User, Account, UserAccounts } from '../types';
-import { accountCreationService } from './account/accountCreationService';
-import { ownedAccountService } from './account/ownedAccountService';
-import { sharedAccountService } from './account/sharedAccountService';
+import { accountService } from './account';
 import { selectedAccountService } from './user/selectedAccountService';
 
 /**
@@ -75,18 +73,8 @@ export const checkAuth = async (): Promise<{
 export const getUserAccounts = async (userId: string): Promise<UserAccounts> => {
   console.log('Getting accounts for user', userId);
   
-  // Get owned accounts
-  const ownedAccounts = await ownedAccountService.getAllOwnedAccounts(userId);
-  
-  // Get shared accounts
-  const sharedAccounts = await sharedAccountService.getAllSharedAccounts(userId);
-  
-  console.log(`Found ${ownedAccounts.length} owned accounts and ${sharedAccounts.length} shared accounts`);
-  
-  return {
-    ownedAccounts,
-    sharedAccounts
-  };
+  // Use the new member-based account service
+  return await accountService.getUserAccounts(userId);
 };
 
 /**
@@ -133,7 +121,7 @@ export const determineActiveAccount = async (userId: string, userAccounts: UserA
       .single();
     
     const userName = profile?.name || 'User';
-    const newAccount = await accountCreationService.createNewAccount(userId, userName);
+    const newAccount = await accountService.getDefaultAccount(userId, userName);
     return newAccount;
   } catch (error) {
     console.error('Failed to create new account:', error);
