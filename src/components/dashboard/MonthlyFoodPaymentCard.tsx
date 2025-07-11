@@ -26,21 +26,31 @@ export const MonthlyFoodPaymentCard: React.FC = () => {
   });
   
   const paymentBreakdown = useMemo(() => {
-    if (!accountMembers || accountMembers.length === 0) return null;
+    console.log('=== MonthlyFoodPaymentCard Debug ===');
+    console.log('accountMembers:', accountMembers);
+    
+    if (!accountMembers || accountMembers.length === 0) {
+      console.log('No account members found');
+      return null;
+    }
     
     const currentDate = new Date();
     const currentMonth = currentDate.getMonth();
     const currentYear = currentDate.getFullYear();
+    console.log('Current date filter:', { currentMonth, currentYear });
+    
+    console.log('All expenses:', expenses);
     
     // Filter current month expenses - only include approved expenses (not paid or rejected)
     const currentMonthExpenses = expenses.filter(expense => {
       const expenseDate = new Date(expense.date);
-      return (
-        expenseDate.getMonth() === currentMonth &&
-        expenseDate.getFullYear() === currentYear &&
-        expense.status === 'approved'
-      );
+      const isCurrentMonth = expenseDate.getMonth() === currentMonth && expenseDate.getFullYear() === currentYear;
+      const isApproved = expense.status === 'approved';
+      console.log(`Expense ${expense.id}: date=${expense.date}, month=${expenseDate.getMonth()}, year=${expenseDate.getFullYear()}, status=${expense.status}, isCurrentMonth=${isCurrentMonth}, isApproved=${isApproved}`);
+      return isCurrentMonth && isApproved;
     });
+    
+    console.log('Current month approved expenses:', currentMonthExpenses);
     
     // Separate expenses that split equally from personal expenses
     const splitEquallyExpenses = currentMonthExpenses.filter(expense => expense.splitEqually === true);
