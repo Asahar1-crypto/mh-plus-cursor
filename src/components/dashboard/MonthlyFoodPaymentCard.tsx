@@ -14,7 +14,11 @@ interface PaymentBreakdown {
   balance: number; // positive = needs to pay more, negative = overpaid
 }
 
-export const MonthlyFoodPaymentCard: React.FC = () => {
+interface MonthlyFoodPaymentCardProps {
+  selectedMonth?: string;
+}
+
+export const MonthlyFoodPaymentCard: React.FC<MonthlyFoodPaymentCardProps> = ({ selectedMonth }) => {
   const { expenses } = useExpense();
   const { account } = useAuth();
   
@@ -30,16 +34,26 @@ export const MonthlyFoodPaymentCard: React.FC = () => {
       return null;
     }
     
-    const currentDate = new Date();
-    const currentMonth = currentDate.getMonth();
-    const currentYear = currentDate.getFullYear();
+    // Parse selected month or use current month as fallback
+    let targetMonth: number;
+    let targetYear: number;
     
-    // Filter current month expenses - only approved expenses (not paid ones)
-    const currentMonthExpenses = expenses.filter(expense => {
+    if (selectedMonth) {
+      const [year, month] = selectedMonth.split('-').map(Number);
+      targetMonth = month - 1; // Convert to 0-based month
+      targetYear = year;
+    } else {
+      const currentDate = new Date();
+      targetMonth = currentDate.getMonth();
+      targetYear = currentDate.getFullYear();
+    }
+    
+    // Filter expenses for the selected month - only approved expenses (not paid ones)
+    const selectedMonthExpenses = expenses.filter(expense => {
       const expenseDate = new Date(expense.date);
-      const isCurrentMonth = expenseDate.getMonth() === currentMonth && expenseDate.getFullYear() === currentYear;
+      const isSelectedMonth = expenseDate.getMonth() === targetMonth && expenseDate.getFullYear() === targetYear;
       const isRelevant = expense.status === 'approved'; // Only approved, not paid
-      return isCurrentMonth && isRelevant;
+      return isSelectedMonth && isRelevant;
     });
     
     // Calculate what each person owes based on the rules:
@@ -50,7 +64,7 @@ export const MonthlyFoodPaymentCard: React.FC = () => {
       let totalOwes = 0;
       
       // Go through all expenses and see what this member owes
-      currentMonthExpenses.forEach(expense => {
+      selectedMonthExpenses.forEach(expense => {
         if (expense.paidById === member.user_id) {
           // This member is designated as the one who should pay
           if (expense.splitEqually) {
@@ -74,12 +88,15 @@ export const MonthlyFoodPaymentCard: React.FC = () => {
     });
     
     // Calculate totals for display
-    const totalExpenses = currentMonthExpenses.reduce((sum, expense) => sum + expense.amount, 0);
+    const totalExpenses = selectedMonthExpenses.reduce((sum, expense) => sum + expense.amount, 0);
     
     // Debug logging to verify calculations
     console.log('🔍 Payment Breakdown Debug:', {
+      selectedMonth,
+      targetMonth: targetMonth + 1, // Display as 1-based
+      targetYear,
       totalExpenses,
-      currentMonthExpensesCount: currentMonthExpenses.length,
+      selectedMonthExpensesCount: selectedMonthExpenses.length,
       breakdown: breakdown.map(b => ({
         name: b.userName,
         shouldPay: Math.round(b.shouldPay),
@@ -89,9 +106,10 @@ export const MonthlyFoodPaymentCard: React.FC = () => {
     
     return {
       totalExpenses,
-      breakdown
+      breakdown,
+      selectedMonth: selectedMonth || `${targetYear}-${String(targetMonth + 1).padStart(2, '0')}`
     };
-  }, [expenses, accountMembers]);
+  }, [expenses, accountMembers, selectedMonth]);
   
   if (!paymentBreakdown) {
     return (
@@ -114,7 +132,11 @@ export const MonthlyFoodPaymentCard: React.FC = () => {
     <Card>
       <CardHeader className="p-4 sm:p-6">
         <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
-          💰 חלוקת תשלומים חודשיים
+          💰 חלוקת תשלומים - {(() => {
+            const [year, month] = (paymentBreakdown.selectedMonth || selectedMonth || '').split('-');
+            const date = new Date(parseInt(year), parseInt(month) - 1);
+            return date.toLocaleDateString('he-IL', { year: 'numeric', month: 'long' });
+          })()}
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4 p-4 sm:p-6 pt-0">
