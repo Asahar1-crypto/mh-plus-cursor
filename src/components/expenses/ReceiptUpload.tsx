@@ -71,10 +71,13 @@ export const ReceiptUpload: React.FC<ReceiptUploadProps> = ({ onScanComplete, on
   }, [handleFileSelect]);
 
   const handleFileInput = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    e.stopPropagation();
     const files = Array.from(e.target.files || []);
     if (files.length > 0) {
       handleFileSelect(files[0]);
     }
+    // Clear the input value to allow selecting the same file again
+    e.target.value = '';
   }, [handleFileSelect]);
 
   const uploadFileToStorage = async (file: File): Promise<string> => {
@@ -162,7 +165,10 @@ export const ReceiptUpload: React.FC<ReceiptUploadProps> = ({ onScanComplete, on
           className="border-dashed border-2 border-muted-foreground/25 hover:border-muted-foreground/50 transition-colors cursor-pointer"
           onDrop={handleDrop}
           onDragOver={(e) => e.preventDefault()}
-          onClick={() => document.getElementById('file-input')?.click()}
+          onClick={(e) => {
+            e.stopPropagation();
+            document.getElementById('file-input')?.click();
+          }}
         >
           <CardContent className="flex flex-col items-center justify-center p-8 text-center">
             <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4">
@@ -186,6 +192,7 @@ export const ReceiptUpload: React.FC<ReceiptUploadProps> = ({ onScanComplete, on
               type="file"
               accept=".jpg,.jpeg,.png,.pdf"
               onChange={handleFileInput}
+              onClick={(e) => e.stopPropagation()}
               className="hidden"
             />
           </CardContent>
