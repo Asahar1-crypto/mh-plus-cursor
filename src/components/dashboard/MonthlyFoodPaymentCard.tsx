@@ -64,22 +64,29 @@ export const MonthlyFoodPaymentCard: React.FC = () => {
     
     // Calculate what each person should pay and what they actually paid
     const breakdown: PaymentBreakdown[] = accountMembers.map(member => {
+      console.log(`\n=== Processing member: ${member.user_name} ===`);
+      
       // Personal expenses: what this person should pay (expenses assigned to them)
       const memberPersonalExpenses = personalExpenses.filter(expense => expense.paidById === member.user_id);
       const shouldPayPersonal = memberPersonalExpenses.reduce((sum, expense) => sum + expense.amount, 0);
+      console.log(`Personal expenses for ${member.user_name}:`, memberPersonalExpenses.length, 'total:', shouldPayPersonal);
       
       // Split equally expenses: equal share for everyone
       const shouldPaySplitEqually = splitEquallyPerPerson;
+      console.log(`Split equally share for ${member.user_name}:`, shouldPaySplitEqually);
       
       // Total what this person should pay (their debt)
       const totalShouldPay = shouldPayPersonal + shouldPaySplitEqually;
+      console.log(`Total should pay for ${member.user_name}:`, totalShouldPay);
       
       // What this person actually paid (what they contributed by creating expenses)
       const memberCreatedExpenses = currentMonthExpenses.filter(expense => expense.createdBy === member.user_id);
       const totalActuallyPaid = memberCreatedExpenses.reduce((sum, expense) => sum + expense.amount, 0);
+      console.log(`Created expenses by ${member.user_name}:`, memberCreatedExpenses.length, 'total:', totalActuallyPaid);
       
       // Balance: positive means they owe money, negative means they overpaid (others owe them)
       const balance = totalShouldPay - totalActuallyPaid;
+      console.log(`Balance for ${member.user_name}:`, balance, '(positive=owes, negative=overpaid)');
       
       return {
         userId: member.user_id,
@@ -89,6 +96,8 @@ export const MonthlyFoodPaymentCard: React.FC = () => {
         balance
       };
     });
+    
+    console.log('Final breakdown:', breakdown);
     
     return {
       totalExpenses: totalSplitEquallyExpenses + totalPersonalExpenses,
