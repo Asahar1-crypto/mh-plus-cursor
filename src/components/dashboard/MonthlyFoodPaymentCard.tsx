@@ -26,21 +26,29 @@ export const MonthlyFoodPaymentCard: React.FC = () => {
   });
   
   const paymentBreakdown = useMemo(() => {
-    if (!accountMembers || accountMembers.length === 0) return null;
+    console.log('=== MonthlyFoodPaymentCard - New Logic ===');
+    console.log('accountMembers:', accountMembers);
+    console.log('expenses:', expenses);
+    
+    if (!accountMembers || accountMembers.length === 0) {
+      console.log('No account members found');
+      return null;
+    }
     
     const currentDate = new Date();
     const currentMonth = currentDate.getMonth();
     const currentYear = currentDate.getFullYear();
+    console.log('Current month/year:', currentMonth, currentYear);
     
     // Filter current month expenses - only include approved expenses (not paid or rejected)
     const currentMonthExpenses = expenses.filter(expense => {
       const expenseDate = new Date(expense.date);
-      return (
-        expenseDate.getMonth() === currentMonth &&
-        expenseDate.getFullYear() === currentYear &&
-        expense.status === 'approved'
-      );
+      const isCurrentMonth = expenseDate.getMonth() === currentMonth && expenseDate.getFullYear() === currentYear;
+      const isApproved = expense.status === 'approved';
+      return isCurrentMonth && isApproved;
     });
+    
+    console.log('Current month approved expenses:', currentMonthExpenses);
     
     // Separate expenses that split equally from personal expenses
     const splitEquallyExpenses = currentMonthExpenses.filter(expense => expense.splitEqually === true);
