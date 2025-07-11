@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { createPortal } from 'react-dom';
 import { FileText, ScanLine, PlusCircle, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ExpenseForm } from '@/components/expenses/ExpenseForm';
@@ -64,11 +63,11 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({ onSubmitSucces
     );
   }
 
-  return createPortal(
+  return (
     <>
       {/* Backdrop */}
       <div 
-        className="fixed inset-0 bg-black/50 z-[60]"
+        className="fixed inset-0 bg-black/50 z-[9998]"
         onClick={(e) => {
           if (currentStep === 'select') {
             handleCancel();
@@ -77,9 +76,9 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({ onSubmitSucces
       />
       
       {/* Modal */}
-      <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
+      <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 pointer-events-none">
         <div 
-          className="bg-background border rounded-lg shadow-lg w-[95vw] max-w-[800px] max-h-[90vh] overflow-y-auto"
+          className="bg-background border rounded-lg shadow-lg w-[95vw] max-w-[800px] max-h-[90vh] overflow-y-auto pointer-events-auto"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}
@@ -156,7 +155,6 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({ onSubmitSucces
           </div>
         </div>
       </div>
-    </>,
-    document.body
+    </>
   );
 };
