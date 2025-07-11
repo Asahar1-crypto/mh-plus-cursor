@@ -161,44 +161,38 @@ export const ReceiptUpload: React.FC<ReceiptUploadProps> = ({ onScanComplete, on
   return (
     <div className="space-y-4">
       {!selectedFile ? (
-        <Card
-          className="border-dashed border-2 border-muted-foreground/25 hover:border-muted-foreground/50 transition-colors cursor-pointer"
-          onDrop={handleDrop}
-          onDragOver={(e) => e.preventDefault()}
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            console.log('Card clicked, triggering file input');
-            document.getElementById('file-input')?.click();
-          }}
-        >
-          <CardContent className="flex flex-col items-center justify-center p-8 text-center">
-            <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4">
-              <Upload className="h-8 w-8 text-muted-foreground" />
-            </div>
-            <h3 className="text-lg font-semibold mb-2">העלה חשבונית לסריקה</h3>
-            <p className="text-muted-foreground mb-4">
-              גרור קובץ לכאן או לחץ לבחירת קובץ
-            </p>
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <FileImage className="h-4 w-4" />
-              <span>JPG, PNG</span>
-              <span>•</span>
-              <FileText className="h-4 w-4" />
-              <span>PDF</span>
-              <span>•</span>
-              <span>עד 5MB</span>
-            </div>
-            <input
-              id="file-input"
-              type="file"
-              accept=".jpg,.jpeg,.png,.pdf"
-              onChange={handleFileInput}
-              onClick={(e) => e.stopPropagation()}
-              className="hidden"
-            />
-          </CardContent>
-        </Card>
+        <div className="space-y-4">
+          <Card
+            className="border-dashed border-2 border-muted-foreground/25 hover:border-muted-foreground/50 transition-colors"
+            onDrop={handleDrop}
+            onDragOver={(e) => e.preventDefault()}
+          >
+            <CardContent className="flex flex-col items-center justify-center p-8 text-center">
+              <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4">
+                <Upload className="h-8 w-8 text-muted-foreground" />
+              </div>
+              <h3 className="text-lg font-semibold mb-2">העלה חשבונית לסריקה</h3>
+              <p className="text-muted-foreground mb-4">
+                גרור קובץ לכאן או בחר קובץ למטה
+              </p>
+              <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
+                <FileImage className="h-4 w-4" />
+                <span>JPG, PNG</span>
+                <span>•</span>
+                <FileText className="h-4 w-4" />
+                <span>PDF</span>
+                <span>•</span>
+                <span>עד 5MB</span>
+              </div>
+              <input
+                type="file"
+                accept=".jpg,.jpeg,.png,.pdf"
+                onChange={handleFileInput}
+                className="w-full p-3 border border-dashed border-muted-foreground/50 rounded-lg cursor-pointer file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-primary-foreground hover:file:bg-primary/90"
+              />
+            </CardContent>
+          </Card>
+        </div>
       ) : (
         <Card>
           <CardContent className="p-6">
