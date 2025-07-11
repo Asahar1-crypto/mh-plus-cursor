@@ -5,6 +5,7 @@ import { useExpense } from '@/contexts/ExpenseContext';
 import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
 import { ExpensesSummary } from '@/components/dashboard/ExpensesSummary';
 import { ExpensesTabs } from '@/components/dashboard/ExpensesTabs';
+import { FoodBudgetChart } from '@/components/dashboard/FoodBudgetChart';
 import PendingInvitationAlert from '@/components/invitation/PendingInvitationAlert';
 import AccountDebugInfo from '@/components/debug/AccountDebugInfo';
 
@@ -65,6 +66,10 @@ const Dashboard = () => {
         paidTotal={paidTotal}
         paidCount={paidExpenses.length}
       />
+      
+      {/* גרף תקציב מזונות */}
+      <FoodBudgetChart />
+      
       <ExpensesTabs 
         pendingExpenses={pendingExpenses}
         approvedExpenses={approvedExpenses}

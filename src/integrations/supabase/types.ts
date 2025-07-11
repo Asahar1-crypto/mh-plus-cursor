@@ -107,6 +107,47 @@ export type Database = {
           },
         ]
       }
+      budgets: {
+        Row: {
+          account_id: string
+          category: string
+          created_at: string
+          id: string
+          month: number
+          monthly_amount: number
+          updated_at: string
+          year: number
+        }
+        Insert: {
+          account_id: string
+          category: string
+          created_at?: string
+          id?: string
+          month: number
+          monthly_amount: number
+          updated_at?: string
+          year: number
+        }
+        Update: {
+          account_id?: string
+          category?: string
+          created_at?: string
+          id?: string
+          month?: number
+          monthly_amount?: number
+          updated_at?: string
+          year?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_budgets_account"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       children: {
         Row: {
           account_id: string
