@@ -163,59 +163,68 @@ export const MonthlyFoodPaymentCard: React.FC = () => {
         {/* Summary of who owes whom */}
         <Separator />
         
-        <div className="space-y-2">
-          <h4 className="font-semibold text-sm sm:text-base">סיכום התשלומים:</h4>
+        <div className="space-y-3">
+          <h4 className="font-semibold text-sm sm:text-base">החישוב הנטו:</h4>
           {(() => {
-            // Calculate net payment after offset between users
-            const debtors = breakdown.filter(person => person.balance > 0);
-            const creditors = breakdown.filter(person => person.balance < 0);
+            // Calculate net balance between users  
+            const userA = breakdown[0];
+            const userB = breakdown[1];
             
-            if (debtors.length === 1 && creditors.length === 1) {
-              const debtor = debtors[0];
-              const creditor = creditors[0];
-              const netPayment = debtor.balance - Math.abs(creditor.balance);
-              
-              if (netPayment > 0) {
-                return (
-                  <div className="text-xs sm:text-sm p-2 sm:p-3 bg-yellow-50 rounded border border-yellow-200">
-                    <span className="font-medium">{debtor.userName}</span> צריך לשלם{' '}
-                    <span className="font-bold text-red-600">₪{Math.round(netPayment)}</span>
-                    {' '}ל-<span className="font-medium">{creditor.userName}</span>
-                    <div className="text-xs text-muted-foreground mt-1">
-                      (אחרי קיזוז: {debtor.userName} חייב ₪{Math.round(debtor.balance)} - {creditor.userName} זכאי ₪{Math.round(Math.abs(creditor.balance))})
-                    </div>
-                  </div>
-                );
-              } else if (netPayment < 0) {
-                return (
-                  <div className="text-xs sm:text-sm p-2 sm:p-3 bg-green-50 rounded border border-green-200">
-                    <span className="font-medium">{creditor.userName}</span> צריך לשלם{' '}
-                    <span className="font-bold text-red-600">₪{Math.round(Math.abs(netPayment))}</span>
-                    {' '}ל-<span className="font-medium">{debtor.userName}</span>
-                    <div className="text-xs text-muted-foreground mt-1">
-                      (אחרי קיזוז: {creditor.userName} זכאי ₪{Math.round(Math.abs(creditor.balance))} - {debtor.userName} חייב ₪{Math.round(debtor.balance)})
-                    </div>
-                  </div>
-                );
-              } else {
-                return (
-                  <div className="text-xs sm:text-sm p-2 sm:p-3 bg-gray-50 rounded border border-gray-200">
-                    <span className="font-medium">אין חובות נטו</span> - הכל מאוזן אחרי קיזוז ✓
-                  </div>
-                );
-              }
+            if (!userA || !userB) {
+              return (
+                <div className="text-xs sm:text-sm p-2 sm:p-3 bg-gray-50 rounded border border-gray-200 text-center">
+                  נדרשים שני משתמשים לחישוב נטו
+                </div>
+              );
             }
             
-            // Fallback for multiple debtors/creditors
-            return debtors.map(debtor => (
-              <div key={debtor.userId} className="text-xs sm:text-sm p-2 sm:p-3 bg-yellow-50 rounded border border-yellow-200">
-                <span className="font-medium">{debtor.userName}</span> חייב לשלם{' '}
-                <span className="font-bold text-red-600">₪{Math.round(debtor.balance)}</span>
-                {creditors.length === 1 && (
-                  <span> ל-<span className="font-medium">{creditors[0].userName}</span></span>
-                )}
+            // Calculate the net difference
+            const netDifference = userA.balance - userB.balance;
+            
+            return (
+              <div className="space-y-2">
+                {/* Show individual balances */}
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  <div className="text-center p-2 bg-muted rounded">
+                    <div className="font-medium">{userA.userName}</div>
+                    <div className="text-red-600">חייב: ₪{Math.round(userA.balance)}</div>
+                  </div>
+                  <div className="text-center p-2 bg-muted rounded">
+                    <div className="font-medium">{userB.userName}</div>
+                    <div className="text-red-600">חייב: ₪{Math.round(userB.balance)}</div>
+                  </div>
+                </div>
+                
+                {/* Show net result */}
+                <div className="text-center">
+                  <div className="text-xs text-muted-foreground mb-1">תוצאה נטו:</div>
+                  {Math.abs(netDifference) < 1 ? (
+                    <div className="p-3 bg-green-50 rounded border border-green-200">
+                      <div className="font-bold text-green-700">💚 החשבון מאוזן!</div>
+                      <div className="text-xs text-muted-foreground mt-1">אין צורך בהעברת כסף</div>
+                    </div>
+                  ) : netDifference > 0 ? (
+                    <div className="p-3 bg-orange-50 rounded border border-orange-200">
+                      <div className="font-bold text-orange-700 text-lg">
+                        💸 {userB.userName} צריך להעביר ₪{Math.round(Math.abs(netDifference))} ל{userA.userName}
+                      </div>
+                      <div className="text-xs text-muted-foreground mt-1">
+                        {userA.userName} חייב ₪{Math.round(userA.balance)} מינוס {userB.userName} חייב ₪{Math.round(userB.balance)} = ₪{Math.round(Math.abs(netDifference))}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="p-3 bg-orange-50 rounded border border-orange-200">
+                      <div className="font-bold text-orange-700 text-lg">
+                        💸 {userA.userName} צריך להעביר ₪{Math.round(Math.abs(netDifference))} ל{userB.userName}
+                      </div>
+                      <div className="text-xs text-muted-foreground mt-1">
+                        {userB.userName} חייב ₪{Math.round(userB.balance)} מינוס {userA.userName} חייב ₪{Math.round(userA.balance)} = ₪{Math.round(Math.abs(netDifference))}
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
-            ));
+            );
           })()}
         </div>
       </CardContent>
