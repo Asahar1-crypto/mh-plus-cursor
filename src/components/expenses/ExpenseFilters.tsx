@@ -32,13 +32,14 @@ export const ExpenseFilters: React.FC<ExpenseFiltersProps> = ({
   setSelectedYear,
   childrenList
 }) => {
-  // Categories for filtering
+  // Categories for filtering - updated to include all categories used in the system
   const categories = [
     'חינוך',
-    'רפואה',
+    'רפואה', 
     'פנאי',
     'ביגוד',
     'מזון',
+    'קייטנות',
     'אחר',
   ];
 
