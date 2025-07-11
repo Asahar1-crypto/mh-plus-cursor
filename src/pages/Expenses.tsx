@@ -4,6 +4,7 @@ import { useExpense } from '@/contexts/ExpenseContext';
 import { Expense } from '@/contexts/expense/types';
 import { ExpenseFilters } from '@/components/expenses/ExpenseFilters';
 import { ExpensesTable } from '@/components/expenses/ExpensesTable';
+import { AddExpenseDialog } from '@/components/expenses/AddExpenseDialog';
 
 
 const ExpensesPage = () => {
@@ -39,10 +40,14 @@ const ExpensesPage = () => {
 
   return (
     <div className="container mx-auto py-6 animate-fade-in">
-      <div className="mb-6">
+      <div className="flex flex-col md:flex-row justify-between items-start mb-6">
         <div>
           <h1 className="text-3xl font-bold">ניהול הוצאות משותפות</h1>
           <p className="text-muted-foreground">צפייה, הוספה ואישור של הוצאות משותפות</p>
+        </div>
+
+        <div className="mt-4 md:mt-0">
+          <AddExpenseDialog />
         </div>
       </div>
 
