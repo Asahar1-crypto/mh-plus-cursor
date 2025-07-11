@@ -1,8 +1,9 @@
 
 import { useState, useCallback } from 'react';
-import { User, Account, UserAccounts } from '../types';
+import { User, Account, UserAccounts, Profile } from '../types';
 import { authService } from '../authService';
 import { invitationCheckService } from '../services/user/invitationCheckService';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
 /**
@@ -10,11 +11,31 @@ import { toast } from 'sonner';
  */
 export const useAuthState = () => {
   const [user, setUser] = useState<User | null>(null);
+  const [profile, setProfile] = useState<Profile | null>(null);
   const [account, setAccount] = useState<Account | null>(null);
   const [userAccounts, setUserAccounts] = useState<UserAccounts | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [lastCheck, setLastCheck] = useState<number>(0);
   const [isCheckingAuth, setIsCheckingAuth] = useState(false);
+
+  const refreshProfile = useCallback(async (): Promise<void> => {
+    if (!user?.id) return;
+    
+    try {
+      const { data: profileData, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single();
+      
+      if (error) throw error;
+      
+      setProfile(profileData);
+    } catch (error) {
+      console.error('Error loading profile:', error);
+      setProfile(null);
+    }
+  }, [user?.id]);
 
   const checkAndSetUserData = useCallback(async (forceRefresh: boolean = false): Promise<void> => {
     // Avoid multiple simultaneous checks with stronger protection
@@ -41,6 +62,25 @@ export const useAuthState = () => {
       setUser(authResult.user);
       setAccount(authResult.account);
       setUserAccounts(authResult.userAccounts);
+      
+      // Load profile data if user exists
+      if (authResult.user?.id) {
+        try {
+          const { data: profileData, error } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', authResult.user.id)
+            .single();
+          
+          if (error) throw error;
+          setProfile(profileData);
+        } catch (error) {
+          console.error('Error loading profile:', error);
+          setProfile(null);
+        }
+      } else {
+        setProfile(null);
+      }
       
       // Check for new invitations when user data is loaded - but only once
       if (authResult.user?.email && now - lastCheck > 5000) {
@@ -70,17 +110,20 @@ export const useAuthState = () => {
       setIsLoading(false);
       setIsCheckingAuth(false);
     }
-  }, [lastCheck, isCheckingAuth]);
+  }, [lastCheck, isCheckingAuth, refreshProfile]);
 
   return {
     user,
     setUser,
+    profile,
+    setProfile,
     account,
     setAccount,
     userAccounts,
     setUserAccounts,
     isLoading,
     setIsLoading,
-    checkAndSetUserData
+    checkAndSetUserData,
+    refreshProfile
   };
 };

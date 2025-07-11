@@ -5,6 +5,14 @@ export interface User {
   name: string;
 }
 
+export interface Profile {
+  id: string;
+  name: string;
+  created_at: string;
+  updated_at: string;
+  selected_account_id: string | null;
+}
+
 export interface Account {
   id: string;
   name: string;
@@ -35,6 +43,7 @@ export interface UserAccounts {
 
 export interface AuthContextType {
   user: User | null;
+  profile: Profile | null;
   account: Account | null;
   userAccounts: UserAccounts | null;
   isAuthenticated: boolean;
@@ -48,4 +57,5 @@ export interface AuthContextType {
   verifyEmail: (token: string) => Promise<boolean>;
   resetPassword: (email: string) => Promise<void>;
   switchAccount: (accountId: string) => Promise<void>;
+  refreshProfile: () => Promise<void>;
 }

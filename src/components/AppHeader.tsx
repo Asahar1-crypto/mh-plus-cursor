@@ -7,7 +7,7 @@ import { LogOut, Settings } from 'lucide-react';
 import AccountSwitcher from './account/AccountSwitcher';
 
 const AppHeader = () => {
-  const { user, logout, isAuthenticated } = useAuth();
+  const { user, profile, logout, isAuthenticated } = useAuth();
 
   const handleLogout = async () => {
     try {
@@ -30,7 +30,7 @@ const AppHeader = () => {
               <AccountSwitcher />
               <div className="flex items-center space-x-2">
                 <span className="text-sm text-gray-600">
-                  שלום, {user?.name || user?.email}
+                  שלום, {profile?.name || user?.name || user?.email}
                 </span>
                 <Link to="/account-settings">
                   <Button variant="ghost" size="sm">

@@ -15,13 +15,16 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const {
     user,
     setUser,
+    profile,
+    setProfile,
     account,
     setAccount,
     userAccounts,
     setUserAccounts,
     isLoading,
     setIsLoading,
-    checkAndSetUserData
+    checkAndSetUserData,
+    refreshProfile
   } = useAuthState();
 
   const {
@@ -66,6 +69,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
   const authContextValue = {
     user,
+    profile,
     account,
     userAccounts,
     isAuthenticated: !!user,
@@ -78,7 +82,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     acceptInvitation,
     verifyEmail,
     resetPassword,
-    switchAccount
+    switchAccount,
+    refreshProfile
   };
 
   return (
