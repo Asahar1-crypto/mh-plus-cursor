@@ -97,6 +97,7 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({ onSubmitSuccess }) => 
     'פנאי',
     'ביגוד',
     'מזון',
+    'מזונות קבועים',
     'אחר',
   ];
   
