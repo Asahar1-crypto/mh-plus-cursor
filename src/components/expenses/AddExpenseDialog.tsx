@@ -45,14 +45,14 @@ export const AddExpenseDialog: React.FC<{ onSubmitSuccess?: () => void }> = ({ o
         </Button>
       </DialogTrigger>
       <DialogContent 
-        className="w-[95vw] max-w-[800px] max-h-[90vh] overflow-y-auto"
+        className="w-[95vw] max-w-[800px] max-h-[90vh] overflow-y-auto z-[9999]"
         onPointerDownOutside={(e) => {
-          if (preventClose) {
+          if (currentStep === 'upload' || currentStep === 'validate') {
             e.preventDefault();
           }
         }}
         onEscapeKeyDown={(e) => {
-          if (preventClose) {
+          if (currentStep === 'upload' || currentStep === 'validate') {
             e.preventDefault();
           }
         }}
