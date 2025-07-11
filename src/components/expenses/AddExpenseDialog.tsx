@@ -21,7 +21,7 @@ export const AddExpenseDialog: React.FC<{ onSubmitSuccess?: () => void }> = ({ o
           <PlusCircle className="mr-2 h-4 w-4" /> הוצאה חדשה
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[600px]">
+      <DialogContent className="w-[95vw] max-w-[600px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
             {isManualForm ? "הוספת הוצאה ידנית" : "סריקת חשבונית"}
