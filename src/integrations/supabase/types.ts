@@ -176,6 +176,8 @@ export type Database = {
         Row: {
           account_id: string
           amount: number
+          approved_at: string | null
+          approved_by: string | null
           category: string | null
           created_at: string
           created_by_id: string | null
@@ -192,6 +194,8 @@ export type Database = {
         Insert: {
           account_id: string
           amount: number
+          approved_at?: string | null
+          approved_by?: string | null
           category?: string | null
           created_at?: string
           created_by_id?: string | null
@@ -208,6 +212,8 @@ export type Database = {
         Update: {
           account_id?: string
           amount?: number
+          approved_at?: string | null
+          approved_by?: string | null
           category?: string | null
           created_at?: string
           created_by_id?: string | null

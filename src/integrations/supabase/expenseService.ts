@@ -56,6 +56,8 @@ export const expenseService = {
         paidById: expense.paid_by_id,
         paidByName: expense.paid_by?.name || 'Unknown',
         status: expense.status as 'pending' | 'approved' | 'rejected' | 'paid',
+        approvedBy: expense.approved_by,
+        approvedAt: expense.approved_at,
         receipt: expense.receipt_url,
         isRecurring: false, // Default value, can be updated based on your schema
         frequency: undefined,
