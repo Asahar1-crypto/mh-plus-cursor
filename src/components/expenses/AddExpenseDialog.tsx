@@ -12,6 +12,7 @@ export const AddExpenseDialog: React.FC<{ onSubmitSuccess?: () => void }> = ({ o
   const [isManualForm, setIsManualForm] = useState(true);
   const [scanResult, setScanResult] = useState<any>(null);
   const [currentStep, setCurrentStep] = useState<'select' | 'upload' | 'validate'>('select');
+  const [preventClose, setPreventClose] = useState(false);
 
   const handleScanComplete = (result: any) => {
     setScanResult(result);
@@ -28,11 +29,16 @@ export const AddExpenseDialog: React.FC<{ onSubmitSuccess?: () => void }> = ({ o
     setCurrentStep('select');
     setScanResult(null);
     setIsManualForm(true);
+    setPreventClose(false);
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => {
-      console.log('Dialog onOpenChange called:', { open, currentStep, isOpen });
+      console.log('Dialog onOpenChange called:', { open, currentStep, isOpen, preventClose });
+      if (!open && preventClose) {
+        console.log('Preventing dialog close due to preventClose flag');
+        return;
+      }
       if (!open) {
         console.log('Closing dialog via handleCancel');
         handleCancel();
@@ -79,6 +85,7 @@ export const AddExpenseDialog: React.FC<{ onSubmitSuccess?: () => void }> = ({ o
                 onClick={() => {
                   setIsManualForm(false);
                   setCurrentStep('upload');
+                  setPreventClose(true);
                 }}
                 className="flex-1"
               >
