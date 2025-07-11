@@ -146,17 +146,17 @@ export const MonthlyFoodPaymentCard: React.FC = () => {
   
   return (
     <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
+      <CardHeader className="p-4 sm:p-6">
+        <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
           💰 חלוקת תשלומים חודשיים
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-4 p-4 sm:p-6 pt-0">
         {/* Total expenses summary */}
-        <div className="text-center p-4 bg-muted rounded-lg">
-          <div className="text-sm text-muted-foreground">סה״כ הוצאות החודש</div>
-          <div className="text-2xl font-bold text-primary">₪{Math.round(totalExpenses)}</div>
-          <div className="text-xs text-muted-foreground grid grid-cols-2 gap-4 mt-2">
+        <div className="text-center p-3 sm:p-4 bg-muted rounded-lg">
+          <div className="text-xs sm:text-sm text-muted-foreground">סה״כ הוצאות החודש</div>
+          <div className="text-xl sm:text-2xl font-bold text-primary">₪{Math.round(totalExpenses)}</div>
+          <div className="text-xs grid grid-cols-2 gap-2 sm:gap-4 mt-2 text-muted-foreground">
             <div>אישי: ₪{Math.round(totalPersonalExpenses)}</div>
             <div>משותף: ₪{Math.round(totalSplitEquallyExpenses)}</div>
           </div>
@@ -169,27 +169,27 @@ export const MonthlyFoodPaymentCard: React.FC = () => {
         
         {/* Individual breakdown */}
         <div className="space-y-3">
-          <h4 className="font-semibold">פירוט תשלומים:</h4>
+          <h4 className="font-semibold text-sm sm:text-base">פירוט תשלומים:</h4>
           {breakdown.map((person) => (
-            <div key={person.userId} className="flex items-center justify-between p-3 rounded-lg border">
+            <div key={person.userId} className="flex flex-col sm:flex-row sm:items-center justify-between p-3 rounded-lg border gap-2 sm:gap-0">
               <div className="flex-1">
-                <div className="font-medium">{person.userName}</div>
-                <div className="text-sm text-muted-foreground">
+                <div className="font-medium text-sm sm:text-base">{person.userName}</div>
+                <div className="text-xs sm:text-sm text-muted-foreground">
                   תרם: ₪{Math.round(person.totalPaid)}
                 </div>
               </div>
               
               <div className="text-right">
                 {person.balance > 0 ? (
-                  <div className="text-red-600 font-semibold">
+                  <div className="text-red-600 font-semibold text-sm sm:text-base">
                     חייב: ₪{Math.round(person.balance)}
                   </div>
                 ) : person.balance < 0 ? (
-                  <div className="text-green-600 font-semibold">
+                  <div className="text-green-600 font-semibold text-sm sm:text-base">
                     זכאי: ₪{Math.round(Math.abs(person.balance))}
                   </div>
                 ) : (
-                  <div className="text-gray-600 font-semibold">
+                  <div className="text-gray-600 font-semibold text-sm sm:text-base">
                     מאוזן ✓
                   </div>
                 )}
@@ -202,14 +202,14 @@ export const MonthlyFoodPaymentCard: React.FC = () => {
         <Separator />
         
         <div className="space-y-2">
-          <h4 className="font-semibold">סיכום התשלומים:</h4>
+          <h4 className="font-semibold text-sm sm:text-base">סיכום התשלומים:</h4>
           {breakdown
             .filter(person => person.balance > 0)
             .map(debtor => {
               const creditors = breakdown.filter(person => person.balance < 0);
               
               return (
-                <div key={debtor.userId} className="text-sm p-2 bg-yellow-50 rounded border border-yellow-200">
+                <div key={debtor.userId} className="text-xs sm:text-sm p-2 sm:p-3 bg-yellow-50 rounded border border-yellow-200">
                   <span className="font-medium">{debtor.userName}</span> חייב לשלם{' '}
                   <span className="font-bold text-red-600">₪{Math.round(debtor.balance)}</span>
                   {creditors.length === 1 && (

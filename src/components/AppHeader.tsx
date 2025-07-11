@@ -3,10 +3,15 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/auth';
 import { Button } from '@/components/ui/button';
-import { LogOut, Settings } from 'lucide-react';
+import { LogOut, Settings, Menu } from 'lucide-react';
 import AccountSwitcher from './account/AccountSwitcher';
 
-const AppHeader = () => {
+interface AppHeaderProps {
+  onMenuClick?: () => void;
+  isMobile?: boolean;
+}
+
+const AppHeader: React.FC<AppHeaderProps> = ({ onMenuClick, isMobile }) => {
   const { user, profile, logout, isAuthenticated } = useAuth();
 
   const handleLogout = async () => {
@@ -18,40 +23,54 @@ const AppHeader = () => {
   };
 
   return (
-    <header className="bg-white border-b border-gray-200 px-4 py-3">
+    <header className="bg-card border-b border-border px-3 sm:px-4 py-3 sticky top-0 z-30">
       <div className="flex items-center justify-between">
-        <Link to="/" className="text-xl font-bold text-primary">
-          ניהול הוצאות
-        </Link>
+        <div className="flex items-center gap-3">
+          {isMobile && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onMenuClick}
+              className="p-2"
+            >
+              <Menu className="h-4 w-4" />
+            </Button>
+          )}
+          <Link to="/" className="text-lg sm:text-xl font-bold text-primary">
+            ניהול הוצאות
+          </Link>
+        </div>
         
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center gap-2 sm:gap-4">
           {isAuthenticated && (
             <>
-              <AccountSwitcher />
-              <div className="flex items-center space-x-2">
-                <span className="text-sm text-gray-600">
+              <div className="hidden sm:block">
+                <AccountSwitcher />
+              </div>
+              <div className="flex items-center gap-1 sm:gap-2">
+                <span className="text-xs sm:text-sm text-muted-foreground hidden md:inline">
                   שלום, {profile?.name || user?.name || user?.email}
                 </span>
                 <Link to="/account-settings">
-                  <Button variant="ghost" size="sm">
+                  <Button variant="ghost" size="sm" className="p-2">
                     <Settings className="h-4 w-4" />
                   </Button>
                 </Link>
-                <Button variant="ghost" size="sm" onClick={handleLogout}>
+                <Button variant="ghost" size="sm" onClick={handleLogout} className="p-2">
                   <LogOut className="h-4 w-4" />
                 </Button>
               </div>
             </>
           )}
           {!isAuthenticated && (
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center gap-2">
               <Link to="/login">
-                <Button variant="outline" size="sm">
+                <Button variant="outline" size="sm" className="text-xs sm:text-sm">
                   התחברות
                 </Button>
               </Link>
               <Link to="/register">
-                <Button size="sm">
+                <Button size="sm" className="text-xs sm:text-sm">
                   הרשמה
                 </Button>
               </Link>
@@ -59,6 +78,12 @@ const AppHeader = () => {
           )}
         </div>
       </div>
+      {/* Mobile account switcher */}
+      {isAuthenticated && isMobile && (
+        <div className="mt-3 pt-3 border-t border-border">
+          <AccountSwitcher />
+        </div>
+      )}
     </header>
   );
 };

@@ -56,7 +56,7 @@ const Dashboard = () => {
   }
 
   return (
-    <div className="container mx-auto p-4 space-y-6">
+    <div className="w-full max-w-7xl mx-auto space-y-4 sm:space-y-6">
       <PendingInvitationAlert />
       <DashboardHeader userName={user?.email} />
       <ExpensesSummary 

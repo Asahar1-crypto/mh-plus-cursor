@@ -47,28 +47,30 @@ const ExpensesPage = () => {
     });
 
   return (
-    <div className="container mx-auto py-6 animate-fade-in">
-      <div className="flex flex-col md:flex-row justify-between items-start mb-6">
+    <div className="w-full max-w-7xl mx-auto py-3 sm:py-6 animate-fade-in">
+      <div className="flex flex-col gap-4 sm:flex-row sm:justify-between sm:items-start mb-4 sm:mb-6">
         <div>
-          <h1 className="text-3xl font-bold">ניהול הוצאות משותפות</h1>
-          <p className="text-muted-foreground">צפייה, הוספה ואישור של הוצאות משותפות</p>
+          <h1 className="text-2xl sm:text-3xl font-bold">ניהול הוצאות משותפות</h1>
+          <p className="text-sm sm:text-base text-muted-foreground">צפייה, הוספה ואישור של הוצאות משותפות</p>
         </div>
 
-        <div className="mt-4 md:mt-0 flex gap-2">
+        <div className="flex gap-2 w-full sm:w-auto">
           <Button
             variant="outline"
             onClick={handleRefresh}
             disabled={isLoading}
-            className="flex items-center gap-2"
+            className="flex items-center gap-2 flex-1 sm:flex-none text-xs sm:text-sm"
           >
-            <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+            <RefreshCw className={`h-3 w-3 sm:h-4 sm:w-4 ${isLoading ? 'animate-spin' : ''}`} />
             רענון
           </Button>
-          <AddExpenseDialog />
+          <div className="flex-1 sm:flex-none">
+            <AddExpenseDialog />
+          </div>
         </div>
       </div>
 
-      <div className="space-y-6">
+      <div className="space-y-4 sm:space-y-6">
         {/* Filtering options */}
         <ExpenseFilters 
           selectedCategory={selectedCategory}

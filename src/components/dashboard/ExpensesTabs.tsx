@@ -22,10 +22,16 @@ export const ExpensesTabs: React.FC<ExpensesTabsProps> = ({
 }) => {
   return (
     <Tabs defaultValue="pending" className="w-full">
-      <TabsList className="w-full mb-4">
-        <TabsTrigger value="pending" className="flex-1">ממתינות ({pendingExpenses.length})</TabsTrigger>
-        <TabsTrigger value="approved" className="flex-1">מאושרות ({approvedExpenses.length})</TabsTrigger>
-        <TabsTrigger value="paid" className="flex-1">שולמו ({paidExpenses.length})</TabsTrigger>
+      <TabsList className="w-full mb-4 grid grid-cols-3 h-auto">
+        <TabsTrigger value="pending" className="flex-1 text-xs sm:text-sm px-2 py-2">
+          ממתינות ({pendingExpenses.length})
+        </TabsTrigger>
+        <TabsTrigger value="approved" className="flex-1 text-xs sm:text-sm px-2 py-2">
+          מאושרות ({approvedExpenses.length})
+        </TabsTrigger>
+        <TabsTrigger value="paid" className="flex-1 text-xs sm:text-sm px-2 py-2">
+          שולמו ({paidExpenses.length})
+        </TabsTrigger>
       </TabsList>
       
       <TabsContent value="pending">
