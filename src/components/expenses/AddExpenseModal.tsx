@@ -67,7 +67,7 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({ onSubmitSucces
     <>
       {/* Backdrop */}
       <div 
-        className="fixed inset-0 bg-black/50 z-40"
+        className="fixed inset-0 bg-black/50 z-[60]"
         onClick={(e) => {
           if (currentStep === 'select') {
             handleCancel();
@@ -76,7 +76,7 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({ onSubmitSucces
       />
       
       {/* Modal */}
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
         <div 
           className="bg-background border rounded-lg shadow-lg w-[95vw] max-w-[800px] max-h-[90vh] overflow-y-auto"
           onClick={(e) => e.stopPropagation()}
