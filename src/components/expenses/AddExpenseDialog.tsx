@@ -32,13 +32,17 @@ export const AddExpenseDialog: React.FC<{ onSubmitSuccess?: () => void }> = ({ o
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => {
+      console.log('Dialog onOpenChange called:', { open, currentStep, isOpen });
       // Prevent closing during receipt upload process
-      if (!open && currentStep === 'upload') {
+      if (!open && (currentStep === 'upload' || currentStep === 'validate')) {
+        console.log('Preventing dialog close during upload/validate');
         return;
       }
       if (!open) {
+        console.log('Closing dialog via handleCancel');
         handleCancel();
       } else {
+        console.log('Opening dialog');
         setIsOpen(true);
       }
     }}>
