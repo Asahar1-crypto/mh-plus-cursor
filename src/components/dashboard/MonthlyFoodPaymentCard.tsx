@@ -206,7 +206,7 @@ export const MonthlyFoodPaymentCard: React.FC = () => {
                   ) : netDifference > 0 ? (
                     <div className="p-3 bg-orange-50 rounded border border-orange-200">
                       <div className="font-bold text-orange-700 text-lg">
-                        💸 {userB.userName} צריך להעביר ₪{Math.round(Math.abs(netDifference))} ל{userA.userName}
+                        💸 {userA.userName} צריך להעביר ₪{Math.round(Math.abs(netDifference))} ל{userB.userName}
                       </div>
                       <div className="text-xs text-muted-foreground mt-1">
                         {userA.userName} חייב ₪{Math.round(userA.balance)} מינוס {userB.userName} חייב ₪{Math.round(userB.balance)} = ₪{Math.round(Math.abs(netDifference))}
@@ -215,7 +215,7 @@ export const MonthlyFoodPaymentCard: React.FC = () => {
                   ) : (
                     <div className="p-3 bg-orange-50 rounded border border-orange-200">
                       <div className="font-bold text-orange-700 text-lg">
-                        💸 {userA.userName} צריך להעביר ₪{Math.round(Math.abs(netDifference))} ל{userB.userName}
+                        💸 {userB.userName} צריך להעביר ₪{Math.round(Math.abs(netDifference))} ל{userA.userName}
                       </div>
                       <div className="text-xs text-muted-foreground mt-1">
                         {userB.userName} חייב ₪{Math.round(userB.balance)} מינוס {userA.userName} חייב ₪{Math.round(userA.balance)} = ₪{Math.round(Math.abs(netDifference))}
