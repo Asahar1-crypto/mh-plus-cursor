@@ -97,19 +97,27 @@ export const useExpenseActions = (
   };
 
   const updateExpenseStatus = async (id: string, status: 'pending' | 'approved' | 'rejected' | 'paid'): Promise<void> => {
+    console.log(`Starting updateExpenseStatus: id=${id}, status=${status}`);
+    console.log(`User:`, user);
+    console.log(`Account:`, account);
+    
     if (!user) {
+      console.error('User is null');
       toast.error('יש להתחבר כדי לעדכן סטטוס הוצאה');
       return;
     }
 
     if (!account) {
+      console.error('Account is null');
       toast.error('לא נמצא חשבון פעיל');
       return;
     }
     
     setIsSubmitting(true);
     try {
+      console.log(`Calling expenseService.updateExpenseStatus with:`, { user: user.id, account: account.id, id, status });
       await expenseService.updateExpenseStatus(user, account, id, status);
+      console.log('updateExpenseStatus completed, calling refreshData...');
       await refreshData(); // Refresh data to show updated status
       
       let statusText = '';
@@ -119,6 +127,7 @@ export const useExpenseActions = (
         case 'paid': statusText = 'סומנה כשולמה'; break;
       }
       toast.success(`ההוצאה ${statusText} בהצלחה`);
+      console.log(`Status update successful: ${statusText}`);
     } catch (error) {
       console.error(`Failed to ${status} expense:`, error);
       toast.error(`שגיאה ב${status === 'approved' ? 'אישור' : status === 'rejected' ? 'דחיית' : 'סימון'} ההוצאה`);
