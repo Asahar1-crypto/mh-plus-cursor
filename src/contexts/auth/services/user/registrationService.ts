@@ -64,11 +64,13 @@ export const registrationService = {
               accountId: inv.account_id,
               accountName: inv.accounts?.name || 'חשבון משותף',
               ownerId: inv.accounts?.owner_id
-            }))
+            })),
+            skipAccountCreation: true // Flag to prevent automatic account creation
           };
           
           localStorage.setItem('pendingInvitationsAfterRegistration', JSON.stringify(pendingInvitations));
           
+          console.log('User has pending invitations - will not create new account automatically');
           console.log('Stored pending invitations with complete data:', pendingInvitations);
           
           // Additional logging to verify that invitations are properly stored
@@ -77,7 +79,7 @@ export const registrationService = {
             console.log('Verification of stored invitations after timeout:', storedInvitations);
           }, 100);
         } else {
-          console.log(`No pending invitations found for ${email} during registration`);
+          console.log(`No pending invitations found for ${email} during registration - will create personal account`);
         }
         
         // Create typed User object

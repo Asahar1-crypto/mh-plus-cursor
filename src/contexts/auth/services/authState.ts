@@ -111,7 +111,7 @@ export const determineActiveAccount = async (userId: string, userAccounts: UserA
   }
   
   // Priority 4: Create new account if none exists
-  console.log('No accounts found, creating new account');
+  console.log('No accounts found, checking if account creation is allowed');
   try {
     // Get user profile to get name
     const { data: profile } = await supabase
@@ -123,8 +123,15 @@ export const determineActiveAccount = async (userId: string, userAccounts: UserA
     const userName = profile?.name || 'User';
     const newAccount = await accountService.getDefaultAccount(userId, userName);
     return newAccount;
-  } catch (error) {
+  } catch (error: any) {
     console.error('Failed to create new account:', error);
+    
+    // If error is about pending invitations, that's expected - user should accept them first
+    if (error.message?.includes('pending invitations')) {
+      console.log('User has pending invitations - will wait for invitation acceptance');
+      return null;
+    }
+    
     return null;
   }
 };

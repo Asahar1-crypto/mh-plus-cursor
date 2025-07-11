@@ -40,8 +40,18 @@ export const accountService = {
         };
       }
       
-      // If no accounts found, create a new one
-      console.log('No existing accounts found, creating new account');
+      // Check if user has pending invitations and should skip account creation
+      const pendingInvitations = localStorage.getItem('pendingInvitationsAfterRegistration');
+      if (pendingInvitations) {
+        const invitationData = JSON.parse(pendingInvitations);
+        if (invitationData.skipAccountCreation) {
+          console.log('User has pending invitations - skipping automatic account creation');
+          throw new Error('User should accept invitations first - no personal account needed');
+        }
+      }
+      
+      // If no accounts found and no skip flag, create a new one
+      console.log('No existing accounts found, creating new personal account');
       return await accountCreationService.createNewAccount(userId, userName);
     } catch (error) {
       console.error('Error getting default account:', error);

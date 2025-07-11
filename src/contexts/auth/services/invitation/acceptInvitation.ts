@@ -131,7 +131,7 @@ export async function acceptInvitation(invitationId: string, user: User): Promis
       userRole: userRole
     };
     
-    // Clear sessionStorage
+    // Clear sessionStorage and localStorage invitation data
     console.log("acceptInvitation: Clearing temporary invitation data");
     sessionStorage.removeItem('pendingInvitationId');
     sessionStorage.removeItem('pendingInvitationAccountId');
@@ -139,6 +139,10 @@ export async function acceptInvitation(invitationId: string, user: User): Promis
     sessionStorage.removeItem('currentInvitationDetails');
     sessionStorage.removeItem('pendingInvitationRedirectChecked');
     sessionStorage.removeItem('notifiedInvitations');
+    
+    // Clear pending invitations from registration to allow future account creation
+    localStorage.removeItem('pendingInvitationsAfterRegistration');
+    console.log("acceptInvitation: Cleared pending invitations from registration");
     
     console.log("acceptInvitation: Invitation accepted successfully, returning shared account:", sharedAccount);
     return sharedAccount;
