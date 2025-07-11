@@ -42,54 +42,23 @@ export const MonthlyFoodPaymentCard: React.FC = () => {
       return isCurrentMonth && isRelevant;
     });
     
-    // Separate expenses that split equally from personal expenses
+    // All expenses are shared - the only difference is whether they split equally or not
     const splitEquallyExpenses = currentMonthExpenses.filter(expense => expense.splitEqually === true);
-    const personalExpenses = currentMonthExpenses.filter(expense => expense.splitEqually !== true);
+    const nonSplitExpenses = currentMonthExpenses.filter(expense => expense.splitEqually !== true);
     
     // Calculate totals
     const totalSplitEquallyExpenses = splitEquallyExpenses.reduce((sum, expense) => sum + expense.amount, 0);
-    const totalPersonalExpenses = personalExpenses.reduce((sum, expense) => sum + expense.amount, 0);
+    const totalNonSplitExpenses = nonSplitExpenses.reduce((sum, expense) => sum + expense.amount, 0);
     
     // For split equally expenses: split among all members
-    // For personal expenses: each person pays what's assigned to them (based on paidById)
+    // For non-split expenses: each person pays based on who paid (but expense is still shared debt)
     const splitEquallyPerPerson = totalSplitEquallyExpenses / accountMembers.length;
+    const nonSplitPerPerson = totalNonSplitExpenses / accountMembers.length;
     
     // Calculate what each person should pay and what they actually paid
     const breakdown: PaymentBreakdown[] = accountMembers.map(member => {
-      // Personal expenses: NEW CORRECTED LOGIC
-      // Rule: The person who the expense is "for" should pay according to the split settings
-      // How to determine "who the expense is for":
-      // 1. If expense has childId: Find the child and determine who is responsible
-      // 2. If no childId: The expense is for whoever is specified in paidById field
-      
-      let shouldPayPersonal = 0;
-      
-      personalExpenses.forEach(expense => {
-        const expenseAmount = expense.splitEqually ? expense.amount / 2 : expense.amount;
-        
-        // Determine who this expense is "for" (who should be responsible)
-        let responsibleUserId: string;
-        
-        if (expense.childId) {
-          // For child expenses: Check who created the expense as they're likely responsible
-          // But we need better logic here - for now use the creator
-          responsibleUserId = expense.createdBy;
-        } else {
-          // For non-child expenses: The paidById indicates who the expense is for
-          responsibleUserId = expense.paidById;
-        }
-        
-        // If this member is responsible for the expense, they should pay
-        if (responsibleUserId === member.user_id) {
-          shouldPayPersonal += expenseAmount;
-        }
-      });
-      
-      // Split equally expenses: equal share for everyone
-      const shouldPaySplitEqually = splitEquallyPerPerson;
-      
-      // Total what this person should pay (their debt)
-      const totalShouldPay = shouldPayPersonal + shouldPaySplitEqually;
+      // Each person should pay their equal share of ALL expenses (shared responsibility)
+      const totalShouldPay = splitEquallyPerPerson + nonSplitPerPerson;
       
       // What this person actually paid (what they contributed by paying for expenses)
       const memberPaidExpenses = currentMonthExpenses.filter(expense => expense.paidById === member.user_id);
@@ -110,10 +79,11 @@ export const MonthlyFoodPaymentCard: React.FC = () => {
     
     // Debug logging to verify calculations
     console.log('🔍 Payment Breakdown Debug:', {
-      totalExpenses: totalSplitEquallyExpenses + totalPersonalExpenses,
+      totalExpenses: totalSplitEquallyExpenses + totalNonSplitExpenses,
       totalSplitEquallyExpenses,
-      totalPersonalExpenses,
+      totalNonSplitExpenses,
       splitEquallyPerPerson,
+      nonSplitPerPerson,
       accountMembersCount: accountMembers.length,
       currentMonthExpensesCount: currentMonthExpenses.length,
       breakdown: breakdown.map(b => ({
@@ -125,9 +95,9 @@ export const MonthlyFoodPaymentCard: React.FC = () => {
     });
     
     return {
-      totalExpenses: totalSplitEquallyExpenses + totalPersonalExpenses,
+      totalExpenses: totalSplitEquallyExpenses + totalNonSplitExpenses,
       totalSplitEquallyExpenses,
-      totalPersonalExpenses,
+      totalNonSplitExpenses,
       splitEquallyPerPerson,
       breakdown
     };
@@ -148,7 +118,7 @@ export const MonthlyFoodPaymentCard: React.FC = () => {
     );
   }
   
-  const { totalExpenses, totalSplitEquallyExpenses, totalPersonalExpenses, splitEquallyPerPerson, breakdown } = paymentBreakdown;
+  const { totalExpenses, totalSplitEquallyExpenses, totalNonSplitExpenses, splitEquallyPerPerson, breakdown } = paymentBreakdown;
   
   return (
     <Card>
@@ -163,11 +133,11 @@ export const MonthlyFoodPaymentCard: React.FC = () => {
           <div className="text-xs sm:text-sm text-muted-foreground">סה״כ הוצאות החודש</div>
           <div className="text-xl sm:text-2xl font-bold text-primary">₪{Math.round(totalExpenses)}</div>
           <div className="text-xs grid grid-cols-2 gap-2 sm:gap-4 mt-2 text-muted-foreground">
-            <div>אישי: ₪{Math.round(totalPersonalExpenses)}</div>
-            <div>משותף: ₪{Math.round(totalSplitEquallyExpenses)}</div>
+            <div>לא מחולק: ₪{Math.round(totalNonSplitExpenses)}</div>
+            <div>מחולק שווה: ₪{Math.round(totalSplitEquallyExpenses)}</div>
           </div>
           <div className="text-xs text-muted-foreground mt-1">
-            חלק משותף לאדם: ₪{Math.round(splitEquallyPerPerson)}
+            חלק לאדם מהכל: ₪{Math.round((totalExpenses / (breakdown.length || 1)))}
           </div>
         </div>
         
