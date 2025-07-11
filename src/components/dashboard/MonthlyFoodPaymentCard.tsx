@@ -67,7 +67,7 @@ export const MonthlyFoodPaymentCard: React.FC = () => {
       const totalShouldPay = shouldPayPersonal + shouldPaySplitEqually;
       
       // What this person actually paid (regardless of category)
-      const memberPaidExpenses = currentMonthExpenses.filter(expense => expense.createdBy === member.user_id);
+      const memberPaidExpenses = currentMonthExpenses.filter(expense => expense.paidById === member.user_id);
       const totalActuallyPaid = memberPaidExpenses.reduce((sum, expense) => sum + expense.amount, 0);
       
       // Balance: negative means they overpaid, positive means they owe money
