@@ -15,6 +15,11 @@ interface ExpenseProviderProps {
 export const ExpenseProvider = ({ children }: ExpenseProviderProps) => {
   const { user, account } = useAuth();
   
+  // Don't render children until auth is ready to prevent context issues
+  if (!user) {
+    return <>{children}</>;
+  }
+  
   // Use our custom hooks to manage state and logic - pass both user and account
   const { 
     expenses, 
