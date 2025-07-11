@@ -129,25 +129,21 @@ export async function acceptInvitation(invitationId: string, user: User): Promis
       return account;
     }
     
-    // Add user as member of the account using the new member service
-    console.log("acceptInvitation: Adding user as member to account");
+    // Use the new invitation acceptance function that handles membership automatically
+    console.log("acceptInvitation: Adding user as member to account using invitation function");
     try {
-      await memberService.addMember(accountId, user.id, 'member');
-    } catch (memberError) {
-      console.error("acceptInvitation: Error adding user as member:", memberError);
-      throw new Error('שגיאה בהצטרפות לחשבון: ' + memberError.message);
-    }
-    
-    // Mark invitation as accepted
-    console.log("acceptInvitation: Marking invitation as accepted");
-    const { error: acceptError } = await supabase
-      .from('invitations')
-      .update({ accepted_at: new Date().toISOString() })
-      .eq('invitation_id', invitation.invitation_id);
+      const { error: acceptError } = await supabase.rpc('accept_invitation_and_add_member', {
+        invitation_uuid: invitationId,
+        user_uuid: user.id
+      });
       
-    if (acceptError) {
-      console.error("acceptInvitation: Error accepting invitation:", acceptError);
-      throw new Error('שגיאה בסימון ההזמנה כמתקבלת: ' + acceptError.message);
+      if (acceptError) {
+        console.error("acceptInvitation: Error in accept_invitation_and_add_member:", acceptError);
+        throw new Error('שגיאה בקבלת ההזמנה: ' + acceptError.message);
+      }
+    } catch (memberError: any) {
+      console.error("acceptInvitation: Error accepting invitation and adding member:", memberError);
+      throw new Error('שגיאה בקבלת ההזמנה: ' + memberError.message);
     }
     
     // Create account object to return

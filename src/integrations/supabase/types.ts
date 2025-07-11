@@ -296,6 +296,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      accept_invitation_and_add_member: {
+        Args: { invitation_uuid: string; user_uuid: string }
+        Returns: boolean
+      }
       add_account_member: {
         Args: {
           account_uuid: string
