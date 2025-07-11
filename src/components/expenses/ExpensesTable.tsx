@@ -17,7 +17,7 @@ import { StatusBadge } from './StatusBadge';
 import { Expense } from '@/contexts/expense/types';
 import { useToast } from '@/hooks/use-toast';
 import { toast } from 'sonner';
-import { Check, X } from 'lucide-react';
+import { Check, X, DollarSign } from 'lucide-react';
 
 interface ExpensesTableProps {
   expenses: Expense[];
@@ -32,19 +32,23 @@ export const ExpensesTable: React.FC<ExpensesTableProps> = ({
   rejectExpense, 
   markAsPaid 
 }) => {
-  const [selectedExpenses, setSelectedExpenses] = useState<string[]>([]);
+  const [selectedPendingExpenses, setSelectedPendingExpenses] = useState<string[]>([]);
+  const [selectedApprovedExpenses, setSelectedApprovedExpenses] = useState<string[]>([]);
   const [isPerformingBulkAction, setIsPerformingBulkAction] = useState(false);
 
   // Reset selection when expenses change
   useEffect(() => {
-    setSelectedExpenses([]);
+    setSelectedPendingExpenses([]);
+    setSelectedApprovedExpenses([]);
   }, [expenses]);
 
   const pendingExpenses = expenses.filter(expense => expense.status === 'pending');
-  const canShowBulkActions = pendingExpenses.length > 0;
+  const approvedExpenses = expenses.filter(expense => expense.status === 'approved');
+  const canShowPendingBulkActions = pendingExpenses.length > 0;
+  const canShowApprovedBulkActions = approvedExpenses.length > 0;
 
-  const handleSelectExpense = (expenseId: string) => {
-    setSelectedExpenses(prev => {
+  const handleSelectPendingExpense = (expenseId: string) => {
+    setSelectedPendingExpenses(prev => {
       if (prev.includes(expenseId)) {
         return prev.filter(id => id !== expenseId);
       } else {
@@ -53,24 +57,57 @@ export const ExpensesTable: React.FC<ExpensesTableProps> = ({
     });
   };
 
-  const handleSelectAll = () => {
-    if (selectedExpenses.length === pendingExpenses.length) {
-      setSelectedExpenses([]);
+  const handleSelectApprovedExpense = (expenseId: string) => {
+    setSelectedApprovedExpenses(prev => {
+      if (prev.includes(expenseId)) {
+        return prev.filter(id => id !== expenseId);
+      } else {
+        return [...prev, expenseId];
+      }
+    });
+  };
+
+  const handleSelectAllPending = () => {
+    if (selectedPendingExpenses.length === pendingExpenses.length) {
+      setSelectedPendingExpenses([]);
     } else {
-      setSelectedExpenses(pendingExpenses.map(expense => expense.id));
+      setSelectedPendingExpenses(pendingExpenses.map(expense => expense.id));
+    }
+  };
+
+  const handleSelectAllApproved = () => {
+    if (selectedApprovedExpenses.length === approvedExpenses.length) {
+      setSelectedApprovedExpenses([]);
+    } else {
+      setSelectedApprovedExpenses(approvedExpenses.map(expense => expense.id));
     }
   };
 
   const handleBulkApprove = async () => {
-    if (selectedExpenses.length === 0) return;
+    if (selectedPendingExpenses.length === 0) return;
 
     setIsPerformingBulkAction(true);
     try {
-      await Promise.all(selectedExpenses.map(id => approveExpense(id)));
-      toast.success(`אושרו ${selectedExpenses.length} הוצאות בהצלחה`);
-      setSelectedExpenses([]);
+      await Promise.all(selectedPendingExpenses.map(id => approveExpense(id)));
+      toast.success(`אושרו ${selectedPendingExpenses.length} הוצאות בהצלחה`);
+      setSelectedPendingExpenses([]);
     } catch (error) {
       toast.error('שגיאה באישור ההוצאות');
+    } finally {
+      setIsPerformingBulkAction(false);
+    }
+  };
+
+  const handleBulkMarkAsPaid = async () => {
+    if (selectedApprovedExpenses.length === 0) return;
+
+    setIsPerformingBulkAction(true);
+    try {
+      await Promise.all(selectedApprovedExpenses.map(id => markAsPaid(id)));
+      toast.success(`סומנו כשולם ${selectedApprovedExpenses.length} הוצאות בהצלחה`);
+      setSelectedApprovedExpenses([]);
+    } catch (error) {
+      toast.error('שגיאה בסימון ההוצאות כשולמות');
     } finally {
       setIsPerformingBulkAction(false);
     }
@@ -116,7 +153,7 @@ export const ExpensesTable: React.FC<ExpensesTableProps> = ({
             <CardTitle className="text-xl">רשימת הוצאות</CardTitle>
             <CardDescription>סה״כ {expenses.length} הוצאות</CardDescription>
           </div>
-          {canShowBulkActions && selectedExpenses.length > 0 && (
+          {canShowPendingBulkActions && selectedPendingExpenses.length > 0 && (
             <div className="flex gap-2">
               <Button
                 onClick={handleBulkApprove}
@@ -125,11 +162,31 @@ export const ExpensesTable: React.FC<ExpensesTableProps> = ({
                 className="flex items-center gap-2"
               >
                 <Check className="h-4 w-4" />
-                אשר {selectedExpenses.length} הוצאות
+                אשר {selectedPendingExpenses.length} הוצאות
               </Button>
               <Button
                 variant="outline"
-                onClick={() => setSelectedExpenses([])}
+                onClick={() => setSelectedPendingExpenses([])}
+                size="sm"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          )}
+          {canShowApprovedBulkActions && selectedApprovedExpenses.length > 0 && (
+            <div className="flex gap-2">
+              <Button
+                onClick={handleBulkMarkAsPaid}
+                disabled={isPerformingBulkAction}
+                size="sm"
+                className="flex items-center gap-2"
+              >
+                <DollarSign className="h-4 w-4" />
+                סמן כשולם {selectedApprovedExpenses.length} הוצאות
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => setSelectedApprovedExpenses([])}
                 size="sm"
               >
                 <X className="h-4 w-4" />
@@ -143,11 +200,22 @@ export const ExpensesTable: React.FC<ExpensesTableProps> = ({
           <Table>
             <TableHeader>
               <TableRow>
-                {canShowBulkActions && (
+                {(canShowPendingBulkActions || canShowApprovedBulkActions) && (
                   <TableHead className="w-12">
                     <Checkbox
-                      checked={pendingExpenses.length > 0 && selectedExpenses.length === pendingExpenses.length}
-                      onCheckedChange={handleSelectAll}
+                      checked={
+                        (pendingExpenses.length > 0 && selectedPendingExpenses.length === pendingExpenses.length) ||
+                        (approvedExpenses.length > 0 && selectedApprovedExpenses.length === approvedExpenses.length)
+                      }
+                      onCheckedChange={(checked) => {
+                        if (checked) {
+                          handleSelectAllPending();
+                          handleSelectAllApproved();
+                        } else {
+                          setSelectedPendingExpenses([]);
+                          setSelectedApprovedExpenses([]);
+                        }
+                      }}
                       disabled={isPerformingBulkAction}
                     />
                   </TableHead>
@@ -166,12 +234,18 @@ export const ExpensesTable: React.FC<ExpensesTableProps> = ({
               {expenses.length > 0 ? (
                 expenses.map((expense) => (
                   <TableRow key={expense.id}>
-                    {canShowBulkActions && (
+                    {(canShowPendingBulkActions || canShowApprovedBulkActions) && (
                       <TableCell>
                         {expense.status === 'pending' ? (
                           <Checkbox
-                            checked={selectedExpenses.includes(expense.id)}
-                            onCheckedChange={() => handleSelectExpense(expense.id)}
+                            checked={selectedPendingExpenses.includes(expense.id)}
+                            onCheckedChange={() => handleSelectPendingExpense(expense.id)}
+                            disabled={isPerformingBulkAction}
+                          />
+                        ) : expense.status === 'approved' ? (
+                          <Checkbox
+                            checked={selectedApprovedExpenses.includes(expense.id)}
+                            onCheckedChange={() => handleSelectApprovedExpense(expense.id)}
                             disabled={isPerformingBulkAction}
                           />
                         ) : null}
@@ -215,7 +289,7 @@ export const ExpensesTable: React.FC<ExpensesTableProps> = ({
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={canShowBulkActions ? 9 : 8} className="text-center py-8 text-muted-foreground">
+                  <TableCell colSpan={(canShowPendingBulkActions || canShowApprovedBulkActions) ? 9 : 8} className="text-center py-8 text-muted-foreground">
                     לא נמצאו הוצאות התואמות לפילטרים שנבחרו
                   </TableCell>
                 </TableRow>
