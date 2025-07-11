@@ -34,22 +34,19 @@ export const ExpensesTable: React.FC<ExpensesTableProps> = ({
       switch (newStatus) {
         case 'approved':
           await approveExpense(expenseId);
-          toast.success('ההוצאה אושרה בהצלחה');
           break;
         case 'rejected':
           await rejectExpense(expenseId);
-          toast.success('ההוצאה נדחתה');
           break;
         case 'paid':
           await markAsPaid(expenseId);
-          toast.success('ההוצאה סומנה כשולמה');
           break;
         default:
           break;
       }
     } catch (error) {
       console.error('Error updating expense status:', error);
-      toast.error('אירעה שגיאה בעת עדכון הסטטוס');
+      // Error handling is done in the individual functions
     }
   };
 
