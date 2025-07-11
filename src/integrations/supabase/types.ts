@@ -178,6 +178,7 @@ export type Database = {
           amount: number
           category: string | null
           created_at: string
+          created_by_id: string | null
           date: string
           description: string
           id: string
@@ -191,6 +192,7 @@ export type Database = {
           amount: number
           category?: string | null
           created_at?: string
+          created_by_id?: string | null
           date?: string
           description: string
           id?: string
@@ -204,6 +206,7 @@ export type Database = {
           amount?: number
           category?: string | null
           created_at?: string
+          created_by_id?: string | null
           date?: string
           description?: string
           id?: string
@@ -218,6 +221,13 @@ export type Database = {
             columns: ["account_id"]
             isOneToOne: false
             referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expenses_created_by_id_fkey"
+            columns: ["created_by_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
           {

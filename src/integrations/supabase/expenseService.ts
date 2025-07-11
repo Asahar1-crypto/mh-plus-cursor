@@ -19,7 +19,8 @@ export const expenseService = {
             name
           )
         ),
-        paid_by:profiles!paid_by_id(name)
+        paid_by:profiles!paid_by_id(name),
+        created_by:profiles!created_by_id(name)
       `)
       .eq('account_id', account.id)
       .order('created_at', { ascending: false });
@@ -50,8 +51,8 @@ export const expenseService = {
         category: expense.category || 'כללי',
         childId: childId,
         childName: childName,
-        createdBy: user.id, // The user who created the expense
-        creatorName: user.name, // The user who created the expense
+        createdBy: expense.created_by_id,
+        creatorName: expense.created_by?.name || 'Unknown',
         paidById: expense.paid_by_id,
         paidByName: expense.paid_by?.name || 'Unknown',
         status: expense.status as 'pending' | 'approved' | 'rejected' | 'paid',
@@ -104,6 +105,7 @@ export const expenseService = {
         category: expense.category,
         account_id: account.id,
         paid_by_id: expense.paidById,
+        created_by_id: user.id,
         status: 'pending'
       })
       .select()

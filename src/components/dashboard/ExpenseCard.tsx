@@ -33,8 +33,9 @@ export const ExpenseCard = ({ expense, onApprove, onReject, onMarkPaid }: Expens
         </div>
       </div>
       <div className="flex items-center justify-between p-2 bg-muted/20">
-        <div className="text-sm text-muted-foreground">
-          {expense.creatorName}
+        <div className="text-sm text-muted-foreground space-y-1">
+          <div>נוצר על ידי: <span className="font-medium">{expense.creatorName}</span></div>
+          <div>לתשלום: <span className="font-medium">{expense.paidByName}</span></div>
         </div>
         <div className="flex items-center gap-2">
           {expense.status === 'pending' && onApprove && onReject && (
