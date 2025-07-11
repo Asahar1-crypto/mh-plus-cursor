@@ -56,42 +56,31 @@ export const MonthlyFoodPaymentCard: React.FC = () => {
     
     // Calculate what each person should pay and what they actually paid
     const breakdown: PaymentBreakdown[] = accountMembers.map(member => {
-      // Personal expenses: calculate based on NEW LOGIC
-      // Rule 1: If user A enters expense on user B -> user B owes (full or half based on splitEqually)
-      // Rule 2: If user enters expense on themselves -> they owe to the other user
-      // 
+      // Personal expenses: NEW CORRECTED LOGIC
+      // Rule: The person who the expense is "for" should pay according to the split settings
       // How to determine "who the expense is for":
-      // - If expense has childId: it's for that child's responsible parent
-      // - If expense has no childId: it's for the person who the expense is "targeted" at
-      //   Since we don't have an explicit "target" field, we need to infer from paidById
-      //   If creator != payer, then it's for the payer (rule 1)
-      //   If creator == payer, then it's for the creator themselves (rule 2)
+      // 1. If expense has childId: Find the child and determine who is responsible
+      // 2. If no childId: The expense is for whoever is specified in paidById field
       
       let shouldPayPersonal = 0;
       
       personalExpenses.forEach(expense => {
         const expenseAmount = expense.splitEqually ? expense.amount / 2 : expense.amount;
         
-        // Determine who this expense is "for" (who should pay)
-        let expenseTargetUserId: string;
+        // Determine who this expense is "for" (who should be responsible)
+        let responsibleUserId: string;
         
         if (expense.childId) {
-          // For child expenses, we need to determine the responsible parent
-          // For now, let's assume the creator is responsible for their child's expenses
-          expenseTargetUserId = expense.createdBy;
+          // For child expenses: Check who created the expense as they're likely responsible
+          // But we need better logic here - for now use the creator
+          responsibleUserId = expense.createdBy;
         } else {
-          // For personal expenses without child
-          if (expense.createdBy === expense.paidById) {
-            // Creator paid for themselves -> they owe (rule 2)
-            expenseTargetUserId = expense.createdBy;
-          } else {
-            // Creator created expense but someone else paid -> the payer was "targeted" (rule 1)
-            expenseTargetUserId = expense.paidById;
-          }
+          // For non-child expenses: The paidById indicates who the expense is for
+          responsibleUserId = expense.paidById;
         }
         
-        // If this member is the target of the expense, they owe
-        if (expenseTargetUserId === member.user_id) {
+        // If this member is responsible for the expense, they should pay
+        if (responsibleUserId === member.user_id) {
           shouldPayPersonal += expenseAmount;
         }
       });
@@ -116,6 +105,23 @@ export const MonthlyFoodPaymentCard: React.FC = () => {
         shouldPay: totalShouldPay,
         balance
       };
+    });
+    
+    
+    // Debug logging to verify calculations
+    console.log('🔍 Payment Breakdown Debug:', {
+      totalExpenses: totalSplitEquallyExpenses + totalPersonalExpenses,
+      totalSplitEquallyExpenses,
+      totalPersonalExpenses,
+      splitEquallyPerPerson,
+      accountMembersCount: accountMembers.length,
+      currentMonthExpensesCount: currentMonthExpenses.length,
+      breakdown: breakdown.map(b => ({
+        name: b.userName,
+        shouldPay: Math.round(b.shouldPay),
+        totalPaid: Math.round(b.totalPaid),
+        balance: Math.round(b.balance)
+      }))
     });
     
     return {
