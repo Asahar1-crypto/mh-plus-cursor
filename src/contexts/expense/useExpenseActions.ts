@@ -101,23 +101,16 @@ export const useExpenseActions = (
       toast.error('יש להתחבר כדי לעדכן סטטוס הוצאה');
       return;
     }
+
+    if (!account) {
+      toast.error('לא נמצא חשבון פעיל');
+      return;
+    }
     
     setIsSubmitting(true);
     try {
-      // For now, just update local state since updateExpenseStatus method doesn't exist yet
-      setExpenses(prevExpenses => prevExpenses.map(expense => {
-        if (expense.id === id) {
-          let updatedExpense = { ...expense, status };
-          
-          if (status === 'approved') {
-            updatedExpense.approvedBy = user.id;
-            updatedExpense.approvedAt = new Date().toISOString();
-          }
-          
-          return updatedExpense;
-        }
-        return expense;
-      }));
+      await expenseService.updateExpenseStatus(user, account, id, status);
+      await refreshData(); // Refresh data to show updated status
       
       let statusText = '';
       switch (status) {

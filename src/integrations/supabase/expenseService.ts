@@ -137,6 +137,29 @@ export const expenseService = {
     }
   },
 
+  async updateExpenseStatus(user: User, account: Account, expenseId: string, status: 'pending' | 'approved' | 'rejected' | 'paid'): Promise<void> {
+    console.log(`Updating expense ${expenseId} status to ${status} in account ${account.id} (${account.name})`);
+    
+    const updateData: any = { status };
+    
+    // Add approved by and approved at for approved status
+    if (status === 'approved') {
+      updateData.approved_by = user.id;
+      updateData.approved_at = new Date().toISOString();
+    }
+    
+    const { error } = await supabase
+      .from('expenses')
+      .update(updateData)
+      .eq('id', expenseId)
+      .eq('account_id', account.id);
+
+    if (error) {
+      console.error('Error updating expense status:', error);
+      throw error;
+    }
+  },
+
   async addChild(user: User, account: Account, child: Omit<Child, 'id'>): Promise<void> {
     console.log(`Adding child to account ${account.id} (${account.name})`);
     
