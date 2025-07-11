@@ -165,21 +165,58 @@ export const MonthlyFoodPaymentCard: React.FC = () => {
         
         <div className="space-y-2">
           <h4 className="font-semibold text-sm sm:text-base">סיכום התשלומים:</h4>
-          {breakdown
-            .filter(person => person.balance > 0)
-            .map(debtor => {
-              const creditors = breakdown.filter(person => person.balance < 0);
+          {(() => {
+            // Calculate net payment after offset between users
+            const debtors = breakdown.filter(person => person.balance > 0);
+            const creditors = breakdown.filter(person => person.balance < 0);
+            
+            if (debtors.length === 1 && creditors.length === 1) {
+              const debtor = debtors[0];
+              const creditor = creditors[0];
+              const netPayment = debtor.balance - Math.abs(creditor.balance);
               
-              return (
-                <div key={debtor.userId} className="text-xs sm:text-sm p-2 sm:p-3 bg-yellow-50 rounded border border-yellow-200">
-                  <span className="font-medium">{debtor.userName}</span> חייב לשלם{' '}
-                  <span className="font-bold text-red-600">₪{Math.round(debtor.balance)}</span>
-                  {creditors.length === 1 && (
-                    <span> ל-<span className="font-medium">{creditors[0].userName}</span></span>
-                  )}
-                </div>
-              );
-            })}
+              if (netPayment > 0) {
+                return (
+                  <div className="text-xs sm:text-sm p-2 sm:p-3 bg-yellow-50 rounded border border-yellow-200">
+                    <span className="font-medium">{debtor.userName}</span> צריך לשלם{' '}
+                    <span className="font-bold text-red-600">₪{Math.round(netPayment)}</span>
+                    {' '}ל-<span className="font-medium">{creditor.userName}</span>
+                    <div className="text-xs text-muted-foreground mt-1">
+                      (אחרי קיזוז: {debtor.userName} חייב ₪{Math.round(debtor.balance)} - {creditor.userName} זכאי ₪{Math.round(Math.abs(creditor.balance))})
+                    </div>
+                  </div>
+                );
+              } else if (netPayment < 0) {
+                return (
+                  <div className="text-xs sm:text-sm p-2 sm:p-3 bg-green-50 rounded border border-green-200">
+                    <span className="font-medium">{creditor.userName}</span> צריך לשלם{' '}
+                    <span className="font-bold text-red-600">₪{Math.round(Math.abs(netPayment))}</span>
+                    {' '}ל-<span className="font-medium">{debtor.userName}</span>
+                    <div className="text-xs text-muted-foreground mt-1">
+                      (אחרי קיזוז: {creditor.userName} זכאי ₪{Math.round(Math.abs(creditor.balance))} - {debtor.userName} חייב ₪{Math.round(debtor.balance)})
+                    </div>
+                  </div>
+                );
+              } else {
+                return (
+                  <div className="text-xs sm:text-sm p-2 sm:p-3 bg-gray-50 rounded border border-gray-200">
+                    <span className="font-medium">אין חובות נטו</span> - הכל מאוזן אחרי קיזוז ✓
+                  </div>
+                );
+              }
+            }
+            
+            // Fallback for multiple debtors/creditors
+            return debtors.map(debtor => (
+              <div key={debtor.userId} className="text-xs sm:text-sm p-2 sm:p-3 bg-yellow-50 rounded border border-yellow-200">
+                <span className="font-medium">{debtor.userName}</span> חייב לשלם{' '}
+                <span className="font-bold text-red-600">₪{Math.round(debtor.balance)}</span>
+                {creditors.length === 1 && (
+                  <span> ל-<span className="font-medium">{creditors[0].userName}</span></span>
+                )}
+              </div>
+            ));
+          })()}
         </div>
       </CardContent>
     </Card>
