@@ -259,6 +259,10 @@ export type Database = {
           owner_id: string
         }[]
       }
+      get_current_user_email: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
     }
     Enums: {
       [_ in never]: never
