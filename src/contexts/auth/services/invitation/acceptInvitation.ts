@@ -88,49 +88,8 @@ export async function acceptInvitation(invitationId: string, user: User): Promis
     
     console.log("acceptInvitation: Found account:", accountData);
     
-    // Check if user is already a member of this account
-    const { data: existingMembership } = await supabase
-      .from('account_members')
-      .select('role')
-      .eq('account_id', accountId)
-      .eq('user_id', user.id)
-      .maybeSingle();
-    
-    if (existingMembership) {
-      console.log("acceptInvitation: User is already a member of this account, marking invitation as accepted");
-      
-      // Just mark invitation as accepted since user is already a member
-      const { error: acceptError } = await supabase
-        .from('invitations')
-        .update({ accepted_at: new Date().toISOString() })
-        .eq('invitation_id', invitation.invitation_id);
-        
-      if (acceptError) {
-        console.error("acceptInvitation: Error accepting invitation:", acceptError);
-        throw new Error('שגיאה בסימון ההזמנה כמתקבלת: ' + acceptError.message);
-      }
-      
-      // Return account with user's current role
-      const account: Account = {
-        id: accountData.id,
-        name: accountData.name,
-        userRole: existingMembership.role
-      };
-      
-      // Clear sessionStorage
-      console.log("acceptInvitation: Clearing temporary invitation data");
-      sessionStorage.removeItem('pendingInvitationId');
-      sessionStorage.removeItem('pendingInvitationAccountId');
-      sessionStorage.removeItem('pendingInvitationOwnerId');
-      sessionStorage.removeItem('currentInvitationDetails');
-      sessionStorage.removeItem('pendingInvitationRedirectChecked');
-      sessionStorage.removeItem('notifiedInvitations');
-      
-      console.log("acceptInvitation: User already member of account, returning account:", account);
-      return account;
-    }
-    
     // Use the new invitation acceptance function that handles membership automatically
+    // This function checks if user is already a member and handles all cases properly
     console.log("acceptInvitation: Using new accept_invitation_and_add_member function");
     console.log("acceptInvitation: invitationId:", invitationId, "userId:", user.id);
     
@@ -154,11 +113,22 @@ export async function acceptInvitation(invitationId: string, user: User): Promis
       throw new Error('שגיאה בקבלת ההזמנה: ' + memberError.message);
     }
     
+    // Get the user's role in the account (either from being already a member or newly added)
+    const { data: membership } = await supabase
+      .from('account_members')
+      .select('role')
+      .eq('account_id', accountId)
+      .eq('user_id', user.id)
+      .single();
+    
+    const userRole = membership?.role || 'member';
+    
+    
     // Create account object to return
     const sharedAccount: Account = {
       id: accountData.id,
       name: accountData.name,
-      userRole: 'member'
+      userRole: userRole
     };
     
     // Clear sessionStorage
