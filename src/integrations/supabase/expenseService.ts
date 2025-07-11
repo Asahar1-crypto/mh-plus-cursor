@@ -103,6 +103,9 @@ export const expenseService = {
     console.log(`Adding expense to account ${account.id} (${account.name})`);
     console.log('Expense data:', expense);
     
+    // Auto-approve if user is adding expense for themselves
+    const isAutoApproved = user.id === expense.paidById;
+    
     const expenseData = {
       amount: expense.amount,
       description: expense.description,
@@ -111,7 +114,9 @@ export const expenseService = {
       account_id: account.id,
       paid_by_id: expense.paidById,
       created_by_id: user.id,
-      status: 'pending',
+      status: isAutoApproved ? 'approved' : 'pending',
+      approved_by: isAutoApproved ? user.id : null,
+      approved_at: isAutoApproved ? new Date().toISOString() : null,
       has_end_date: expense.hasEndDate || false,
       end_date: expense.endDate || null,
       split_equally: expense.splitEqually
