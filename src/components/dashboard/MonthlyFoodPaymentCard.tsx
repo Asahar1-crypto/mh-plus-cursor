@@ -136,9 +136,6 @@ export const MonthlyFoodPaymentCard: React.FC = () => {
             <div key={person.userId} className="flex flex-col sm:flex-row sm:items-center justify-between p-3 rounded-lg border gap-2 sm:gap-0">
               <div className="flex-1">
                 <div className="font-medium text-sm sm:text-base">{person.userName}</div>
-                <div className="text-xs sm:text-sm text-muted-foreground">
-                  תרם: ₪{Math.round(person.totalPaid)}
-                </div>
               </div>
               
               <div className="text-right">
