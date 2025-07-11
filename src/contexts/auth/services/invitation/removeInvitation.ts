@@ -22,24 +22,24 @@ export async function removeInvitation(account: Account): Promise<void> {
       throw new Error('שגיאה בהסרת ההזמנה: ' + deleteError.message);
     }
 
-    // Clear the shared_with_email from the account if it exists
-    if (account.sharedWithEmail) {
-      const { error: updateError } = await supabase
-        .from('accounts')
-        .update({ 
-          shared_with_email: null,
-          shared_with_id: null,
-          invitation_id: null
-        })
-        .eq('id', account.id);
+    console.log("removeInvitation: Pending invitations deleted successfully");
 
-      if (updateError) {
-        console.error("removeInvitation: Error updating account:", updateError);
-        throw new Error('שגיאה בעדכון החשבון: ' + updateError.message);
-      }
+    // Clear the shared_with_email and invitation_id from the account
+    const { error: updateError } = await supabase
+      .from('accounts')
+      .update({ 
+        shared_with_email: null,
+        shared_with_id: null,
+        invitation_id: null
+      })
+      .eq('id', account.id);
+
+    if (updateError) {
+      console.error("removeInvitation: Error updating account:", updateError);
+      throw new Error('שגיאה בעדכון החשבון: ' + updateError.message);
     }
 
-    console.log("removeInvitation: Invitation removed successfully");
+    console.log("removeInvitation: Account updated - sharing information cleared");
     
   } catch (error: any) {
     console.error('removeInvitation: Failed to remove invitation:', error);

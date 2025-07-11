@@ -16,10 +16,10 @@ export const useAuthState = () => {
   const [lastCheck, setLastCheck] = useState<number>(0);
   const [isCheckingAuth, setIsCheckingAuth] = useState(false);
 
-  const checkAndSetUserData = useCallback(async (): Promise<void> => {
+  const checkAndSetUserData = useCallback(async (forceRefresh: boolean = false): Promise<void> => {
     // Avoid multiple simultaneous checks with stronger protection
     const now = Date.now();
-    if (now - lastCheck < 2000 || isCheckingAuth) {
+    if (!forceRefresh && (now - lastCheck < 2000 || isCheckingAuth)) {
       console.log('Skipping auth check - too soon since last check or already checking');
       return;
     }

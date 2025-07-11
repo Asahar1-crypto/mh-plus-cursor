@@ -9,7 +9,7 @@ export const useAuthenticationActions = (
   setAccount: (account: Account | null) => void,
   setUserAccounts: (userAccounts: UserAccounts | null) => void,
   setIsLoading: (isLoading: boolean) => void,
-  checkAndSetUserData: () => Promise<void>
+  checkAndSetUserData: (forceRefresh?: boolean) => Promise<void>
 ) => {
   const login = async (email: string, password: string): Promise<void> => {
     setIsLoading(true);

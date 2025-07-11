@@ -6,7 +6,7 @@ import { invitationCheckService } from '../services/user/invitationCheckService'
 
 export const useAuthSubscriptions = (
   user: User | null,
-  checkAndSetUserData: () => Promise<void>
+  checkAndSetUserData: (forceRefresh?: boolean) => Promise<void>
 ) => {
   // Set up auth state listener and check for saved session
   useEffect(() => {
@@ -22,7 +22,7 @@ export const useAuthSubscriptions = (
           console.log('User signed in or token refreshed, updating session');
           // Wrap in setTimeout to prevent any potential recursion issues
           setTimeout(() => {
-            checkAndSetUserData().catch(err => {
+            checkAndSetUserData(true).catch(err => {
               console.error('Error checking auth state after event:', err);
             });
           }, 0);

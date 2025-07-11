@@ -156,7 +156,7 @@ export async function acceptInvitation(invitationId: string, user: User): Promis
       .update({ 
         shared_with_id: user.id,
         shared_with_email: user.email,
-        invitation_id: invitation.invitation_id
+        invitation_id: null // Clear the invitation_id once accepted
       })
       .eq('id', accountId);
       

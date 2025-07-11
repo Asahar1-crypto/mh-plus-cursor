@@ -55,10 +55,22 @@ export async function sendInvitation(email: string, user: User, account: Account
       throw new Error('כבר נשלחה הזמנה פעילה לכתובת האימייל הזו');
     }
 
-    // Check if account is already shared with someone else
-    if (account.sharedWithEmail && account.sharedWithEmail.toLowerCase() !== email.toLowerCase()) {
+    // Check if account is already shared with someone else by querying the database
+    console.log("sendInvitation: Checking if account is already shared");
+    const { data: currentAccount, error: currentAccountError } = await supabase
+      .from('accounts')
+      .select('shared_with_email, shared_with_id')
+      .eq('id', account.id)
+      .single();
+      
+    if (currentAccountError) {
+      console.error("sendInvitation: Error checking current account state:", currentAccountError);
+      throw new Error('שגיאה בבדיקת מצב החשבון: ' + currentAccountError.message);
+    }
+    
+    if (currentAccount.shared_with_email && currentAccount.shared_with_email.toLowerCase() !== email.toLowerCase()) {
       console.error("sendInvitation: Account already shared with someone else");
-      throw new Error(`החשבון כבר משותף עם ${account.sharedWithEmail}`);
+      throw new Error(`החשבון כבר משותף עם ${currentAccount.shared_with_email}`);
     }
 
     // Generate unique invitation ID
@@ -82,6 +94,23 @@ export async function sendInvitation(email: string, user: User, account: Account
     }
 
     console.log("sendInvitation: Invitation created successfully");
+
+    // Update the account to include the shared_with_email
+    console.log("sendInvitation: Updating account with shared_with_email");
+    const { error: updateAccountError } = await supabase
+      .from('accounts')
+      .update({ 
+        shared_with_email: email.toLowerCase(),
+        invitation_id: invitationId
+      })
+      .eq('id', account.id);
+
+    if (updateAccountError) {
+      console.error("sendInvitation: Error updating account:", updateAccountError);
+      // This is not critical, continue with email sending
+    } else {
+      console.log("sendInvitation: Account updated with shared email and invitation ID");
+    }
 
     // Try to send email (this might fail if email service is not configured)
     try {

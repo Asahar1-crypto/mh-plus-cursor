@@ -14,7 +14,7 @@ export const useAuthActions = (
   setAccount: (account: Account | null) => void,
   setUserAccounts: (userAccounts: UserAccounts | null) => void,
   setIsLoading: (isLoading: boolean) => void,
-  checkAndSetUserData: () => Promise<void>
+  checkAndSetUserData: (forceRefresh?: boolean) => Promise<void>
 ) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -50,6 +50,8 @@ export const useAuthActions = (
     try {
       await authService.sendInvitation(email, user, account);
       toast.success('ההזמנה נשלחה בהצלחה');
+      // Force data refresh after successful invitation
+      await checkAndSetUserData(true);
     } catch (error: any) {
       console.error('Failed to send invitation:', error);
       toast.error(`שגיאה בשליחת ההזמנה: ${error.message}`);
@@ -67,7 +69,7 @@ export const useAuthActions = (
     setIsSubmitting(true);
     try {
       await authService.removeInvitation(account);
-      await checkAndSetUserData(); // Refresh data after removing invitation
+      await checkAndSetUserData(true); // Force refresh after removing invitation
       toast.success('ההזמנה הוסרה בהצלחה');
     } catch (error: any) {
       console.error('Failed to remove invitation:', error);
@@ -91,7 +93,7 @@ export const useAuthActions = (
       console.log('useAuthActions: Invitation accepted, shared account:', sharedAccount);
       
       // Refresh all user data to include the new shared account
-      await checkAndSetUserData();
+      await checkAndSetUserData(true);
       console.log('useAuthActions: User data refreshed after accepting invitation');
       
       toast.success('הצטרפת לחשבון בהצלחה!');

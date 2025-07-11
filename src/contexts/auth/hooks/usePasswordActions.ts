@@ -4,7 +4,7 @@ import { authService } from '../authService';
 
 export const usePasswordActions = (
   setIsLoading: (isLoading: boolean) => void,
-  checkAndSetUserData: () => Promise<void>
+  checkAndSetUserData: (forceRefresh?: boolean) => Promise<void>
 ) => {
   const verifyEmail = async (token: string): Promise<boolean> => {
     setIsLoading(true);
