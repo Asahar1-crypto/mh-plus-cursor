@@ -14,6 +14,7 @@ export const expenseSchema = z.object({
   hasEndDate: z.boolean().default(false),
   endDate: z.date().optional(),
   includeInMonthlyBalance: z.boolean().default(true),
+  splitEqually: z.boolean().default(false),
   date: z.date().default(() => new Date()),
   receipt: z.string().optional(),
 }).refine((data) => {

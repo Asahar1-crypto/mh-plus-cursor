@@ -63,7 +63,8 @@ export const expenseService = {
         frequency: undefined,
         hasEndDate: expense.has_end_date || false,
         endDate: expense.end_date || undefined,
-        includeInMonthlyBalance: true // Default value
+        includeInMonthlyBalance: true, // Default value
+        splitEqually: expense.split_equally || false
       };
     });
 
@@ -113,7 +114,8 @@ export const expenseService = {
         created_by_id: user.id,
         status: 'pending',
         has_end_date: expense.hasEndDate || false,
-        end_date: expense.endDate || null
+        end_date: expense.endDate || null,
+        split_equally: expense.splitEqually
       })
       .select()
       .single();

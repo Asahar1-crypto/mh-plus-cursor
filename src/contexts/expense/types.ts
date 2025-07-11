@@ -20,6 +20,7 @@ export interface Expense {
   hasEndDate?: boolean;
   endDate?: string;
   includeInMonthlyBalance: boolean;
+  splitEqually: boolean;
 }
 
 export interface Child {

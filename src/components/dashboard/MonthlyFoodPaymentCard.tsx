@@ -42,34 +42,29 @@ export const MonthlyFoodPaymentCard: React.FC = () => {
       );
     });
     
-    // Separate food expenses from other expenses
-    const foodExpenses = currentMonthExpenses.filter(expense => 
-      expense.category === 'מזון' || expense.category === 'מזונות'
-    );
-    
-    const otherExpenses = currentMonthExpenses.filter(expense => 
-      expense.category !== 'מזון' && expense.category !== 'מזונות'
-    );
+    // Separate expenses that split equally from personal expenses
+    const splitEquallyExpenses = currentMonthExpenses.filter(expense => expense.splitEqually);
+    const personalExpenses = currentMonthExpenses.filter(expense => !expense.splitEqually);
     
     // Calculate totals
-    const totalFoodExpenses = foodExpenses.reduce((sum, expense) => sum + expense.amount, 0);
-    const totalOtherExpenses = otherExpenses.reduce((sum, expense) => sum + expense.amount, 0);
+    const totalSplitEquallyExpenses = splitEquallyExpenses.reduce((sum, expense) => sum + expense.amount, 0);
+    const totalPersonalExpenses = personalExpenses.reduce((sum, expense) => sum + expense.amount, 0);
     
-    // For food expenses: each person should pay what they owe (based on paidById)
-    // For other expenses: split equally among all members
-    const otherExpensesPerPerson = totalOtherExpenses / accountMembers.length;
+    // For split equally expenses: split among all members
+    // For personal expenses: each person pays what's assigned to them (based on paidById)
+    const splitEquallyPerPerson = totalSplitEquallyExpenses / accountMembers.length;
     
     // Calculate what each person should pay and what they actually paid
     const breakdown: PaymentBreakdown[] = accountMembers.map(member => {
-      // Food expenses: what this person should pay (their own food expenses)
-      const memberFoodExpenses = foodExpenses.filter(expense => expense.paidById === member.user_id);
-      const shouldPayFood = memberFoodExpenses.reduce((sum, expense) => sum + expense.amount, 0);
+      // Personal expenses: what this person should pay (their own personal expenses)
+      const memberPersonalExpenses = personalExpenses.filter(expense => expense.paidById === member.user_id);
+      const shouldPayPersonal = memberPersonalExpenses.reduce((sum, expense) => sum + expense.amount, 0);
       
-      // Other expenses: equal share for everyone
-      const shouldPayOther = otherExpensesPerPerson;
+      // Split equally expenses: equal share for everyone
+      const shouldPaySplitEqually = splitEquallyPerPerson;
       
       // Total what this person should pay
-      const totalShouldPay = shouldPayFood + shouldPayOther;
+      const totalShouldPay = shouldPayPersonal + shouldPaySplitEqually;
       
       // What this person actually paid (regardless of category)
       const memberPaidExpenses = currentMonthExpenses.filter(expense => expense.createdBy === member.user_id);
@@ -88,10 +83,10 @@ export const MonthlyFoodPaymentCard: React.FC = () => {
     });
     
     return {
-      totalExpenses: totalFoodExpenses + totalOtherExpenses,
-      totalFoodExpenses,
-      totalOtherExpenses,
-      otherExpensesPerPerson,
+      totalExpenses: totalSplitEquallyExpenses + totalPersonalExpenses,
+      totalSplitEquallyExpenses,
+      totalPersonalExpenses,
+      splitEquallyPerPerson,
       breakdown
     };
   }, [expenses, accountMembers]);
@@ -111,7 +106,7 @@ export const MonthlyFoodPaymentCard: React.FC = () => {
     );
   }
   
-  const { totalExpenses, totalFoodExpenses, totalOtherExpenses, otherExpensesPerPerson, breakdown } = paymentBreakdown;
+  const { totalExpenses, totalSplitEquallyExpenses, totalPersonalExpenses, splitEquallyPerPerson, breakdown } = paymentBreakdown;
   
   return (
     <Card>
@@ -126,11 +121,11 @@ export const MonthlyFoodPaymentCard: React.FC = () => {
           <div className="text-sm text-muted-foreground">סה״כ הוצאות החודש</div>
           <div className="text-2xl font-bold text-primary">₪{Math.round(totalExpenses)}</div>
           <div className="text-xs text-muted-foreground grid grid-cols-2 gap-4 mt-2">
-            <div>מזונות: ₪{Math.round(totalFoodExpenses)}</div>
-            <div>אחר: ₪{Math.round(totalOtherExpenses)}</div>
+            <div>אישי: ₪{Math.round(totalPersonalExpenses)}</div>
+            <div>משותף: ₪{Math.round(totalSplitEquallyExpenses)}</div>
           </div>
           <div className="text-xs text-muted-foreground mt-1">
-            חלק אחר לאדם: ₪{Math.round(otherExpensesPerPerson)}
+            חלק משותף לאדם: ₪{Math.round(splitEquallyPerPerson)}
           </div>
         </div>
         

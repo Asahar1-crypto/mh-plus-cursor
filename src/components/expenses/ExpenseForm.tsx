@@ -53,6 +53,7 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({ onSubmitSuccess }) => 
       hasEndDate: false,
       endDate: undefined,
       includeInMonthlyBalance: true,
+      splitEqually: false,
       date: new Date(),
       receipt: '',
     },
@@ -83,6 +84,7 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({ onSubmitSuccess }) => 
         hasEndDate: data.hasEndDate,
         endDate: data.endDate ? format(data.endDate, 'yyyy-MM-dd') : undefined,
         includeInMonthlyBalance: data.includeInMonthlyBalance,
+        splitEqually: data.splitEqually,
         receipt: data.receipt,
       });
       
@@ -416,6 +418,27 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({ onSubmitSuccess }) => 
                 <FormLabel className="text-base">כלול בקיזוז החודשי</FormLabel>
                 <FormDescription>
                   הוצאה זו תיכלל בחישוב הקיזוז החודשי בין השותפים
+                </FormDescription>
+              </div>
+              <FormControl>
+                <Switch
+                  checked={field.value}
+                  onCheckedChange={field.onChange}
+                />
+              </FormControl>
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="splitEqually"
+          render={({ field }) => (
+            <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+              <div className="space-y-0.5">
+                <FormLabel className="text-base">חלק שווה בין כולם</FormLabel>
+                <FormDescription>
+                  כאשר מופעל: ההוצאה תתחלק שווה בין כל חברי החשבון. כאשר כבוי: מי שהוצאה מוגדרת עליו ישלם את המלוא
                 </FormDescription>
               </div>
               <FormControl>

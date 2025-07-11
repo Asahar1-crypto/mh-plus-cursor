@@ -229,6 +229,7 @@ export type Database = {
           id: string
           paid_by_id: string
           receipt_url: string | null
+          split_equally: boolean
           status: string
           updated_at: string
         }
@@ -247,6 +248,7 @@ export type Database = {
           id?: string
           paid_by_id: string
           receipt_url?: string | null
+          split_equally?: boolean
           status?: string
           updated_at?: string
         }
@@ -265,6 +267,7 @@ export type Database = {
           id?: string
           paid_by_id?: string
           receipt_url?: string | null
+          split_equally?: boolean
           status?: string
           updated_at?: string
         }
