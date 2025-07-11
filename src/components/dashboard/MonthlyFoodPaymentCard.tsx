@@ -26,19 +26,13 @@ export const MonthlyFoodPaymentCard: React.FC = () => {
   });
   
   const paymentBreakdown = useMemo(() => {
-    console.log('=== MonthlyFoodPaymentCard - New Logic ===');
-    console.log('accountMembers:', accountMembers);
-    console.log('expenses:', expenses);
-    
     if (!accountMembers || accountMembers.length === 0) {
-      console.log('No account members found');
       return null;
     }
     
     const currentDate = new Date();
     const currentMonth = currentDate.getMonth();
     const currentYear = currentDate.getFullYear();
-    console.log('Current month/year:', currentMonth, currentYear);
     
     // Filter current month expenses - only include approved expenses (not paid or rejected)
     const currentMonthExpenses = expenses.filter(expense => {
@@ -47,8 +41,6 @@ export const MonthlyFoodPaymentCard: React.FC = () => {
       const isApproved = expense.status === 'approved';
       return isCurrentMonth && isApproved;
     });
-    
-    console.log('Current month approved expenses:', currentMonthExpenses);
     
     // Separate expenses that split equally from personal expenses
     const splitEquallyExpenses = currentMonthExpenses.filter(expense => expense.splitEqually === true);
@@ -64,29 +56,22 @@ export const MonthlyFoodPaymentCard: React.FC = () => {
     
     // Calculate what each person should pay and what they actually paid
     const breakdown: PaymentBreakdown[] = accountMembers.map(member => {
-      console.log(`\n=== Processing member: ${member.user_name} ===`);
-      
       // Personal expenses: what this person should pay (expenses assigned to them)
       const memberPersonalExpenses = personalExpenses.filter(expense => expense.paidById === member.user_id);
       const shouldPayPersonal = memberPersonalExpenses.reduce((sum, expense) => sum + expense.amount, 0);
-      console.log(`Personal expenses for ${member.user_name}:`, memberPersonalExpenses.length, 'total:', shouldPayPersonal);
       
       // Split equally expenses: equal share for everyone
       const shouldPaySplitEqually = splitEquallyPerPerson;
-      console.log(`Split equally share for ${member.user_name}:`, shouldPaySplitEqually);
       
       // Total what this person should pay (their debt)
       const totalShouldPay = shouldPayPersonal + shouldPaySplitEqually;
-      console.log(`Total should pay for ${member.user_name}:`, totalShouldPay);
       
       // What this person actually paid (what they contributed by creating expenses)
       const memberCreatedExpenses = currentMonthExpenses.filter(expense => expense.createdBy === member.user_id);
       const totalActuallyPaid = memberCreatedExpenses.reduce((sum, expense) => sum + expense.amount, 0);
-      console.log(`Created expenses by ${member.user_name}:`, memberCreatedExpenses.length, 'total:', totalActuallyPaid);
       
       // Balance: positive means they owe money, negative means they overpaid (others owe them)
       const balance = totalShouldPay - totalActuallyPaid;
-      console.log(`Balance for ${member.user_name}:`, balance, '(positive=owes, negative=overpaid)');
       
       return {
         userId: member.user_id,
@@ -96,8 +81,6 @@ export const MonthlyFoodPaymentCard: React.FC = () => {
         balance
       };
     });
-    
-    console.log('Final breakdown:', breakdown);
     
     return {
       totalExpenses: totalSplitEquallyExpenses + totalPersonalExpenses,
@@ -181,17 +164,16 @@ export const MonthlyFoodPaymentCard: React.FC = () => {
         <div className="space-y-2">
           <h4 className="font-semibold">סיכום התשלומים:</h4>
           {breakdown
-            .filter(person => person.balance > 0)
+            .filter(person => person.shouldPay > 0)
             .map(debtor => {
-              const creditors = breakdown.filter(person => person.balance < 0);
-              if (creditors.length === 0) return null;
+              const others = breakdown.filter(person => person.userId !== debtor.userId);
               
               return (
                 <div key={debtor.userId} className="text-sm p-2 bg-yellow-50 rounded border border-yellow-200">
                   <span className="font-medium">{debtor.userName}</span> חייב לשלם{' '}
-                  <span className="font-bold text-red-600">₪{Math.round(debtor.balance)}</span>
-                  {creditors.length === 1 && (
-                    <span> ל-<span className="font-medium">{creditors[0].userName}</span></span>
+                  <span className="font-bold text-red-600">₪{Math.round(debtor.shouldPay)}</span>
+                  {others.length === 1 && (
+                    <span> ל-<span className="font-medium">{others[0].userName}</span></span>
                   )}
                 </div>
               );
