@@ -42,34 +42,39 @@ export const MonthlyFoodPaymentCard: React.FC = () => {
       return isCurrentMonth && isRelevant;
     });
     
-    // Calculate what each person owes based on the rules:
-    // 1. split_equally = true: Only the payer owes their half
-    // 2. split_equally = false: The payer owes the full amount to the other person
-    
+    // Calculate what each person actually paid and what they should pay
     const breakdown: PaymentBreakdown[] = accountMembers.map(member => {
-      let totalOwes = 0;
+      let actuallyPaid = 0;
+      let shouldPay = 0;
       
-      // Go through all expenses and see what this member owes
+      // Calculate what this member actually paid (where they were the payer)
       currentMonthExpenses.forEach(expense => {
         if (expense.paidById === member.user_id) {
-          // This member is designated as the one who should pay
-          if (expense.splitEqually) {
-            // Half-half: only owes their half
-            totalOwes += expense.amount / 2;
-          } else {
-            // Full payment: owes the full amount
-            totalOwes += expense.amount;
+          actuallyPaid += expense.amount;
+        }
+      });
+      
+      // Calculate what this member should pay based on splitting rules
+      currentMonthExpenses.forEach(expense => {
+        if (expense.splitEqually) {
+          // Half-half: everyone pays half
+          shouldPay += expense.amount / 2;
+        } else {
+          // Full payment: only the designated payer pays
+          if (expense.paidById === member.user_id) {
+            shouldPay += expense.amount;
           }
         }
-        // If this member is NOT the payer, they don't owe anything for this expense
       });
+      
+      const balance = shouldPay - actuallyPaid; // positive = owes money, negative = paid too much
       
       return {
         userId: member.user_id,
         userName: member.user_name,
-        totalPaid: 0, // Not relevant in this calculation
-        shouldPay: totalOwes,
-        balance: totalOwes // Positive means they owe money
+        totalPaid: actuallyPaid,
+        shouldPay: shouldPay,
+        balance: balance
       };
     });
     
@@ -82,6 +87,7 @@ export const MonthlyFoodPaymentCard: React.FC = () => {
       currentMonthExpensesCount: currentMonthExpenses.length,
       breakdown: breakdown.map(b => ({
         name: b.userName,
+        actuallyPaid: Math.round(b.totalPaid),
         shouldPay: Math.round(b.shouldPay),
         balance: Math.round(b.balance)
       }))
