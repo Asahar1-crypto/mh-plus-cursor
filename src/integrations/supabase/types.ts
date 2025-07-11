@@ -181,6 +181,8 @@ export type Database = {
           created_by_id: string | null
           date: string
           description: string
+          end_date: string | null
+          has_end_date: boolean | null
           id: string
           paid_by_id: string
           receipt_url: string | null
@@ -195,6 +197,8 @@ export type Database = {
           created_by_id?: string | null
           date?: string
           description: string
+          end_date?: string | null
+          has_end_date?: boolean | null
           id?: string
           paid_by_id: string
           receipt_url?: string | null
@@ -209,6 +213,8 @@ export type Database = {
           created_by_id?: string | null
           date?: string
           description?: string
+          end_date?: string | null
+          has_end_date?: boolean | null
           id?: string
           paid_by_id?: string
           receipt_url?: string | null

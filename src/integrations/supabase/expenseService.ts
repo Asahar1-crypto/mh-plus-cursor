@@ -58,6 +58,9 @@ export const expenseService = {
         status: expense.status as 'pending' | 'approved' | 'rejected' | 'paid',
         receipt: expense.receipt_url,
         isRecurring: false, // Default value, can be updated based on your schema
+        frequency: undefined,
+        hasEndDate: expense.has_end_date || false,
+        endDate: expense.end_date || undefined,
         includeInMonthlyBalance: true // Default value
       };
     });
@@ -106,7 +109,9 @@ export const expenseService = {
         account_id: account.id,
         paid_by_id: expense.paidById,
         created_by_id: user.id,
-        status: 'pending'
+        status: 'pending',
+        has_end_date: expense.hasEndDate || false,
+        end_date: expense.endDate || null
       })
       .select()
       .single();

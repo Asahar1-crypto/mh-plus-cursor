@@ -80,6 +80,8 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({ onSubmitSuccess }) => 
         paidByName: paidByMember?.user_name || '',
         isRecurring: data.isRecurring,
         frequency: data.isRecurring ? data.frequency as 'monthly' | 'weekly' | 'yearly' : undefined,
+        hasEndDate: data.hasEndDate,
+        endDate: data.endDate ? format(data.endDate, 'yyyy-MM-dd') : undefined,
         includeInMonthlyBalance: data.includeInMonthlyBalance,
         receipt: data.receipt,
       });
