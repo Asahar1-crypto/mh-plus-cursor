@@ -296,6 +296,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      add_account_member: {
+        Args: {
+          account_uuid: string
+          user_uuid: string
+          member_role?: Database["public"]["Enums"]["account_member_role"]
+        }
+        Returns: boolean
+      }
       create_account_if_not_exists: {
         Args: { user_id: string; account_name: string }
         Returns: {
@@ -309,6 +317,15 @@ export type Database = {
         Returns: {
           id: string
           name: string
+        }[]
+      }
+      get_account_members_with_details: {
+        Args: { account_uuid: string }
+        Returns: {
+          user_id: string
+          user_name: string
+          role: Database["public"]["Enums"]["account_member_role"]
+          joined_at: string
         }[]
       }
       get_current_user_email: {
@@ -325,6 +342,10 @@ export type Database = {
       }
       is_account_member: {
         Args: { user_uuid: string; account_uuid: string }
+        Returns: boolean
+      }
+      remove_account_member: {
+        Args: { account_uuid: string; user_uuid: string }
         Returns: boolean
       }
     }

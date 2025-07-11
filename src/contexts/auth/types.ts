@@ -8,13 +8,24 @@ export interface User {
 export interface Account {
   id: string;
   name: string;
-  ownerId: string;
+  // Legacy fields (will be removed in future)
+  ownerId?: string;
   sharedWithId?: string;
   sharedWithEmail?: string;
   sharedWithName?: string;
   ownerName?: string;
   invitationId?: string;
   isSharedAccount?: boolean;
+  // New member-based fields
+  members?: AccountMember[];
+  userRole?: 'admin' | 'member';
+}
+
+export interface AccountMember {
+  user_id: string;
+  user_name: string;
+  role: 'admin' | 'member';
+  joined_at: string;
 }
 
 export interface UserAccounts {

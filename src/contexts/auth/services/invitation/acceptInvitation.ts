@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { User, Account } from '../../types';
 import { toast } from 'sonner';
 import { validateAccountExists, getAccountDetails, debugListAllAccounts } from './accountValidator';
+import { memberService } from '../account/memberService';
 
 export async function acceptInvitation(invitationId: string, user: User): Promise<Account> {
   try {
@@ -86,17 +87,18 @@ export async function acceptInvitation(invitationId: string, user: User): Promis
     
     console.log("acceptInvitation: Found account:", accountData);
     
-    // Check if this is the user's own account
-    if (accountData.owner_id === user.id) {
-      console.error("acceptInvitation: Cannot share account with self");
-      throw new Error('לא ניתן לשתף חשבון עם עצמך');
-    }
+    // Check if user is already a member of this account
+    const { data: existingMembership } = await supabase
+      .from('account_members')
+      .select('role')
+      .eq('account_id', accountId)
+      .eq('user_id', user.id)
+      .maybeSingle();
     
-    // Check if user is already shared on this account
-    if (accountData.shared_with_id === user.id) {
-      console.log("acceptInvitation: User is already shared on this account, marking invitation as accepted");
+    if (existingMembership) {
+      console.log("acceptInvitation: User is already a member of this account, marking invitation as accepted");
       
-      // Just mark invitation as accepted since user is already shared
+      // Just mark invitation as accepted since user is already a member
       const { error: acceptError } = await supabase
         .from('invitations')
         .update({ accepted_at: new Date().toISOString() })
@@ -107,33 +109,11 @@ export async function acceptInvitation(invitationId: string, user: User): Promis
         throw new Error('שגיאה בסימון ההזמנה כמתקבלת: ' + acceptError.message);
       }
       
-      // Get owner profile data
-      let ownerName = 'בעל החשבון';
-      
-      try {
-        const { data: ownerProfile } = await supabase
-          .from('profiles')
-          .select('name')
-          .eq('id', accountData.owner_id)
-          .maybeSingle();
-          
-        if (ownerProfile && ownerProfile.name) {
-          ownerName = ownerProfile.name;
-        }
-      } catch (error) {
-        console.error("acceptInvitation: Could not fetch owner profile:", error);
-      }
-      
-      // Return existing shared account
-      const sharedAccount: Account = {
+      // Return account with user's current role
+      const account: Account = {
         id: accountData.id,
         name: accountData.name,
-        ownerId: accountData.owner_id,
-        ownerName: ownerName,
-        sharedWithId: user.id,
-        sharedWithEmail: user.email,
-        invitationId: invitation.invitation_id,
-        isSharedAccount: true
+        userRole: existingMembership.role
       };
       
       // Clear sessionStorage
@@ -145,24 +125,17 @@ export async function acceptInvitation(invitationId: string, user: User): Promis
       sessionStorage.removeItem('pendingInvitationRedirectChecked');
       sessionStorage.removeItem('notifiedInvitations');
       
-      console.log("acceptInvitation: User already shared on account, returning shared account:", sharedAccount);
-      return sharedAccount;
+      console.log("acceptInvitation: User already member of account, returning account:", account);
+      return account;
     }
     
-    // Update the existing account to include the shared user (don't create a new account)
-    console.log("acceptInvitation: Updating existing account with shared user information");
-    const { error: updateError } = await supabase
-      .from('accounts')
-      .update({ 
-        shared_with_id: user.id,
-        shared_with_email: user.email,
-        invitation_id: null // Clear the invitation_id once accepted
-      })
-      .eq('id', accountId);
-      
-    if (updateError) {
-      console.error("acceptInvitation: Error updating account:", updateError);
-      throw new Error('שגיאה בעדכון החשבון: ' + updateError.message);
+    // Add user as member of the account using the new member service
+    console.log("acceptInvitation: Adding user as member to account");
+    try {
+      await memberService.addMember(accountId, user.id, 'member');
+    } catch (memberError) {
+      console.error("acceptInvitation: Error adding user as member:", memberError);
+      throw new Error('שגיאה בהצטרפות לחשבון: ' + memberError.message);
     }
     
     // Mark invitation as accepted
@@ -177,33 +150,11 @@ export async function acceptInvitation(invitationId: string, user: User): Promis
       throw new Error('שגיאה בסימון ההזמנה כמתקבלת: ' + acceptError.message);
     }
     
-    // Get owner profile data
-    let ownerName = 'בעל החשבון';
-    
-    try {
-      const { data: ownerProfile } = await supabase
-        .from('profiles')
-        .select('name')
-        .eq('id', accountData.owner_id)
-        .maybeSingle();
-        
-      if (ownerProfile && ownerProfile.name) {
-        ownerName = ownerProfile.name;
-      }
-    } catch (error) {
-      console.error("acceptInvitation: Could not fetch owner profile:", error);
-    }
-    
-    // Create account object to return (the existing account, not a new one)
+    // Create account object to return
     const sharedAccount: Account = {
       id: accountData.id,
       name: accountData.name,
-      ownerId: accountData.owner_id,
-      ownerName: ownerName,
-      sharedWithId: user.id,
-      sharedWithEmail: user.email,
-      invitationId: invitation.invitation_id,
-      isSharedAccount: true
+      userRole: 'member'
     };
     
     // Clear sessionStorage
