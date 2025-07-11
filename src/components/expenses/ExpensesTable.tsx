@@ -18,6 +18,9 @@ import { Expense } from '@/contexts/expense/types';
 import { useToast } from '@/hooks/use-toast';
 import { toast } from 'sonner';
 import { Check, X, DollarSign } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
+import { useAuth } from '@/contexts/auth';
+import { memberService } from '@/contexts/auth/services/account/memberService';
 
 interface ExpensesTableProps {
   expenses: Expense[];
@@ -32,9 +35,17 @@ export const ExpensesTable: React.FC<ExpensesTableProps> = ({
   rejectExpense, 
   markAsPaid 
 }) => {
+  const { account } = useAuth();
   const [selectedPendingExpenses, setSelectedPendingExpenses] = useState<string[]>([]);
   const [selectedApprovedExpenses, setSelectedApprovedExpenses] = useState<string[]>([]);
   const [isPerformingBulkAction, setIsPerformingBulkAction] = useState(false);
+
+  // Get account members
+  const { data: accountMembers } = useQuery({
+    queryKey: ['account-members', account?.id],
+    queryFn: () => memberService.getAccountMembers(account!.id),
+    enabled: !!account?.id
+  });
 
   // Reset selection when expenses change
   useEffect(() => {
@@ -46,6 +57,20 @@ export const ExpensesTable: React.FC<ExpensesTableProps> = ({
   const approvedExpenses = expenses.filter(expense => expense.status === 'approved');
   const canShowPendingBulkActions = pendingExpenses.length > 0;
   const canShowApprovedBulkActions = approvedExpenses.length > 0;
+
+  // Function to determine who should pay for an expense
+  const getPayerInfo = (expense: Expense) => {
+    if (!accountMembers) return 'טוען...';
+    
+    if (expense.splitEqually) {
+      // Both users should pay their half
+      return 'כולם (חצי-חצי)';
+    } else {
+      // Only the designated payer should pay
+      const payer = accountMembers.find(member => member.user_id === expense.paidById);
+      return payer ? payer.user_name : 'לא ידוע';
+    }
+  };
 
   const handleSelectPendingExpense = (expenseId: string) => {
     setSelectedPendingExpenses(prev => {
@@ -226,6 +251,7 @@ export const ExpensesTable: React.FC<ExpensesTableProps> = ({
                 <TableHead className="text-right">קטגוריה</TableHead>
                 <TableHead className="text-right">שיוך</TableHead>
                 <TableHead className="text-right">נוסף ע"י</TableHead>
+                <TableHead className="text-right">מי צריך לשלם</TableHead>
                 <TableHead className="text-right">סטטוס</TableHead>
                 <TableHead className="text-right">פעולות</TableHead>
               </TableRow>
@@ -263,6 +289,9 @@ export const ExpensesTable: React.FC<ExpensesTableProps> = ({
                       {expense.childName || 'הוצאה כללית'}
                     </TableCell>
                     <TableCell>{expense.creatorName}</TableCell>
+                    <TableCell className="text-sm">
+                      {getPayerInfo(expense)}
+                    </TableCell>
                     <TableCell>
                       <StatusBadge status={expense.status} />
                     </TableCell>
@@ -289,7 +318,7 @@ export const ExpensesTable: React.FC<ExpensesTableProps> = ({
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={(canShowPendingBulkActions || canShowApprovedBulkActions) ? 9 : 8} className="text-center py-8 text-muted-foreground">
+                  <TableCell colSpan={(canShowPendingBulkActions || canShowApprovedBulkActions) ? 10 : 9} className="text-center py-8 text-muted-foreground">
                     לא נמצאו הוצאות התואמות לפילטרים שנבחרו
                   </TableCell>
                 </TableRow>
