@@ -130,17 +130,24 @@ export async function acceptInvitation(invitationId: string, user: User): Promis
     }
     
     // Use the new invitation acceptance function that handles membership automatically
-    console.log("acceptInvitation: Adding user as member to account using invitation function");
+    console.log("acceptInvitation: Using new accept_invitation_and_add_member function");
+    console.log("acceptInvitation: invitationId:", invitationId, "userId:", user.id);
+    
     try {
-      const { error: acceptError } = await supabase.rpc('accept_invitation_and_add_member', {
+      console.log("acceptInvitation: Calling supabase.rpc('accept_invitation_and_add_member')");
+      const { data, error: acceptError } = await supabase.rpc('accept_invitation_and_add_member', {
         invitation_uuid: invitationId,
         user_uuid: user.id
       });
+      
+      console.log("acceptInvitation: RPC result:", { data, error: acceptError });
       
       if (acceptError) {
         console.error("acceptInvitation: Error in accept_invitation_and_add_member:", acceptError);
         throw new Error('שגיאה בקבלת ההזמנה: ' + acceptError.message);
       }
+      
+      console.log("acceptInvitation: Successfully called accept_invitation_and_add_member");
     } catch (memberError: any) {
       console.error("acceptInvitation: Error accepting invitation and adding member:", memberError);
       throw new Error('שגיאה בקבלת ההזמנה: ' + memberError.message);
