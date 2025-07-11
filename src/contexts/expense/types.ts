@@ -49,4 +49,5 @@ export interface ExpenseContextType {
   getExpensesByMonth: (month: number, year: number) => Expense[];
   getMonthlyBalance: () => number;
   uploadReceipt: (expenseId: string, receiptUrl: string) => Promise<void>;
+  refreshData: () => Promise<void>;
 }

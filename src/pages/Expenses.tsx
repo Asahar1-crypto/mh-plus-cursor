@@ -5,6 +5,8 @@ import { Expense } from '@/contexts/expense/types';
 import { ExpenseFilters } from '@/components/expenses/ExpenseFilters';
 import { ExpensesTable } from '@/components/expenses/ExpensesTable';
 import { AddExpenseDialog } from '@/components/expenses/AddExpenseDialog';
+import { Button } from '@/components/ui/button';
+import { RefreshCw } from 'lucide-react';
 
 
 const ExpensesPage = () => {
@@ -13,8 +15,14 @@ const ExpensesPage = () => {
     childrenList, 
     approveExpense, 
     rejectExpense, 
-    markAsPaid 
+    markAsPaid,
+    isLoading,
+    refreshData
   } = useExpense();
+
+  const handleRefresh = async () => {
+    await refreshData();
+  };
   
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedChild, setSelectedChild] = useState<string | null>(null);
@@ -46,7 +54,16 @@ const ExpensesPage = () => {
           <p className="text-muted-foreground">צפייה, הוספה ואישור של הוצאות משותפות</p>
         </div>
 
-        <div className="mt-4 md:mt-0">
+        <div className="mt-4 md:mt-0 flex gap-2">
+          <Button
+            variant="outline"
+            onClick={handleRefresh}
+            disabled={isLoading}
+            className="flex items-center gap-2"
+          >
+            <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+            רענון
+          </Button>
           <AddExpenseDialog />
         </div>
       </div>

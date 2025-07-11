@@ -82,6 +82,36 @@ export const useExpenseStorage = (user: User | null, account: Account | null): E
     }
   }, [user?.id, account?.id]);
 
+  // Add visibility change listener for auto-refresh when returning to tab
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (!document.hidden && user && account) {
+        console.log('Tab became visible, refreshing data...');
+        refreshData();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [user, account]);
+
+  // Add focus listener for auto-refresh when returning to window
+  useEffect(() => {
+    const handleFocus = () => {
+      if (user && account) {
+        console.log('Window gained focus, refreshing data...');
+        refreshData();
+      }
+    };
+
+    window.addEventListener('focus', handleFocus);
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+    };
+  }, [user, account]);
+
   return {
     expenses,
     setExpenses,

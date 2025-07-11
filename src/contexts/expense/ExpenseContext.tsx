@@ -69,7 +69,8 @@ export const ExpenseProvider = ({ children }: ExpenseProviderProps) => {
     getExpensesByCategory,
     getExpensesByMonth,
     getMonthlyBalance,
-    uploadReceipt
+    uploadReceipt,
+    refreshData
   };
 
   return (
