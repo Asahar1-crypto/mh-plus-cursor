@@ -4,6 +4,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { Home, CreditCard, User, Settings, Plus, Users, BarChart3, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Logo } from '@/components/ui/Logo';
 
 interface SidebarItemProps {
   icon: React.ElementType;
@@ -19,14 +20,22 @@ const SidebarItem: React.FC<SidebarItemProps> = ({ icon: Icon, label, path, isAc
       to={path}
       onClick={onClick}
       className={cn(
-        'flex items-center gap-3 px-3 py-2 rounded-md transition-colors',
+        'flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 group relative overflow-hidden',
         isActive
-          ? 'bg-primary text-primary-foreground'
-          : 'hover:bg-muted text-foreground hover:text-foreground'
+          ? 'bg-gradient-primary text-primary-foreground shadow-glow'
+          : 'hover:bg-muted/50 text-foreground hover:text-foreground hover:scale-105'
       )}
     >
-      <Icon className="h-5 w-5" />
-      <span>{label}</span>
+      <div className={cn(
+        'p-2 rounded-lg transition-all duration-300',
+        isActive ? 'bg-white/20' : 'group-hover:bg-primary/10'
+      )}>
+        <Icon className="h-5 w-5" />
+      </div>
+      <span className="font-medium">{label}</span>
+      {isActive && (
+        <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-white rounded-r-full"></div>
+      )}
     </Link>
   );
 };
@@ -51,7 +60,7 @@ const AppSidebar: React.FC<AppSidebarProps> = ({ isMobile, isOpen, onClose }) =>
 
   // Improved sidebar positioning and responsiveness
   const sidebarClasses = cn(
-    'flex flex-col w-64 bg-card border-l border-border transition-all duration-300 ease-in-out',
+    'flex flex-col w-64 glass shadow-card border-l border-border/50 transition-all duration-300 ease-in-out backdrop-blur-xl',
     isMobile 
       ? 'fixed top-0 right-0 h-full z-50 transform' + (isOpen ? ' translate-x-0' : ' translate-x-full')
       : 'fixed top-0 right-0 h-full z-20'

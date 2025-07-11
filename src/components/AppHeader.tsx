@@ -5,6 +5,7 @@ import { useAuth } from '@/contexts/auth';
 import { Button } from '@/components/ui/button';
 import { LogOut, Settings, Menu } from 'lucide-react';
 import AccountSwitcher from './account/AccountSwitcher';
+import { Logo } from '@/components/ui/Logo';
 
 interface AppHeaderProps {
   onMenuClick?: () => void;
@@ -23,7 +24,7 @@ const AppHeader: React.FC<AppHeaderProps> = ({ onMenuClick, isMobile }) => {
   };
 
   return (
-    <header className="bg-card border-b border-border px-3 sm:px-4 py-3 sticky top-0 z-30">
+    <header className="glass shadow-card border-b border-border/50 px-3 sm:px-4 py-3 sticky top-0 z-30 backdrop-blur-xl">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           {isMobile && (
@@ -36,8 +37,8 @@ const AppHeader: React.FC<AppHeaderProps> = ({ onMenuClick, isMobile }) => {
               <Menu className="h-4 w-4" />
             </Button>
           )}
-          <Link to="/" className="text-lg sm:text-xl font-bold text-primary">
-            ניהול הוצאות
+          <Link to="/" className="flex items-center hover:opacity-80 transition-opacity">
+            <Logo size="sm" showText={!isMobile} />
           </Link>
         </div>
         
