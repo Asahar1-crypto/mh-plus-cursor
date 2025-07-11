@@ -2,7 +2,7 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
-import { Home, CreditCard, User, Settings, Plus, Users } from 'lucide-react';
+import { Home, CreditCard, User, Settings, Plus, Users, BarChart3 } from 'lucide-react';
 
 interface SidebarItemProps {
   icon: React.ElementType;
@@ -41,6 +41,7 @@ const AppSidebar: React.FC<AppSidebarProps> = ({ isMobile, isOpen, onClose }) =>
     { icon: Home, label: 'דשבורד', path: '/dashboard' },
     { icon: CreditCard, label: 'הוצאות', path: '/expenses' },
     { icon: Users, label: 'ילדים', path: '/children' },
+    { icon: BarChart3, label: 'דוחות', path: '/reports' },
     { icon: User, label: 'פרופיל', path: '/profile' },
     { icon: Settings, label: 'הגדרות', path: '/account-settings' },
   ];

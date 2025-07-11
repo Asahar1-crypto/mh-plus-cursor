@@ -19,6 +19,7 @@ import NotFound from "./pages/NotFound";
 import AddExpense from "./pages/AddExpense";
 import Children from "./pages/Children";
 import Expenses from "./pages/Expenses";
+import Reports from "./pages/Reports";
 
 import AuthLayout from "./components/AuthLayout";
 import AppLayout from "./components/AppLayout";
@@ -56,6 +57,7 @@ const App = () => (
                 <Route path="/add-expense" element={<AddExpense />} />
                 <Route path="/children" element={<Children />} />
                 <Route path="/expenses" element={<Expenses />} />
+                <Route path="/reports" element={<Reports />} />
               </Route>
               
               {/* Special routes */}
