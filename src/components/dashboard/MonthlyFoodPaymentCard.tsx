@@ -42,34 +42,45 @@ export const MonthlyFoodPaymentCard: React.FC = () => {
       return isCurrentMonth && isRelevant;
     });
     
-    // Calculate what each person owes based on the rules:
-    // 1. split_equally = true: Only the payer owes their half
-    // 2. split_equally = false: The payer owes the full amount to the other person
+    // Calculate what each person owes/paid based on correct logic:
+    // 1. paidById = who actually paid out of pocket
+    // 2. split_equally = true: each person owes half
+    // 3. split_equally = false: the person who didn't pay owes the full amount
     
     const breakdown: PaymentBreakdown[] = accountMembers.map(member => {
+      let totalPaid = 0;
       let totalOwes = 0;
       
-      // Go through all expenses and see what this member owes
+      // Go through all expenses
       currentMonthExpenses.forEach(expense => {
         if (expense.paidById === member.user_id) {
-          // This member is designated as the one who should pay
-          if (expense.splitEqually) {
-            // Half-half: only owes their half
-            totalOwes += expense.amount / 2;
-          } else {
-            // Full payment: owes the full amount
+          // This member paid out of pocket
+          totalPaid += expense.amount;
+        }
+        
+        // Calculate what this member should contribute
+        if (expense.splitEqually) {
+          // Everyone pays half
+          totalOwes += expense.amount / 2;
+        } else {
+          // Only the non-payer owes the full amount
+          if (expense.paidById !== member.user_id) {
             totalOwes += expense.amount;
           }
+          // If this person paid and it's not split equally, they don't owe anything additional
         }
-        // If this member is NOT the payer, they don't owe anything for this expense
       });
+      
+      // Balance = what they owe minus what they already paid
+      // Positive = they owe money, Negative = they are owed money
+      const balance = totalOwes - totalPaid;
       
       return {
         userId: member.user_id,
         userName: member.user_name,
-        totalPaid: 0, // Not relevant in this calculation
+        totalPaid,
         shouldPay: totalOwes,
-        balance: totalOwes // Positive means they owe money
+        balance
       };
     });
     
