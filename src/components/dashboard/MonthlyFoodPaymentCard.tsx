@@ -42,65 +42,53 @@ export const MonthlyFoodPaymentCard: React.FC = () => {
       return isCurrentMonth && isRelevant;
     });
     
-    // Separate expenses by split settings
-    const splitEquallyExpenses = currentMonthExpenses.filter(expense => expense.splitEqually === true);
-    const noSplitExpenses = currentMonthExpenses.filter(expense => expense.splitEqually !== true);
+    // Calculate what each person owes based on the rules:
+    // 1. split_equally = true: Only the payer owes their half
+    // 2. split_equally = false: The payer owes the full amount to the other person
     
-    // Calculate totals
-    const totalSplitEquallyExpenses = splitEquallyExpenses.reduce((sum, expense) => sum + expense.amount, 0);
-    const totalNoSplitExpenses = noSplitExpenses.reduce((sum, expense) => sum + expense.amount, 0);
-    
-    // For split equally expenses: everyone pays equal share
-    // For no-split expenses: everyone owes equal share to whoever paid
-    const splitEquallyPerPerson = totalSplitEquallyExpenses / accountMembers.length;
-    const noSplitPerPerson = totalNoSplitExpenses / accountMembers.length;
-    
-    // Calculate what each person should pay and what they actually paid
     const breakdown: PaymentBreakdown[] = accountMembers.map(member => {
-      // What this person should pay:
-      // 1. Equal share of split-equally expenses
-      // 2. Equal share of no-split expenses (they owe this to whoever paid)
-      const totalShouldPay = splitEquallyPerPerson + noSplitPerPerson;
+      let totalOwes = 0;
       
-      // What this person actually paid (contributed)
-      const memberPaidExpenses = currentMonthExpenses.filter(expense => expense.paidById === member.user_id);
-      const totalActuallyPaid = memberPaidExpenses.reduce((sum, expense) => sum + expense.amount, 0);
-      
-      // Balance: positive means they owe money, negative means they're owed money
-      const balance = totalShouldPay - totalActuallyPaid;
+      // Go through all expenses and see what this member owes
+      currentMonthExpenses.forEach(expense => {
+        if (expense.paidById === member.user_id) {
+          // This member is designated as the one who should pay
+          if (expense.splitEqually) {
+            // Half-half: only owes their half
+            totalOwes += expense.amount / 2;
+          } else {
+            // Full payment: owes the full amount
+            totalOwes += expense.amount;
+          }
+        }
+        // If this member is NOT the payer, they don't owe anything for this expense
+      });
       
       return {
         userId: member.user_id,
         userName: member.user_name,
-        totalPaid: totalActuallyPaid,
-        shouldPay: totalShouldPay,
-        balance
+        totalPaid: 0, // Not relevant in this calculation
+        shouldPay: totalOwes,
+        balance: totalOwes // Positive means they owe money
       };
     });
     
+    // Calculate totals for display
+    const totalExpenses = currentMonthExpenses.reduce((sum, expense) => sum + expense.amount, 0);
     
     // Debug logging to verify calculations
     console.log('🔍 Payment Breakdown Debug:', {
-      totalExpenses: totalSplitEquallyExpenses + totalNoSplitExpenses,
-      totalSplitEquallyExpenses,
-      totalNoSplitExpenses,
-      splitEquallyPerPerson,
-      noSplitPerPerson,
-      accountMembersCount: accountMembers.length,
+      totalExpenses,
       currentMonthExpensesCount: currentMonthExpenses.length,
       breakdown: breakdown.map(b => ({
         name: b.userName,
         shouldPay: Math.round(b.shouldPay),
-        totalPaid: Math.round(b.totalPaid),
         balance: Math.round(b.balance)
       }))
     });
     
     return {
-      totalExpenses: totalSplitEquallyExpenses + totalNoSplitExpenses,
-      totalSplitEquallyExpenses,
-      totalNoSplitExpenses: totalNoSplitExpenses,
-      splitEquallyPerPerson,
+      totalExpenses,
       breakdown
     };
   }, [expenses, accountMembers]);
@@ -120,7 +108,7 @@ export const MonthlyFoodPaymentCard: React.FC = () => {
     );
   }
   
-  const { totalExpenses, totalSplitEquallyExpenses, totalNoSplitExpenses, splitEquallyPerPerson, breakdown } = paymentBreakdown;
+  const { totalExpenses, breakdown } = paymentBreakdown;
   
   return (
     <Card>
@@ -134,12 +122,8 @@ export const MonthlyFoodPaymentCard: React.FC = () => {
         <div className="text-center p-3 sm:p-4 bg-muted rounded-lg">
           <div className="text-xs sm:text-sm text-muted-foreground">סה״כ הוצאות החודש</div>
           <div className="text-xl sm:text-2xl font-bold text-primary">₪{Math.round(totalExpenses)}</div>
-          <div className="text-xs grid grid-cols-2 gap-2 sm:gap-4 mt-2 text-muted-foreground">
-            <div>לא מחולק: ₪{Math.round(totalNoSplitExpenses)}</div>
-            <div>מחולק שווה: ₪{Math.round(totalSplitEquallyExpenses)}</div>
-          </div>
           <div className="text-xs text-muted-foreground mt-1">
-            חלק לאדם מהכל: ₪{Math.round((totalExpenses / (breakdown.length || 1)))}
+            סה״כ חובות: ₪{Math.round(breakdown.reduce((sum, person) => sum + Math.max(0, person.balance), 0))}
           </div>
         </div>
         
