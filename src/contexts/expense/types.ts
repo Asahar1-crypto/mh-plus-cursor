@@ -17,6 +17,8 @@ export interface Expense {
   receipt?: string;
   isRecurring: boolean;
   frequency?: 'monthly' | 'weekly' | 'yearly';
+  hasEndDate?: boolean;
+  endDate?: string;
   includeInMonthlyBalance: boolean;
 }
 

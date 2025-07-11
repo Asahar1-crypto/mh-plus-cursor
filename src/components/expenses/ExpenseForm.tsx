@@ -50,6 +50,8 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({ onSubmitSuccess }) => 
       paidById: '',
       isRecurring: false,
       frequency: 'monthly',
+      hasEndDate: false,
+      endDate: undefined,
       includeInMonthlyBalance: true,
       date: new Date(),
       receipt: '',
@@ -57,6 +59,7 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({ onSubmitSuccess }) => 
   });
   
   const watchIsRecurring = form.watch('isRecurring');
+  const watchHasEndDate = form.watch('hasEndDate');
   
   const onSubmit = async (data: ExpenseFormValues) => {
     setIsPending(true);
@@ -326,6 +329,79 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({ onSubmitSuccess }) => 
               </FormItem>
             )}
           />
+        )}
+
+        {watchIsRecurring && (
+          <>
+            <FormField
+              control={form.control}
+              name="hasEndDate"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                  <div className="space-y-0.5">
+                    <FormLabel className="text-base">הגדר תאריך סיום</FormLabel>
+                    <FormDescription>
+                      סמן אם ברצונך להגדיר תאריך סיום להוצאה הקבועה
+                    </FormDescription>
+                  </div>
+                  <FormControl>
+                    <Switch
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+
+            {watchHasEndDate && (
+              <FormField
+                control={form.control}
+                name="endDate"
+                render={({ field }) => (
+                  <FormItem className="flex flex-col">
+                    <FormLabel>תאריך סיום</FormLabel>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <FormControl>
+                          <Button
+                            variant={"outline"}
+                            className={cn(
+                              "w-full pl-3 text-left font-normal",
+                              !field.value && "text-muted-foreground"
+                            )}
+                          >
+                            {field.value ? (
+                              format(field.value, "dd/MM/yyyy")
+                            ) : (
+                              <span>בחר תאריך סיום</span>
+                            )}
+                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                          </Button>
+                        </FormControl>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={field.value}
+                          onSelect={field.onChange}
+                          disabled={(date) =>
+                            date < new Date()
+                          }
+                          initialFocus
+                          className={cn("p-3 pointer-events-auto")}
+                        />
+                      </PopoverContent>
+                    </Popover>
+                    <FormDescription>
+                      תאריך שבו ההוצאה הקבועה תפסיק להתווסף אוטומטית
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
+          </>
         )}
 
         <FormField

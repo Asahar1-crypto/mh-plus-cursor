@@ -11,9 +11,20 @@ export const expenseSchema = z.object({
   paidById: z.string().min(1, { message: 'יש לבחור מי צריך לשלם' }),
   isRecurring: z.boolean().default(false),
   frequency: z.string().optional(),
+  hasEndDate: z.boolean().default(false),
+  endDate: z.date().optional(),
   includeInMonthlyBalance: z.boolean().default(true),
   date: z.date().default(() => new Date()),
   receipt: z.string().optional(),
+}).refine((data) => {
+  // אם זה הוצאה קבועה עם תאריך סיום, תאריך הסיום חייב להיות אחרי תאריך ההתחלה
+  if (data.hasEndDate && data.endDate && data.isRecurring) {
+    return data.endDate > data.date;
+  }
+  return true;
+}, {
+  message: 'תאריך הסיום חייב להיות אחרי תאריך ההתחלה',
+  path: ['endDate']
 });
 
 export type ExpenseFormValues = z.infer<typeof expenseSchema>;
