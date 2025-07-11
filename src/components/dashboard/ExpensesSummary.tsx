@@ -86,7 +86,7 @@ export const ExpensesSummary: React.FC<ExpensesSummaryProps> = ({
             </CardDescription>
             <Clock className="h-5 w-5 text-amber-500 animate-pulse-slow" />
           </div>
-          <CardTitle className="text-2xl sm:text-3xl font-bold gradient-primary bg-clip-text text-transparent">
+          <CardTitle className="text-2xl sm:text-3xl font-bold text-foreground">
             ₪{summaryData.pending.total.toFixed(0)}
           </CardTitle>
         </CardHeader>
@@ -122,7 +122,7 @@ export const ExpensesSummary: React.FC<ExpensesSummaryProps> = ({
             </CardDescription>
             <CheckCircle className="h-5 w-5 text-green-500 animate-pulse-slow" />
           </div>
-          <CardTitle className="text-2xl sm:text-3xl font-bold gradient-primary bg-clip-text text-transparent">
+          <CardTitle className="text-2xl sm:text-3xl font-bold text-foreground">
             ₪{summaryData.approved.total.toFixed(0)}
           </CardTitle>
         </CardHeader>
@@ -158,7 +158,7 @@ export const ExpensesSummary: React.FC<ExpensesSummaryProps> = ({
             </CardDescription>
             <CreditCard className="h-5 w-5 text-blue-500 animate-pulse-slow" />
           </div>
-          <CardTitle className="text-2xl sm:text-3xl font-bold gradient-primary bg-clip-text text-transparent">
+          <CardTitle className="text-2xl sm:text-3xl font-bold text-foreground">
             ₪{summaryData.paid.total.toFixed(0)}
           </CardTitle>
         </CardHeader>
