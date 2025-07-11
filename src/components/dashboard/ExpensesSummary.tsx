@@ -38,19 +38,29 @@ export const ExpensesSummary: React.FC<ExpensesSummaryProps> = ({
       }
 
       const breakdown = accountMembers.map(member => {
-        const userExpenses = expenses.filter(exp => exp.paidById === member.user_id);
-        // Calculate amount based on split_equally flag
-        const userTotal = userExpenses.reduce((sum, exp) => {
-          if (exp.splitEqually) {
-            return sum + (exp.amount / 2); // Only half if split equally
-          } else {
-            return sum + exp.amount; // Full amount if not split equally
+        let userTotal = 0;
+        let userCount = 0;
+        
+        expenses.forEach(exp => {
+          if (exp.paidById === member.user_id) {
+            // This member paid the expense
+            if (exp.splitEqually) {
+              userTotal += exp.amount / 2; // Only their half
+            } else {
+              userTotal += exp.amount; // Full amount
+            }
+            userCount++;
+          } else if (exp.splitEqually && accountMembers.some(m => m.user_id === exp.paidById)) {
+            // This member didn't pay, but it's split equally and someone else from the account paid
+            userTotal += exp.amount / 2; // They owe their half
+            userCount++;
           }
-        }, 0);
+        });
+        
         return {
           userName: member.user_name,
           amount: userTotal,
-          count: userExpenses.length
+          count: userCount
         };
       });
 
