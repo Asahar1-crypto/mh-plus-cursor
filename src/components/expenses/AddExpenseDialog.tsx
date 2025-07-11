@@ -33,27 +33,30 @@ export const AddExpenseDialog: React.FC<{ onSubmitSuccess?: () => void }> = ({ o
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => {
-      console.log('Dialog onOpenChange called:', { open, currentStep, isOpen, preventClose });
-      if (!open && preventClose) {
-        console.log('Preventing dialog close due to preventClose flag');
-        return;
-      }
-      if (!open) {
-        console.log('Closing dialog via handleCancel');
-        handleCancel();
-      }
-    }}>
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
         <Button onClick={() => {
           setCurrentStep('select');
           setIsManualForm(true);
           setIsOpen(true);
+          setPreventClose(false);
         }}>
           <PlusCircle className="mr-2 h-4 w-4" /> הוצאה חדשה
         </Button>
       </DialogTrigger>
-      <DialogContent className="w-[95vw] max-w-[800px] max-h-[90vh] overflow-y-auto">
+      <DialogContent 
+        className="w-[95vw] max-w-[800px] max-h-[90vh] overflow-y-auto"
+        onPointerDownOutside={(e) => {
+          if (preventClose) {
+            e.preventDefault();
+          }
+        }}
+        onEscapeKeyDown={(e) => {
+          if (preventClose) {
+            e.preventDefault();
+          }
+        }}
+      >
         <DialogHeader>
           <DialogTitle>
             {currentStep === 'select' ? "הוספת הוצאה" 
@@ -75,6 +78,7 @@ export const AddExpenseDialog: React.FC<{ onSubmitSuccess?: () => void }> = ({ o
                 onClick={() => {
                   setIsManualForm(true);
                   setCurrentStep('select');
+                  setPreventClose(false);
                 }}
                 className="flex-1"
               >
