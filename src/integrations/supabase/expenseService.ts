@@ -13,12 +13,13 @@ export const expenseService = {
       .from('expenses')
       .select(`
         *,
-        expense_children!inner(
+        expense_children(
           child_id,
-          children!inner(
+          children(
             name
           )
-        )
+        ),
+        paid_by:profiles!paid_by_id(name)
       `)
       .eq('account_id', account.id)
       .order('created_at', { ascending: false });
@@ -49,8 +50,10 @@ export const expenseService = {
         category: expense.category || 'כללי',
         childId: childId,
         childName: childName,
-        createdBy: expense.paid_by_id,
-        creatorName: 'Unknown', // We'll need to join with profiles to get this
+        createdBy: user.id, // The user who created the expense
+        creatorName: user.name, // The user who created the expense
+        paidById: expense.paid_by_id,
+        paidByName: expense.paid_by?.name || 'Unknown',
         status: expense.status as 'pending' | 'approved' | 'rejected' | 'paid',
         receipt: expense.receipt_url,
         isRecurring: false, // Default value, can be updated based on your schema
@@ -100,7 +103,7 @@ export const expenseService = {
         date: expense.date,
         category: expense.category,
         account_id: account.id,
-        paid_by_id: user.id,
+        paid_by_id: expense.paidById,
         status: 'pending'
       })
       .select()

@@ -9,6 +9,8 @@ export interface Expense {
   childName?: string;
   createdBy: string;
   creatorName: string;
+  paidById: string;
+  paidByName: string;
   status: 'pending' | 'approved' | 'rejected' | 'paid';
   approvedBy?: string;
   approvedAt?: string;

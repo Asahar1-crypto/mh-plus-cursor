@@ -16,6 +16,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { cn } from '@/lib/utils';
 import { useExpense } from '@/contexts/ExpenseContext';
 import { ExpenseFormValues, expenseSchema } from './expenseFormSchema';
+import { useAuth } from '@/contexts/auth';
 
 interface ExpenseFormProps {
   onSubmitSuccess?: () => void;
@@ -23,6 +24,7 @@ interface ExpenseFormProps {
 
 export const ExpenseForm: React.FC<ExpenseFormProps> = ({ onSubmitSuccess }) => {
   const { addExpense, childrenList } = useExpense();
+  const { account } = useAuth();
   const navigate = useNavigate();
   const [isPending, setIsPending] = React.useState(false);
   
@@ -33,6 +35,7 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({ onSubmitSuccess }) => 
       description: '',
       category: '',
       childId: '',
+      paidById: '',
       isRecurring: false,
       frequency: 'monthly',
       includeInMonthlyBalance: true,
@@ -49,6 +52,8 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({ onSubmitSuccess }) => 
       const childInfo = data.childId ? 
         childrenList.find(c => c.id === data.childId) : undefined;
       
+      const paidByMember = account?.members?.find(m => m.user_id === data.paidById);
+      
       await addExpense({
         amount: Number(data.amount),
         description: data.description,
@@ -56,6 +61,8 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({ onSubmitSuccess }) => 
         date: format(data.date, 'yyyy-MM-dd'),
         childId: data.childId === 'general' ? undefined : data.childId,
         childName: childInfo?.name,
+        paidById: data.paidById,
+        paidByName: paidByMember?.user_name || '',
         isRecurring: data.isRecurring,
         frequency: data.isRecurring ? data.frequency as 'monthly' | 'weekly' | 'yearly' : undefined,
         includeInMonthlyBalance: data.includeInMonthlyBalance,
@@ -227,6 +234,37 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({ onSubmitSuccess }) => 
             )}
           />
         </div>
+        
+        <FormField
+          control={form.control}
+          name="paidById"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>מי צריך לשלם?</FormLabel>
+              <Select 
+                onValueChange={field.onChange} 
+                defaultValue={field.value}
+              >
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="בחר מי צריך לשלם" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  {account?.members?.map((member) => (
+                    <SelectItem key={member.user_id} value={member.user_id}>
+                      {member.user_name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <FormDescription>
+                בחר מי צריך לשלם את ההוצאה הזו
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
         
         <FormField
           control={form.control}
