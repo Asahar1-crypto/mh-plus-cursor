@@ -14,6 +14,51 @@ export type Database = {
   }
   public: {
     Tables: {
+      account_members: {
+        Row: {
+          account_id: string
+          created_at: string
+          id: string
+          joined_at: string
+          role: Database["public"]["Enums"]["account_member_role"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          account_id: string
+          created_at?: string
+          id?: string
+          joined_at?: string
+          role?: Database["public"]["Enums"]["account_member_role"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          account_id?: string
+          created_at?: string
+          id?: string
+          joined_at?: string
+          role?: Database["public"]["Enums"]["account_member_role"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "account_members_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "account_members_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       accounts: {
         Row: {
           created_at: string
@@ -259,13 +304,32 @@ export type Database = {
           owner_id: string
         }[]
       }
+      create_account_with_admin: {
+        Args: { account_name: string; admin_user_id: string }
+        Returns: {
+          id: string
+          name: string
+        }[]
+      }
       get_current_user_email: {
         Args: Record<PropertyKey, never>
         Returns: string
       }
+      get_user_account_ids: {
+        Args: { user_uuid: string }
+        Returns: string[]
+      }
+      is_account_admin: {
+        Args: { user_uuid: string; account_uuid: string }
+        Returns: boolean
+      }
+      is_account_member: {
+        Args: { user_uuid: string; account_uuid: string }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      account_member_role: "admin" | "member"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -392,6 +456,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      account_member_role: ["admin", "member"],
+    },
   },
 } as const
