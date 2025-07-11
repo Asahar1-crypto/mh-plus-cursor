@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { FileText, ScanLine, PlusCircle, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ExpenseForm } from '@/components/expenses/ExpenseForm';
@@ -63,7 +64,7 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({ onSubmitSucces
     );
   }
 
-  return (
+  return createPortal(
     <>
       {/* Backdrop */}
       <div 
@@ -155,6 +156,7 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({ onSubmitSucces
           </div>
         </div>
       </div>
-    </>
+    </>,
+    document.body
   );
 };
