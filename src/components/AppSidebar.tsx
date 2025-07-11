@@ -51,10 +51,10 @@ const AppSidebar: React.FC<AppSidebarProps> = ({ isMobile, isOpen, onClose }) =>
 
   // Improved sidebar positioning and responsiveness
   const sidebarClasses = cn(
-    'flex flex-col w-64 bg-card border-r border-border transition-all duration-300 ease-in-out',
+    'flex flex-col w-64 bg-card border-l border-border transition-all duration-300 ease-in-out',
     isMobile 
-      ? 'fixed top-0 left-0 h-full z-50 transform' + (isOpen ? ' translate-x-0' : ' -translate-x-full')
-      : 'fixed top-0 left-0 h-full z-20'
+      ? 'fixed top-0 right-0 h-full z-50 transform' + (isOpen ? ' translate-x-0' : ' translate-x-full')
+      : 'fixed top-0 right-0 h-full z-20'
   );
 
   return (
