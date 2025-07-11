@@ -1,4 +1,3 @@
-
 export * from './types';
 export * from './rpcTypes';
 export * from './sendInvitation';

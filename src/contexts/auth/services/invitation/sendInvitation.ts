@@ -85,7 +85,7 @@ export async function sendInvitation(email: string, user: User, account: Account
 
     // Try to send email (this might fail if email service is not configured)
     try {
-      const invitationUrl = `${window.location.origin}/accept-invitation/${invitationId}`;
+      const invitationUrl = `${window.location.origin}/invitation/${invitationId}`;
       
       // Try to send email using the edge function
       const { data, error } = await supabase.functions.invoke('send-email', {
