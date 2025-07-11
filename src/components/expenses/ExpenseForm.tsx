@@ -2,6 +2,7 @@
 import React from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -17,6 +18,7 @@ import { cn } from '@/lib/utils';
 import { useExpense } from '@/contexts/ExpenseContext';
 import { ExpenseFormValues, expenseSchema } from './expenseFormSchema';
 import { useAuth } from '@/contexts/auth';
+import { memberService } from '@/contexts/auth/services/account/memberService';
 
 interface ExpenseFormProps {
   onSubmitSuccess?: () => void;
@@ -27,6 +29,16 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({ onSubmitSuccess }) => 
   const { account } = useAuth();
   const navigate = useNavigate();
   const [isPending, setIsPending] = React.useState(false);
+
+  // Load account members for the payer selection
+  const { data: accountMembers } = useQuery({
+    queryKey: ['accountMembers', account?.id],
+    queryFn: async () => {
+      if (!account?.id) return [];
+      return memberService.getAccountMembers(account.id);
+    },
+    enabled: !!account?.id
+  });
   
   const form = useForm<ExpenseFormValues>({
     resolver: zodResolver(expenseSchema),
@@ -52,7 +64,7 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({ onSubmitSuccess }) => 
       const childInfo = data.childId ? 
         childrenList.find(c => c.id === data.childId) : undefined;
       
-      const paidByMember = account?.members?.find(m => m.user_id === data.paidById);
+      const paidByMember = accountMembers?.find(m => m.user_id === data.paidById);
       
       await addExpense({
         amount: Number(data.amount),
@@ -251,7 +263,7 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({ onSubmitSuccess }) => 
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  {account?.members?.map((member) => (
+                  {accountMembers?.map((member) => (
                     <SelectItem key={member.user_id} value={member.user_id}>
                       {member.user_name}
                     </SelectItem>
