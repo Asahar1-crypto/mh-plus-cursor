@@ -29,6 +29,7 @@ const ExpensesPage = () => {
   const [selectedStatus, setSelectedStatus] = useState<Expense['status'] | null>(null);
   const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth());
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
+  const [selectedPayer, setSelectedPayer] = useState<string | null>(null);
 
   // Filter expenses based on selected criteria
   const filteredExpenses = expenses
@@ -44,6 +45,23 @@ const ExpensesPage = () => {
         );
       }
       return true;
+    })
+    .filter(expense => {
+      if (!selectedPayer) return true;
+      
+      if (selectedPayer === 'split') {
+        // Show only split expenses
+        return expense.splitEqually;
+      } else {
+        // Show expenses where the specific user should pay
+        if (expense.splitEqually) {
+          // For split expenses, both users should pay
+          return true;
+        } else {
+          // For non-split expenses, only the designated payer should pay
+          return expense.paidById === selectedPayer;
+        }
+      }
     });
 
   return (
@@ -83,6 +101,8 @@ const ExpensesPage = () => {
           setSelectedMonth={setSelectedMonth}
           selectedYear={selectedYear}
           setSelectedYear={setSelectedYear}
+          selectedPayer={selectedPayer}
+          setSelectedPayer={setSelectedPayer}
           childrenList={childrenList}
         />
 

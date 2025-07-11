@@ -4,6 +4,9 @@ import { Filter } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
 import { Expense, Child } from '@/contexts/expense/types';
+import { useQuery } from '@tanstack/react-query';
+import { useAuth } from '@/contexts/auth';
+import { memberService } from '@/contexts/auth/services/account/memberService';
 
 interface ExpenseFiltersProps {
   selectedCategory: string | null;
@@ -16,6 +19,8 @@ interface ExpenseFiltersProps {
   setSelectedMonth: (month: number) => void;
   selectedYear: number;
   setSelectedYear: (year: number) => void;
+  selectedPayer: string | null;
+  setSelectedPayer: (payer: string | null) => void;
   childrenList: Child[];
 }
 
@@ -30,8 +35,18 @@ export const ExpenseFilters: React.FC<ExpenseFiltersProps> = ({
   setSelectedMonth,
   selectedYear,
   setSelectedYear,
+  selectedPayer,
+  setSelectedPayer,
   childrenList
 }) => {
+  const { account } = useAuth();
+  
+  // Get account members
+  const { data: accountMembers } = useQuery({
+    queryKey: ['account-members', account?.id],
+    queryFn: () => memberService.getAccountMembers(account!.id),
+    enabled: !!account?.id
+  });
   // Categories for filtering - updated to include all categories used in the system
   const categories = [
     'חינוך',
@@ -75,7 +90,7 @@ export const ExpenseFilters: React.FC<ExpenseFiltersProps> = ({
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
           <div className="space-y-2">
             <label className="text-sm font-medium">לפי חודש</label>
             <div className="flex gap-2">
@@ -167,6 +182,27 @@ export const ExpenseFilters: React.FC<ExpenseFiltersProps> = ({
                 {childrenList.map((child) => (
                   <SelectItem key={child.id} value={child.id}>
                     {child.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm font-medium">מי צריך לשלם</label>
+            <Select 
+              value={selectedPayer || 'all'} 
+              onValueChange={(value) => setSelectedPayer(value === 'all' ? null : value)}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="כל המשלמים" />
+              </SelectTrigger>
+              <SelectContent className="bg-background border shadow-lg z-50">
+                <SelectItem value="all">הכל</SelectItem>
+                <SelectItem value="split">חצי-חצי</SelectItem>
+                {accountMembers?.map((member) => (
+                  <SelectItem key={member.user_id} value={member.user_id}>
+                    {member.user_name}
                   </SelectItem>
                 ))}
               </SelectContent>
