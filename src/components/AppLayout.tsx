@@ -45,7 +45,7 @@ const AppLayout = () => {
         isOpen={isMobileSidebarOpen}
         onClose={() => setIsMobileSidebarOpen(false)}
       />
-      <div className={`flex flex-col flex-1 transition-all duration-300 ${isMobile ? 'w-full' : 'ml-64'}`}>
+      <div className={`flex flex-col flex-1 transition-all duration-300 ${isMobile ? 'w-full' : 'mr-64'}`}>
         <AppHeader 
           onMenuClick={() => setIsMobileSidebarOpen(!isMobileSidebarOpen)}
           isMobile={isMobile}

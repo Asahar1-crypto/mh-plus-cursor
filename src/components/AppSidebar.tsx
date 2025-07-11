@@ -29,7 +29,7 @@ const SidebarItem: React.FC<SidebarItemProps> = ({ icon: Icon, label, path, isAc
       <Icon className="h-5 w-5" />
       <span className="font-medium">{label}</span>
       {isActive && (
-        <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-primary-foreground rounded-r-full"></div>
+        <div className="absolute right-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-primary-foreground rounded-l-full"></div>
       )}
     </Link>
   );
@@ -55,10 +55,10 @@ const AppSidebar: React.FC<AppSidebarProps> = ({ isMobile, isOpen, onClose }) =>
 
   // Improved sidebar positioning and responsiveness
   const sidebarClasses = cn(
-    'flex flex-col w-64 bg-card/95 backdrop-blur-xl border-r border-border shadow-lg transition-all duration-300 ease-in-out',
+    'flex flex-col w-64 bg-card/95 backdrop-blur-xl border-l border-border shadow-lg transition-all duration-300 ease-in-out',
     isMobile 
       ? 'fixed top-0 right-0 h-full z-50 transform' + (isOpen ? ' translate-x-0' : ' translate-x-full')
-      : 'fixed top-0 left-0 h-full z-20'
+      : 'fixed top-0 right-0 h-full z-20'
   );
 
   return (
