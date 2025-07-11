@@ -39,6 +39,7 @@ export const ExpenseFilters: React.FC<ExpenseFiltersProps> = ({
     'פנאי',
     'ביגוד',
     'מזון',
+    'מזונות',
     'קייטנות',
     'אחר',
   ];
