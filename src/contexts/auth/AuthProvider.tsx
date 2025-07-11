@@ -27,6 +27,18 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     refreshProfile
   } = useAuthState();
 
+  const authActions = useAuthActions(
+    user,
+    account,
+    setUser,
+    setAccount,
+    setUserAccounts,
+    setIsLoading,
+    checkAndSetUserData
+  );
+
+  console.log('AuthProvider: received from useAuthActions', { authActions });
+
   const {
     login,
     register,
@@ -38,15 +50,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     resetPassword,
     switchAccount,
     updateAccountName
-  } = useAuthActions(
-    user,
-    account,
-    setUser,
-    setAccount,
-    setUserAccounts,
-    setIsLoading,
-    checkAndSetUserData
-  );
+  } = authActions;
 
   // Set up subscriptions for auth state changes and invitation checking
   useAuthSubscriptions(user, checkAndSetUserData);

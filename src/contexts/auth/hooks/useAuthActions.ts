@@ -26,13 +26,17 @@ export const useAuthActions = (
     checkAndSetUserData
   );
 
-  const { switchAccount, updateAccountName } = useAccountActions(
+  const accountActions = useAccountActions(
     user,
     account,
     setAccount,
     setUserAccounts,
     setIsLoading
   );
+  
+  console.log('useAuthActions: received from useAccountActions', { accountActions });
+  
+  const { switchAccount, updateAccountName } = accountActions;
 
   const { verifyEmail, resetPassword } = usePasswordActions(
     setIsLoading,

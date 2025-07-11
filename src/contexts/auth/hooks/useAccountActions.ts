@@ -80,6 +80,8 @@ export const useAccountActions = (
     }
   };
 
+  console.log('useAccountActions: returning functions', { switchAccount: typeof switchAccount, updateAccountName: typeof updateAccountName });
+  
   return {
     switchAccount,
     updateAccountName
