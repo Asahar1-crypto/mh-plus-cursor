@@ -2,6 +2,7 @@ import React from 'react';
 import { useAuth } from '@/contexts/auth';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import FoodBudgetChart from '@/components/reports/FoodBudgetChart';
+import { FoodBudgetChart as DashboardFoodBudgetChart } from '@/components/dashboard/FoodBudgetChart';
 
 const Reports = () => {
   const { user, account, isLoading } = useAuth();
@@ -40,7 +41,7 @@ const Reports = () => {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <FoodBudgetChart />
+            <DashboardFoodBudgetChart />
           </CardContent>
         </Card>
       </div>

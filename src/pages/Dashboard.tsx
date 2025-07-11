@@ -5,7 +5,7 @@ import { useExpense } from '@/contexts/ExpenseContext';
 import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
 import { ExpensesSummary } from '@/components/dashboard/ExpensesSummary';
 import { ExpensesTabs } from '@/components/dashboard/ExpensesTabs';
-import { FoodBudgetChart } from '@/components/dashboard/FoodBudgetChart';
+
 import { MonthlyFoodPaymentCard } from '@/components/dashboard/MonthlyFoodPaymentCard';
 import PendingInvitationAlert from '@/components/invitation/PendingInvitationAlert';
 import AccountDebugInfo from '@/components/debug/AccountDebugInfo';
@@ -68,11 +68,7 @@ const Dashboard = () => {
         paidCount={paidExpenses.length}
       />
       
-      {/* Grid with food budget chart and payment breakdown */}
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-        <FoodBudgetChart />
-        <MonthlyFoodPaymentCard />
-      </div>
+      <MonthlyFoodPaymentCard />
       
       <ExpensesTabs 
         pendingExpenses={pendingExpenses}
