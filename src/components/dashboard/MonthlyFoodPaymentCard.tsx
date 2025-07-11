@@ -56,9 +56,45 @@ export const MonthlyFoodPaymentCard: React.FC = () => {
     
     // Calculate what each person should pay and what they actually paid
     const breakdown: PaymentBreakdown[] = accountMembers.map(member => {
-      // Personal expenses: what this person should pay (expenses assigned to them)
-      const memberPersonalExpenses = personalExpenses.filter(expense => expense.paidById === member.user_id);
-      const shouldPayPersonal = memberPersonalExpenses.reduce((sum, expense) => sum + expense.amount, 0);
+      // Personal expenses: calculate based on NEW LOGIC
+      // Rule 1: If user A enters expense on user B -> user B owes (full or half based on splitEqually)
+      // Rule 2: If user enters expense on themselves -> they owe to the other user
+      // 
+      // How to determine "who the expense is for":
+      // - If expense has childId: it's for that child's responsible parent
+      // - If expense has no childId: it's for the person who the expense is "targeted" at
+      //   Since we don't have an explicit "target" field, we need to infer from paidById
+      //   If creator != payer, then it's for the payer (rule 1)
+      //   If creator == payer, then it's for the creator themselves (rule 2)
+      
+      let shouldPayPersonal = 0;
+      
+      personalExpenses.forEach(expense => {
+        const expenseAmount = expense.splitEqually ? expense.amount / 2 : expense.amount;
+        
+        // Determine who this expense is "for" (who should pay)
+        let expenseTargetUserId: string;
+        
+        if (expense.childId) {
+          // For child expenses, we need to determine the responsible parent
+          // For now, let's assume the creator is responsible for their child's expenses
+          expenseTargetUserId = expense.createdBy;
+        } else {
+          // For personal expenses without child
+          if (expense.createdBy === expense.paidById) {
+            // Creator paid for themselves -> they owe (rule 2)
+            expenseTargetUserId = expense.createdBy;
+          } else {
+            // Creator created expense but someone else paid -> the payer was "targeted" (rule 1)
+            expenseTargetUserId = expense.paidById;
+          }
+        }
+        
+        // If this member is the target of the expense, they owe
+        if (expenseTargetUserId === member.user_id) {
+          shouldPayPersonal += expenseAmount;
+        }
+      });
       
       // Split equally expenses: equal share for everyone
       const shouldPaySplitEqually = splitEquallyPerPerson;
@@ -66,9 +102,9 @@ export const MonthlyFoodPaymentCard: React.FC = () => {
       // Total what this person should pay (their debt)
       const totalShouldPay = shouldPayPersonal + shouldPaySplitEqually;
       
-      // What this person actually paid (what they contributed by creating expenses)
-      const memberCreatedExpenses = currentMonthExpenses.filter(expense => expense.createdBy === member.user_id);
-      const totalActuallyPaid = memberCreatedExpenses.reduce((sum, expense) => sum + expense.amount, 0);
+      // What this person actually paid (what they contributed by paying for expenses)
+      const memberPaidExpenses = currentMonthExpenses.filter(expense => expense.paidById === member.user_id);
+      const totalActuallyPaid = memberPaidExpenses.reduce((sum, expense) => sum + expense.amount, 0);
       
       // Balance: positive means they owe money, negative means they overpaid (others owe them)
       const balance = totalShouldPay - totalActuallyPaid;
@@ -144,13 +180,17 @@ export const MonthlyFoodPaymentCard: React.FC = () => {
               </div>
               
               <div className="text-right">
-                {person.shouldPay > 0 ? (
+                {person.balance > 0 ? (
                   <div className="text-red-600 font-semibold">
-                    חייב: ₪{Math.round(person.shouldPay)}
+                    חייב: ₪{Math.round(person.balance)}
+                  </div>
+                ) : person.balance < 0 ? (
+                  <div className="text-green-600 font-semibold">
+                    זכאי: ₪{Math.round(Math.abs(person.balance))}
                   </div>
                 ) : (
                   <div className="text-gray-600 font-semibold">
-                    אין חוב ✓
+                    מאוזן ✓
                   </div>
                 )}
               </div>
@@ -164,16 +204,16 @@ export const MonthlyFoodPaymentCard: React.FC = () => {
         <div className="space-y-2">
           <h4 className="font-semibold">סיכום התשלומים:</h4>
           {breakdown
-            .filter(person => person.shouldPay > 0)
+            .filter(person => person.balance > 0)
             .map(debtor => {
-              const others = breakdown.filter(person => person.userId !== debtor.userId);
+              const creditors = breakdown.filter(person => person.balance < 0);
               
               return (
                 <div key={debtor.userId} className="text-sm p-2 bg-yellow-50 rounded border border-yellow-200">
                   <span className="font-medium">{debtor.userName}</span> חייב לשלם{' '}
-                  <span className="font-bold text-red-600">₪{Math.round(debtor.shouldPay)}</span>
-                  {others.length === 1 && (
-                    <span> ל-<span className="font-medium">{others[0].userName}</span></span>
+                  <span className="font-bold text-red-600">₪{Math.round(debtor.balance)}</span>
+                  {creditors.length === 1 && (
+                    <span> ל-<span className="font-medium">{creditors[0].userName}</span></span>
                   )}
                 </div>
               );
