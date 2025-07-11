@@ -113,7 +113,7 @@ const Dashboard = () => {
       <DashboardHeader userName={user?.name} />
       
       {/* Month Filter */}
-      <Card>
+      <Card className="bg-card/95 backdrop-blur-sm border shadow-sm">
         <CardContent className="p-4">
           <div className="flex items-center gap-3">
             <CalendarIcon className="h-5 w-5 text-muted-foreground" />

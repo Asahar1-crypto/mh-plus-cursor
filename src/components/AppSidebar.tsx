@@ -20,21 +20,16 @@ const SidebarItem: React.FC<SidebarItemProps> = ({ icon: Icon, label, path, isAc
       to={path}
       onClick={onClick}
       className={cn(
-        'flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 group relative overflow-hidden',
+        'flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 group relative',
         isActive
-          ? 'bg-gradient-primary text-primary-foreground shadow-glow'
-          : 'hover:bg-muted/50 text-foreground hover:text-foreground hover:scale-105'
+          ? 'bg-primary text-primary-foreground shadow-sm'
+          : 'hover:bg-accent text-foreground hover:text-accent-foreground'
       )}
     >
-      <div className={cn(
-        'p-2 rounded-lg transition-all duration-300',
-        isActive ? 'bg-white/20' : 'group-hover:bg-primary/10'
-      )}>
-        <Icon className="h-5 w-5" />
-      </div>
+      <Icon className="h-5 w-5" />
       <span className="font-medium">{label}</span>
       {isActive && (
-        <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-white rounded-r-full"></div>
+        <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-primary-foreground rounded-r-full"></div>
       )}
     </Link>
   );
@@ -60,10 +55,10 @@ const AppSidebar: React.FC<AppSidebarProps> = ({ isMobile, isOpen, onClose }) =>
 
   // Improved sidebar positioning and responsiveness
   const sidebarClasses = cn(
-    'flex flex-col w-64 glass shadow-card border-l border-border/50 transition-all duration-300 ease-in-out backdrop-blur-xl',
+    'flex flex-col w-64 bg-card/95 backdrop-blur-xl border-r border-border shadow-lg transition-all duration-300 ease-in-out',
     isMobile 
       ? 'fixed top-0 right-0 h-full z-50 transform' + (isOpen ? ' translate-x-0' : ' translate-x-full')
-      : 'fixed top-0 right-0 h-full z-20'
+      : 'fixed top-0 left-0 h-full z-20'
   );
 
   return (
@@ -94,7 +89,10 @@ const AppSidebar: React.FC<AppSidebarProps> = ({ isMobile, isOpen, onClose }) =>
           </div>
         )}
         
-        <div className="p-4 flex-1 overflow-y-auto">
+        <div className="p-6 pt-8 flex-1 overflow-y-auto">
+          <div className="mb-6">
+            <Logo size="md" />
+          </div>
           <nav className="space-y-1">
             {sidebarItems.map((item) => (
               <SidebarItem

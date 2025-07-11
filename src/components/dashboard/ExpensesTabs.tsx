@@ -21,18 +21,19 @@ export const ExpensesTabs: React.FC<ExpensesTabsProps> = ({
   onMarkPaid
 }) => {
   return (
-    <Tabs defaultValue="pending" className="w-full">
-      <TabsList className="w-full mb-4 grid grid-cols-3 h-auto">
-        <TabsTrigger value="pending" className="flex-1 text-xs sm:text-sm px-2 py-2">
-          ממתינות ({pendingExpenses.length})
-        </TabsTrigger>
-        <TabsTrigger value="approved" className="flex-1 text-xs sm:text-sm px-2 py-2">
-          מאושרות ({approvedExpenses.length})
-        </TabsTrigger>
-        <TabsTrigger value="paid" className="flex-1 text-xs sm:text-sm px-2 py-2">
-          שולמו ({paidExpenses.length})
-        </TabsTrigger>
-      </TabsList>
+    <div className="bg-card/95 backdrop-blur-sm border shadow-sm rounded-lg p-6">
+      <Tabs defaultValue="pending" className="w-full">
+        <TabsList className="w-full mb-6 grid grid-cols-3 h-auto bg-accent/50">
+          <TabsTrigger value="pending" className="flex-1 text-sm px-4 py-3">
+            ממתינות ({pendingExpenses.length})
+          </TabsTrigger>
+          <TabsTrigger value="approved" className="flex-1 text-sm px-4 py-3">
+            מאושרות ({approvedExpenses.length})
+          </TabsTrigger>
+          <TabsTrigger value="paid" className="flex-1 text-sm px-4 py-3">
+            שולמו ({paidExpenses.length})
+          </TabsTrigger>
+        </TabsList>
       
       <TabsContent value="pending">
         {pendingExpenses.length > 0 ? (
@@ -87,6 +88,7 @@ export const ExpensesTabs: React.FC<ExpensesTabsProps> = ({
           </div>
         )}
       </TabsContent>
-    </Tabs>
+      </Tabs>
+    </div>
   );
 };

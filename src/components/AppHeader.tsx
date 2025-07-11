@@ -24,7 +24,7 @@ const AppHeader: React.FC<AppHeaderProps> = ({ onMenuClick, isMobile }) => {
   };
 
   return (
-    <header className="glass shadow-card border-b border-border/50 px-3 sm:px-4 py-3 sticky top-0 z-30 backdrop-blur-xl">
+    <header className="bg-card/95 backdrop-blur-xl border-b border-border shadow-sm px-4 py-3 sticky top-0 z-30">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           {isMobile && (

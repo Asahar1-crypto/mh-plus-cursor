@@ -35,16 +35,15 @@ export const Logo: React.FC<LogoProps> = ({
           alt="Family Budget Logo" 
           className={cn(
             sizeClasses[size],
-            "rounded-xl shadow-glow animate-float transition-transform hover:scale-105"
+            "rounded-lg shadow-sm transition-transform hover:scale-105"
           )}
         />
-        <div className="absolute -inset-1 bg-gradient-primary rounded-xl blur opacity-30 animate-glow"></div>
       </div>
       {showText && (
         <div className="flex flex-col">
           <h1 className={cn(
             textSizeClasses[size],
-            "font-bold gradient-primary bg-clip-text text-transparent"
+            "font-bold text-foreground"
           )}>
             Family Budget
           </h1>

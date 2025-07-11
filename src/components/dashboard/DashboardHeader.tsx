@@ -14,24 +14,20 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({ userName }) =>
   const greeting = currentHour < 12 ? 'בוקר טוב' : currentHour < 18 ? 'צהריים טובים' : 'ערב טוב';
 
   return (
-    <Card className="glass shadow-card border-0 overflow-hidden relative mb-6">
-      <div className="absolute inset-0 gradient-primary opacity-5"></div>
-      <div className="relative p-6">
+    <Card className="bg-card/95 backdrop-blur-sm border shadow-sm mb-6">
+      <div className="p-6">
         <div className="flex flex-col md:flex-row items-start justify-between gap-6">
-          <div className="flex items-center gap-6">
-            <Logo size="lg" />
-            <div className="space-y-1">
-              <div className="flex items-center gap-2">
-                <h2 className="text-3xl font-bold text-foreground">
-                  {greeting}, {userName || 'משתמש'}!
-                </h2>
-                <Sparkles className="h-6 w-6 text-primary animate-pulse-slow" />
-              </div>
-              <p className="text-muted-foreground flex items-center gap-2">
-                <TrendingUp className="h-4 w-4" />
-                בואו נראה איך התקציב שלכם מתנהל היום
-              </p>
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <h2 className="text-2xl md:text-3xl font-bold text-foreground">
+                {greeting}, {userName || 'משתמש'}!
+              </h2>
+              <Sparkles className="h-5 w-5 text-primary" />
             </div>
+            <p className="text-muted-foreground flex items-center gap-2">
+              <TrendingUp className="h-4 w-4" />
+              בואו נראה איך התקציב שלכם מתנהל היום
+            </p>
           </div>
           
           <div className="flex flex-col md:flex-row items-start md:items-center gap-4">
@@ -45,12 +41,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({ userName }) =>
                 })}
               </div>
             </div>
-            <div className="relative">
-              <div className="absolute -inset-1 bg-gradient-primary rounded-lg blur opacity-30"></div>
-              <div className="relative">
-                <AddExpenseDialog />
-              </div>
-            </div>
+            <AddExpenseDialog />
           </div>
         </div>
       </div>

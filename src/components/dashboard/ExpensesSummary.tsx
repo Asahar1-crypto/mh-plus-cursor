@@ -77,8 +77,8 @@ export const ExpensesSummary: React.FC<ExpensesSummaryProps> = ({
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-6">
       {/* כרטיס הוצאות ממתינות */}
-      <Card className="glass shadow-card border-0 overflow-hidden relative group hover:shadow-glow transition-all duration-300">
-        <div className="absolute inset-0 bg-gradient-to-br from-amber-500/10 to-orange-500/10"></div>
+      <Card className="bg-card/95 backdrop-blur-sm border shadow-sm overflow-hidden relative group hover:shadow-md transition-all duration-200">
+        <div className="absolute inset-0 bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/20 dark:to-orange-950/20"></div>
         <CardHeader className="pb-2 p-4 sm:p-6 relative">
           <div className="flex items-center justify-between">
             <CardDescription className="text-xs sm:text-sm font-medium text-amber-600 dark:text-amber-400">
@@ -113,8 +113,8 @@ export const ExpensesSummary: React.FC<ExpensesSummaryProps> = ({
       </Card>
       
       {/* כרטיס הוצאות מאושרות */}
-      <Card className="glass shadow-card border-0 overflow-hidden relative group hover:shadow-glow transition-all duration-300">
-        <div className="absolute inset-0 bg-gradient-to-br from-green-500/10 to-emerald-500/10"></div>
+      <Card className="bg-card/95 backdrop-blur-sm border shadow-sm overflow-hidden relative group hover:shadow-md transition-all duration-200">
+        <div className="absolute inset-0 bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/20 dark:to-emerald-950/20"></div>
         <CardHeader className="pb-2 p-4 sm:p-6 relative">
           <div className="flex items-center justify-between">
             <CardDescription className="text-xs sm:text-sm font-medium text-green-600 dark:text-green-400">
@@ -149,8 +149,8 @@ export const ExpensesSummary: React.FC<ExpensesSummaryProps> = ({
       </Card>
       
       {/* כרטיס הוצאות ששולמו */}
-      <Card className="glass shadow-card border-0 overflow-hidden relative group hover:shadow-glow transition-all duration-300 sm:col-span-2 lg:col-span-1">
-        <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 to-cyan-500/10"></div>
+      <Card className="bg-card/95 backdrop-blur-sm border shadow-sm overflow-hidden relative group hover:shadow-md transition-all duration-200 sm:col-span-2 lg:col-span-1">
+        <div className="absolute inset-0 bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-950/20 dark:to-cyan-950/20"></div>
         <CardHeader className="pb-2 p-4 sm:p-6 relative">
           <div className="flex items-center justify-between">
             <CardDescription className="text-xs sm:text-sm font-medium text-blue-600 dark:text-blue-400">
