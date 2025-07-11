@@ -32,13 +32,13 @@ export const MonthlyFoodPaymentCard: React.FC = () => {
     const currentMonth = currentDate.getMonth();
     const currentYear = currentDate.getFullYear();
     
-    // Filter current month expenses
+    // Filter current month expenses - only include approved expenses (not paid or rejected)
     const currentMonthExpenses = expenses.filter(expense => {
       const expenseDate = new Date(expense.date);
       return (
         expenseDate.getMonth() === currentMonth &&
         expenseDate.getFullYear() === currentYear &&
-        expense.status !== 'rejected'
+        expense.status === 'approved'
       );
     });
     
