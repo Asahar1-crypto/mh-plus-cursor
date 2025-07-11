@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { AddExpenseDialog } from '@/components/expenses/AddExpenseDialog';
+import { AddExpenseModal } from '@/components/expenses/AddExpenseModal';
 import { Logo } from '@/components/ui/Logo';
 import { Card } from '@/components/ui/card';
 import { Sparkles, TrendingUp, Plus } from 'lucide-react';
@@ -41,7 +41,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({ userName }) =>
                 })}
               </div>
             </div>
-            <AddExpenseDialog />
+            <AddExpenseModal />
           </div>
         </div>
       </div>

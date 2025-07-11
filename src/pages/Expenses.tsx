@@ -4,7 +4,7 @@ import { useExpense } from '@/contexts/ExpenseContext';
 import { Expense } from '@/contexts/expense/types';
 import { ExpenseFilters } from '@/components/expenses/ExpenseFilters';
 import { ExpensesTable } from '@/components/expenses/ExpensesTable';
-import { AddExpenseDialog } from '@/components/expenses/AddExpenseDialog';
+import { AddExpenseModal } from '@/components/expenses/AddExpenseModal';
 import { Button } from '@/components/ui/button';
 import { RefreshCw } from 'lucide-react';
 
@@ -83,7 +83,7 @@ const ExpensesPage = () => {
             רענון
           </Button>
           <div className="flex-1 sm:flex-none">
-            <AddExpenseDialog />
+            <AddExpenseModal />
           </div>
         </div>
       </div>
