@@ -40,6 +40,13 @@ const Dashboard = () => {
   const approvedExpenses = getApprovedExpenses();
   const paidExpenses = getPaidExpenses();
   
+  // Debug: Check if expenses are correctly categorized
+  console.log('🐛 Dashboard Debug:', {
+    pending: pendingExpenses.map(e => ({ id: e.id, status: e.status, description: e.description })),
+    approved: approvedExpenses.map(e => ({ id: e.id, status: e.status, description: e.description })),
+    paid: paidExpenses.map(e => ({ id: e.id, status: e.status, description: e.description }))
+  });
+  
   const pendingTotal = getTotalPending();
   const approvedTotal = getTotalApproved();
   const paidTotal = paidExpenses.reduce((sum, exp) => sum + exp.amount, 0);
