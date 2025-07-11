@@ -101,22 +101,27 @@ export const expenseService = {
 
   async addExpense(user: User, account: Account, expense: Omit<Expense, 'id' | 'createdBy' | 'creatorName' | 'status'>): Promise<void> {
     console.log(`Adding expense to account ${account.id} (${account.name})`);
+    console.log('Expense data:', expense);
+    
+    const expenseData = {
+      amount: expense.amount,
+      description: expense.description,
+      date: expense.date,
+      category: expense.category,
+      account_id: account.id,
+      paid_by_id: expense.paidById,
+      created_by_id: user.id,
+      status: 'pending',
+      has_end_date: expense.hasEndDate || false,
+      end_date: expense.endDate || null,
+      split_equally: expense.splitEqually
+    };
+    
+    console.log('Data being inserted:', expenseData);
     
     const { data: newExpense, error } = await supabase
       .from('expenses')
-      .insert({
-        amount: expense.amount,
-        description: expense.description,
-        date: expense.date,
-        category: expense.category,
-        account_id: account.id,
-        paid_by_id: expense.paidById,
-        created_by_id: user.id,
-        status: 'pending',
-        has_end_date: expense.hasEndDate || false,
-        end_date: expense.endDate || null,
-        split_equally: expense.splitEqually
-      })
+      .insert(expenseData)
       .select()
       .single();
 
@@ -125,8 +130,11 @@ export const expenseService = {
       throw error;
     }
 
+    console.log('Successfully added expense:', newExpense);
+
     // If there's a child associated, add the relationship
     if (expense.childId && newExpense) {
+      console.log('Adding child relationship:', { expense_id: newExpense.id, child_id: expense.childId });
       const { error: childError } = await supabase
         .from('expense_children')
         .insert({
@@ -137,6 +145,8 @@ export const expenseService = {
       if (childError) {
         console.error('Error linking expense to child:', childError);
         // Don't throw here, the expense was created successfully
+      } else {
+        console.log('Successfully linked expense to child');
       }
     }
   },
