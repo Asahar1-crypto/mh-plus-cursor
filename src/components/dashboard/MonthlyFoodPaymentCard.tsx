@@ -144,17 +144,13 @@ export const MonthlyFoodPaymentCard: React.FC = () => {
               </div>
               
               <div className="text-right">
-                {person.balance > 0 ? (
+                {person.shouldPay > 0 ? (
                   <div className="text-red-600 font-semibold">
-                    חייב: ₪{Math.round(person.balance)}
-                  </div>
-                ) : person.balance < 0 ? (
-                  <div className="text-green-600 font-semibold">
-                    זכאי: ₪{Math.round(Math.abs(person.balance))}
+                    חייב: ₪{Math.round(person.shouldPay)}
                   </div>
                 ) : (
                   <div className="text-gray-600 font-semibold">
-                    מאוזן ✓
+                    אין חוב ✓
                   </div>
                 )}
               </div>
@@ -168,16 +164,16 @@ export const MonthlyFoodPaymentCard: React.FC = () => {
         <div className="space-y-2">
           <h4 className="font-semibold">סיכום התשלומים:</h4>
           {breakdown
-            .filter(person => person.balance > 0)
+            .filter(person => person.shouldPay > 0)
             .map(debtor => {
-              const creditors = breakdown.filter(person => person.balance < 0);
+              const others = breakdown.filter(person => person.userId !== debtor.userId);
               
               return (
                 <div key={debtor.userId} className="text-sm p-2 bg-yellow-50 rounded border border-yellow-200">
                   <span className="font-medium">{debtor.userName}</span> חייב לשלם{' '}
-                  <span className="font-bold text-red-600">₪{Math.round(debtor.balance)}</span>
-                  {creditors.length === 1 && (
-                    <span> ל-<span className="font-medium">{creditors[0].userName}</span></span>
+                  <span className="font-bold text-red-600">₪{Math.round(debtor.shouldPay)}</span>
+                  {others.length === 1 && (
+                    <span> ל-<span className="font-medium">{others[0].userName}</span></span>
                   )}
                 </div>
               );
