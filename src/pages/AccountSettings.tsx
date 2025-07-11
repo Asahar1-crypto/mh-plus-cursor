@@ -7,6 +7,7 @@ import AccountStatusAlert from '@/components/account/AccountStatusAlert';
 import InviteUserForm from '@/components/account/InviteUserForm';
 import UsersListCard from '@/components/account/UsersListCard';
 import PendingInvitationsCard from '@/components/account/PendingInvitationsCard';
+import SentInvitationsCard from '@/components/account/SentInvitationsCard';
 import NotificationsCard from '@/components/account/NotificationsCard';
 
 const AccountSettings = () => {
@@ -58,6 +59,7 @@ const AccountSettings = () => {
         
         <div className="space-y-6">
           <InviteUserForm account={account} onInvite={handleInvite} />
+          <SentInvitationsCard account={account} />
           <UsersListCard 
             account={account} 
             user={user} 
