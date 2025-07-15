@@ -248,16 +248,16 @@ export const ReceiptValidation: React.FC<ReceiptValidationProps> = ({
                   </TableCell>
                   <TableCell>
                     <Select
-                      value={selectedChildren[index] || ""}
+                      value={selectedChildren[index] || "none"}
                       onValueChange={(value) => 
-                        setSelectedChildren(prev => ({ ...prev, [index]: value }))
+                        setSelectedChildren(prev => ({ ...prev, [index]: value === "none" ? "" : value }))
                       }
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="בחר ילד" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">ללא שיוך</SelectItem>
+                        <SelectItem value="none">ללא שיוך</SelectItem>
                         {childrenList.map((child) => (
                           <SelectItem key={child.id} value={child.id}>
                             {child.name}
