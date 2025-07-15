@@ -13,6 +13,7 @@ interface DashboardHeaderProps {
 export const DashboardHeader: React.FC<DashboardHeaderProps> = ({ userName }) => {
   const { refreshData } = useExpense();
   
+  console.log('📊 DashboardHeader: Component rendered, refreshData available:', !!refreshData);
   
   const currentHour = new Date().getHours();
   const greeting = currentHour < 12 ? 'בוקר טוב' : currentHour < 18 ? 'צהריים טובים' : 'ערב טוב';

@@ -103,12 +103,18 @@ export const AddExpenseModal: React.FC<{ onSubmitSuccess?: () => void }> = ({ on
       }}
     >
       <DialogTrigger asChild>
-        <Button onClick={() => {
-          console.log('🔍 AddExpenseModal: Trigger button clicked');
+        <Button onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          console.log('🔍 AddExpenseModal: Trigger button clicked - BEFORE state changes');
+          console.log('🔍 AddExpenseModal: Current state before click:', { isOpen, currentStep, isManualForm });
+          
           setCurrentStep('select');
           setIsManualForm(true);
           setIsOpen(true);
-          console.log('🔍 AddExpenseModal: State set after trigger click', { isOpen: true, currentStep: 'select' });
+          
+          console.log('🔍 AddExpenseModal: State set after trigger click');
+          console.log('🔍 AddExpenseModal: New state should be:', { isOpen: true, currentStep: 'select', isManualForm: true });
         }}>
           <PlusCircle className="mr-2 h-4 w-4" /> הוצאה חדשה
         </Button>
