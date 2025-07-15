@@ -40,12 +40,6 @@ serve(async (req) => {
       throw new Error('Missing required fields: file_url and account_id');
     }
 
-    // Validate file type - only images are supported
-    if (!file_type || !file_type.startsWith('image/')) {
-      console.error('Invalid file type:', file_type);
-      throw new Error('Only image files are supported (JPG, PNG, etc.)');
-    }
-
     // Initialize Supabase client
     const supabaseUrl = Deno.env.get('SUPABASE_URL');
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
@@ -77,33 +71,6 @@ serve(async (req) => {
 
     console.log('Processing receipt scan for user:', user.id);
 
-    // Prepare GPT-4o Vision prompt
-    const systemPrompt = `אתה עוזר פיננסי מקצועי שמנתח חשבוניות. המטרה שלך היא לזהות ולחלץ נתונים מחשבוניות בצורה מדויקת.
-
-הוראות:
-1. זהה את התאריך, שם הספק, והסכום הכולל
-2. עבור כל פריט ברשימה - חלץ: שם, מחיר, כמות (אם מצוינת)
-3. שייך לכל פריט אחת מהקטגוריות: מזון, ביגוד, חינוך, בריאות, ציוד תינוקות, משחקים, ספרים, אחר
-4. אם החשבונית מטושטשת או לא ברורה - ציין confidence_score נמוך
-5. החזר תשובה בפורמט JSON בלבד, ללא הסברים נוספים
-
-פורמט פלט נדרש:
-{
-  "date": "YYYY-MM-DD",
-  "vendor": "שם הספק",
-  "total": מספר,
-  "currency": "ILS",
-  "confidence_score": 1-100,
-  "items": [
-    {
-      "name": "שם הפריט",
-      "price": מחיר,
-      "quantity": כמות (אופציונלי),
-      "category": "קטגוריה"
-    }
-  ]
-}`;
-
     // Call GPT-4o Vision API
     const openaiApiKey = Deno.env.get('OPENAI_API_KEY');
     console.log('OpenAI API Key present:', !!openaiApiKey);
@@ -114,6 +81,28 @@ serve(async (req) => {
     
     console.log('Calling OpenAI API with file_url:', file_url);
     
+    let imageUrl = file_url;
+    
+    // Handle both PDF and image files
+    const prompt = `Please analyze this receipt/invoice document and extract the following information in JSON format:
+{
+  "date": "YYYY-MM-DD format",
+  "vendor": "store/company name",
+  "total": number (total amount),
+  "items": [
+    {
+      "name": "item name",
+      "price": number,
+      "quantity": number (if available),
+      "category": "food/other classification"
+    }
+  ],
+  "currency": "ILS or other currency code",
+  "confidence_score": number (0-100, your confidence in the extraction)
+}
+
+Please be as accurate as possible and only include information that is clearly visible in the document.`;
+
     const openaiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -125,27 +114,18 @@ serve(async (req) => {
         messages: [
           {
             role: 'system',
-            content: systemPrompt
+            content: 'You are a helpful assistant that extracts information from receipts and invoices. You can process both images and PDF documents.'
           },
           {
             role: 'user',
             content: [
-              {
-                type: 'text',
-                text: 'נא לנתח את החשבונית המצורפת ולהחזיר את הנתונים בפורמט JSON.'
-              },
-              {
-                type: 'image_url',
-                image_url: {
-                  url: file_url
-                }
-              }
+              { type: 'text', text: prompt },
+              { type: 'image_url', image_url: { url: file_url } }
             ]
           }
         ],
-        max_tokens: 2000,
-        temperature: 0.1
-      }),
+        max_tokens: 1000
+      })
     });
 
     if (!openaiResponse.ok) {
