@@ -104,24 +104,18 @@ export const ReceiptUpload: React.FC<ReceiptUploadProps> = ({ onScanComplete, on
   };
 
   const scanReceipt = async () => {
-    console.log('🔍 ReceiptUpload: Starting scan process');
     if (!selectedFile || !account) {
-      console.log('🚨 ReceiptUpload: Missing selectedFile or account');
       return;
     }
 
-    console.log('☁️ ReceiptUpload: Starting upload and scan process');
     setIsUploading(true);
     setIsScanning(true);
 
     try {
       // Upload file to storage
-      console.log('☁️ ReceiptUpload: Uploading file to storage');
       const fileUrl = await uploadFileToStorage(selectedFile);
-      console.log('☁️ ReceiptUpload: File uploaded, URL:', fileUrl);
 
       // Call scan function
-      console.log('🤖 ReceiptUpload: Calling scan-receipt function');
       const { data, error } = await supabase.functions.invoke('scan-receipt', {
         body: {
           file_url: fileUrl,
@@ -133,7 +127,6 @@ export const ReceiptUpload: React.FC<ReceiptUploadProps> = ({ onScanComplete, on
       });
 
       if (error) {
-        console.error('🚨 ReceiptUpload: Scan function error:', error);
         throw new Error(error.message || 'שגיאה בסריקת החשבונית');
       }
 
@@ -146,18 +139,15 @@ export const ReceiptUpload: React.FC<ReceiptUploadProps> = ({ onScanComplete, on
         description: `זוהו ${data.result.items.length} פריטים`
       });
 
-      console.log('✅ ReceiptUpload: Scan completed successfully, result:', data.result);
       onScanComplete(data.result);
 
     } catch (error) {
-      console.error('🚨 ReceiptUpload: Error during scan:', error);
       toast({
         variant: "destructive",
         title: "שגיאה בסריקה",
         description: error instanceof Error ? error.message : "אירעה שגיאה לא צפויה"
       });
     } finally {
-      console.log('🔍 ReceiptUpload: Scan process completed');
       setIsUploading(false);
       setIsScanning(false);
     }

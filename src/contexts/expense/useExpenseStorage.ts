@@ -21,25 +21,20 @@ export const useExpenseStorage = (user: User | null, account: Account | null): E
   const currentAccountRef = useRef<string | null>(null);
 
   const refreshData = async () => {
-    console.log('🔄 refreshData: Starting refresh process');
     if (!user || !account) {
-      console.log('🔄 refreshData: No user or account, clearing data');
       setExpenses([]);
       setChildrenList([]);
       return;
     }
     
-    console.log(`🔄 refreshData: Loading data for user ${user.id} in account ${account.id} (${account.name})`);
     setIsLoading(true);
     try {
       // Load expenses from Supabase for the current account
       const fetchedExpenses = await expenseService.getExpenses(user, account);
-      console.log(`Loaded ${fetchedExpenses.length} expenses for account ${account.name}`);
       setExpenses(fetchedExpenses);
       
       // Load children from Supabase for the current account
       const fetchedChildren = await expenseService.getChildren(user, account);
-      console.log(`Loaded ${fetchedChildren.length} children for account ${account.name}`);
       setChildrenList(fetchedChildren);
       
       // Update the current account reference
@@ -50,26 +45,17 @@ export const useExpenseStorage = (user: User | null, account: Account | null): E
       setExpenses([]);
       setChildrenList([]);
     } finally {
-      console.log('🔄 refreshData: Finished refresh process');
       setIsLoading(false);
     }
   };
 
   // Load data when user or account changes
   useEffect(() => {
-    console.log('useExpenseStorage effect triggered', { 
-      userId: user?.id, 
-      accountId: account?.id,
-      accountName: account?.name,
-      previousAccountId: currentAccountRef.current
-    });
-    
     // Check if account actually changed
     const accountChanged = account?.id !== currentAccountRef.current;
     
     if (user && account) {
       if (accountChanged || currentAccountRef.current === null) {
-        console.log('Account changed or first load, refreshing data...');
         // Clear data immediately when switching accounts
         setExpenses([]);
         setChildrenList([]);
@@ -77,7 +63,6 @@ export const useExpenseStorage = (user: User | null, account: Account | null): E
       }
     } else {
       // Clear data if no user or account
-      console.log('No user or account, clearing data');
       setExpenses([]);
       setChildrenList([]);
       currentAccountRef.current = null;
@@ -88,7 +73,6 @@ export const useExpenseStorage = (user: User | null, account: Account | null): E
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (!document.hidden && user && account) {
-        console.log('Tab became visible, refreshing data...');
         refreshData();
       }
     };
@@ -100,16 +84,25 @@ export const useExpenseStorage = (user: User | null, account: Account | null): E
   }, [user, account]);
 
   // Add focus listener for auto-refresh when returning to window
+  // Only refresh if the window was actually inactive (not just modal interactions)
   useEffect(() => {
+    let windowWasInactive = false;
+
+    const handleBlur = () => {
+      windowWasInactive = true;
+    };
+
     const handleFocus = () => {
-      if (user && account) {
-        console.log('Window gained focus, refreshing data...');
+      if (windowWasInactive && user && account) {
         refreshData();
+        windowWasInactive = false;
       }
     };
 
+    window.addEventListener('blur', handleBlur);
     window.addEventListener('focus', handleFocus);
     return () => {
+      window.removeEventListener('blur', handleBlur);
       window.removeEventListener('focus', handleFocus);
     };
   }, [user, account]);
