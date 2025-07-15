@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { AddExpenseModal } from '@/components/expenses/AddExpenseModal';
+import { useExpense } from '@/contexts/ExpenseContext';
 import { Logo } from '@/components/ui/Logo';
 import { Card } from '@/components/ui/card';
 import { Sparkles, TrendingUp, Plus } from 'lucide-react';
@@ -10,6 +11,7 @@ interface DashboardHeaderProps {
 }
 
 export const DashboardHeader: React.FC<DashboardHeaderProps> = ({ userName }) => {
+  const { refreshData } = useExpense();
   const currentHour = new Date().getHours();
   const greeting = currentHour < 12 ? 'בוקר טוב' : currentHour < 18 ? 'צהריים טובים' : 'ערב טוב';
 
@@ -42,7 +44,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({ userName }) =>
               </div>
             </div>
             <div className="flex-1 sm:flex-none">
-              <AddExpenseModal />
+              <AddExpenseModal onSubmitSuccess={refreshData} />
             </div>
           </div>
         </div>

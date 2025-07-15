@@ -22,9 +22,10 @@ import { memberService } from '@/contexts/auth/services/account/memberService';
 
 interface ExpenseFormProps {
   onSubmitSuccess?: () => void;
+  onCancel?: () => void;
 }
 
-export const ExpenseForm: React.FC<ExpenseFormProps> = ({ onSubmitSuccess }) => {
+export const ExpenseForm: React.FC<ExpenseFormProps> = ({ onSubmitSuccess, onCancel }) => {
   const { addExpense, childrenList } = useExpense();
   const { account } = useAuth();
   const navigate = useNavigate();
@@ -454,7 +455,13 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({ onSubmitSuccess }) => 
           <Button 
             type="button" 
             variant="outline" 
-            onClick={() => navigate('/expenses')}
+            onClick={() => {
+              if (onCancel) {
+                onCancel();
+              } else {
+                navigate('/expenses');
+              }
+            }}
           >
             ביטול
           </Button>

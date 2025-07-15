@@ -166,10 +166,13 @@ export const AddExpenseModal: React.FC<{ onSubmitSuccess?: () => void }> = ({ on
 
                 {isManualForm && (
                   <div className="pb-4">
-                    <ExpenseForm onSubmitSuccess={() => {
-                      if (onSubmitSuccess) onSubmitSuccess();
-                      handleCancel();
-                    }} />
+                    <ExpenseForm 
+                      onSubmitSuccess={() => {
+                        if (onSubmitSuccess) onSubmitSuccess();
+                        handleCancel();
+                      }}
+                      onCancel={handleCancel}
+                    />
                   </div>
                 )}
               </div>
