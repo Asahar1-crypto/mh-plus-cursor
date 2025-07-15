@@ -29,42 +29,47 @@ export const ReceiptUpload: React.FC<ReceiptUploadProps> = ({ onScanComplete, on
   const maxFileSize = 5 * 1024 * 1024; // 5MB
 
   const handleFileSelect = useCallback((file: File) => {
-    console.log('🔍 ReceiptUpload: handleFileSelect called', { fileName: file.name, fileSize: file.size, fileType: file.type });
-    
-    // Validate file type
-    if (!Object.keys(acceptedTypes).includes(file.type)) {
-      console.log('🔍 ReceiptUpload: File type not accepted', file.type);
-      toast({
-        variant: "destructive",
-        title: "פורמט קובץ לא נתמך",
-        description: "אנא העלה קובץ תמונה (JPG או PNG) בלבד. קבצי PDF לא נתמכים בזיהוי אוטומטי."
-      });
-      return;
-    }
+    try {
+      console.log('🔍 ReceiptUpload: handleFileSelect called', { fileName: file.name, fileSize: file.size, fileType: file.type });
+      
+      // Validate file type
+      if (!Object.keys(acceptedTypes).includes(file.type)) {
+        console.log('🔍 ReceiptUpload: File type not accepted', file.type);
+        toast({
+          variant: "destructive",
+          title: "פורמט קובץ לא נתמך",
+          description: "אנא העלה קובץ תמונה (JPG או PNG) בלבד. קבצי PDF לא נתמכים בזיהוי אוטומטי."
+        });
+        return;
+      }
 
-    // Validate file size
-    if (file.size > maxFileSize) {
-      console.log('🔍 ReceiptUpload: File too large', file.size);
-      toast({
-        variant: "destructive",
-        title: "קובץ גדול מדי",
-        description: "גודל הקובץ לא יכול לעלות על 5MB."
-      });
-      return;
-    }
+      // Validate file size
+      if (file.size > maxFileSize) {
+        console.log('🔍 ReceiptUpload: File too large', file.size);
+        toast({
+          variant: "destructive",
+          title: "קובץ גדול מדי",
+          description: "גודל הקובץ לא יכול לעלות על 5MB."
+        });
+        return;
+      }
 
-    console.log('🔍 ReceiptUpload: File validation passed, setting selected file');
-    setSelectedFile(file);
+      console.log('🔍 ReceiptUpload: File validation passed, setting selected file');
+      setSelectedFile(file);
 
-    // Create preview for images
-    if (file.type.startsWith('image/')) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        setPreviewUrl(e.target?.result as string);
-      };
-      reader.readAsDataURL(file);
-    } else {
-      setPreviewUrl(null);
+      // Create preview for images
+      if (file.type.startsWith('image/')) {
+        console.log('🔍 ReceiptUpload: Creating preview for image');
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          setPreviewUrl(e.target?.result as string);
+        };
+        reader.readAsDataURL(file);
+      } else {
+        setPreviewUrl(null);
+      }
+    } catch (error) {
+      console.error('🔍 ReceiptUpload: Error in handleFileSelect', error);
     }
   }, [toast]);
 
