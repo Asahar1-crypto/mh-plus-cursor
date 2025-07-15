@@ -21,8 +21,7 @@ export const ReceiptUpload: React.FC<ReceiptUploadProps> = ({ onScanComplete, on
 
   const acceptedTypes = {
     'image/jpeg': ['.jpg', '.jpeg'],
-    'image/png': ['.png'],
-    'application/pdf': ['.pdf']
+    'image/png': ['.png']
   };
 
   const maxFileSize = 5 * 1024 * 1024; // 5MB
@@ -33,7 +32,7 @@ export const ReceiptUpload: React.FC<ReceiptUploadProps> = ({ onScanComplete, on
       toast({
         variant: "destructive",
         title: "פורמט קובץ לא נתמך",
-        description: "אנא העלה קובץ PDF, JPG או PNG בלבד."
+        description: "אנא העלה קובץ תמונה (JPG או PNG) בלבד."
       });
       return;
     }
@@ -179,14 +178,11 @@ export const ReceiptUpload: React.FC<ReceiptUploadProps> = ({ onScanComplete, on
                 <FileImage className="h-4 w-4" />
                 <span>JPG, PNG</span>
                 <span>•</span>
-                <FileText className="h-4 w-4" />
-                <span>PDF</span>
-                <span>•</span>
                 <span>עד 5MB</span>
               </div>
               <input
                 type="file"
-                accept=".jpg,.jpeg,.png,.pdf"
+                accept=".jpg,.jpeg,.png"
                 onChange={handleFileInput}
                 className="w-full p-3 border border-dashed border-muted-foreground/50 rounded-lg cursor-pointer file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-primary-foreground hover:file:bg-primary/90"
               />

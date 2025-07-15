@@ -40,6 +40,12 @@ serve(async (req) => {
       throw new Error('Missing required fields: file_url and account_id');
     }
 
+    // Validate file type - only images are supported
+    if (!file_type || !file_type.startsWith('image/')) {
+      console.error('Invalid file type:', file_type);
+      throw new Error('Only image files are supported (JPG, PNG, etc.)');
+    }
+
     // Initialize Supabase client
     const supabaseUrl = Deno.env.get('SUPABASE_URL');
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
