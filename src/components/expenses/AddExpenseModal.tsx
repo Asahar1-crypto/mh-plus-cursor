@@ -14,17 +14,22 @@ export const AddExpenseModal: React.FC<{ onSubmitSuccess?: () => void }> = ({ on
   const [scanResult, setScanResult] = useState<any>(null);
   const [currentStep, setCurrentStep] = useState<'select' | 'upload' | 'validate'>('select');
 
+  console.log('🔍 AddExpenseModal: Render', { isOpen, currentStep, shouldPreventClose: currentStep === 'upload' || currentStep === 'validate' });
+
   const handleScanComplete = (result: any) => {
+    console.log('🔍 AddExpenseModal: handleScanComplete called', result);
     setScanResult(result);
     setCurrentStep('validate');
   };
 
   const handleScanApprove = () => {
+    console.log('🔍 AddExpenseModal: handleScanApprove called');
     handleCancel();
     if (onSubmitSuccess) onSubmitSuccess();
   };
 
   const handleCancel = () => {
+    console.log('🔍 AddExpenseModal: handleCancel called');
     setIsOpen(false);
     setCurrentStep('select');
     setScanResult(null);
@@ -80,12 +85,16 @@ export const AddExpenseModal: React.FC<{ onSubmitSuccess?: () => void }> = ({ on
     <Dialog 
       open={isOpen} 
       onOpenChange={(open) => {
+        console.log('🔍 AddExpenseModal: onOpenChange called', { open, shouldPreventClose });
         // Only allow closing if we're not in a step that should prevent close
         if (!open && shouldPreventClose) {
+          console.log('🔍 AddExpenseModal: Preventing close due to shouldPreventClose');
           return;
         }
+        console.log('🔍 AddExpenseModal: Setting isOpen to', open);
         setIsOpen(open);
         if (!open) {
+          console.log('🔍 AddExpenseModal: Resetting state on close');
           // Reset state when dialog closes
           setCurrentStep('select');
           setScanResult(null);

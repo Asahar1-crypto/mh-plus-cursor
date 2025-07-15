@@ -19,6 +19,8 @@ export const ReceiptUpload: React.FC<ReceiptUploadProps> = ({ onScanComplete, on
   const { toast } = useToast();
   const { account } = useAuth();
 
+  console.log('🔍 ReceiptUpload: Render', { selectedFile: selectedFile?.name, isUploading, isScanning, account: account?.id });
+
   const acceptedTypes = {
     'image/jpeg': ['.jpg', '.jpeg'],
     'image/png': ['.png']
@@ -27,8 +29,11 @@ export const ReceiptUpload: React.FC<ReceiptUploadProps> = ({ onScanComplete, on
   const maxFileSize = 5 * 1024 * 1024; // 5MB
 
   const handleFileSelect = useCallback((file: File) => {
+    console.log('🔍 ReceiptUpload: handleFileSelect called', { fileName: file.name, fileSize: file.size, fileType: file.type });
+    
     // Validate file type
     if (!Object.keys(acceptedTypes).includes(file.type)) {
+      console.log('🔍 ReceiptUpload: File type not accepted', file.type);
       toast({
         variant: "destructive",
         title: "פורמט קובץ לא נתמך",
@@ -39,6 +44,7 @@ export const ReceiptUpload: React.FC<ReceiptUploadProps> = ({ onScanComplete, on
 
     // Validate file size
     if (file.size > maxFileSize) {
+      console.log('🔍 ReceiptUpload: File too large', file.size);
       toast({
         variant: "destructive",
         title: "קובץ גדול מדי",
@@ -47,6 +53,7 @@ export const ReceiptUpload: React.FC<ReceiptUploadProps> = ({ onScanComplete, on
       return;
     }
 
+    console.log('🔍 ReceiptUpload: File validation passed, setting selected file');
     setSelectedFile(file);
 
     // Create preview for images
@@ -104,18 +111,23 @@ export const ReceiptUpload: React.FC<ReceiptUploadProps> = ({ onScanComplete, on
   };
 
   const scanReceipt = async () => {
+    console.log('🔍 ReceiptUpload: scanReceipt called', { selectedFile: selectedFile?.name, account: account?.id });
+    
     if (!selectedFile || !account) {
+      console.log('🔍 ReceiptUpload: Missing file or account', { selectedFile: !!selectedFile, account: !!account });
       return;
     }
 
+    console.log('🔍 ReceiptUpload: Starting scan process');
     setIsUploading(true);
     setIsScanning(true);
 
     try {
-      // Upload file to storage
+      console.log('🔍 ReceiptUpload: Uploading file to storage');
       const fileUrl = await uploadFileToStorage(selectedFile);
+      console.log('🔍 ReceiptUpload: File uploaded successfully', fileUrl);
 
-      // Call scan function
+      console.log('🔍 ReceiptUpload: Calling scan function');
       const { data, error } = await supabase.functions.invoke('scan-receipt', {
         body: {
           file_url: fileUrl,
@@ -127,13 +139,16 @@ export const ReceiptUpload: React.FC<ReceiptUploadProps> = ({ onScanComplete, on
       });
 
       if (error) {
+        console.log('🔍 ReceiptUpload: Scan function error', error);
         throw new Error(error.message || 'שגיאה בסריקת החשבונית');
       }
 
       if (!data.success) {
+        console.log('🔍 ReceiptUpload: Scan function returned error', data);
         throw new Error(data.error || 'לא הצלחנו לסרוק את החשבונית');
       }
 
+      console.log('🔍 ReceiptUpload: Scan successful, calling onScanComplete', data.result);
       toast({
         title: "החשבונית נסרקה בהצלחה!",
         description: `זוהו ${data.result.items.length} פריטים`
@@ -142,12 +157,14 @@ export const ReceiptUpload: React.FC<ReceiptUploadProps> = ({ onScanComplete, on
       onScanComplete(data.result);
 
     } catch (error) {
+      console.log('🔍 ReceiptUpload: Scan error', error);
       toast({
         variant: "destructive",
         title: "שגיאה בסריקה",
         description: error instanceof Error ? error.message : "אירעה שגיאה לא צפויה"
       });
     } finally {
+      console.log('🔍 ReceiptUpload: Scan process finished');
       setIsUploading(false);
       setIsScanning(false);
     }
