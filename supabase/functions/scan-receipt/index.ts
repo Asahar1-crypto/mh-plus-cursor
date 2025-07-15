@@ -93,38 +93,6 @@ serve(async (req) => {
 
     console.log('✅ User authenticated successfully:', user.id);
 
-    // Test if file URL is accessible
-    console.log('🔗 Testing file URL accessibility:', file_url);
-    
-    try {
-      const fileResponse = await fetch(file_url, { method: 'HEAD' });
-      console.log('📄 File URL test result:', {
-        status: fileResponse.status,
-        ok: fileResponse.ok,
-        contentType: fileResponse.headers.get('content-type')
-      });
-      
-      if (!fileResponse.ok) {
-        console.error('❌ File URL is not accessible');
-        return new Response(JSON.stringify({ 
-          success: false, 
-          error: 'File is not accessible' 
-        }), {
-          status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        });
-      }
-    } catch (fileError) {
-      console.error('❌ Error accessing file URL:', fileError);
-      return new Response(JSON.stringify({ 
-        success: false, 
-        error: 'Cannot access file' 
-      }), {
-        status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      });
-    }
-
     // Call OpenAI API
     console.log('🤖 Calling OpenAI API...');
     
