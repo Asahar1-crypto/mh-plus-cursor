@@ -138,17 +138,17 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({ onSubmitSuccess }) => 
                       </Button>
                     </FormControl>
                   </PopoverTrigger>
-                   <PopoverContent className="w-auto p-0 z-[10000]" align="start">
-                     <Calendar
-                       mode="single"
-                       selected={field.value}
-                       onSelect={field.onChange}
-                       disabled={(date) =>
-                         date > new Date() || date < new Date("1900-01-01")
-                       }
-                       initialFocus
-                     />
-                   </PopoverContent>
+                  <PopoverContent className="w-auto p-0 z-[10001]" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={field.value}
+                      onSelect={field.onChange}
+                      disabled={(date) =>
+                        date > new Date() || date < new Date("1900-01-01")
+                      }
+                      initialFocus
+                    />
+                  </PopoverContent>
                 </Popover>
                 <FormMessage />
               </FormItem>
@@ -204,7 +204,7 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({ onSubmitSuccess }) => 
                       <SelectValue placeholder="בחר קטגוריה" />
                     </SelectTrigger>
                   </FormControl>
-                  <SelectContent className="z-[10000]">
+                  <SelectContent className="z-[10001]">
                     {categories.map((category) => (
                       <SelectItem key={category} value={category}>
                         {category}
@@ -232,7 +232,7 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({ onSubmitSuccess }) => 
                       <SelectValue placeholder="בחר ילד/ה (אופציונלי)" />
                     </SelectTrigger>
                   </FormControl>
-                  <SelectContent className="z-[10000]">
+                  <SelectContent className="z-[10001]">
                     <SelectItem value="general">כללי - ללא שיוך לילד/ה</SelectItem>
                     {childrenList.length > 0 ? (
                       childrenList.map((child) => (
@@ -271,13 +271,13 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({ onSubmitSuccess }) => 
                     <SelectValue placeholder="בחר מי צריך לשלם" />
                   </SelectTrigger>
                 </FormControl>
-                 <SelectContent className="z-[10000]">
-                   {accountMembers?.map((member) => (
-                     <SelectItem key={member.user_id} value={member.user_id}>
-                       {member.user_name}
-                     </SelectItem>
-                   ))}
-                 </SelectContent>
+                <SelectContent className="z-[10001]">
+                  {accountMembers?.map((member) => (
+                    <SelectItem key={member.user_id} value={member.user_id}>
+                      {member.user_name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
               </Select>
               <FormDescription>
                 בחר מי צריך לשלם את ההוצאה הזו
@@ -324,7 +324,7 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({ onSubmitSuccess }) => 
                       <SelectValue placeholder="בחר תדירות" />
                     </SelectTrigger>
                   </FormControl>
-                  <SelectContent className="z-[10000]">
+                  <SelectContent className="z-[10001]">
                     <SelectItem value="weekly">שבועי</SelectItem>
                     <SelectItem value="monthly">חודשי</SelectItem>
                     <SelectItem value="yearly">שנתי</SelectItem>
@@ -385,7 +385,7 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({ onSubmitSuccess }) => 
                           </Button>
                         </FormControl>
                       </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0 z-[10000]" align="start">
+                      <PopoverContent className="w-auto p-0 z-[10001]" align="start">
                         <Calendar
                           mode="single"
                           selected={field.value}
@@ -394,7 +394,6 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({ onSubmitSuccess }) => 
                             date < new Date()
                           }
                           initialFocus
-                          className={cn("p-3 pointer-events-auto")}
                         />
                       </PopoverContent>
                     </Popover>

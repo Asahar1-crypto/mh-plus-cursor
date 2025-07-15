@@ -46,7 +46,7 @@ export const AddExpenseDialog: React.FC<{ onSubmitSuccess?: () => void }> = ({ o
         </Button>
       </DialogTrigger>
       <DialogContent 
-        className="w-[95vw] max-w-[800px] max-h-[90vh] z-[9999] flex flex-col"
+        className="w-[95vw] max-w-[900px] h-[90vh] max-h-[90vh] z-[9999] flex flex-col p-0"
         onPointerDownOutside={(e) => {
           if (currentStep === 'upload' || currentStep === 'validate') {
             e.preventDefault();
@@ -58,7 +58,7 @@ export const AddExpenseDialog: React.FC<{ onSubmitSuccess?: () => void }> = ({ o
           }
         }}
       >
-        <DialogHeader className="flex-shrink-0">
+        <DialogHeader className="flex-shrink-0 px-6 py-4 border-b">
           <DialogTitle>
             {currentStep === 'select' ? "הוספת הוצאה" 
              : currentStep === 'upload' ? "סריקת חשבונית"
@@ -71,58 +71,66 @@ export const AddExpenseDialog: React.FC<{ onSubmitSuccess?: () => void }> = ({ o
           </DialogDescription>
         </DialogHeader>
         
-        <ScrollArea className="flex-1 max-h-[calc(90vh-120px)] px-1">
-          {currentStep === 'select' && (
-            <>
-              <div className="flex gap-4 mb-4">
-                <Button 
-                  variant="default"
-                  onClick={() => {
-                    setIsManualForm(true);
-                    setCurrentStep('select');
-                    setPreventClose(false);
-                  }}
-                  className="flex-1"
-                >
-                  <FileText className="mr-2 h-4 w-4" /> הזנה ידנית
-                </Button>
-                <Button 
-                  variant="outline"
-                  onClick={() => {
-                    setIsManualForm(false);
-                    setCurrentStep('upload');
-                    setPreventClose(true);
-                  }}
-                  className="flex-1"
-                >
-                  <ScanLine className="mr-2 h-4 w-4" /> סריקת חשבונית
-                </Button>
+        <div className="flex-1 overflow-hidden">
+          <ScrollArea className="h-full px-6 py-4">
+            {currentStep === 'select' && (
+              <div className="space-y-6">
+                <div className="flex gap-4">
+                  <Button 
+                    variant="default"
+                    onClick={() => {
+                      setIsManualForm(true);
+                      setCurrentStep('select');
+                      setPreventClose(false);
+                    }}
+                    className="flex-1"
+                  >
+                    <FileText className="mr-2 h-4 w-4" /> הזנה ידנית
+                  </Button>
+                  <Button 
+                    variant="outline"
+                    onClick={() => {
+                      setIsManualForm(false);
+                      setCurrentStep('upload');
+                      setPreventClose(true);
+                    }}
+                    className="flex-1"
+                  >
+                    <ScanLine className="mr-2 h-4 w-4" /> סריקת חשבונית
+                  </Button>
+                </div>
+
+                {isManualForm && (
+                  <div className="pb-4">
+                    <ExpenseForm onSubmitSuccess={() => {
+                      if (onSubmitSuccess) onSubmitSuccess();
+                      handleCancel();
+                    }} />
+                  </div>
+                )}
               </div>
+            )}
 
-              {isManualForm && (
-                <ExpenseForm onSubmitSuccess={() => {
-                  if (onSubmitSuccess) onSubmitSuccess();
-                  handleCancel();
-                }} />
-              )}
-            </>
-          )}
+            {currentStep === 'upload' && (
+              <div className="pb-4">
+                <ReceiptUpload 
+                  onScanComplete={handleScanComplete}
+                  onCancel={handleCancel}
+                />
+              </div>
+            )}
 
-          {currentStep === 'upload' && (
-            <ReceiptUpload 
-              onScanComplete={handleScanComplete}
-              onCancel={handleCancel}
-            />
-          )}
-
-          {currentStep === 'validate' && scanResult && (
-            <ReceiptValidation
-              scanResult={scanResult}
-              onApprove={handleScanApprove}
-              onCancel={handleCancel}
-            />
-          )}
-        </ScrollArea>
+            {currentStep === 'validate' && scanResult && (
+              <div className="pb-4">
+                <ReceiptValidation
+                  scanResult={scanResult}
+                  onApprove={handleScanApprove}
+                  onCancel={handleCancel}
+                />
+              </div>
+            )}
+          </ScrollArea>
+        </div>
       </DialogContent>
     </Dialog>
   );
