@@ -28,20 +28,36 @@ serve(async (req) => {
   }
 
   try {
-    const { file_url, file_name, file_size, file_type, account_id } = await req.json();
+    console.log('Received request:', req.method, req.url);
+    
+    const requestBody = await req.json();
+    console.log('Request body:', requestBody);
+    
+    const { file_url, file_name, file_size, file_type, account_id } = requestBody;
 
     if (!file_url || !account_id) {
+      console.error('Missing required fields:', { file_url: !!file_url, account_id: !!account_id });
       throw new Error('Missing required fields: file_url and account_id');
     }
 
     // Initialize Supabase client
+    const supabaseUrl = Deno.env.get('SUPABASE_URL');
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+    
+    console.log('Environment check:', {
+      supabaseUrl: !!supabaseUrl,
+      supabaseServiceKey: !!supabaseServiceKey
+    });
+    
     const supabase = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+      supabaseUrl ?? '',
+      supabaseServiceKey ?? ''
     );
 
     // Get user from auth header
     const authHeader = req.headers.get('Authorization');
+    console.log('Auth header present:', !!authHeader);
+    
     if (!authHeader) {
       throw new Error('No authorization header');
     }
@@ -83,14 +99,23 @@ serve(async (req) => {
 }`;
 
     // Call GPT-4o Vision API
+    const openaiApiKey = Deno.env.get('OPENAI_API_KEY');
+    console.log('OpenAI API Key present:', !!openaiApiKey);
+    
+    if (!openaiApiKey) {
+      throw new Error('OpenAI API key not found');
+    }
+    
+    console.log('Calling OpenAI API with file_url:', file_url);
+    
     const openaiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${Deno.env.get('OPENAI_API_KEY')}`,
+        'Authorization': `Bearer ${openaiApiKey}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4.1-2025-04-14',
+        model: 'gpt-4o',
         messages: [
           {
             role: 'system',
