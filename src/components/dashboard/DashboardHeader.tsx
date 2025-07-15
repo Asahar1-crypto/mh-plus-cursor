@@ -1,7 +1,5 @@
-
 import React from 'react';
 import { useExpense } from '@/contexts/ExpenseContext';
-import { Logo } from '@/components/ui/Logo';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Sparkles, TrendingUp, Plus } from 'lucide-react';
@@ -14,8 +12,6 @@ interface DashboardHeaderProps {
 export const DashboardHeader: React.FC<DashboardHeaderProps> = ({ userName }) => {
   const { refreshData } = useExpense();
   const navigate = useNavigate();
-  
-  console.log('📊 DashboardHeader: Component rendered, refreshData available:', !!refreshData);
   
   const currentHour = new Date().getHours();
   const greeting = currentHour < 12 ? 'בוקר טוב' : currentHour < 18 ? 'צהריים טובים' : 'ערב טוב';
