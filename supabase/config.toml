@@ -3,3 +3,6 @@ project_id = "hchmfsilgfrzhenafbzi"
 
 [functions.send-email]
 verify_jwt = true
+
+[functions.scan-receipt]
+verify_jwt = true
