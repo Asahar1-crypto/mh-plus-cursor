@@ -6,6 +6,7 @@ import { Account } from '@/contexts/auth/types';
 
 export const expenseService = {
   async getExpenses(user: User, account: Account): Promise<Expense[]> {
+    console.log(`🔍 getExpenses: Starting fetch for user ${user.id} in account ${account.id} (${account.name})`);
     console.log(`Getting expenses for user ${user.id} in account ${account.id} (${account.name})`);
     
     // Fetch expenses from the specific account
