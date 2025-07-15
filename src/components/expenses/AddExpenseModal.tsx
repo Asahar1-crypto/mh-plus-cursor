@@ -31,6 +31,8 @@ export const AddExpenseModal: React.FC<{ onSubmitSuccess?: () => void }> = ({ on
     setIsManualForm(true);
   };
 
+  const shouldPreventClose = currentStep === 'upload' || currentStep === 'validate';
+
   // Prevent body scroll when dialog is open and manage escape key
   useEffect(() => {
     if (isOpen) {
@@ -44,7 +46,35 @@ export const AddExpenseModal: React.FC<{ onSubmitSuccess?: () => void }> = ({ on
     };
   }, [isOpen]);
 
-  const shouldPreventClose = currentStep === 'upload' || currentStep === 'validate';
+  // Prevent navigation during critical steps
+  useEffect(() => {
+    if (shouldPreventClose) {
+      const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+        e.preventDefault();
+        e.returnValue = '';
+      };
+
+      const handleKeyDown = (e: KeyboardEvent) => {
+        // Prevent common navigation shortcuts
+        if (e.key === 'Escape' || 
+            (e.ctrlKey && e.key === 'w') || 
+            (e.altKey && e.key === 'F4') ||
+            (e.key === 'F5') ||
+            (e.ctrlKey && e.key === 'r')) {
+          e.preventDefault();
+          e.stopPropagation();
+        }
+      };
+
+      window.addEventListener('beforeunload', handleBeforeUnload);
+      document.addEventListener('keydown', handleKeyDown, { capture: true });
+
+      return () => {
+        window.removeEventListener('beforeunload', handleBeforeUnload);
+        document.removeEventListener('keydown', handleKeyDown, { capture: true });
+      };
+    }
+  }, [shouldPreventClose]);
 
   return (
     <Dialog 
@@ -52,6 +82,7 @@ export const AddExpenseModal: React.FC<{ onSubmitSuccess?: () => void }> = ({ on
       onOpenChange={(open) => {
         // Only allow closing if we're not in a step that should prevent close
         if (!open && shouldPreventClose) {
+          console.log('Preventing dialog close during critical step:', currentStep);
           return;
         }
         setIsOpen(open);
@@ -75,12 +106,20 @@ export const AddExpenseModal: React.FC<{ onSubmitSuccess?: () => void }> = ({ on
       <DialogContent 
         className="w-[95vw] max-w-[900px] h-[90vh] max-h-[90vh] z-[9999] flex flex-col p-0"
         onPointerDownOutside={(e) => {
-          if (currentStep === 'upload' || currentStep === 'validate') {
+          if (shouldPreventClose) {
+            console.log('Preventing dialog close via pointer down outside:', currentStep);
             e.preventDefault();
           }
         }}
         onEscapeKeyDown={(e) => {
-          if (currentStep === 'upload' || currentStep === 'validate') {
+          if (shouldPreventClose) {
+            console.log('Preventing dialog close via escape key:', currentStep);
+            e.preventDefault();
+          }
+        }}
+        onInteractOutside={(e) => {
+          if (shouldPreventClose) {
+            console.log('Preventing dialog close via interaction outside:', currentStep);
             e.preventDefault();
           }
         }}
