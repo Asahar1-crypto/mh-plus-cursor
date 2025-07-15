@@ -107,6 +107,8 @@ const Dashboard = () => {
     );
   }
 
+  console.log('🎯 Dashboard: Rendering dashboard');
+
   return (
     <div className="w-full max-w-7xl mx-auto space-y-4 sm:space-y-6">
       <PendingInvitationAlert />

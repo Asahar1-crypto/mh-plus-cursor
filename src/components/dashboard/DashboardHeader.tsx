@@ -12,6 +12,8 @@ interface DashboardHeaderProps {
 
 export const DashboardHeader: React.FC<DashboardHeaderProps> = ({ userName }) => {
   const { refreshData } = useExpense();
+  console.log('📊 DashboardHeader: Component rendered, refreshData available:', !!refreshData);
+  
   const currentHour = new Date().getHours();
   const greeting = currentHour < 12 ? 'בוקר טוב' : currentHour < 18 ? 'צהריים טובים' : 'ערב טוב';
 
@@ -44,7 +46,10 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({ userName }) =>
               </div>
             </div>
             <div className="flex-1 sm:flex-none">
-              <AddExpenseModal onSubmitSuccess={refreshData} />
+              <AddExpenseModal onSubmitSuccess={() => {
+                console.log('📊 DashboardHeader: onSubmitSuccess called, calling refreshData');
+                refreshData();
+              }} />
             </div>
           </div>
         </div>

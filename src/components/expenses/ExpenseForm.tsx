@@ -64,6 +64,7 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({ onSubmitSuccess, onCan
   const watchHasEndDate = form.watch('hasEndDate');
   
   const onSubmit = async (data: ExpenseFormValues) => {
+    console.log('💰 ExpenseForm: Form submitted with data:', data);
     setIsPending(true);
     try {
       const childInfo = data.childId ? 
@@ -89,11 +90,16 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({ onSubmitSuccess, onCan
         receipt: data.receipt,
       });
       
+      console.log('✅ ExpenseForm: Expense added successfully');
       if (onSubmitSuccess) {
+        console.log('💰 ExpenseForm: Calling onSubmitSuccess callback');
         onSubmitSuccess();
       } else {
+        console.log('💰 ExpenseForm: No callback, navigating to /expenses');
         navigate('/expenses');
       }
+    } catch (error) {
+      console.error('🚨 ExpenseForm: Error adding expense:', error);
     } finally {
       setIsPending(false);
     }

@@ -15,16 +15,19 @@ export const AddExpenseModal: React.FC<{ onSubmitSuccess?: () => void }> = ({ on
   const [currentStep, setCurrentStep] = useState<'select' | 'upload' | 'validate'>('select');
 
   const handleScanComplete = (result: any) => {
+    console.log('🔍 AddExpenseModal: Scan completed, result:', result);
     setScanResult(result);
     setCurrentStep('validate');
   };
 
   const handleScanApprove = () => {
+    console.log('✅ AddExpenseModal: Scan approved, calling onSubmitSuccess');
     handleCancel();
     if (onSubmitSuccess) onSubmitSuccess();
   };
 
   const handleCancel = () => {
+    console.log('❌ AddExpenseModal: Handling cancel');
     setIsOpen(false);
     setCurrentStep('select');
     setScanResult(null);
@@ -80,14 +83,16 @@ export const AddExpenseModal: React.FC<{ onSubmitSuccess?: () => void }> = ({ on
     <Dialog 
       open={isOpen} 
       onOpenChange={(open) => {
+        console.log('🔄 AddExpenseModal: Dialog onOpenChange called, open:', open, 'currentStep:', currentStep, 'shouldPreventClose:', shouldPreventClose);
         // Only allow closing if we're not in a step that should prevent close
         if (!open && shouldPreventClose) {
-          console.log('Preventing dialog close during critical step:', currentStep);
+          console.log('🚫 AddExpenseModal: Preventing dialog close during critical step:', currentStep);
           return;
         }
         setIsOpen(open);
         if (!open) {
           // Reset state when dialog closes
+          console.log('🔄 AddExpenseModal: Resetting state after dialog close');
           setCurrentStep('select');
           setScanResult(null);
           setIsManualForm(true);
@@ -96,6 +101,7 @@ export const AddExpenseModal: React.FC<{ onSubmitSuccess?: () => void }> = ({ on
     >
       <DialogTrigger asChild>
         <Button onClick={() => {
+          console.log('🖱️ AddExpenseModal: Open button clicked');
           setCurrentStep('select');
           setIsManualForm(true);
           setIsOpen(true);
@@ -145,6 +151,7 @@ export const AddExpenseModal: React.FC<{ onSubmitSuccess?: () => void }> = ({ on
                   <Button 
                     variant="default"
                     onClick={() => {
+                      console.log('📝 AddExpenseModal: Manual form button clicked');
                       setIsManualForm(true);
                       setCurrentStep('select');
                     }}
@@ -155,6 +162,7 @@ export const AddExpenseModal: React.FC<{ onSubmitSuccess?: () => void }> = ({ on
                   <Button 
                     variant="outline"
                     onClick={() => {
+                      console.log('📸 AddExpenseModal: Scan receipt button clicked');
                       setIsManualForm(false);
                       setCurrentStep('upload');
                     }}
@@ -168,10 +176,14 @@ export const AddExpenseModal: React.FC<{ onSubmitSuccess?: () => void }> = ({ on
                   <div className="pb-4">
                     <ExpenseForm 
                       onSubmitSuccess={() => {
+                        console.log('✅ AddExpenseModal: Manual form submitted successfully');
                         if (onSubmitSuccess) onSubmitSuccess();
                         handleCancel();
                       }}
-                      onCancel={handleCancel}
+                      onCancel={() => {
+                        console.log('❌ AddExpenseModal: Manual form cancelled');
+                        handleCancel();
+                      }}
                     />
                   </div>
                 )}
@@ -181,8 +193,14 @@ export const AddExpenseModal: React.FC<{ onSubmitSuccess?: () => void }> = ({ on
             {currentStep === 'upload' && (
               <div className="pb-4">
                 <ReceiptUpload 
-                  onScanComplete={handleScanComplete}
-                  onCancel={handleCancel}
+                  onScanComplete={(result) => {
+                    console.log('📸 AddExpenseModal: Receipt uploaded, calling handleScanComplete');
+                    handleScanComplete(result);
+                  }}
+                  onCancel={() => {
+                    console.log('❌ AddExpenseModal: Receipt upload cancelled');
+                    handleCancel();
+                  }}
                 />
               </div>
             )}
@@ -191,8 +209,14 @@ export const AddExpenseModal: React.FC<{ onSubmitSuccess?: () => void }> = ({ on
               <div className="pb-4">
                 <ReceiptValidation
                   scanResult={scanResult}
-                  onApprove={handleScanApprove}
-                  onCancel={handleCancel}
+                  onApprove={() => {
+                    console.log('✅ AddExpenseModal: Receipt validation approved');
+                    handleScanApprove();
+                  }}
+                  onCancel={() => {
+                    console.log('❌ AddExpenseModal: Receipt validation cancelled');
+                    handleCancel();
+                  }}
                 />
               </div>
             )}

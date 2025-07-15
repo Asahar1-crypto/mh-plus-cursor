@@ -21,14 +21,15 @@ export const useExpenseStorage = (user: User | null, account: Account | null): E
   const currentAccountRef = useRef<string | null>(null);
 
   const refreshData = async () => {
+    console.log('🔄 refreshData: Starting refresh process');
     if (!user || !account) {
-      console.log('No user or account, clearing data');
+      console.log('🔄 refreshData: No user or account, clearing data');
       setExpenses([]);
       setChildrenList([]);
       return;
     }
     
-    console.log(`Loading data for user ${user.id} in account ${account.id} (${account.name})`);
+    console.log(`🔄 refreshData: Loading data for user ${user.id} in account ${account.id} (${account.name})`);
     setIsLoading(true);
     try {
       // Load expenses from Supabase for the current account
@@ -49,6 +50,7 @@ export const useExpenseStorage = (user: User | null, account: Account | null): E
       setExpenses([]);
       setChildrenList([]);
     } finally {
+      console.log('🔄 refreshData: Finished refresh process');
       setIsLoading(false);
     }
   };
