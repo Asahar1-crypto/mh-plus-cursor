@@ -43,6 +43,14 @@ export const expenseService = {
       const childName = expense.expense_children?.[0]?.children?.name || null;
       const childId = expense.expense_children?.[0]?.child_id || null;
 
+      // Debug log to see the actual data structure
+      console.log(`🔍 Expense ${expense.id}:`, {
+        paid_by_data: expense.paid_by,
+        created_by_data: expense.created_by,
+        paid_by_id: expense.paid_by_id,
+        created_by_id: expense.created_by_id
+      });
+
       return {
         id: expense.id,
         amount: parseFloat(expense.amount),
