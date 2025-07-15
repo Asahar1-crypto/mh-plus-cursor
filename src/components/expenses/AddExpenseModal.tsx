@@ -1,15 +1,14 @@
+
 import React, { useState, useEffect } from 'react';
-import { FileText, ScanLine, PlusCircle, X } from 'lucide-react';
+import { FileText, ScanLine, PlusCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { ExpenseForm } from '@/components/expenses/ExpenseForm';
 import { ReceiptUpload } from '@/components/expenses/ReceiptUpload';
 import { ReceiptValidation } from '@/components/expenses/ReceiptValidation';
 
-interface AddExpenseModalProps {
-  onSubmitSuccess?: () => void;
-}
-
-export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({ onSubmitSuccess }) => {
+export const AddExpenseModal: React.FC<{ onSubmitSuccess?: () => void }> = ({ onSubmitSuccess }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [isManualForm, setIsManualForm] = useState(true);
   const [scanResult, setScanResult] = useState<any>(null);
@@ -32,81 +31,78 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({ onSubmitSucces
     setIsManualForm(true);
   };
 
-  // Close modal on Escape key
+  // Prevent body scroll when dialog is open and manage escape key
   useEffect(() => {
-    const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && currentStep === 'select') {
-        handleCancel();
-      }
-    };
-
     if (isOpen) {
-      document.addEventListener('keydown', handleEscape);
       document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
     }
 
     return () => {
-      document.removeEventListener('keydown', handleEscape);
       document.body.style.overflow = 'unset';
     };
-  }, [isOpen, currentStep]);
+  }, [isOpen]);
 
-  if (!isOpen) {
-    return (
-      <Button onClick={() => {
-        setCurrentStep('select');
-        setIsManualForm(true);
-        setIsOpen(true);
-      }}>
-        <PlusCircle className="mr-2 h-4 w-4" /> הוצאה חדשה
-      </Button>
-    );
-  }
+  const shouldPreventClose = currentStep === 'upload' || currentStep === 'validate';
 
   return (
-    <>
-      {/* Backdrop */}
-      <div 
-        className="fixed inset-0 bg-black/50 z-[9998]"
-        onClick={(e) => {
-          if (currentStep === 'select') {
-            handleCancel();
+    <Dialog 
+      open={isOpen} 
+      onOpenChange={(open) => {
+        // Only allow closing if we're not in a step that should prevent close
+        if (!open && shouldPreventClose) {
+          return;
+        }
+        setIsOpen(open);
+        if (!open) {
+          // Reset state when dialog closes
+          setCurrentStep('select');
+          setScanResult(null);
+          setIsManualForm(true);
+        }
+      }}
+    >
+      <DialogTrigger asChild>
+        <Button onClick={() => {
+          setCurrentStep('select');
+          setIsManualForm(true);
+          setIsOpen(true);
+        }}>
+          <PlusCircle className="mr-2 h-4 w-4" /> הוצאה חדשה
+        </Button>
+      </DialogTrigger>
+      <DialogContent 
+        className="w-[95vw] max-w-[900px] h-[90vh] max-h-[90vh] z-[9999] flex flex-col p-0"
+        onPointerDownOutside={(e) => {
+          if (currentStep === 'upload' || currentStep === 'validate') {
+            e.preventDefault();
           }
         }}
-      />
-      
-      {/* Modal */}
-      <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 pointer-events-none">
-        <div 
-          className="bg-background border rounded-lg shadow-lg w-[95vw] max-w-[800px] max-h-[90vh] overflow-y-auto pointer-events-auto"
-          onClick={(e) => e.stopPropagation()}
-        >
-          {/* Header */}
-          <div className="flex items-center justify-between p-6 border-b">
-            <div>
-              <h2 className="text-lg font-semibold">
-                {currentStep === 'select' ? "הוספת הוצאה" 
-                 : currentStep === 'upload' ? "סריקת חשבונית"
-                 : "אימות פרטי החשבונית"}
-              </h2>
-              <p className="text-sm text-muted-foreground">
-                {currentStep === 'select' ? "בחר את הדרך להוספת ההוצאה"
-                 : currentStep === 'upload' ? "העלה קובץ חשבונית לסריקה אוטומטית"
-                 : "בדוק ואשר את הפריטים שזוהו"}
-              </p>
-            </div>
+        onEscapeKeyDown={(e) => {
+          if (currentStep === 'upload' || currentStep === 'validate') {
+            e.preventDefault();
+          }
+        }}
+      >
+        <DialogHeader className="flex-shrink-0 px-6 py-4 border-b">
+          <DialogTitle>
+            {currentStep === 'select' ? "הוספת הוצאה" 
+             : currentStep === 'upload' ? "סריקת חשבונית"
+             : "אימות פרטי החשבונית"}
+          </DialogTitle>
+          <DialogDescription>
+            {currentStep === 'select' ? "בחר את הדרך להוספת ההוצאה"
+             : currentStep === 'upload' ? "העלה קובץ חשבונית לסריקה אוטומטית"
+             : "בדוק ואשר את הפריטים שזוהו"}
+          </DialogDescription>
+        </DialogHeader>
+        
+        <div className="flex-1 overflow-hidden">
+          <ScrollArea className="h-full px-6 py-4">
             {currentStep === 'select' && (
-              <Button variant="ghost" size="sm" onClick={handleCancel}>
-                <X className="h-4 w-4" />
-              </Button>
-            )}
-          </div>
-
-          {/* Content */}
-          <div className="p-6">
-            {currentStep === 'select' && (
-              <>
-                <div className="flex gap-4 mb-4">
+              <div className="space-y-6">
+                <div className="flex gap-4">
                   <Button 
                     variant="default"
                     onClick={() => {
@@ -130,31 +126,37 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({ onSubmitSucces
                 </div>
 
                 {isManualForm && (
-                  <ExpenseForm onSubmitSuccess={() => {
-                    if (onSubmitSuccess) onSubmitSuccess();
-                    handleCancel();
-                  }} />
+                  <div className="pb-4">
+                    <ExpenseForm onSubmitSuccess={() => {
+                      if (onSubmitSuccess) onSubmitSuccess();
+                      handleCancel();
+                    }} />
+                  </div>
                 )}
-              </>
+              </div>
             )}
 
             {currentStep === 'upload' && (
-              <ReceiptUpload 
-                onScanComplete={handleScanComplete}
-                onCancel={handleCancel}
-              />
+              <div className="pb-4">
+                <ReceiptUpload 
+                  onScanComplete={handleScanComplete}
+                  onCancel={handleCancel}
+                />
+              </div>
             )}
 
             {currentStep === 'validate' && scanResult && (
-              <ReceiptValidation
-                scanResult={scanResult}
-                onApprove={handleScanApprove}
-                onCancel={handleCancel}
-              />
+              <div className="pb-4">
+                <ReceiptValidation
+                  scanResult={scanResult}
+                  onApprove={handleScanApprove}
+                  onCancel={handleCancel}
+                />
+              </div>
             )}
-          </div>
+          </ScrollArea>
         </div>
-      </div>
-    </>
+      </DialogContent>
+    </Dialog>
   );
 };

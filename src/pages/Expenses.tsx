@@ -83,7 +83,7 @@ const ExpensesPage = () => {
             רענון
           </Button>
           <div className="flex-1 sm:flex-none">
-            <AddExpenseModal />
+            <AddExpenseModal onSubmitSuccess={refreshData} />
           </div>
         </div>
       </div>
