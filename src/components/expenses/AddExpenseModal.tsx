@@ -104,9 +104,11 @@ export const AddExpenseModal: React.FC<{ onSubmitSuccess?: () => void }> = ({ on
     >
       <DialogTrigger asChild>
         <Button onClick={() => {
+          console.log('🔍 AddExpenseModal: Trigger button clicked');
           setCurrentStep('select');
           setIsManualForm(true);
           setIsOpen(true);
+          console.log('🔍 AddExpenseModal: State set after trigger click', { isOpen: true, currentStep: 'select' });
         }}>
           <PlusCircle className="mr-2 h-4 w-4" /> הוצאה חדשה
         </Button>
