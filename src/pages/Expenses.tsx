@@ -1,5 +1,6 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { useLocation } from 'react-router-dom';
 import { useExpense } from '@/contexts/ExpenseContext';
 import { Expense } from '@/contexts/expense/types';
 import { ExpenseFilters } from '@/components/expenses/ExpenseFilters';
@@ -10,6 +11,9 @@ import { RefreshCw } from 'lucide-react';
 
 
 const ExpensesPage = () => {
+  const location = useLocation();
+  const modalRef = useRef<any>(null);
+  
   const { 
     expenses, 
     childrenList, 
@@ -23,6 +27,19 @@ const ExpensesPage = () => {
   const handleRefresh = async () => {
     await refreshData();
   };
+
+  // Check if we should auto-open the modal
+  useEffect(() => {
+    if (location.state?.openModal) {
+      // Small delay to ensure modal is rendered
+      setTimeout(() => {
+        const modalButton = document.querySelector('[data-modal-trigger="add-expense"]');
+        if (modalButton) {
+          (modalButton as HTMLElement).click();
+        }
+      }, 100);
+    }
+  }, [location.state]);
   
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedChild, setSelectedChild] = useState<string | null>(null);

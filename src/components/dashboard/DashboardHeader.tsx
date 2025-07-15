@@ -1,10 +1,11 @@
 
 import React from 'react';
-import { AddExpenseModal } from '@/components/expenses/AddExpenseModal';
 import { useExpense } from '@/contexts/ExpenseContext';
 import { Logo } from '@/components/ui/Logo';
 import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { Sparkles, TrendingUp, Plus } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 interface DashboardHeaderProps {
   userName: string | undefined;
@@ -12,11 +13,16 @@ interface DashboardHeaderProps {
 
 export const DashboardHeader: React.FC<DashboardHeaderProps> = ({ userName }) => {
   const { refreshData } = useExpense();
+  const navigate = useNavigate();
   
   console.log('📊 DashboardHeader: Component rendered, refreshData available:', !!refreshData);
   
   const currentHour = new Date().getHours();
   const greeting = currentHour < 12 ? 'בוקר טוב' : currentHour < 18 ? 'צהריים טובים' : 'ערב טוב';
+
+  const handleAddExpense = () => {
+    navigate('/expenses', { state: { openModal: true } });
+  };
 
   return (
     <Card className="bg-card/95 backdrop-blur-sm border shadow-sm mb-6">
@@ -47,9 +53,10 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({ userName }) =>
               </div>
             </div>
             <div className="flex-1 sm:flex-none">
-              <AddExpenseModal onSubmitSuccess={() => {
-                refreshData();
-              }} />
+              <Button onClick={handleAddExpense}>
+                <Plus className="mr-2 h-4 w-4" />
+                הוצאה חדשה
+              </Button>
             </div>
           </div>
         </div>
