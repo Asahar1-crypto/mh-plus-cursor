@@ -133,6 +133,9 @@ Deno.serve(async (req) => {
           }
 
           // Generate new monthly expense
+          // Auto-approve if the same user who created the recurring expense is also the one paying
+          const isAutoApproved = expense.paid_by_id === expense.created_by_id;
+          
           const newExpenseData = {
             account_id: expense.account_id,
             amount: expense.amount,
@@ -141,7 +144,9 @@ Deno.serve(async (req) => {
             category: expense.category,
             paid_by_id: expense.paid_by_id,
             created_by_id: expense.created_by_id,
-            status: 'pending',
+            status: isAutoApproved ? 'approved' : 'pending',
+            approved_by: isAutoApproved ? expense.created_by_id : null,
+            approved_at: isAutoApproved ? new Date().toISOString() : null,
             split_equally: expense.split_equally,
             is_recurring: false,
             frequency: null,
