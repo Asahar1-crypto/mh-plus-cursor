@@ -1,7 +1,7 @@
 
 import { supabase } from './client';
 import { Expense, Child } from '@/contexts/expense/types';
-import { User } from '@/contexts/AuthContext';
+import { User } from '@/contexts/auth/types';
 import { Account } from '@/contexts/auth/types';
 
 export const expenseService = {
