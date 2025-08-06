@@ -225,10 +225,13 @@ export type Database = {
           date: string
           description: string
           end_date: string | null
+          frequency: string | null
           has_end_date: boolean | null
           id: string
+          is_recurring: boolean | null
           paid_by_id: string
           receipt_url: string | null
+          recurring_parent_id: string | null
           split_equally: boolean
           status: string
           updated_at: string
@@ -244,10 +247,13 @@ export type Database = {
           date?: string
           description: string
           end_date?: string | null
+          frequency?: string | null
           has_end_date?: boolean | null
           id?: string
+          is_recurring?: boolean | null
           paid_by_id: string
           receipt_url?: string | null
+          recurring_parent_id?: string | null
           split_equally?: boolean
           status?: string
           updated_at?: string
@@ -263,10 +269,13 @@ export type Database = {
           date?: string
           description?: string
           end_date?: string | null
+          frequency?: string | null
           has_end_date?: boolean | null
           id?: string
+          is_recurring?: boolean | null
           paid_by_id?: string
           receipt_url?: string | null
+          recurring_parent_id?: string | null
           split_equally?: boolean
           status?: string
           updated_at?: string
@@ -291,6 +300,13 @@ export type Database = {
             columns: ["paid_by_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expenses_recurring_parent_id_fkey"
+            columns: ["recurring_parent_id"]
+            isOneToOne: false
+            referencedRelation: "expenses"
             referencedColumns: ["id"]
           },
         ]
@@ -433,6 +449,10 @@ export type Database = {
           id: string
           name: string
         }[]
+      }
+      generate_recurring_expenses: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
       }
       get_account_members_with_details: {
         Args: { account_uuid: string }

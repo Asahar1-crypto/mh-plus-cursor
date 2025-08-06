@@ -68,8 +68,8 @@ export const expenseService = {
         approvedBy: expense.approved_by,
         approvedAt: expense.approved_at,
         receipt: expense.receipt_url,
-        isRecurring: false, // Default value, can be updated based on your schema
-        frequency: undefined,
+        isRecurring: expense.is_recurring || false,
+        frequency: expense.frequency as 'monthly' | 'weekly' | 'yearly' | undefined,
         hasEndDate: expense.has_end_date || false,
         endDate: expense.end_date || undefined,
         includeInMonthlyBalance: true, // Default value
@@ -128,7 +128,9 @@ export const expenseService = {
       approved_at: isAutoApproved ? new Date().toISOString() : null,
       has_end_date: expense.hasEndDate || false,
       end_date: expense.endDate || null,
-      split_equally: expense.splitEqually
+      split_equally: expense.splitEqually,
+      is_recurring: expense.isRecurring || false,
+      frequency: expense.frequency || null
     };
     
     console.log('Data being inserted:', expenseData);
