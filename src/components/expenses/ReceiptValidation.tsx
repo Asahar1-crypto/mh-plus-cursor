@@ -26,6 +26,15 @@ interface ScanResult {
   }[];
 }
 
+const PAYMENT_TYPES = [
+  { value: 'i_paid_shared', label: 'שילמתי - הוצאה משותפת' },
+  { value: 'i_paid_theirs', label: 'שילמתי עבורם' },
+  { value: 'they_paid_shared', label: 'הם שילמו - הוצאה משותפת' },
+  { value: 'they_paid_mine', label: 'הם שילמו עבורי' },
+  { value: 'i_owe_them', label: 'אני חייב להם' },
+  { value: 'they_owe_me', label: 'הם חייבים לי' }
+];
+
 interface ReceiptValidationProps {
   scanResult: ScanResult;
   onApprove: () => void;
@@ -52,11 +61,12 @@ export const ReceiptValidation: React.FC<ReceiptValidationProps> = ({
   const [editedDate, setEditedDate] = useState(scanResult.date);
   const [editedVendor, setEditedVendor] = useState(scanResult.vendor);
   const [selectedChildren, setSelectedChildren] = useState<Record<number, string>>({});
+  const [paymentTypes, setPaymentTypes] = useState<Record<number, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   
   const { toast } = useToast();
   const { addExpense, childrenList } = useExpense();
-  const { user } = useAuth();
+  const { user, account } = useAuth();
 
   const confidenceScore = scanResult.confidence_score || 0;
   const isLowConfidence = confidenceScore < 60;
@@ -73,10 +83,13 @@ export const ReceiptValidation: React.FC<ReceiptValidationProps> = ({
   };
 
   const addNewItem = () => {
+    const newIndex = editedItems.length;
     setEditedItems([
       ...editedItems,
       { name: '', price: 0, quantity: 1, category: 'אחר' }
     ]);
+    // Set default payment type for new item
+    setPaymentTypes(prev => ({ ...prev, [newIndex]: 'i_paid_shared' }));
   };
 
   const calculateTotal = () => {
@@ -93,12 +106,23 @@ export const ReceiptValidation: React.FC<ReceiptValidationProps> = ({
       for (let i = 0; i < editedItems.length; i++) {
         const item = editedItems[i];
         const childId = selectedChildren[i];
+        const paymentType = paymentTypes[i] || 'i_paid_shared';
 
         if (!item.name.trim() || item.price <= 0) {
           toast({
             variant: "destructive",
             title: "שגיאה בנתונים",
             description: `שם ומחיר חובה עבור פריט מספר ${i + 1}`
+          });
+          setIsSubmitting(false);
+          return;
+        }
+
+        if (!paymentType) {
+          toast({
+            variant: "destructive",
+            title: "שגיאה בנתונים",
+            description: `יש לבחור סוג תשלום עבור פריט מספר ${i + 1}`
           });
           setIsSubmitting(false);
           return;
@@ -199,6 +223,7 @@ export const ReceiptValidation: React.FC<ReceiptValidationProps> = ({
                 <TableHead>כמות</TableHead>
                 <TableHead>קטגוריה</TableHead>
                 <TableHead>ילד</TableHead>
+                <TableHead>סוג תשלום</TableHead>
                 <TableHead>פעולות</TableHead>
               </TableRow>
             </TableHeader>
@@ -234,10 +259,10 @@ export const ReceiptValidation: React.FC<ReceiptValidationProps> = ({
                       value={item.category}
                       onValueChange={(value) => updateItem(index, 'category', value)}
                     >
-                      <SelectTrigger>
+                      <SelectTrigger className="min-w-[120px]">
                         <SelectValue />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className="z-[110]">
                         {CATEGORIES.map((category) => (
                           <SelectItem key={category} value={category}>
                             {category}
@@ -253,14 +278,33 @@ export const ReceiptValidation: React.FC<ReceiptValidationProps> = ({
                         setSelectedChildren(prev => ({ ...prev, [index]: value === "none" ? "" : value }))
                       }
                     >
-                      <SelectTrigger>
+                      <SelectTrigger className="min-w-[120px]">
                         <SelectValue placeholder="בחר ילד" />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className="z-[110]">
                         <SelectItem value="none">ללא שיוך</SelectItem>
                         {childrenList.map((child) => (
                           <SelectItem key={child.id} value={child.id}>
                             {child.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </TableCell>
+                  <TableCell>
+                    <Select
+                      value={paymentTypes[index] || "i_paid_shared"}
+                      onValueChange={(value) => 
+                        setPaymentTypes(prev => ({ ...prev, [index]: value }))
+                      }
+                    >
+                      <SelectTrigger className="min-w-[160px]">
+                        <SelectValue placeholder="בחר סוג תשלום" />
+                      </SelectTrigger>
+                      <SelectContent className="z-[110]">
+                        {PAYMENT_TYPES.map((type) => (
+                          <SelectItem key={type.value} value={type.value}>
+                            {type.label}
                           </SelectItem>
                         ))}
                       </SelectContent>
