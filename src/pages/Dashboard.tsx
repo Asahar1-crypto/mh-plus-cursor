@@ -146,9 +146,9 @@ const Dashboard = () => {
         </Card>
         
         <ExpensesSummary 
-          pendingExpenses={filteredPending}
-          approvedExpenses={filteredApproved}
-          paidExpenses={filteredPaid}
+          pendingExpenses={getPendingExpenses()}
+          approvedExpenses={getApprovedExpenses()}
+          paidExpenses={getPaidExpenses()}
         />
         
         <MonthlyFoodPaymentCard selectedMonth={selectedMonth} />
