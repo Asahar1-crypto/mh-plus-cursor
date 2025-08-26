@@ -5,8 +5,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { CategoryDropdown } from './CategoryDropdown';
+import { ChildDropdown } from './ChildDropdown';
+import { PaymentTypeDropdown } from './PaymentTypeDropdown';
+
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
 import { useExpense } from '@/contexts/expense/useExpense';
@@ -41,26 +43,16 @@ interface ReceiptValidationProps {
   onCancel: () => void;
 }
 
-const CATEGORIES = [
-  'מזון',
-  'ביגוד', 
-  'חינוך',
-  'בריאות',
-  'ציוד תינוקות',
-  'משחקים',
-  'ספרים',
-  'אחר'
-];
 
 // Map English categories from scan to Hebrew categories
 const CATEGORY_MAPPING: Record<string, string> = {
-  'food': 'מזון',
-  'clothing': 'ביגוד',
-  'education': 'חינוך',
-  'health': 'בריאות',
+  'food': 'אוכל וכיבוד',
+  'clothing': 'ביגוד והנעלה',
+  'education': 'ספרים וציוד לימודים',
+  'health': 'רפואה ובריאות',
   'baby': 'ציוד תינוקות',
-  'toys': 'משחקים',
-  'books': 'ספרים',
+  'toys': 'צעצועים ומשחקים',
+  'books': 'ספרים וציוד לימודים',
   'other': 'אחר',
   'general': 'אחר'
 };
@@ -234,7 +226,7 @@ export const ReceiptValidation: React.FC<ReceiptValidationProps> = ({
       </Card>
 
       {/* Items List */}
-      <Card className="overflow-visible">
+      <Card>
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
             פריטים בחשבונית
@@ -243,10 +235,10 @@ export const ReceiptValidation: React.FC<ReceiptValidationProps> = ({
             </div>
           </CardTitle>
         </CardHeader>
-        <CardContent className="overflow-visible">
+        <CardContent>
           <div className="space-y-4">
             {editedItems.map((item, index) => (
-              <div key={index} className="p-4 border rounded-lg space-y-4 relative overflow-visible">
+              <div key={index} className="p-4 border rounded-lg space-y-4 relative">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
                     <Label htmlFor={`name-${index}`}>שם הפריט</Label>
@@ -283,62 +275,29 @@ export const ReceiptValidation: React.FC<ReceiptValidationProps> = ({
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
                     <Label>קטגוריה</Label>
-                    <Select
+                    <CategoryDropdown
                       value={item.category}
                       onValueChange={(value) => updateItem(index, 'category', value)}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="בחר קטגוריה" />
-                      </SelectTrigger>
-                       <SelectContent className="z-[300]">
-                         {CATEGORIES.map((category) => (
-                           <SelectItem key={category} value={category}>
-                             {category}
-                           </SelectItem>
-                         ))}
-                       </SelectContent>
-                    </Select>
+                    />
                   </div>
                   <div>
                     <Label>ילד</Label>
-                    <Select
+                    <ChildDropdown
+                      children={childrenList}
                       value={selectedChildren[index] || "none"}
                       onValueChange={(value) => 
                         setSelectedChildren(prev => ({ ...prev, [index]: value === "none" ? "" : value }))
                       }
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="בחר ילד" />
-                      </SelectTrigger>
-                       <SelectContent className="z-[300]">
-                         <SelectItem value="none">ללא שיוך</SelectItem>
-                         {childrenList.map((child) => (
-                           <SelectItem key={child.id} value={child.id}>
-                             {child.name}
-                           </SelectItem>
-                         ))}
-                       </SelectContent>
-                    </Select>
+                    />
                   </div>
                   <div>
                     <Label>סוג תשלום</Label>
-                    <Select
+                    <PaymentTypeDropdown
                       value={paymentTypes[index] || "i_paid_shared"}
                       onValueChange={(value) => 
                         setPaymentTypes(prev => ({ ...prev, [index]: value }))
                       }
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="בחר סוג תשלום" />
-                      </SelectTrigger>
-                       <SelectContent className="z-[300]">
-                         {PAYMENT_TYPES.map((type) => (
-                           <SelectItem key={type.value} value={type.value}>
-                             {type.label}
-                           </SelectItem>
-                         ))}
-                       </SelectContent>
-                    </Select>
+                    />
                   </div>
                 </div>
                 
