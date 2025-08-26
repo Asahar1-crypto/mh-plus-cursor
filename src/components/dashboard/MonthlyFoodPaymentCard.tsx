@@ -5,7 +5,6 @@ import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/auth';
 import { memberService } from '@/contexts/auth/services/account/memberService';
 import { Separator } from '@/components/ui/separator';
-import { ArrowRightLeft, TrendingDown, Calculator, DollarSign } from 'lucide-react';
 
 interface PaymentBreakdown {
   userId: string;
@@ -49,218 +48,205 @@ export const MonthlyFoodPaymentCard: React.FC<MonthlyFoodPaymentCardProps> = ({ 
       targetYear = currentDate.getFullYear();
     }
     
-    // Filter expenses for the target month and food categories
-    const filteredExpenses = expenses.filter(expense => {
+    // Filter expenses for the selected month - only approved expenses (not paid ones)
+    const selectedMonthExpenses = expenses.filter(expense => {
       const expenseDate = new Date(expense.date);
-      const isSameMonth = expenseDate.getMonth() === targetMonth && expenseDate.getFullYear() === targetYear;
-      const isFoodCategory = ['מזון', 'מזונות', 'אוכל'].includes(expense.category);
-      return isSameMonth && isFoodCategory && expense.status === 'paid';
+      const isSelectedMonth = expenseDate.getMonth() === targetMonth && expenseDate.getFullYear() === targetYear;
+      const isRelevant = expense.status === 'approved'; // Only approved, not paid
+      return isSelectedMonth && isRelevant;
     });
     
-    if (filteredExpenses.length === 0) {
-      return null;
-    }
+    // Calculate what each person owes based on the rules:
+    // 1. split_equally = true: Only the payer owes their half
+    // 2. split_equally = false: The payer owes the full amount to the other person
     
-    // Calculate breakdown
     const breakdown: PaymentBreakdown[] = accountMembers.map(member => {
-      let totalPaid = 0;
+      let totalOwes = 0;
       
-      filteredExpenses.forEach(expense => {
+      // Go through all expenses and see what this member owes
+      selectedMonthExpenses.forEach(expense => {
         if (expense.paidById === member.user_id) {
-          totalPaid += expense.amount;
+          // This member is designated as the one who should pay
+          if (expense.splitEqually) {
+            // Half-half: only owes their half
+            totalOwes += expense.amount / 2;
+          } else {
+            // Full payment: owes the full amount
+            totalOwes += expense.amount;
+          }
         }
+        // If this member is NOT the payer, they don't owe anything for this expense
       });
       
       return {
         userId: member.user_id,
         userName: member.user_name,
-        totalPaid,
-        shouldPay: 0, // Will be calculated below
-        balance: 0 // Will be calculated below
+        totalPaid: 0, // Not relevant in this calculation
+        shouldPay: totalOwes,
+        balance: totalOwes // Positive means they owe money
       };
     });
     
-    // Calculate total food expenses
-    const totalFoodExpenses = filteredExpenses.reduce((sum, expense) => sum + expense.amount, 0);
+    // Calculate totals for display
+    const totalExpenses = selectedMonthExpenses.reduce((sum, expense) => sum + expense.amount, 0);
     
-    // Calculate how much each member should pay (equal split)
-    const shouldPayEach = totalFoodExpenses / accountMembers.length;
-    
-    // Update shouldPay and balance for each member
-    breakdown.forEach(member => {
-      member.shouldPay = shouldPayEach;
-      member.balance = member.totalPaid - shouldPayEach;
+    // Debug logging to verify calculations
+    console.log('🔍 Payment Breakdown Debug:', {
+      selectedMonth,
+      targetMonth: targetMonth + 1, // Display as 1-based
+      targetYear,
+      totalExpenses,
+      selectedMonthExpensesCount: selectedMonthExpenses.length,
+      breakdown: breakdown.map(b => ({
+        name: b.userName,
+        shouldPay: Math.round(b.shouldPay),
+        balance: Math.round(b.balance)
+      }))
     });
     
     return {
+      totalExpenses,
       breakdown,
-      totalFoodExpenses,
-      shouldPayEach
+      selectedMonth: selectedMonth || `${targetYear}-${String(targetMonth + 1).padStart(2, '0')}`
     };
   }, [expenses, accountMembers, selectedMonth]);
   
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('he-IL', {
-      style: 'currency',
-      currency: 'ILS',
-      minimumFractionDigits: 0
-    }).format(amount);
-  };
-  
   if (!paymentBreakdown) {
     return (
-      <Card className="border-0 bg-gradient-to-br from-slate-50 to-gray-100 shadow-lg">
+      <Card>
         <CardHeader>
-          <CardTitle className="flex items-center space-x-2 text-gray-700">
-            <Calculator className="h-5 w-5" />
-            <span>חישוב נטו</span>
+         <CardTitle className="flex items-center gap-2">
+            💰 חלוקת תשלומים חודשיים
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="text-center py-8">
-            <div className="text-gray-500 text-lg">אין הוצאות מזון לחודש זה</div>
-          </div>
+          <p className="text-muted-foreground">טוען נתוני חברי החשבון...</p>
         </CardContent>
       </Card>
     );
   }
   
-  // Find who owes whom
-  const creditors = paymentBreakdown.breakdown.filter(member => member.balance < 0);
-  const debtors = paymentBreakdown.breakdown.filter(member => member.balance > 0);
-  
-  // Simple debt settlement calculation
-  const settlements: { from: string; to: string; amount: number }[] = [];
-  
-  let debtorsCopy = [...debtors];
-  let creditorsCopy = [...creditors];
-  
-  for (const creditor of creditorsCopy) {
-    let creditAmount = Math.abs(creditor.balance);
-    
-    for (const debtor of debtorsCopy) {
-      if (creditAmount <= 0 || debtor.balance <= 0) continue;
-      
-      const transferAmount = Math.min(creditAmount, debtor.balance);
-      
-      if (transferAmount > 0) {
-        settlements.push({
-          from: debtor.userName,
-          to: creditor.userName,
-          amount: transferAmount
-        });
-        
-        creditAmount -= transferAmount;
-        debtor.balance -= transferAmount;
-      }
-    }
-  }
+  const { totalExpenses, breakdown } = paymentBreakdown;
   
   return (
-    <div className="space-y-6">
-      {/* Net Calculation Header */}
-      <Card className="border-0 bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50 shadow-xl">
-        <CardHeader>
-          <CardTitle className="flex items-center space-x-2 text-emerald-800">
-            <Calculator className="h-6 w-6" />
-            <span>חישוב נטו</span>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Total Summary */}
-            <div className="space-y-4">
-              <div className="text-center p-4 bg-white/50 rounded-xl">
-                <div className="text-sm text-emerald-600 mb-1">סה״כ הוצאות מזון</div>
-                <div className="text-2xl font-bold text-emerald-800">
-                  {formatCurrency(paymentBreakdown.totalFoodExpenses)}
-                </div>
-              </div>
-              <div className="text-center p-4 bg-white/50 rounded-xl">
-                <div className="text-sm text-emerald-600 mb-1">לכל אחד</div>
-                <div className="text-xl font-semibold text-emerald-700">
-                  {formatCurrency(paymentBreakdown.shouldPayEach)}
-                </div>
-              </div>
-            </div>
-            
-            {/* Breakdown by Person */}
-            <div className="space-y-3">
-              {paymentBreakdown.breakdown.map((member) => (
-                <div key={member.userId} className="flex items-center justify-between p-3 bg-white/60 rounded-lg">
-                  <div className="flex items-center space-x-2">
-                    <div className="h-8 w-8 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white text-sm font-semibold">
-                      {member.userName.charAt(0).toUpperCase()}
-                    </div>
-                    <span className="font-medium text-emerald-800">{member.userName}</span>
-                  </div>
-                  <div className="text-left">
-                    <div className="text-sm text-emerald-600">שילם {formatCurrency(member.totalPaid)}</div>
-                    <div className={`text-sm font-semibold ${member.balance >= 0 ? 'text-red-600' : 'text-green-600'}`}>
-                      {member.balance >= 0 ? 'חייב' : 'זכאי'} {formatCurrency(Math.abs(member.balance))}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
+    <Card>
+      <CardHeader className="p-4 sm:p-6">
+        <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
+          💰 חלוקת תשלומים - {(() => {
+            const [year, month] = (paymentBreakdown.selectedMonth || selectedMonth || '').split('-');
+            const date = new Date(parseInt(year), parseInt(month) - 1);
+            return date.toLocaleDateString('he-IL', { year: 'numeric', month: 'long' });
+          })()}
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4 p-4 sm:p-6 pt-0">
+        {/* Total expenses summary */}
+        <div className="text-center p-3 sm:p-4 bg-muted rounded-lg">
+          <div className="text-xs sm:text-sm text-muted-foreground">סה״כ הוצאות החודש</div>
+          <div className="text-xl sm:text-2xl font-bold text-primary">₪{Math.round(totalExpenses)}</div>
+          <div className="text-xs text-muted-foreground mt-1">
+            סה״כ חובות: ₪{Math.round(breakdown.reduce((sum, person) => sum + Math.max(0, person.balance), 0))}
           </div>
-        </CardContent>
-      </Card>
-      
-      {/* Settlement Instructions */}
-      {settlements.length > 0 && (
-        <Card className="border-0 bg-gradient-to-br from-amber-50 via-orange-50 to-red-50 shadow-xl">
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2 text-amber-800">
-              <ArrowRightLeft className="h-6 w-6" />
-              <span>הוראות סילוק</span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {settlements.map((settlement, index) => (
-                <div key={index} className="relative">
-                  {/* Main Settlement Card */}
-                  <div className="p-6 bg-gradient-to-r from-white/80 to-orange-50/80 rounded-xl border-2 border-orange-200/50 shadow-lg hover:shadow-xl transition-all duration-300">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-4">
-                        <div className="h-12 w-12 rounded-full bg-gradient-to-br from-orange-500 to-red-600 flex items-center justify-center text-white font-bold">
-                          <DollarSign className="h-6 w-6" />
-                        </div>
-                        <div>
-                          <div className="text-lg font-bold text-orange-800">
-                            {settlement.from} צריך להעביר לטבען
-                          </div>
-                          <div className="text-sm text-orange-600">
-                            {settlement.from} ← {formatCurrency(settlement.amount)} ← {settlement.to}
-                          </div>
-                        </div>
-                      </div>
-                      <div className="text-left">
-                        <div className="text-3xl font-bold text-orange-700">
-                          {formatCurrency(settlement.amount)}
-                        </div>
-                        <div className="text-sm text-orange-500 text-center">
-                          <TrendingDown className="h-4 w-4 inline mr-1" />
-                          סילוק חוב
-                        </div>
-                      </div>
-                    </div>
+        </div>
+        
+        <Separator />
+        
+        {/* Individual breakdown */}
+        <div className="space-y-3">
+          <h4 className="font-semibold text-sm sm:text-base">פירוט תשלומים:</h4>
+          {breakdown.map((person) => (
+            <div key={person.userId} className="flex flex-col sm:flex-row sm:items-center justify-between p-3 rounded-lg border gap-2 sm:gap-0">
+              <div className="flex-1">
+                <div className="font-medium text-sm sm:text-base">{person.userName}</div>
+              </div>
+              
+              <div className="text-right">
+                {person.balance > 0 ? (
+                  <div className="text-red-600 font-semibold text-sm sm:text-base">
+                    חייב: ₪{Math.round(person.balance)}
                   </div>
-                  
-                  {/* Calculation Details */}
-                  <div className="mt-3 p-3 bg-orange-50/50 rounded-lg text-sm text-orange-700">
-                    <div className="flex justify-between items-center">
-                      <span>{settlement.from} שילם {formatCurrency(debtors.find(d => d.userName === settlement.from)?.totalPaid || 0)}</span>
-                      <span>מינוס {formatCurrency(paymentBreakdown.shouldPayEach)} = {formatCurrency((debtors.find(d => d.userName === settlement.from)?.totalPaid || 0) - paymentBreakdown.shouldPayEach)}</span>
-                    </div>
+                ) : person.balance < 0 ? (
+                  <div className="text-green-600 font-semibold text-sm sm:text-base">
+                    זכאי: ₪{Math.round(Math.abs(person.balance))}
+                  </div>
+                ) : (
+                  <div className="text-gray-600 font-semibold text-sm sm:text-base">
+                    מאוזן ✓
+                  </div>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+        
+        {/* Summary of who owes whom */}
+        <Separator />
+        
+        <div className="space-y-3">
+          <h4 className="font-semibold text-sm sm:text-base">החישוב הנטו:</h4>
+          {(() => {
+            // Calculate net balance between users  
+            const userA = breakdown[0];
+            const userB = breakdown[1];
+            
+            if (!userA || !userB) {
+              return (
+                <div className="text-xs sm:text-sm p-2 sm:p-3 bg-gray-50 rounded border border-gray-200 text-center">
+                  נדרשים שני משתמשים לחישוב נטו
+                </div>
+              );
+            }
+            
+            // Calculate the net difference
+            const netDifference = userA.balance - userB.balance;
+            
+            return (
+              <div className="space-y-2">
+                {/* Show individual balances */}
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  <div className="text-center p-2 bg-muted rounded">
+                    <div className="font-medium">{userA.userName}</div>
+                    <div className="text-red-600">חייב: ₪{Math.round(userA.balance)}</div>
+                  </div>
+                  <div className="text-center p-2 bg-muted rounded">
+                    <div className="font-medium">{userB.userName}</div>
+                    <div className="text-red-600">חייב: ₪{Math.round(userB.balance)}</div>
                   </div>
                 </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-    </div>
+                
+                {/* Show net result */}
+                <div className="text-center">
+                  <div className="text-xs text-muted-foreground mb-1">תוצאה נטו:</div>
+                  {Math.abs(netDifference) < 1 ? (
+                    <div className="p-3 bg-green-50 rounded border border-green-200">
+                      <div className="font-bold text-green-700">💚 החשבון מאוזן!</div>
+                      <div className="text-xs text-muted-foreground mt-1">אין צורך בהעברת כסף</div>
+                    </div>
+                  ) : netDifference > 0 ? (
+                    <div className="p-3 bg-orange-50 rounded border border-orange-200">
+                      <div className="font-bold text-orange-700 text-lg">
+                        💸 {userA.userName} צריך להעביר ₪{Math.round(Math.abs(netDifference))} ל{userB.userName}
+                      </div>
+                      <div className="text-xs text-muted-foreground mt-1">
+                        {userA.userName} חייב ₪{Math.round(userA.balance)} מינוס {userB.userName} חייב ₪{Math.round(userB.balance)} = ₪{Math.round(Math.abs(netDifference))}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="p-3 bg-orange-50 rounded border border-orange-200">
+                      <div className="font-bold text-orange-700 text-lg">
+                        💸 {userB.userName} צריך להעביר ₪{Math.round(Math.abs(netDifference))} ל{userA.userName}
+                      </div>
+                      <div className="text-xs text-muted-foreground mt-1">
+                        {userB.userName} חייב ₪{Math.round(userB.balance)} מינוס {userA.userName} חייב ₪{Math.round(userA.balance)} = ₪{Math.round(Math.abs(netDifference))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })()}
+        </div>
+      </CardContent>
+    </Card>
   );
 };

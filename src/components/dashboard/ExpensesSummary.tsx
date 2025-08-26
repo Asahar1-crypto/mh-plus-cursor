@@ -1,6 +1,7 @@
+
 import React, { useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { CheckCircle, Clock, CreditCard, TrendingUp, Users, ArrowUpRight, ArrowDownRight } from 'lucide-react';
+import { CheckCircle, Clock, CreditCard } from 'lucide-react';
 import { Expense } from '@/contexts/expense/types';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/auth';
@@ -49,186 +50,139 @@ export const ExpensesSummary: React.FC<ExpensesSummaryProps> = ({
               userTotal += exp.amount; // Full amount
             }
             userCount++;
-          } else if (exp.splitEqually) {
-            // This member owes half
-            userTotal -= exp.amount / 2;
+          } else if (exp.splitEqually && accountMembers.some(m => m.user_id === exp.paidById)) {
+            // This member didn't pay, but it's split equally and someone else from the account paid
+            userTotal += exp.amount / 2; // They owe their half
+            userCount++;
           }
         });
         
         return {
-          userId: member.user_id,
           userName: member.user_name,
-          total: userTotal,
+          amount: userTotal,
           count: userCount
         };
       });
-      
+
       return { total, count, breakdown };
     };
 
-    const pending = calculateBreakdown(pendingExpenses);
-    const approved = calculateBreakdown(approvedExpenses);
-    const paid = calculateBreakdown(paidExpenses);
-    
-    const totalMonth = pending.total + approved.total + paid.total;
-    
     return {
-      pending,
-      approved,
-      paid,
-      totalMonth
+      pending: calculateBreakdown(pendingExpenses),
+      approved: calculateBreakdown(approvedExpenses),
+      paid: calculateBreakdown(paidExpenses)
     };
   }, [pendingExpenses, approvedExpenses, paidExpenses, accountMembers]);
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('he-IL', {
-      style: 'currency',
-      currency: 'ILS',
-      minimumFractionDigits: 0
-    }).format(amount);
-  };
-
   return (
-    <div className="space-y-6">
-      {/* Main Summary Header */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-600 via-blue-700 to-purple-800 p-8 text-white">
-        <div className="absolute inset-0 bg-gradient-to-br from-blue-500/20 to-purple-700/20 backdrop-blur-3xl"></div>
-        <div className="relative">
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h2 className="text-3xl font-bold mb-2">חלוקת תשלומים</h2>
-              <p className="text-blue-100 text-lg">
-                {new Date().toLocaleDateString('he-IL', { year: 'numeric', month: 'long' })}
-              </p>
-            </div>
-            <div className="flex items-center space-x-2 bg-white/10 backdrop-blur-sm rounded-full px-4 py-2">
-              <Users className="h-5 w-5" />
-              <span className="font-medium">{accountMembers?.length || 0} משתתפים</span>
-            </div>
-          </div>
-          
-          <div className="text-center">
-            <div className="text-sm text-blue-100 mb-2">סה״כ הוצאות החודש</div>
-            <div className="text-5xl font-bold mb-1 bg-gradient-to-r from-blue-100 to-white bg-clip-text text-transparent">
-              {formatCurrency(summaryData.totalMonth)}
-            </div>
-            <div className="text-blue-200 text-sm">
-              סה״כ {pendingExpenses.length + approvedExpenses.length + paidExpenses.length} הוצאות
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Status Cards Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {/* Pending Card */}
-        <Card className="group relative overflow-hidden border-0 bg-gradient-to-br from-orange-50 to-red-50 hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
-          <div className="absolute inset-0 bg-gradient-to-br from-orange-500/5 to-red-500/10"></div>
-          <CardHeader className="relative pb-3">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-lg font-semibold text-orange-800">ממתין לאישור</CardTitle>
-              <div className="h-10 w-10 rounded-full bg-orange-100 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
-                <Clock className="h-5 w-5 text-orange-600" />
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent className="relative">
-            <div className="flex items-baseline space-x-2 mb-2">
-              <span className="text-2xl font-bold text-orange-800">
-                {formatCurrency(summaryData.pending.total)}
-              </span>
-              <ArrowUpRight className="h-4 w-4 text-orange-500" />
-            </div>
-            <div className="text-sm text-orange-600">
-              {summaryData.pending.count} הוצאות
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Approved Card */}
-        <Card className="group relative overflow-hidden border-0 bg-gradient-to-br from-blue-50 to-indigo-50 hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
-          <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-indigo-500/10"></div>
-          <CardHeader className="relative pb-3">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-lg font-semibold text-blue-800">מאושר</CardTitle>
-              <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
-                <CheckCircle className="h-5 w-5 text-blue-600" />
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent className="relative">
-            <div className="flex items-baseline space-x-2 mb-2">
-              <span className="text-2xl font-bold text-blue-800">
-                {formatCurrency(summaryData.approved.total)}
-              </span>
-              <TrendingUp className="h-4 w-4 text-blue-500" />
-            </div>
-            <div className="text-sm text-blue-600">
-              {summaryData.approved.count} הוצאות
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Paid Card */}
-        <Card className="group relative overflow-hidden border-0 bg-gradient-to-br from-green-50 to-emerald-50 hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
-          <div className="absolute inset-0 bg-gradient-to-br from-green-500/5 to-emerald-500/10"></div>
-          <CardHeader className="relative pb-3">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-lg font-semibold text-green-800">שולם</CardTitle>
-              <div className="h-10 w-10 rounded-full bg-green-100 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
-                <CreditCard className="h-5 w-5 text-green-600" />
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent className="relative">
-            <div className="flex items-baseline space-x-2 mb-2">
-              <span className="text-2xl font-bold text-green-800">
-                {formatCurrency(summaryData.paid.total)}
-              </span>
-              <ArrowDownRight className="h-4 w-4 text-green-500" />
-            </div>
-            <div className="text-sm text-green-600">
-              {summaryData.paid.count} הוצאות
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* User Breakdown */}
-      {accountMembers && accountMembers.length > 0 && (
-        <Card className="border-0 bg-white/70 backdrop-blur-sm shadow-xl">
-          <CardHeader>
-            <CardTitle className="text-xl font-bold text-gray-800">פירוש תשלומים</CardTitle>
-            <CardDescription className="text-gray-600">
-              פילוח ההוצאות לפי משתתף
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-6">
+      {/* כרטיס הוצאות ממתינות */}
+      <Card className="bg-card/95 backdrop-blur-sm border shadow-sm overflow-hidden relative group hover:shadow-md transition-all duration-200">
+        <div className="absolute inset-0 bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/20 dark:to-orange-950/20"></div>
+        <CardHeader className="pb-2 p-4 sm:p-6 relative">
+          <div className="flex items-center justify-between">
+            <CardDescription className="text-xs sm:text-sm font-medium text-amber-600 dark:text-amber-400">
+              הוצאות ממתינות
             </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {summaryData.pending.breakdown.map((userBreakdown, index) => (
-                <div key={userBreakdown.userId} className="flex items-center justify-between p-4 rounded-xl bg-gradient-to-r from-gray-50 to-gray-100/50 hover:from-gray-100 hover:to-gray-150 transition-all duration-300">
-                  <div className="flex items-center space-x-3">
-                    <div className="h-10 w-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-semibold">
-                      {userBreakdown.userName.charAt(0).toUpperCase()}
-                    </div>
-                    <div>
-                      <div className="font-semibold text-gray-800">{userBreakdown.userName}</div>
-                      <div className="text-sm text-gray-500">
-                        {userBreakdown.count} הוצאות
-                      </div>
-                    </div>
+            <Clock className="h-5 w-5 text-amber-500 animate-pulse-slow" />
+          </div>
+          <CardTitle className="text-2xl sm:text-3xl font-bold text-foreground">
+            ₪{summaryData.pending.total.toFixed(0)}
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-4 sm:p-6 pt-0 space-y-2 relative">
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 bg-amber-500 rounded-full animate-pulse"></div>
+            <span className="text-xs sm:text-sm text-muted-foreground">
+              {summaryData.pending.count} הוצאות ממתינות לאישור
+            </span>
+          </div>
+          {summaryData.pending.breakdown.length > 0 && (
+            <div className="text-xs space-y-1 mt-3 pt-3 border-t border-amber-200/50">
+              {summaryData.pending.breakdown.map((user, index) => (
+                user.amount > 0 && (
+                  <div key={index} className="flex justify-between text-muted-foreground">
+                    <span className="font-medium">{user.userName}:</span>
+                    <span className="font-mono">₪{user.amount.toFixed(0)} ({user.count})</span>
                   </div>
-                  <div className="text-left">
-                    <div className={`text-lg font-bold ${userBreakdown.total >= 0 ? 'text-red-600' : 'text-green-600'}`}>
-                      {userBreakdown.total >= 0 ? 'חייב' : 'זכאי'} {formatCurrency(Math.abs(userBreakdown.total))}
-                    </div>
-                  </div>
-                </div>
+                )
               ))}
             </div>
-          </CardContent>
-        </Card>
-      )}
+          )}
+        </CardContent>
+      </Card>
+      
+      {/* כרטיס הוצאות מאושרות */}
+      <Card className="bg-card/95 backdrop-blur-sm border shadow-sm overflow-hidden relative group hover:shadow-md transition-all duration-200">
+        <div className="absolute inset-0 bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/20 dark:to-emerald-950/20"></div>
+        <CardHeader className="pb-2 p-4 sm:p-6 relative">
+          <div className="flex items-center justify-between">
+            <CardDescription className="text-xs sm:text-sm font-medium text-green-600 dark:text-green-400">
+              הוצאות מאושרות
+            </CardDescription>
+            <CheckCircle className="h-5 w-5 text-green-500 animate-pulse-slow" />
+          </div>
+          <CardTitle className="text-2xl sm:text-3xl font-bold text-foreground">
+            ₪{summaryData.approved.total.toFixed(0)}
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-4 sm:p-6 pt-0 space-y-2 relative">
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+            <span className="text-xs sm:text-sm text-muted-foreground">
+              {summaryData.approved.count} הוצאות מאושרות לתשלום
+            </span>
+          </div>
+          {summaryData.approved.breakdown.length > 0 && (
+            <div className="text-xs space-y-1 mt-3 pt-3 border-t border-green-200/50">
+              {summaryData.approved.breakdown.map((user, index) => (
+                user.amount > 0 && (
+                  <div key={index} className="flex justify-between text-muted-foreground">
+                    <span className="font-medium">{user.userName}:</span>
+                    <span className="font-mono">₪{user.amount.toFixed(0)} ({user.count})</span>
+                  </div>
+                )
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+      
+      {/* כרטיס הוצאות ששולמו */}
+      <Card className="bg-card/95 backdrop-blur-sm border shadow-sm overflow-hidden relative group hover:shadow-md transition-all duration-200 sm:col-span-2 lg:col-span-1">
+        <div className="absolute inset-0 bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-950/20 dark:to-cyan-950/20"></div>
+        <CardHeader className="pb-2 p-4 sm:p-6 relative">
+          <div className="flex items-center justify-between">
+            <CardDescription className="text-xs sm:text-sm font-medium text-blue-600 dark:text-blue-400">
+              הוצאות ששולמו החודש
+            </CardDescription>
+            <CreditCard className="h-5 w-5 text-blue-500 animate-pulse-slow" />
+          </div>
+          <CardTitle className="text-2xl sm:text-3xl font-bold text-foreground">
+            ₪{summaryData.paid.total.toFixed(0)}
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-4 sm:p-6 pt-0 space-y-2 relative">
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+            <span className="text-xs sm:text-sm text-muted-foreground">
+              {summaryData.paid.count} הוצאות שולמו
+            </span>
+          </div>
+          {summaryData.paid.breakdown.length > 0 && (
+            <div className="text-xs space-y-1 mt-3 pt-3 border-t border-blue-200/50">
+              {summaryData.paid.breakdown.map((user, index) => (
+                user.amount > 0 && (
+                  <div key={index} className="flex justify-between text-muted-foreground">
+                    <span className="font-medium">{user.userName}:</span>
+                    <span className="font-mono">₪{user.amount.toFixed(0)} ({user.count})</span>
+                  </div>
+                )
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 };
