@@ -110,49 +110,74 @@ const Dashboard = () => {
   
 
   return (
-    <div className="w-full max-w-7xl mx-auto space-y-4 sm:space-y-6">
-      <PendingInvitationAlert />
-      <DashboardHeader userName={user?.name} />
-      
-      {/* Month Filter */}
-      <Card className="bg-card/95 backdrop-blur-sm border shadow-sm">
-        <CardContent className="p-4">
-          <div className="flex items-center gap-3">
-            <CalendarIcon className="h-5 w-5 text-muted-foreground" />
-            <label className="text-sm font-medium">סינון לפי חודש:</label>
-            <Select value={selectedMonth} onValueChange={setSelectedMonth}>
-              <SelectTrigger className="w-48">
-                <SelectValue placeholder="בחר חודש" />
-              </SelectTrigger>
-              <SelectContent className="bg-background border shadow-lg z-50">
-                {monthOptions.map(option => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </CardContent>
-      </Card>
-      
-      <ExpensesSummary 
-        pendingExpenses={filteredPending}
-        approvedExpenses={filteredApproved}
-        paidExpenses={filteredPaid}
-      />
-      
-      <MonthlyFoodPaymentCard selectedMonth={selectedMonth} />
-      
-      <ExpensesTabs 
-        pendingExpenses={filteredPending}
-        approvedExpenses={filteredApproved}
-        paidExpenses={filteredPaid}
-        onApprove={approveExpense}
-        onReject={rejectExpense}
-        onMarkPaid={markAsPaid}
-      />
-      <AccountDebugInfo />
+    <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5 animate-fade-in">
+      <div className="w-full max-w-7xl mx-auto p-4 sm:p-6 space-y-6 sm:space-y-8">
+        <div className="animate-scale-in">
+          <PendingInvitationAlert />
+        </div>
+        
+        <div className="animate-fade-in [animation-delay:200ms]">
+          <DashboardHeader userName={user?.name} />
+        </div>
+        
+        {/* Month Filter with enhanced design */}
+        <div className="animate-slide-in-right [animation-delay:400ms]">
+          <Card className="bg-gradient-to-r from-card/90 to-card/95 backdrop-blur-lg border border-border/50 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.02] group overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-r from-primary/5 to-accent/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+            <CardContent className="p-4 sm:p-6 relative">
+              <div className="flex items-center gap-4">
+                <div className="p-2 rounded-full bg-primary/10 group-hover:bg-primary/20 transition-colors duration-300">
+                  <CalendarIcon className="h-5 w-5 text-primary group-hover:scale-110 transition-transform duration-300" />
+                </div>
+                <label className="text-sm font-semibold text-foreground">סינון לפי חודש:</label>
+                <Select value={selectedMonth} onValueChange={setSelectedMonth}>
+                  <SelectTrigger className="w-52 bg-background/80 border-border/50 hover:bg-background hover:border-primary/50 transition-all duration-300 hover:shadow-md">
+                    <SelectValue placeholder="בחר חודש" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-background/95 backdrop-blur-lg border border-border/50 shadow-xl">
+                    {monthOptions.map(option => (
+                      <SelectItem 
+                        key={option.value} 
+                        value={option.value}
+                        className="hover:bg-primary/10 focus:bg-primary/10 transition-colors duration-200"
+                      >
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+        
+        <div className="animate-fade-in [animation-delay:600ms]">
+          <ExpensesSummary 
+            pendingExpenses={filteredPending}
+            approvedExpenses={filteredApproved}
+            paidExpenses={filteredPaid}
+          />
+        </div>
+        
+        <div className="animate-scale-in [animation-delay:800ms]">
+          <MonthlyFoodPaymentCard selectedMonth={selectedMonth} />
+        </div>
+        
+        <div className="animate-fade-in [animation-delay:1000ms]">
+          <ExpensesTabs 
+            pendingExpenses={filteredPending}
+            approvedExpenses={filteredApproved}
+            paidExpenses={filteredPaid}
+            onApprove={approveExpense}
+            onReject={rejectExpense}
+            onMarkPaid={markAsPaid}
+          />
+        </div>
+        
+        <div className="animate-fade-in [animation-delay:1200ms]">
+          <AccountDebugInfo />
+        </div>
+      </div>
     </div>
   );
 };
