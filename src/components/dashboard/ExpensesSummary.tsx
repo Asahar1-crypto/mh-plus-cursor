@@ -7,6 +7,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/auth';
 import { memberService } from '@/contexts/auth/services/account/memberService';
 import { NetCalculationCard } from './NetCalculationCard';
+import { PreviousMonthsCard } from './PreviousMonthsCard';
 
 interface ExpensesSummaryProps {
   pendingExpenses: Expense[];
@@ -78,7 +79,7 @@ export const ExpensesSummary: React.FC<ExpensesSummaryProps> = ({
   }, [pendingExpenses, approvedExpenses, paidExpenses, accountMembers]);
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-8">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 sm:gap-6 mb-8">
       {/* כרטיס הוצאות ממתינות */}
       <Card className="bg-gradient-to-br from-card/90 to-card/95 backdrop-blur-lg border border-border/50 shadow-xl hover:shadow-2xl overflow-hidden relative group hover:scale-105 transition-all duration-500">
         <div className="absolute inset-0 bg-gradient-to-br from-amber-500/10 to-orange-500/15 opacity-60 group-hover:opacity-90 transition-opacity duration-300"></div>
@@ -201,6 +202,12 @@ export const ExpensesSummary: React.FC<ExpensesSummaryProps> = ({
       
       {/* Net Calculation Card */}
       <NetCalculationCard 
+        approvedExpenses={approvedExpenses}
+        selectedMonth={selectedMonth}
+      />
+      
+      {/* Previous Months Card */}
+      <PreviousMonthsCard 
         approvedExpenses={approvedExpenses}
         selectedMonth={selectedMonth}
       />
