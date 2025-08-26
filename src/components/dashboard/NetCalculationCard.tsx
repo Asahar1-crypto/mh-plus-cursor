@@ -125,7 +125,7 @@ export const NetCalculationCard: React.FC<NetCalculationCardProps> = ({
     }
   }, [breakdown]);
 
-  const totalAmount = filteredApprovedExpenses.reduce((sum, exp) => sum + exp.amount, 0);
+  
 
   return (
     <Card className="relative overflow-hidden bg-gradient-to-br from-background/95 to-background/80 backdrop-blur-sm border border-border/50 hover:border-primary/30 transition-all duration-500 group animate-fade-in">
@@ -144,12 +144,6 @@ export const NetCalculationCard: React.FC<NetCalculationCardProps> = ({
       </CardHeader>
       
       <CardContent className="relative space-y-4">
-        {/* Total amount */}
-        <div className="text-center p-3 bg-gradient-to-r from-muted/50 to-muted/30 backdrop-blur-sm rounded-xl border border-border/50">
-          <div className="text-2xl font-bold">₪{totalAmount.toLocaleString()}</div>
-          <div className="text-sm text-muted-foreground">סה"כ מאושרות</div>
-        </div>
-
         {/* Net result */}
         <div className="space-y-3">
           <div className="text-sm font-semibold text-muted-foreground flex items-center justify-center gap-2">
