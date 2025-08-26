@@ -45,16 +45,19 @@ export const ExpensesSummary: React.FC<ExpensesSummaryProps> = ({
             // המשתמש שילם את ההוצאה
             userExpensesCount++;
             if (exp.splitEqually) {
-              // אם זה מתחלק שווה, הוא שילם הכל אבל צריך לקבל חזרה חצי
-              netBalance += exp.amount / 2;
+              // ההוצאה מתחלקת - הוא שילם הכל אבל כל אחד צריך לשלם את החלק שלו
+              const perPersonShare = exp.amount / accountMembers.length;
+              netBalance += exp.amount - perPersonShare; // מה ששילם מינוס החלק שלו = מה שמגיע לו מהאחרים
             } else {
-              // אם זה לא מתחלק, זה הוצאה רק שלו
+              // ההוצאה לא מתחלקת - זה רק שלו
               netBalance += exp.amount;
             }
           } else if (exp.splitEqually) {
-            // המשתמש לא שילם אבל ההוצאה מתחלקת, אז הוא חייב חצי
-            netBalance -= exp.amount / 2;
+            // המשתמש לא שילם אבל ההוצאה מתחלקת - הוא חייב את החלק שלו
+            const perPersonShare = exp.amount / accountMembers.length;
+            netBalance -= perPersonShare;
           }
+          // אם exp.splitEqually = false והמשתמש לא שילם, זה לא נוגע אליו
         });
         
         return {
