@@ -46,13 +46,13 @@ interface ReceiptValidationProps {
 
 // Map English categories from scan to Hebrew categories
 const CATEGORY_MAPPING: Record<string, string> = {
-  'food': 'אוכל וכיבוד',
-  'clothing': 'ביגוד והנעלה',
-  'education': 'ספרים וציוד לימודים',
-  'health': 'רפואה ובריאות',
-  'baby': 'ציוד תינוקות',
-  'toys': 'צעצועים ומשחקים',
-  'books': 'ספרים וציוד לימודים',
+  'food': 'מזון',
+  'clothing': 'ביגוד',
+  'education': 'חינוך',
+  'health': 'רפואה',
+  'baby': 'ביגוד',
+  'toys': 'פנאי',
+  'books': 'חינוך',
   'other': 'אחר',
   'general': 'אחר'
 };
