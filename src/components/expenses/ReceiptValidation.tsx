@@ -234,7 +234,7 @@ export const ReceiptValidation: React.FC<ReceiptValidationProps> = ({
       </Card>
 
       {/* Items List */}
-      <Card>
+      <Card className="overflow-visible">
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
             פריטים בחשבונית
@@ -243,10 +243,10 @@ export const ReceiptValidation: React.FC<ReceiptValidationProps> = ({
             </div>
           </CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="overflow-visible">
           <div className="space-y-4">
             {editedItems.map((item, index) => (
-              <div key={index} className="p-4 border rounded-lg space-y-4 relative">
+              <div key={index} className="p-4 border rounded-lg space-y-4 relative overflow-visible">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
                     <Label htmlFor={`name-${index}`}>שם הפריט</Label>
@@ -290,13 +290,13 @@ export const ReceiptValidation: React.FC<ReceiptValidationProps> = ({
                       <SelectTrigger>
                         <SelectValue placeholder="בחר קטגוריה" />
                       </SelectTrigger>
-                      <SelectContent className="z-[200]">
-                        {CATEGORIES.map((category) => (
-                          <SelectItem key={category} value={category}>
-                            {category}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
+                       <SelectContent className="z-[300]">
+                         {CATEGORIES.map((category) => (
+                           <SelectItem key={category} value={category}>
+                             {category}
+                           </SelectItem>
+                         ))}
+                       </SelectContent>
                     </Select>
                   </div>
                   <div>
@@ -310,14 +310,14 @@ export const ReceiptValidation: React.FC<ReceiptValidationProps> = ({
                       <SelectTrigger>
                         <SelectValue placeholder="בחר ילד" />
                       </SelectTrigger>
-                      <SelectContent className="z-[200]">
-                        <SelectItem value="none">ללא שיוך</SelectItem>
-                        {childrenList.map((child) => (
-                          <SelectItem key={child.id} value={child.id}>
-                            {child.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
+                       <SelectContent className="z-[300]">
+                         <SelectItem value="none">ללא שיוך</SelectItem>
+                         {childrenList.map((child) => (
+                           <SelectItem key={child.id} value={child.id}>
+                             {child.name}
+                           </SelectItem>
+                         ))}
+                       </SelectContent>
                     </Select>
                   </div>
                   <div>
@@ -331,13 +331,13 @@ export const ReceiptValidation: React.FC<ReceiptValidationProps> = ({
                       <SelectTrigger>
                         <SelectValue placeholder="בחר סוג תשלום" />
                       </SelectTrigger>
-                      <SelectContent className="z-[200]">
-                        {PAYMENT_TYPES.map((type) => (
-                          <SelectItem key={type.value} value={type.value}>
-                            {type.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
+                       <SelectContent className="z-[300]">
+                         {PAYMENT_TYPES.map((type) => (
+                           <SelectItem key={type.value} value={type.value}>
+                             {type.label}
+                           </SelectItem>
+                         ))}
+                       </SelectContent>
                     </Select>
                   </div>
                 </div>
