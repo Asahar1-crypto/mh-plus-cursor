@@ -2,7 +2,7 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
-import { Home, CreditCard, User, Settings, Plus, Users, BarChart3, X, Shield } from 'lucide-react';
+import { Home, CreditCard, User, Settings, Plus, Users, BarChart3, X, Shield, UserCog } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Logo } from '@/components/ui/Logo';
 import { useAuth } from '@/contexts/auth';
@@ -51,6 +51,7 @@ const AppSidebar: React.FC<AppSidebarProps> = ({ isMobile, isOpen, onClose }) =>
     { icon: CreditCard, label: 'הוצאות', path: '/expenses' },
     { icon: Users, label: 'ילדים', path: '/children' },
     { icon: BarChart3, label: 'דוחות', path: '/reports' },
+    { icon: UserCog, label: 'ניהול חשבון', path: '/account-management' },
     { icon: User, label: 'פרופיל', path: '/profile' },
     { icon: Settings, label: 'הגדרות', path: '/account-settings' },
   ];

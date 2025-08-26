@@ -14,6 +14,7 @@ import VerifyEmail from "./pages/VerifyEmail";
 import ForgotPassword from "./pages/ForgotPassword";
 import Dashboard from "./pages/Dashboard";
 import AccountSettings from "./pages/AccountSettings";
+import AccountManagement from "./pages/AccountManagement";
 import AcceptInvitation from "./pages/AcceptInvitation";
 import NotFound from "./pages/NotFound";
 import AddExpense from "./pages/AddExpense";
@@ -59,6 +60,7 @@ const App = () => (
               <Route element={<AppLayout />}>
                 <Route path="/dashboard" element={<Dashboard />} />
                 <Route path="/account-settings" element={<AccountSettings />} />
+                <Route path="/account-management" element={<AccountManagement />} />
                 <Route path="/add-expense" element={<AddExpense />} />
                 <Route path="/children" element={<Children />} />
                 <Route path="/expenses" element={<Expenses />} />
