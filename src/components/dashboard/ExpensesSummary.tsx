@@ -26,7 +26,7 @@ export const ExpensesSummary: React.FC<ExpensesSummaryProps> = ({
     enabled: !!account?.id
   });
 
-  // Calculate totals and breakdown by user with net calculation
+  // Calculate totals and breakdown by user
   const summaryData = useMemo(() => {
     const calculateBreakdown = (expenses: Expense[]) => {
       const total = expenses.reduce((sum, exp) => sum + exp.amount, 0);
@@ -37,34 +37,29 @@ export const ExpensesSummary: React.FC<ExpensesSummaryProps> = ({
       }
 
       const breakdown = accountMembers.map(member => {
-        let netBalance = 0; // חיובי = אדם זה חייב כסף, שלילי = מגיע לו כסף
-        let userExpensesCount = 0;
+        let userTotal = 0;
+        let userCount = 0;
         
         expenses.forEach(exp => {
           if (exp.paidById === member.user_id) {
-            // המשתמש שילם את ההוצאה
-            userExpensesCount++;
+            // This member paid the expense
             if (exp.splitEqually) {
-              // ההוצאה מתחלקת - הוא שילם הכל אבל כל אחד צריך לשלם את החלק שלו
-              const perPersonShare = exp.amount / accountMembers.length;
-              netBalance += exp.amount - perPersonShare; // מה ששילם מינוס החלק שלו = מה שמגיע לו מהאחרים
+              userTotal += exp.amount / 2; // Only their half
             } else {
-              // ההוצאה לא מתחלקת - זה רק שלו
-              netBalance += exp.amount;
+              userTotal += exp.amount; // Full amount
             }
+            userCount++;
           } else if (exp.splitEqually) {
-            // המשתמש לא שילם אבל ההוצאה מתחלקת - הוא חייב את החלק שלו
-            const perPersonShare = exp.amount / accountMembers.length;
-            netBalance -= perPersonShare;
+            // This member owes half
+            userTotal -= exp.amount / 2;
           }
-          // אם exp.splitEqually = false והמשתמש לא שילם, זה לא נוגע אליו
         });
         
         return {
           userId: member.user_id,
           userName: member.user_name,
-          total: netBalance, // זה הסכום נטו - אם חיובי הוא חייב, אם שלילי מגיע לו
-          count: userExpensesCount
+          total: userTotal,
+          count: userCount
         };
       });
       
@@ -203,96 +198,33 @@ export const ExpensesSummary: React.FC<ExpensesSummaryProps> = ({
       {accountMembers && accountMembers.length > 0 && (
         <Card className="border-0 bg-white/70 backdrop-blur-sm shadow-xl">
           <CardHeader>
-            <CardTitle className="text-xl font-bold text-gray-800">חישוב נטו לפי משתתף</CardTitle>
+            <CardTitle className="text-xl font-bold text-gray-800">פירוש תשלומים</CardTitle>
             <CardDescription className="text-gray-600">
-              יתרות נטו - חיובי = חייב כסף, שלילי = מגיע כסף
+              פילוח ההוצאות לפי משתתף
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-6">
-              {/* Pending Expenses */}
-              {summaryData.pending.total > 0 && (
-                <div>
-                  <h4 className="text-lg font-semibold text-orange-800 mb-3 flex items-center">
-                    <Clock className="h-5 w-5 mr-2" />
-                    חישוב נטו - ממתין לאישור
-                  </h4>
-                  <div className="space-y-2">
-                    {summaryData.pending.breakdown.map((userBreakdown) => (
-                      <div key={`pending-${userBreakdown.userId}`} className="flex items-center justify-between p-3 rounded-lg bg-orange-50">
-                        <div className="flex items-center space-x-3">
-                          <div className="h-8 w-8 rounded-full bg-orange-100 flex items-center justify-center text-orange-700 font-semibold text-sm">
-                            {userBreakdown.userName.charAt(0).toUpperCase()}
-                          </div>
-                          <span className="font-medium text-orange-800">{userBreakdown.userName}</span>
-                        </div>
-                        <div className="text-left">
-                          <div className={`font-bold ${userBreakdown.total >= 0 ? 'text-red-600' : 'text-green-600'}`}>
-                            {userBreakdown.total >= 0 ? 'חייב' : 'מגיע'} {formatCurrency(Math.abs(userBreakdown.total))}
-                          </div>
-                          <div className="text-sm text-orange-600">{userBreakdown.count} הוצאות</div>
-                        </div>
+            <div className="space-y-4">
+              {summaryData.pending.breakdown.map((userBreakdown, index) => (
+                <div key={userBreakdown.userId} className="flex items-center justify-between p-4 rounded-xl bg-gradient-to-r from-gray-50 to-gray-100/50 hover:from-gray-100 hover:to-gray-150 transition-all duration-300">
+                  <div className="flex items-center space-x-3">
+                    <div className="h-10 w-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-semibold">
+                      {userBreakdown.userName.charAt(0).toUpperCase()}
+                    </div>
+                    <div>
+                      <div className="font-semibold text-gray-800">{userBreakdown.userName}</div>
+                      <div className="text-sm text-gray-500">
+                        {userBreakdown.count} הוצאות
                       </div>
-                    ))}
+                    </div>
+                  </div>
+                  <div className="text-left">
+                    <div className={`text-lg font-bold ${userBreakdown.total >= 0 ? 'text-red-600' : 'text-green-600'}`}>
+                      {userBreakdown.total >= 0 ? 'חייב' : 'זכאי'} {formatCurrency(Math.abs(userBreakdown.total))}
+                    </div>
                   </div>
                 </div>
-              )}
-
-              {/* Approved Expenses */}
-              {summaryData.approved.total > 0 && (
-                <div>
-                  <h4 className="text-lg font-semibold text-blue-800 mb-3 flex items-center">
-                    <CheckCircle className="h-5 w-5 mr-2" />
-                    חישוב נטו - מאושר
-                  </h4>
-                  <div className="space-y-2">
-                    {summaryData.approved.breakdown.map((userBreakdown) => (
-                      <div key={`approved-${userBreakdown.userId}`} className="flex items-center justify-between p-3 rounded-lg bg-blue-50">
-                        <div className="flex items-center space-x-3">
-                          <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-semibold text-sm">
-                            {userBreakdown.userName.charAt(0).toUpperCase()}
-                          </div>
-                          <span className="font-medium text-blue-800">{userBreakdown.userName}</span>
-                        </div>
-                        <div className="text-left">
-                          <div className={`font-bold ${userBreakdown.total >= 0 ? 'text-red-600' : 'text-green-600'}`}>
-                            {userBreakdown.total >= 0 ? 'חייב' : 'מגיע'} {formatCurrency(Math.abs(userBreakdown.total))}
-                          </div>
-                          <div className="text-sm text-blue-600">{userBreakdown.count} הוצאות</div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Paid Expenses */}
-              {summaryData.paid.total > 0 && (
-                <div>
-                  <h4 className="text-lg font-semibold text-green-800 mb-3 flex items-center">
-                    <CreditCard className="h-5 w-5 mr-2" />
-                    חישוב נטו - שולם
-                  </h4>
-                  <div className="space-y-2">
-                    {summaryData.paid.breakdown.map((userBreakdown) => (
-                      <div key={`paid-${userBreakdown.userId}`} className="flex items-center justify-between p-3 rounded-lg bg-green-50">
-                        <div className="flex items-center space-x-3">
-                          <div className="h-8 w-8 rounded-full bg-green-100 flex items-center justify-center text-green-700 font-semibold text-sm">
-                            {userBreakdown.userName.charAt(0).toUpperCase()}
-                          </div>
-                          <span className="font-medium text-green-800">{userBreakdown.userName}</span>
-                        </div>
-                        <div className="text-left">
-                          <div className={`font-bold ${userBreakdown.total >= 0 ? 'text-red-600' : 'text-green-600'}`}>
-                            {userBreakdown.total >= 0 ? 'חייב' : 'מגיע'} {formatCurrency(Math.abs(userBreakdown.total))}
-                          </div>
-                          <div className="text-sm text-green-600">{userBreakdown.count} הוצאות</div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
+              ))}
             </div>
           </CardContent>
         </Card>
