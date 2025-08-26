@@ -181,20 +181,6 @@ export const NetCalculationCard: React.FC<NetCalculationCardProps> = ({
             </div>
           )}
         </div>
-
-        {/* Individual balances if there are users */}
-        {breakdown.length >= 2 && (
-          <div className="grid grid-cols-2 gap-3 pt-2">
-            {breakdown.slice(0, 2).map((user, index) => (
-              <div key={index} className="text-center p-3 bg-gradient-to-br from-background/80 to-background/60 backdrop-blur-sm rounded-xl border border-border/50 hover:border-primary/30 transition-all duration-300">
-                <div className="font-semibold text-sm mb-1">{user.userName}</div>
-                <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 px-2 py-1 rounded text-blue-700 dark:text-blue-400 text-xs font-bold">
-                  חייב: ₪{Math.round(user.balance)}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
       </CardContent>
     </Card>
   );
