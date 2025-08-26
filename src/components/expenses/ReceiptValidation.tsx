@@ -52,6 +52,19 @@ const CATEGORIES = [
   'אחר'
 ];
 
+// Map English categories from scan to Hebrew categories
+const CATEGORY_MAPPING: Record<string, string> = {
+  'food': 'מזון',
+  'clothing': 'ביגוד',
+  'education': 'חינוך',
+  'health': 'בריאות',
+  'baby': 'ציוד תינוקות',
+  'toys': 'משחקים',
+  'books': 'ספרים',
+  'other': 'אחר',
+  'general': 'אחר'
+};
+
 export const ReceiptValidation: React.FC<ReceiptValidationProps> = ({
   scanResult,
   onApprove,
@@ -67,6 +80,22 @@ export const ReceiptValidation: React.FC<ReceiptValidationProps> = ({
   const { toast } = useToast();
   const { addExpense, childrenList } = useExpense();
   const { user, account } = useAuth();
+
+  // Convert English categories to Hebrew and set initial payment types
+  useEffect(() => {
+    const convertedItems = scanResult.items.map(item => ({
+      ...item,
+      category: CATEGORY_MAPPING[item.category.toLowerCase()] || 'אחר'
+    }));
+    setEditedItems(convertedItems);
+    
+    // Set default payment types for all items
+    const defaultPaymentTypes: Record<number, string> = {};
+    convertedItems.forEach((_, index) => {
+      defaultPaymentTypes[index] = 'i_paid_shared';
+    });
+    setPaymentTypes(defaultPaymentTypes);
+  }, []);
 
   const confidenceScore = scanResult.confidence_score || 0;
   const isLowConfidence = confidenceScore < 60;
@@ -260,11 +289,11 @@ export const ReceiptValidation: React.FC<ReceiptValidationProps> = ({
                       onValueChange={(value) => updateItem(index, 'category', value)}
                     >
                       <SelectTrigger className="min-w-[120px]">
-                        <SelectValue />
+                        <SelectValue placeholder="בחר קטגוריה" />
                       </SelectTrigger>
-                      <SelectContent className="z-[110]">
+                      <SelectContent className="z-[110] bg-background border shadow-lg">
                         {CATEGORIES.map((category) => (
-                          <SelectItem key={category} value={category}>
+                          <SelectItem key={category} value={category} className="cursor-pointer hover:bg-accent">
                             {category}
                           </SelectItem>
                         ))}
