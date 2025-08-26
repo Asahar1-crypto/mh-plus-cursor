@@ -110,49 +110,59 @@ const Dashboard = () => {
   
 
   return (
-    <div className="w-full max-w-7xl mx-auto space-y-4 sm:space-y-6">
-      <PendingInvitationAlert />
-      <DashboardHeader userName={user?.name} />
-      
-      {/* Month Filter */}
-      <Card className="bg-card/95 backdrop-blur-sm border shadow-sm">
-        <CardContent className="p-4">
-          <div className="flex items-center gap-3">
-            <CalendarIcon className="h-5 w-5 text-muted-foreground" />
-            <label className="text-sm font-medium">סינון לפי חודש:</label>
-            <Select value={selectedMonth} onValueChange={setSelectedMonth}>
-              <SelectTrigger className="w-48">
-                <SelectValue placeholder="בחר חודש" />
-              </SelectTrigger>
-              <SelectContent className="bg-background border shadow-lg z-50">
-                {monthOptions.map(option => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </CardContent>
-      </Card>
-      
-      <ExpensesSummary 
-        pendingExpenses={filteredPending}
-        approvedExpenses={filteredApproved}
-        paidExpenses={filteredPaid}
-      />
-      
-      <MonthlyFoodPaymentCard selectedMonth={selectedMonth} />
-      
-      <ExpensesTabs 
-        pendingExpenses={filteredPending}
-        approvedExpenses={filteredApproved}
-        paidExpenses={filteredPaid}
-        onApprove={approveExpense}
-        onReject={rejectExpense}
-        onMarkPaid={markAsPaid}
-      />
-      <AccountDebugInfo />
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50">
+      <div className="w-full max-w-7xl mx-auto space-y-6 p-4 sm:p-6">
+        <PendingInvitationAlert />
+        <DashboardHeader userName={user?.name} />
+        
+        {/* Month Filter - Modern Design */}
+        <Card className="border-0 bg-white/80 backdrop-blur-sm shadow-lg hover:shadow-xl transition-all duration-300">
+          <CardContent className="p-6">
+            <div className="flex items-center gap-4">
+              <div className="h-10 w-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
+                <CalendarIcon className="h-5 w-5 text-white" />
+              </div>
+              <div className="flex-1">
+                <label className="text-lg font-semibold text-gray-800 mb-2 block">סינון לפי חודש</label>
+                <Select value={selectedMonth} onValueChange={setSelectedMonth}>
+                  <SelectTrigger className="w-64 bg-white/90 border-gray-200 focus:border-blue-500 focus:ring-blue-500/20">
+                    <SelectValue placeholder="בחר חודש" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-white border shadow-xl z-50 rounded-lg">
+                    {monthOptions.map(option => (
+                      <SelectItem 
+                        key={option.value} 
+                        value={option.value}
+                        className="hover:bg-blue-50 focus:bg-blue-50"
+                      >
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        
+        <ExpensesSummary 
+          pendingExpenses={filteredPending}
+          approvedExpenses={filteredApproved}
+          paidExpenses={filteredPaid}
+        />
+        
+        <MonthlyFoodPaymentCard selectedMonth={selectedMonth} />
+        
+        <ExpensesTabs 
+          pendingExpenses={filteredPending}
+          approvedExpenses={filteredApproved}
+          paidExpenses={filteredPaid}
+          onApprove={approveExpense}
+          onReject={rejectExpense}
+          onMarkPaid={markAsPaid}
+        />
+        <AccountDebugInfo />
+      </div>
     </div>
   );
 };
