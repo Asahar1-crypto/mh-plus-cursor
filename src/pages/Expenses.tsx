@@ -6,7 +6,9 @@ import { Expense } from '@/contexts/expense/types';
 import { ExpenseFilters } from '@/components/expenses/ExpenseFilters';
 import { ExpensesTable } from '@/components/expenses/ExpensesTable';
 import { AddExpenseModal } from '@/components/expenses/AddExpenseModal';
+import { RecurringExpensesTable } from '@/components/expenses/RecurringExpensesTable';
 import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { RefreshCw } from 'lucide-react';
 
 
@@ -48,8 +50,9 @@ const ExpensesPage = () => {
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
   const [selectedPayer, setSelectedPayer] = useState<string | null>(null);
 
-  // Filter expenses based on selected criteria
+  // Filter regular expenses (non-recurring) based on selected criteria
   const filteredExpenses = expenses
+    .filter(expense => !expense.isRecurring) // Show only non-recurring expenses
     .filter(expense => selectedCategory ? expense.category === selectedCategory : true)
     .filter(expense => selectedChild ? expense.childId === selectedChild : true)
     .filter(expense => selectedStatus ? expense.status === selectedStatus : true)
@@ -81,6 +84,9 @@ const ExpensesPage = () => {
       }
     });
 
+  // Get recurring expenses only
+  const recurringExpenses = expenses.filter(expense => expense.isRecurring);
+
   return (
     <div className="w-full max-w-7xl mx-auto py-3 sm:py-6 animate-fade-in">
       <div className="flex flex-col gap-4 sm:flex-row sm:justify-between sm:items-start mb-4 sm:mb-6">
@@ -105,32 +111,47 @@ const ExpensesPage = () => {
         </div>
       </div>
 
-      <div className="space-y-4 sm:space-y-6">
-        {/* Filtering options */}
-        <ExpenseFilters 
-          selectedCategory={selectedCategory}
-          setSelectedCategory={setSelectedCategory}
-          selectedChild={selectedChild}
-          setSelectedChild={setSelectedChild}
-          selectedStatus={selectedStatus}
-          setSelectedStatus={setSelectedStatus}
-          selectedMonth={selectedMonth}
-          setSelectedMonth={setSelectedMonth}
-          selectedYear={selectedYear}
-          setSelectedYear={setSelectedYear}
-          selectedPayer={selectedPayer}
-          setSelectedPayer={setSelectedPayer}
-          childrenList={childrenList}
-        />
+      <Tabs defaultValue="regular" className="space-y-4 sm:space-y-6">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="regular">הוצאות רגילות</TabsTrigger>
+          <TabsTrigger value="recurring">הוצאות חוזרות ({recurringExpenses.length})</TabsTrigger>
+        </TabsList>
 
-        {/* Expenses Table */}
-        <ExpensesTable 
-          expenses={filteredExpenses}
-          approveExpense={approveExpense}
-          rejectExpense={rejectExpense}
-          markAsPaid={markAsPaid}
-        />
-      </div>
+        <TabsContent value="regular" className="space-y-4 sm:space-y-6">
+          {/* Filtering options */}
+          <ExpenseFilters 
+            selectedCategory={selectedCategory}
+            setSelectedCategory={setSelectedCategory}
+            selectedChild={selectedChild}
+            setSelectedChild={setSelectedChild}
+            selectedStatus={selectedStatus}
+            setSelectedStatus={setSelectedStatus}
+            selectedMonth={selectedMonth}
+            setSelectedMonth={setSelectedMonth}
+            selectedYear={selectedYear}
+            setSelectedYear={setSelectedYear}
+            selectedPayer={selectedPayer}
+            setSelectedPayer={setSelectedPayer}
+            childrenList={childrenList}
+          />
+
+          {/* Expenses Table */}
+          <ExpensesTable 
+            expenses={filteredExpenses}
+            approveExpense={approveExpense}
+            rejectExpense={rejectExpense}
+            markAsPaid={markAsPaid}
+          />
+        </TabsContent>
+
+        <TabsContent value="recurring" className="space-y-4 sm:space-y-6">
+          <RecurringExpensesTable 
+            expenses={recurringExpenses}
+            childrenList={childrenList}
+            refreshData={refreshData}
+          />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };

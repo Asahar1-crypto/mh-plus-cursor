@@ -43,3 +43,17 @@ export const getMonthlyBalance = (expenses: Expense[]): number => {
     currentYear
   ).reduce((acc, curr) => acc + curr.amount, 0);
 };
+
+export const getRecurringExpenses = (expenses: Expense[]): Expense[] => 
+  expenses.filter(e => e.isRecurring);
+
+export const getNonRecurringExpenses = (expenses: Expense[]): Expense[] => 
+  expenses.filter(e => !e.isRecurring);
+
+export const getActiveRecurringExpenses = (expenses: Expense[]): Expense[] => {
+  const today = new Date();
+  return getRecurringExpenses(expenses).filter(expense => {
+    if (!expense.hasEndDate || !expense.endDate) return true;
+    return new Date(expense.endDate) >= today;
+  });
+};
