@@ -142,7 +142,7 @@ export const NetCalculationCard: React.FC<NetCalculationCardProps> = ({
           </div>
         </div>
         <CardTitle className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent group-hover:scale-110 transition-transform duration-300 origin-left">
-          ₪0
+          {netResult.type === 'transfer' ? `₪${netResult.amount}` : netResult.type === 'balanced' ? '₪0' : '---'}
         </CardTitle>
       </CardHeader>
       
