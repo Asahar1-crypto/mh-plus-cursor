@@ -233,7 +233,7 @@ export const ReceiptValidation: React.FC<ReceiptValidationProps> = ({
         </CardContent>
       </Card>
 
-      {/* Items Table */}
+      {/* Items List */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
@@ -244,51 +244,50 @@ export const ReceiptValidation: React.FC<ReceiptValidationProps> = ({
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>שם הפריט</TableHead>
-                <TableHead>מחיר</TableHead>
-                <TableHead>כמות</TableHead>
-                <TableHead>קטגוריה</TableHead>
-                <TableHead>ילד</TableHead>
-                <TableHead>סוג תשלום</TableHead>
-                <TableHead>פעולות</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {editedItems.map((item, index) => (
-                <TableRow key={index}>
-                  <TableCell>
+          <div className="space-y-4">
+            {editedItems.map((item, index) => (
+              <div key={index} className="p-4 border rounded-lg space-y-4 relative">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <Label htmlFor={`name-${index}`}>שם הפריט</Label>
                     <Input
+                      id={`name-${index}`}
                       value={item.name}
                       onChange={(e) => updateItem(index, 'name', e.target.value)}
                       placeholder="שם הפריט"
                     />
-                  </TableCell>
-                  <TableCell>
+                  </div>
+                  <div>
+                    <Label htmlFor={`price-${index}`}>מחיר</Label>
                     <Input
+                      id={`price-${index}`}
                       type="number"
                       value={item.price}
                       onChange={(e) => updateItem(index, 'price', parseFloat(e.target.value) || 0)}
                       min="0"
                       step="0.01"
                     />
-                  </TableCell>
-                  <TableCell>
+                  </div>
+                  <div>
+                    <Label htmlFor={`quantity-${index}`}>כמות</Label>
                     <Input
+                      id={`quantity-${index}`}
                       type="number"
                       value={item.quantity || 1}
                       onChange={(e) => updateItem(index, 'quantity', parseInt(e.target.value) || 1)}
                       min="1"
                     />
-                  </TableCell>
-                  <TableCell>
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <Label>קטגוריה</Label>
                     <Select
                       value={item.category}
                       onValueChange={(value) => updateItem(index, 'category', value)}
                     >
-                      <SelectTrigger className="min-w-[120px]">
+                      <SelectTrigger>
                         <SelectValue placeholder="בחר קטגוריה" />
                       </SelectTrigger>
                       <SelectContent className="z-[200]">
@@ -299,15 +298,16 @@ export const ReceiptValidation: React.FC<ReceiptValidationProps> = ({
                         ))}
                       </SelectContent>
                     </Select>
-                  </TableCell>
-                  <TableCell>
+                  </div>
+                  <div>
+                    <Label>ילד</Label>
                     <Select
                       value={selectedChildren[index] || "none"}
                       onValueChange={(value) => 
                         setSelectedChildren(prev => ({ ...prev, [index]: value === "none" ? "" : value }))
                       }
                     >
-                      <SelectTrigger className="min-w-[120px]">
+                      <SelectTrigger>
                         <SelectValue placeholder="בחר ילד" />
                       </SelectTrigger>
                       <SelectContent className="z-[200]">
@@ -319,15 +319,16 @@ export const ReceiptValidation: React.FC<ReceiptValidationProps> = ({
                         ))}
                       </SelectContent>
                     </Select>
-                  </TableCell>
-                  <TableCell>
+                  </div>
+                  <div>
+                    <Label>סוג תשלום</Label>
                     <Select
                       value={paymentTypes[index] || "i_paid_shared"}
                       onValueChange={(value) => 
                         setPaymentTypes(prev => ({ ...prev, [index]: value }))
                       }
                     >
-                      <SelectTrigger className="min-w-[160px]">
+                      <SelectTrigger>
                         <SelectValue placeholder="בחר סוג תשלום" />
                       </SelectTrigger>
                       <SelectContent className="z-[200]">
@@ -338,21 +339,22 @@ export const ReceiptValidation: React.FC<ReceiptValidationProps> = ({
                         ))}
                       </SelectContent>
                     </Select>
-                  </TableCell>
-                  <TableCell>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => removeItem(index)}
-                      disabled={editedItems.length === 1}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+                  </div>
+                </div>
+                
+                <div className="absolute top-2 left-2">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => removeItem(index)}
+                    disabled={editedItems.length === 1}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
 
           <Button
             variant="outline"
