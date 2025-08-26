@@ -7,7 +7,7 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instanciate createClient with right options
+  // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "12.2.3 (519615d)"
@@ -68,6 +68,8 @@ export type Database = {
           owner_id: string
           shared_with_email: string | null
           shared_with_id: string | null
+          subscription_status: string | null
+          trial_ends_at: string | null
           updated_at: string
         }
         Insert: {
@@ -78,6 +80,8 @@ export type Database = {
           owner_id: string
           shared_with_email?: string | null
           shared_with_id?: string | null
+          subscription_status?: string | null
+          trial_ends_at?: string | null
           updated_at?: string
         }
         Update: {
@@ -88,6 +92,8 @@ export type Database = {
           owner_id?: string
           shared_with_email?: string | null
           shared_with_id?: string | null
+          subscription_status?: string | null
+          trial_ends_at?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -353,6 +359,8 @@ export type Database = {
         Row: {
           created_at: string
           id: string
+          is_super_admin: boolean | null
+          last_login: string | null
           name: string
           selected_account_id: string | null
           updated_at: string
@@ -360,6 +368,8 @@ export type Database = {
         Insert: {
           created_at?: string
           id: string
+          is_super_admin?: boolean | null
+          last_login?: string | null
           name: string
           selected_account_id?: string | null
           updated_at?: string
@@ -367,6 +377,8 @@ export type Database = {
         Update: {
           created_at?: string
           id?: string
+          is_super_admin?: boolean | null
+          last_login?: string | null
           name?: string
           selected_account_id?: string | null
           updated_at?: string
@@ -418,6 +430,89 @@ export type Database = {
         }
         Relationships: []
       }
+      subscriptions: {
+        Row: {
+          canceled_at: string | null
+          created_at: string
+          current_period_end: string | null
+          current_period_start: string | null
+          id: string
+          status: string
+          stripe_customer_id: string | null
+          stripe_subscription_id: string | null
+          subscription_starts_at: string | null
+          tenant_id: string
+          trial_ends_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          canceled_at?: string | null
+          created_at?: string
+          current_period_end?: string | null
+          current_period_start?: string | null
+          id?: string
+          status?: string
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          subscription_starts_at?: string | null
+          tenant_id: string
+          trial_ends_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          canceled_at?: string | null
+          created_at?: string
+          current_period_end?: string | null
+          current_period_start?: string | null
+          id?: string
+          status?: string
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          subscription_starts_at?: string | null
+          tenant_id?: string
+          trial_ends_at?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscriptions_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: true
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      system_settings: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          setting_key: string
+          setting_value: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          setting_key: string
+          setting_value: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          setting_key?: string
+          setting_value?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -430,13 +525,13 @@ export type Database = {
       add_account_member: {
         Args: {
           account_uuid: string
-          user_uuid: string
           member_role?: Database["public"]["Enums"]["account_member_role"]
+          user_uuid: string
         }
         Returns: boolean
       }
       create_account_if_not_exists: {
-        Args: { user_id: string; account_name: string }
+        Args: { account_name: string; user_id: string }
         Returns: {
           id: string
           name: string
@@ -457,14 +552,18 @@ export type Database = {
       get_account_members_with_details: {
         Args: { account_uuid: string }
         Returns: {
+          joined_at: string
+          role: Database["public"]["Enums"]["account_member_role"]
           user_id: string
           user_name: string
-          role: Database["public"]["Enums"]["account_member_role"]
-          joined_at: string
         }[]
       }
       get_current_user_email: {
         Args: Record<PropertyKey, never>
+        Returns: string
+      }
+      get_system_setting: {
+        Args: { key_name: string }
         Returns: string
       }
       get_user_account_ids: {
@@ -472,11 +571,15 @@ export type Database = {
         Returns: string[]
       }
       is_account_admin: {
-        Args: { user_uuid: string; account_uuid: string }
+        Args: { account_uuid: string; user_uuid: string }
         Returns: boolean
       }
       is_account_member: {
-        Args: { user_uuid: string; account_uuid: string }
+        Args: { account_uuid: string; user_uuid: string }
+        Returns: boolean
+      }
+      is_super_admin: {
+        Args: { user_uuid: string }
         Returns: boolean
       }
       remove_account_member: {
