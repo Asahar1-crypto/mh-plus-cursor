@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Switch } from '@/components/ui/switch';
 import { useNavigate } from 'react-router-dom';
@@ -48,7 +49,7 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({ onSubmitSuccess, onCan
       description: '',
       category: '',
       childId: '',
-      paidById: '',
+      paymentType: undefined,
       isRecurring: false,
       frequency: 'monthly',
       hasEndDate: false,
@@ -69,7 +70,36 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({ onSubmitSuccess, onCan
       const childInfo = data.childId ? 
         childrenList.find(c => c.id === data.childId) : undefined;
       
-      const paidByMember = accountMembers?.find(m => m.user_id === data.paidById);
+      // Determine paidById and expense settings based on payment type
+      let paidById: string;
+      let includeInMonthlyBalance = true;
+      let splitEqually = false;
+      
+      const currentUser = accountMembers?.find(m => m.role === 'admin')?.user_id || '';
+      const otherUser = accountMembers?.find(m => m.role !== 'admin')?.user_id || accountMembers?.[1]?.user_id || '';
+      
+      switch (data.paymentType) {
+        case 'i_paid_they_owe':
+          paidById = otherUser; // They need to pay back
+          includeInMonthlyBalance = true;
+          break;
+        case 'they_paid_i_owe':
+          paidById = currentUser; // I need to pay back
+          includeInMonthlyBalance = true;
+          break;
+        case 'i_paid_my_expense':
+          paidById = currentUser; // It's my expense only
+          includeInMonthlyBalance = false;
+          break;
+        case 'they_paid_their_expense':
+          paidById = otherUser; // It's their expense only
+          includeInMonthlyBalance = false;
+          break;
+        default:
+          paidById = currentUser;
+      }
+      
+      const paidByMember = accountMembers?.find(m => m.user_id === paidById);
       
       await addExpense({
         amount: Number(data.amount),
@@ -78,14 +108,14 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({ onSubmitSuccess, onCan
         date: format(data.date, 'yyyy-MM-dd'),
         childId: data.childId === 'general' ? undefined : data.childId,
         childName: childInfo?.name,
-        paidById: data.paidById,
+        paidById: paidById,
         paidByName: paidByMember?.user_name || '',
         isRecurring: data.isRecurring,
         frequency: data.isRecurring ? data.frequency as 'monthly' | 'weekly' | 'yearly' : undefined,
         hasEndDate: data.hasEndDate,
         endDate: data.endDate ? format(data.endDate, 'yyyy-MM-dd') : undefined,
-        includeInMonthlyBalance: data.includeInMonthlyBalance,
-        splitEqually: data.splitEqually,
+        includeInMonthlyBalance: includeInMonthlyBalance,
+        splitEqually: splitEqually,
         receipt: data.receipt,
       });
       
@@ -261,29 +291,61 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({ onSubmitSuccess, onCan
         
         <FormField
           control={form.control}
-          name="paidById"
+          name="paymentType"
           render={({ field }) => (
-            <FormItem>
-              <FormLabel>מי צריך לשלם?</FormLabel>
-              <Select 
-                onValueChange={field.onChange} 
-                defaultValue={field.value}
-              >
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="בחר מי צריך לשלם" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent className="z-[10001]">
-                  {accountMembers?.map((member) => (
-                    <SelectItem key={member.user_id} value={member.user_id}>
-                      {member.user_name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+            <FormItem className="space-y-3">
+              <FormLabel className="text-base">מי שילם ומי צריך לשלם?</FormLabel>
+              <FormControl>
+                <RadioGroup
+                  onValueChange={field.onChange}
+                  defaultValue={field.value}
+                  className="space-y-4"
+                  dir="rtl"
+                >
+                  {accountMembers && accountMembers.length >= 2 && (
+                    <>
+                      <div className="flex items-center space-x-3 space-x-reverse">
+                        <RadioGroupItem value="i_paid_they_owe" id="i_paid_they_owe" />
+                        <label 
+                          htmlFor="i_paid_they_owe" 
+                          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                        >
+                          אני שילמתי ו{accountMembers.find(m => m.user_id !== (accountMembers.find(m => m.role === 'admin')?.user_id || accountMembers[0].user_id))?.user_name || 'השותף'} צריך/צריכה להחזיר לי
+                        </label>
+                      </div>
+                      <div className="flex items-center space-x-3 space-x-reverse">
+                        <RadioGroupItem value="they_paid_i_owe" id="they_paid_i_owe" />
+                        <label 
+                          htmlFor="they_paid_i_owe" 
+                          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                        >
+                          {accountMembers.find(m => m.user_id !== (accountMembers.find(m => m.role === 'admin')?.user_id || accountMembers[0].user_id))?.user_name || 'השותף'} שילם/ה ואני צריך/צריכה להחזיר לו/לה
+                        </label>
+                      </div>
+                      <div className="flex items-center space-x-3 space-x-reverse">
+                        <RadioGroupItem value="i_paid_my_expense" id="i_paid_my_expense" />
+                        <label 
+                          htmlFor="i_paid_my_expense" 
+                          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                        >
+                          אני שילמתי וזה רק עליי (אין החזר)
+                        </label>
+                      </div>
+                      <div className="flex items-center space-x-3 space-x-reverse">
+                        <RadioGroupItem value="they_paid_their_expense" id="they_paid_their_expense" />
+                        <label 
+                          htmlFor="they_paid_their_expense" 
+                          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                        >
+                          {accountMembers.find(m => m.user_id !== (accountMembers.find(m => m.role === 'admin')?.user_id || accountMembers[0].user_id))?.user_name || 'השותף'} שילם/ה וזה רק עליו/עליה (אין החזר)
+                        </label>
+                      </div>
+                    </>
+                  )}
+                </RadioGroup>
+              </FormControl>
               <FormDescription>
-                בחר מי צריך לשלם את ההוצאה הזו
+                בחר את הסיטואציה המתאימה - מי שילם בפועל ומי צריך לשלם
               </FormDescription>
               <FormMessage />
             </FormItem>
@@ -411,47 +473,6 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({ onSubmitSuccess, onCan
           </>
         )}
 
-        <FormField
-          control={form.control}
-          name="includeInMonthlyBalance"
-          render={({ field }) => (
-            <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-              <div className="space-y-0.5">
-                <FormLabel className="text-base">כלול בקיזוז החודשי</FormLabel>
-                <FormDescription>
-                  הוצאה זו תיכלל בחישוב הקיזוז החודשי בין השותפים
-                </FormDescription>
-              </div>
-              <FormControl>
-                <Switch
-                  checked={field.value}
-                  onCheckedChange={field.onChange}
-                />
-              </FormControl>
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
-          name="splitEqually"
-          render={({ field }) => (
-            <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-              <div className="space-y-0.5">
-                <FormLabel className="text-base">חלק שווה בין כולם</FormLabel>
-                <FormDescription>
-                  כאשר מופעל: הסכום יתחלק בחצי בין שני חברי החשבון. כאשר כבוי: מי שנבחר ב"מי צריך לשלם" ישלם את מלוא הסכום
-                </FormDescription>
-              </div>
-              <FormControl>
-                <Switch
-                  checked={field.value}
-                  onCheckedChange={field.onChange}
-                />
-              </FormControl>
-            </FormItem>
-          )}
-        />
         
         <div className="flex justify-end gap-4 pt-4">
           <Button 

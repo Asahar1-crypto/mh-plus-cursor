@@ -8,7 +8,9 @@ export const expenseSchema = z.object({
   description: z.string().min(2, { message: 'נדרש תיאור של לפחות 2 תווים' }),
   category: z.string().min(1, { message: 'יש לבחור קטגוריה' }),
   childId: z.string().optional(),
-  paidById: z.string().min(1, { message: 'יש לבחור מי צריך לשלם' }),
+  paymentType: z.enum(['i_paid_they_owe', 'they_paid_i_owe', 'i_paid_my_expense', 'they_paid_their_expense'], {
+    message: 'יש לבחור את סוג התשלום'
+  }),
   isRecurring: z.boolean().default(false),
   frequency: z.string().optional(),
   hasEndDate: z.boolean().default(false),
