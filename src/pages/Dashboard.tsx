@@ -156,6 +156,7 @@ const Dashboard = () => {
             pendingExpenses={filteredPending}
             approvedExpenses={filteredApproved}
             paidExpenses={filteredPaid}
+            selectedMonth={selectedMonth}
           />
         </div>
         
