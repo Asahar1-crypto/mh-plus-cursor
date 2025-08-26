@@ -98,146 +98,148 @@ export const RecurringExpensesTable: React.FC<RecurringExpensesTableProps> = ({
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex justify-between items-start">
-          <div>
-            <CardTitle className="text-xl flex items-center gap-2">
-              <Repeat className="h-5 w-5" />
-              הוצאות חוזרות
-            </CardTitle>
-            <CardDescription>
-              ניהול הוצאות שחוזרות על עצמן באופן קבוע • סה״כ {expenses.length} הוצאות חוזרות
-            </CardDescription>
+    <div dir="rtl">
+      <Card>
+        <CardHeader>
+          <div className="flex justify-between items-start">
+            <div className="text-right">
+              <CardTitle className="text-xl flex items-center gap-2">
+                <Repeat className="h-5 w-5" />
+                הוצאות חוזרות
+              </CardTitle>
+              <CardDescription>
+                ניהול הוצאות שחוזרות על עצמן באופן קבוע • סה״כ {expenses.length} הוצאות חוזרות
+              </CardDescription>
+            </div>
+            <AddRecurringExpenseModal 
+              onSuccess={refreshData}
+              childrenList={childrenList}
+            />
           </div>
-          <AddRecurringExpenseModal 
-            onSuccess={refreshData}
-            childrenList={childrenList}
-          />
-        </div>
-      </CardHeader>
-      <CardContent>
-        <div className="rounded-md border">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="text-right">תיאור</TableHead>
-                <TableHead className="text-right">סכום</TableHead>
-                <TableHead className="text-right">קטגוריה</TableHead>
-                <TableHead className="text-right">שיוך</TableHead>
-                <TableHead className="text-right">תדירות</TableHead>
-                <TableHead className="text-right">חלוקה</TableHead>
-                <TableHead className="text-right">נוסף ע"י</TableHead>
-                <TableHead className="text-right">מי משלם</TableHead>
-                <TableHead className="text-right">תאריך יצירה</TableHead>
-                <TableHead className="text-right">תאריך סיום</TableHead>
-                <TableHead className="text-right">פעולות</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {expenses.length > 0 ? (
-                expenses.map((expense) => (
-                  <TableRow key={expense.id}>
-                    <TableCell className="font-medium">
-                      {expense.description}
-                    </TableCell>
-                    <TableCell>₪{expense.amount.toFixed(2)}</TableCell>
-                    <TableCell>{expense.category}</TableCell>
-                    <TableCell>{getChildName(expense.childId)}</TableCell>
-                    <TableCell>
-                      <Badge variant="secondary">
-                        {getFrequencyLabel(expense.frequency)}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={expense.splitEqually ? "default" : "outline"}>
-                        {expense.splitEqually ? 'חצי-חצי' : 'מלא'}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>{getCreatorName(expense.createdBy)}</TableCell>
-                    <TableCell>{getPayerName(expense.paidById)}</TableCell>
-                    <TableCell>
-                      {format(new Date(expense.date), 'dd/MM/yyyy')}
-                    </TableCell>
-                    <TableCell>
-                      {expense.hasEndDate && expense.endDate ? (
-                        <span className="text-sm text-muted-foreground">
-                          {format(new Date(expense.endDate), 'dd/MM/yyyy')}
-                        </span>
-                      ) : (
-                        <Badge variant="outline">ללא הגבלה</Badge>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="h-8 w-8 p-0"
-                          title="עריכה"
-                          onClick={() => setEditingExpense(expense)}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="h-8 w-8 p-0 text-destructive hover:text-destructive"
-                              title="מחיקה"
-                              disabled={isDeletingExpense === expense.id}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>האם אתה בטוח?</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                פעולה זו תמחק את ההוצאה החוזרת "{expense.description}" לצמיתות.
-                                ההוצאות שכבר נוצרו בעבר לא יימחקו.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>ביטול</AlertDialogCancel>
-                              <AlertDialogAction
-                                onClick={() => handleDeleteRecurring(expense.id)}
-                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+        </CardHeader>
+        <CardContent>
+          <div className="rounded-md border">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="text-right">תיאור</TableHead>
+                  <TableHead className="text-right">סכום</TableHead>
+                  <TableHead className="text-right">קטגוריה</TableHead>
+                  <TableHead className="text-right">שיוך</TableHead>
+                  <TableHead className="text-right">תדירות</TableHead>
+                  <TableHead className="text-right">חלוקה</TableHead>
+                  <TableHead className="text-right">נוסף ע"י</TableHead>
+                  <TableHead className="text-right">מי משלם</TableHead>
+                  <TableHead className="text-right">תאריך יצירה</TableHead>
+                  <TableHead className="text-right">תאריך סיום</TableHead>
+                  <TableHead className="text-right">פעולות</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {expenses.length > 0 ? (
+                  expenses.map((expense) => (
+                    <TableRow key={expense.id}>
+                      <TableCell className="font-medium text-right">
+                        {expense.description}
+                      </TableCell>
+                      <TableCell className="text-right">₪{expense.amount.toFixed(2)}</TableCell>
+                      <TableCell className="text-right">{expense.category}</TableCell>
+                      <TableCell className="text-right">{getChildName(expense.childId)}</TableCell>
+                      <TableCell className="text-right">
+                        <Badge variant="secondary">
+                          {getFrequencyLabel(expense.frequency)}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Badge variant={expense.splitEqually ? "default" : "outline"}>
+                          {expense.splitEqually ? 'חצי-חצי' : 'מלא'}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right">{getCreatorName(expense.createdBy)}</TableCell>
+                      <TableCell className="text-right">{getPayerName(expense.paidById)}</TableCell>
+                      <TableCell className="text-right">
+                        {format(new Date(expense.date), 'dd/MM/yyyy')}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {expense.hasEndDate && expense.endDate ? (
+                          <span className="text-sm text-muted-foreground">
+                            {format(new Date(expense.endDate), 'dd/MM/yyyy')}
+                          </span>
+                        ) : (
+                          <Badge variant="outline">ללא הגבלה</Badge>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex gap-2 justify-end">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-8 w-8 p-0"
+                            title="עריכה"
+                            onClick={() => setEditingExpense(expense)}
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                                title="מחיקה"
+                                disabled={isDeletingExpense === expense.id}
                               >
-                                מחק
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>האם אתה בטוח?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  פעולה זו תמחק את ההוצאה החוזרת "{expense.description}" לצמיתות.
+                                  ההוצאות שכבר נוצרו בעבר לא יימחקו.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>ביטול</AlertDialogCancel>
+                                <AlertDialogAction
+                                  onClick={() => handleDeleteRecurring(expense.id)}
+                                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                >
+                                  מחק
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={11} className="text-center py-8 text-muted-foreground">
+                      <div className="flex flex-col items-center gap-2">
+                        <Calendar className="h-8 w-8 text-muted-foreground/50" />
+                        <span>לא נמצאו הוצאות חוזרות</span>
+                        <span className="text-sm">הוצאות חוזרות מאפשרות לך ליצור הוצאות שחוזרות על עצמן מדי חודש</span>
                       </div>
                     </TableCell>
                   </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={11} className="text-center py-8 text-muted-foreground">
-                    <div className="flex flex-col items-center gap-2">
-                      <Calendar className="h-8 w-8 text-muted-foreground/50" />
-                      <span>לא נמצאו הוצאות חוזרות</span>
-                      <span className="text-sm">הוצאות חוזרות מאפשרות לך ליצור הוצאות שחוזרות על עצמן מדי חודש</span>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </div>
-        
-        <EditRecurringExpenseModal
-          expense={editingExpense}
-          isOpen={!!editingExpense}
-          onClose={() => setEditingExpense(null)}
-          onSuccess={refreshData}
-          childrenList={childrenList}
-        />
-      </CardContent>
-    </Card>
+                )}
+              </TableBody>
+            </Table>
+          </div>
+          
+          <EditRecurringExpenseModal
+            expense={editingExpense}
+            isOpen={!!editingExpense}
+            onClose={() => setEditingExpense(null)}
+            onSuccess={refreshData}
+            childrenList={childrenList}
+          />
+        </CardContent>
+      </Card>
+    </div>
   );
 };

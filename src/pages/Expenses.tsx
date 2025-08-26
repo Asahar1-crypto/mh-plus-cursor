@@ -88,9 +88,9 @@ const ExpensesPage = () => {
   const recurringExpenses = expenses.filter(expense => expense.isRecurring);
 
   return (
-    <div className="w-full max-w-7xl mx-auto py-3 sm:py-6 animate-fade-in">
+    <div className="w-full max-w-7xl mx-auto py-3 sm:py-6 animate-fade-in" dir="rtl">
       <div className="flex flex-col gap-4 sm:flex-row sm:justify-between sm:items-start mb-4 sm:mb-6">
-        <div>
+        <div className="text-right">
           <h1 className="text-2xl sm:text-3xl font-bold">ניהול הוצאות משותפות</h1>
           <p className="text-sm sm:text-base text-muted-foreground">צפייה, הוספה ואישור של הוצאות משותפות</p>
         </div>

@@ -171,162 +171,164 @@ export const ExpensesTable: React.FC<ExpensesTableProps> = ({
   };
 
   return (
-    <Card>
-      <CardHeader className="pb-0">
-        <div className="flex justify-between items-start">
-          <div>
-            <CardTitle className="text-xl">רשימת הוצאות</CardTitle>
-            <CardDescription>סה״כ {expenses.length} הוצאות</CardDescription>
+    <div dir="rtl">
+      <Card>
+        <CardHeader className="pb-0">
+          <div className="flex justify-between items-start">
+            <div className="text-right">
+              <CardTitle className="text-xl">רשימת הוצאות</CardTitle>
+              <CardDescription>סה״כ {expenses.length} הוצאות</CardDescription>
+            </div>
+            {canShowPendingBulkActions && selectedPendingExpenses.length > 0 && (
+              <div className="flex gap-2">
+                <Button
+                  onClick={handleBulkApprove}
+                  disabled={isPerformingBulkAction}
+                  size="sm"
+                  className="flex items-center gap-2"
+                >
+                  <Check className="h-4 w-4" />
+                  אשר {selectedPendingExpenses.length} הוצאות
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => setSelectedPendingExpenses([])}
+                  size="sm"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            )}
+            {canShowApprovedBulkActions && selectedApprovedExpenses.length > 0 && (
+              <div className="flex gap-2">
+                <Button
+                  onClick={handleBulkMarkAsPaid}
+                  disabled={isPerformingBulkAction}
+                  size="sm"
+                  className="flex items-center gap-2"
+                >
+                  <DollarSign className="h-4 w-4" />
+                  סמן כשולם {selectedApprovedExpenses.length} הוצאות
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => setSelectedApprovedExpenses([])}
+                  size="sm"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            )}
           </div>
-          {canShowPendingBulkActions && selectedPendingExpenses.length > 0 && (
-            <div className="flex gap-2">
-              <Button
-                onClick={handleBulkApprove}
-                disabled={isPerformingBulkAction}
-                size="sm"
-                className="flex items-center gap-2"
-              >
-                <Check className="h-4 w-4" />
-                אשר {selectedPendingExpenses.length} הוצאות
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => setSelectedPendingExpenses([])}
-                size="sm"
-              >
-                <X className="h-4 w-4" />
-              </Button>
-            </div>
-          )}
-          {canShowApprovedBulkActions && selectedApprovedExpenses.length > 0 && (
-            <div className="flex gap-2">
-              <Button
-                onClick={handleBulkMarkAsPaid}
-                disabled={isPerformingBulkAction}
-                size="sm"
-                className="flex items-center gap-2"
-              >
-                <DollarSign className="h-4 w-4" />
-                סמן כשולם {selectedApprovedExpenses.length} הוצאות
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => setSelectedApprovedExpenses([])}
-                size="sm"
-              >
-                <X className="h-4 w-4" />
-              </Button>
-            </div>
-          )}
-        </div>
-      </CardHeader>
-      <CardContent className="pt-6">
-        <div className="rounded-md border">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                {(canShowPendingBulkActions || canShowApprovedBulkActions) && (
-                  <TableHead className="w-12">
-                    <Checkbox
-                      checked={
-                        (pendingExpenses.length > 0 && selectedPendingExpenses.length === pendingExpenses.length) ||
-                        (approvedExpenses.length > 0 && selectedApprovedExpenses.length === approvedExpenses.length)
-                      }
-                      onCheckedChange={(checked) => {
-                        if (checked) {
-                          handleSelectAllPending();
-                          handleSelectAllApproved();
-                        } else {
-                          setSelectedPendingExpenses([]);
-                          setSelectedApprovedExpenses([]);
+        </CardHeader>
+        <CardContent className="pt-6">
+          <div className="rounded-md border">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  {(canShowPendingBulkActions || canShowApprovedBulkActions) && (
+                    <TableHead className="w-12">
+                      <Checkbox
+                        checked={
+                          (pendingExpenses.length > 0 && selectedPendingExpenses.length === pendingExpenses.length) ||
+                          (approvedExpenses.length > 0 && selectedApprovedExpenses.length === approvedExpenses.length)
                         }
-                      }}
-                      disabled={isPerformingBulkAction}
-                    />
-                  </TableHead>
-                )}
-                <TableHead className="text-right">תאריך</TableHead>
-                <TableHead className="text-right">תיאור</TableHead>
-                <TableHead className="text-right">סכום</TableHead>
-                <TableHead className="text-right">קטגוריה</TableHead>
-                <TableHead className="text-right">שיוך</TableHead>
-                <TableHead className="text-right">נוסף ע"י</TableHead>
-                <TableHead className="text-right">מי צריך לשלם</TableHead>
-                <TableHead className="text-right">סטטוס</TableHead>
-                <TableHead className="text-right">פעולות</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {expenses.length > 0 ? (
-                expenses.map((expense) => (
-                  <TableRow key={expense.id}>
-                    {(canShowPendingBulkActions || canShowApprovedBulkActions) && (
-                      <TableCell>
-                        {expense.status === 'pending' ? (
-                          <Checkbox
-                            checked={selectedPendingExpenses.includes(expense.id)}
-                            onCheckedChange={() => handleSelectPendingExpense(expense.id)}
-                            disabled={isPerformingBulkAction}
-                          />
-                        ) : expense.status === 'approved' ? (
-                          <Checkbox
-                            checked={selectedApprovedExpenses.includes(expense.id)}
-                            onCheckedChange={() => handleSelectApprovedExpense(expense.id)}
-                            disabled={isPerformingBulkAction}
-                          />
-                        ) : null}
+                        onCheckedChange={(checked) => {
+                          if (checked) {
+                            handleSelectAllPending();
+                            handleSelectAllApproved();
+                          } else {
+                            setSelectedPendingExpenses([]);
+                            setSelectedApprovedExpenses([]);
+                          }
+                        }}
+                        disabled={isPerformingBulkAction}
+                      />
+                    </TableHead>
+                  )}
+                  <TableHead className="text-right">תאריך</TableHead>
+                  <TableHead className="text-right">תיאור</TableHead>
+                  <TableHead className="text-right">סכום</TableHead>
+                  <TableHead className="text-right">קטגוריה</TableHead>
+                  <TableHead className="text-right">שיוך</TableHead>
+                  <TableHead className="text-right">נוסף ע"י</TableHead>
+                  <TableHead className="text-right">מי צריך לשלם</TableHead>
+                  <TableHead className="text-right">סטטוס</TableHead>
+                  <TableHead className="text-right">פעולות</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {expenses.length > 0 ? (
+                  expenses.map((expense) => (
+                    <TableRow key={expense.id}>
+                      {(canShowPendingBulkActions || canShowApprovedBulkActions) && (
+                        <TableCell>
+                          {expense.status === 'pending' ? (
+                            <Checkbox
+                              checked={selectedPendingExpenses.includes(expense.id)}
+                              onCheckedChange={() => handleSelectPendingExpense(expense.id)}
+                              disabled={isPerformingBulkAction}
+                            />
+                          ) : expense.status === 'approved' ? (
+                            <Checkbox
+                              checked={selectedApprovedExpenses.includes(expense.id)}
+                              onCheckedChange={() => handleSelectApprovedExpense(expense.id)}
+                              disabled={isPerformingBulkAction}
+                            />
+                          ) : null}
+                        </TableCell>
+                      )}
+                      <TableCell className="text-right">
+                        {format(new Date(expense.date), 'dd/MM/yyyy')}
                       </TableCell>
-                    )}
-                    <TableCell>
-                      {format(new Date(expense.date), 'dd/MM/yyyy')}
-                    </TableCell>
-                    <TableCell className="font-medium">
-                      {expense.description}
-                    </TableCell>
-                    <TableCell>₪{expense.amount.toFixed(2)}</TableCell>
-                    <TableCell>{expense.category}</TableCell>
-                    <TableCell>
-                      {expense.childName || 'הוצאה כללית'}
-                    </TableCell>
-                    <TableCell>{expense.creatorName}</TableCell>
-                    <TableCell className="text-sm">
-                      {getPayerInfo(expense)}
-                    </TableCell>
-                    <TableCell>
-                      <StatusBadge status={expense.status} />
-                    </TableCell>
-                    <TableCell>
-                      <Select
-                        value=""
-                        onValueChange={(newStatus: Expense['status']) => 
-                          handleStatusChange(expense.id, newStatus)
-                        }
-                      >
-                        <SelectTrigger className="w-32 h-8">
-                          <SelectValue placeholder="בחר פעולה" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {getStatusOptions(expense.status).map((option) => (
-                            <SelectItem key={option.value} value={option.value}>
-                              {option.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <TableCell className="font-medium text-right">
+                        {expense.description}
+                      </TableCell>
+                      <TableCell className="text-right">₪{expense.amount.toFixed(2)}</TableCell>
+                      <TableCell className="text-right">{expense.category}</TableCell>
+                      <TableCell className="text-right">
+                        {expense.childName || 'הוצאה כללית'}
+                      </TableCell>
+                      <TableCell className="text-right">{expense.creatorName}</TableCell>
+                      <TableCell className="text-sm text-right">
+                        {getPayerInfo(expense)}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <StatusBadge status={expense.status} />
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Select
+                          value=""
+                          onValueChange={(newStatus: Expense['status']) => 
+                            handleStatusChange(expense.id, newStatus)
+                          }
+                        >
+                          <SelectTrigger className="w-32 h-8">
+                            <SelectValue placeholder="בחר פעולה" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {getStatusOptions(expense.status).map((option) => (
+                              <SelectItem key={option.value} value={option.value}>
+                                {option.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={(canShowPendingBulkActions || canShowApprovedBulkActions) ? 10 : 9} className="text-center py-8 text-muted-foreground">
+                      לא נמצאו הוצאות התואמות לפילטרים שנבחרו
                     </TableCell>
                   </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={(canShowPendingBulkActions || canShowApprovedBulkActions) ? 10 : 9} className="text-center py-8 text-muted-foreground">
-                    לא נמצאו הוצאות התואמות לפילטרים שנבחרו
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </div>
-      </CardContent>
-    </Card>
+                )}
+              </TableBody>
+            </Table>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
   );
 };
