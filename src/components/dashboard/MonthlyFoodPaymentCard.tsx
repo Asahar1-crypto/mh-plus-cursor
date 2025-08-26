@@ -49,12 +49,11 @@ export const MonthlyFoodPaymentCard: React.FC<MonthlyFoodPaymentCardProps> = ({ 
       targetYear = currentDate.getFullYear();
     }
     
-    // Filter expenses for the target month and food categories
+    // Filter expenses for the target month and paid status
     const filteredExpenses = expenses.filter(expense => {
       const expenseDate = new Date(expense.date);
       const isSameMonth = expenseDate.getMonth() === targetMonth && expenseDate.getFullYear() === targetYear;
-      const isFoodCategory = ['מזון', 'מזונות', 'אוכל'].includes(expense.category);
-      return isSameMonth && isFoodCategory && expense.status === 'paid';
+      return isSameMonth && expense.status === 'paid';
     });
     
     if (filteredExpenses.length === 0) {
@@ -80,11 +79,11 @@ export const MonthlyFoodPaymentCard: React.FC<MonthlyFoodPaymentCardProps> = ({ 
       };
     });
     
-    // Calculate total food expenses
-    const totalFoodExpenses = filteredExpenses.reduce((sum, expense) => sum + expense.amount, 0);
+    // Calculate total expenses
+    const totalExpenses = filteredExpenses.reduce((sum, expense) => sum + expense.amount, 0);
     
     // Calculate how much each member should pay (equal split)
-    const shouldPayEach = totalFoodExpenses / accountMembers.length;
+    const shouldPayEach = totalExpenses / accountMembers.length;
     
     // Update shouldPay and balance for each member
     breakdown.forEach(member => {
@@ -94,7 +93,7 @@ export const MonthlyFoodPaymentCard: React.FC<MonthlyFoodPaymentCardProps> = ({ 
     
     return {
       breakdown,
-      totalFoodExpenses,
+      totalExpenses,
       shouldPayEach
     };
   }, [expenses, accountMembers, selectedMonth]);
@@ -118,7 +117,7 @@ export const MonthlyFoodPaymentCard: React.FC<MonthlyFoodPaymentCardProps> = ({ 
         </CardHeader>
         <CardContent>
           <div className="text-center py-8">
-            <div className="text-gray-500 text-lg">אין הוצאות מזון לחודש זה</div>
+            <div className="text-gray-500 text-lg">אין הוצאות לחודש זה</div>
           </div>
         </CardContent>
       </Card>
@@ -171,9 +170,9 @@ export const MonthlyFoodPaymentCard: React.FC<MonthlyFoodPaymentCardProps> = ({ 
             {/* Total Summary */}
             <div className="space-y-4">
               <div className="text-center p-4 bg-white/50 rounded-xl">
-                <div className="text-sm text-emerald-600 mb-1">סה״כ הוצאות מזון</div>
+                <div className="text-sm text-emerald-600 mb-1">סה״כ הוצאות</div>
                 <div className="text-2xl font-bold text-emerald-800">
-                  {formatCurrency(paymentBreakdown.totalFoodExpenses)}
+                  {formatCurrency(paymentBreakdown.totalExpenses)}
                 </div>
               </div>
               <div className="text-center p-4 bg-white/50 rounded-xl">
