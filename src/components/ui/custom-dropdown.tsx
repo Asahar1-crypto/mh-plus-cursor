@@ -49,8 +49,13 @@ export function CustomDropdown({
           <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
-        <div className="max-h-60 overflow-auto">
+      <PopoverContent 
+        className="w-[var(--radix-popover-trigger-width)] p-0 z-[9999]" 
+        align="start"
+        side="bottom"
+        sideOffset={4}
+      >
+        <div className="max-h-60 overflow-auto bg-popover border rounded-md shadow-lg">
           {options.map((option) => (
             <div
               key={option.value}
