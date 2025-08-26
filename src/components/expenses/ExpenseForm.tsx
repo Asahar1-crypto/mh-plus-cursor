@@ -349,14 +349,14 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({ onSubmitSuccess, onCan
               {
                 value: 'i_owe_them',
                 label: `אני צריך לשלם ל${otherUserName}`,
-                description: 'חוב ללא תשלום מוקדם (כמו מזונות, דמי ילדים)',
+                description: `תשלום מלא שאני חייב/ת ל${otherUserName}`,
                 icon: <ArrowLeftRight className="h-4 w-4" />,
                 color: 'text-orange-600 dark:text-orange-400'
               },
               {
                 value: 'they_owe_me',
                 label: `${otherUserName} צריך/צריכה לשלם לי`,
-                description: 'חוב ללא תשלום מוקדם (כמו מזונות, השתתפות)',
+                description: `תשלום מלא ש${otherUserName} חייב/ת לי`,
                 icon: <ArrowLeftRight className="h-4 w-4" />,
                 color: 'text-purple-600 dark:text-purple-400'
               }
