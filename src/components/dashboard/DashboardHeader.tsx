@@ -13,8 +13,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({ userName }) =>
   const { refreshData } = useExpense();
   const navigate = useNavigate();
   
-  const currentHour = new Date().getHours();
-  const greeting = currentHour < 12 ? 'בוקר טוב' : currentHour < 18 ? 'צהריים טובים' : 'ערב טוב';
+  const greeting = "היי 👋";
 
   const handleAddExpense = () => {
     navigate('/expenses', { state: { openModal: true } });
