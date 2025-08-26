@@ -223,8 +223,7 @@ export const ExpensesTable: React.FC<ExpensesTableProps> = ({
                     size="sm"
                     className="bg-blue-600 hover:bg-blue-700 text-white"
                   >
-                    <DollarSign className="h-3 w-3 mr-1" />
-                    סמן כשולם ({selectedApprovedExpenses.length})
+                    <span className="ml-1">סמן כשולם ({selectedApprovedExpenses.length})</span>
                   </Button>
                 )}
               </div>
@@ -235,7 +234,7 @@ export const ExpensesTable: React.FC<ExpensesTableProps> = ({
 
       <CardContent className="p-0">
         <div className="overflow-x-auto">
-          <Table>
+          <Table dir="rtl">
             <TableHeader>
               <TableRow className="bg-muted/30 border-b border-border/50">
                 <TableHead className="text-right font-semibold">בחר</TableHead>
@@ -253,7 +252,6 @@ export const ExpensesTable: React.FC<ExpensesTableProps> = ({
                 </TableHead>
                 <TableHead className="text-right font-semibold">
                   <div className="flex items-center gap-2 justify-end">
-                    <DollarSign className="h-4 w-4" />
                     סכום
                   </div>
                 </TableHead>
@@ -324,63 +322,68 @@ export const ExpensesTable: React.FC<ExpensesTableProps> = ({
                       )}
                     </TableCell>
                     
-                    <TableCell className="font-medium">
+                    <TableCell className="font-medium text-right">
                       <div className="flex items-center gap-2 justify-end">
+                        <span>{format(new Date(expense.date), 'dd/MM/yyyy')}</span>
                         <Calendar className="h-3 w-3 text-muted-foreground" />
-                        {format(new Date(expense.date), 'dd/MM/yyyy')}
                       </div>
                     </TableCell>
                     
-                    <TableCell>
-                      <div className="max-w-xs">
+                    <TableCell className="text-right">
+                      <div className="max-w-xs text-right">
                         <p className="font-medium truncate">{expense.description}</p>
                         <p className="text-xs text-muted-foreground">נוצר על ידי: {creatorName}</p>
                       </div>
                     </TableCell>
                     
-                    <TableCell>
+                    <TableCell className="text-right">
                       <div className="flex items-center gap-2 justify-end">
-                        <DollarSign className="h-3 w-3 text-green-600" />
                         <span className="font-bold text-lg">₪{expense.amount}</span>
                       </div>
                     </TableCell>
                     
-                    <TableCell>
-                      <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
-                        {expense.category || 'לא צוין'}
-                      </Badge>
+                    <TableCell className="text-right">
+                      <div className="flex justify-end">
+                        <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
+                          {expense.category || 'לא צוין'}
+                        </Badge>
+                      </div>
                     </TableCell>
                     
-                    <TableCell>
+                    <TableCell className="text-right">
                       {expense.childName ? (
                         <div className="flex items-center gap-2 justify-end">
-                          <User className="h-3 w-3 text-muted-foreground" />
                           <span className="text-sm font-medium">{expense.childName}</span>
+                          <User className="h-3 w-3 text-muted-foreground" />
                         </div>
                       ) : (
                         <span className="text-muted-foreground text-sm">כללי</span>
                       )}
                     </TableCell>
                     
-                    <TableCell>
+                    <TableCell className="text-right">
                       <div className="space-y-1">
                         <div className="flex items-center gap-2 justify-end">
-                          <Users className="h-3 w-3 text-muted-foreground" />
                           <span className="text-sm font-medium">{paidByName}</span>
+                          <Users className="h-3 w-3 text-muted-foreground" />
                         </div>
                         {expense.splitEqually && (
-                          <Badge variant="secondary" className="text-xs">
-                            חלוקה שווה
-                          </Badge>
+                          <div className="flex justify-end">
+                            <Badge variant="secondary" className="text-xs">
+                              חלוקה שווה
+                            </Badge>
+                          </div>
                         )}
                       </div>
                     </TableCell>
                     
-                    <TableCell>
-                      <StatusBadge status={expense.status} />
+                    <TableCell className="text-right">
+                      <div className="flex justify-end">
+                        <StatusBadge status={expense.status} />
+                      </div>
                     </TableCell>
                     
-                    <TableCell>
+                    <TableCell className="text-right">
                       <div className="flex gap-1 justify-end">
                         {expense.status === 'pending' && (
                           <>
@@ -409,8 +412,7 @@ export const ExpensesTable: React.FC<ExpensesTableProps> = ({
                             onClick={() => handleMarkAsPaid(expense.id)}
                             className="h-8 px-3 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
                           >
-                            <DollarSign className="h-4 w-4 mr-1" />
-                            סמן כשולם
+                            <span className="ml-1">סמן כשולם</span>
                           </Button>
                         )}
                       </div>
