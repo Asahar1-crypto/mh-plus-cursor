@@ -10,17 +10,27 @@ export const memberService = {
     try {
       console.log(`Getting members for account ${accountId}`);
       
-      const { data, error } = await supabase.rpc(
-        'get_account_members_with_details',
-        { account_uuid: accountId }
-      );
+      const { data, error } = await supabase
+        .from('account_members')
+        .select(`
+          user_id,
+          role,
+          joined_at,
+          profiles!inner(name)
+        `)
+        .eq('account_id', accountId);
       
       if (error) {
         console.error('Error getting account members:', error);
         throw error;
       }
       
-      return data || [];
+      return (data || []).map(member => ({
+        user_id: member.user_id,
+        user_name: member.profiles?.name || 'משתמש לא ידוע',
+        role: member.role,
+        joined_at: member.joined_at
+      }));
     } catch (error) {
       console.error('Error in getAccountMembers:', error);
       throw error;
