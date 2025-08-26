@@ -240,43 +240,43 @@ export const ExpensesTable: React.FC<ExpensesTableProps> = ({
               <TableRow className="bg-muted/30 border-b border-border/50">
                 <TableHead className="text-right font-semibold">בחר</TableHead>
                 <TableHead className="text-right font-semibold">
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 justify-end">
                     <Calendar className="h-4 w-4" />
                     תאריך
                   </div>
                 </TableHead>
                 <TableHead className="text-right font-semibold">
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 justify-end">
                     <FileText className="h-4 w-4" />
                     תיאור
                   </div>
                 </TableHead>
                 <TableHead className="text-right font-semibold">
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 justify-end">
                     <DollarSign className="h-4 w-4" />
                     סכום
                   </div>
                 </TableHead>
                 <TableHead className="text-right font-semibold">
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 justify-end">
                     <Tag className="h-4 w-4" />
                     קטגוריה
                   </div>
                 </TableHead>
                 <TableHead className="text-right font-semibold">
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 justify-end">
                     <User className="h-4 w-4" />
                     ילד
                   </div>
                 </TableHead>
                 <TableHead className="text-right font-semibold">
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 justify-end">
                     <Users className="h-4 w-4" />
                     משלם
                   </div>
                 </TableHead>
                 <TableHead className="text-right font-semibold">
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 justify-end">
                     <Zap className="h-4 w-4" />
                     סטטוס
                   </div>
@@ -325,7 +325,7 @@ export const ExpensesTable: React.FC<ExpensesTableProps> = ({
                     </TableCell>
                     
                     <TableCell className="font-medium">
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 justify-end">
                         <Calendar className="h-3 w-3 text-muted-foreground" />
                         {format(new Date(expense.date), 'dd/MM/yyyy')}
                       </div>
@@ -339,7 +339,7 @@ export const ExpensesTable: React.FC<ExpensesTableProps> = ({
                     </TableCell>
                     
                     <TableCell>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 justify-end">
                         <DollarSign className="h-3 w-3 text-green-600" />
                         <span className="font-bold text-lg">₪{expense.amount}</span>
                       </div>
@@ -353,7 +353,7 @@ export const ExpensesTable: React.FC<ExpensesTableProps> = ({
                     
                     <TableCell>
                       {expense.childName ? (
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 justify-end">
                           <User className="h-3 w-3 text-muted-foreground" />
                           <span className="text-sm font-medium">{expense.childName}</span>
                         </div>
@@ -364,7 +364,7 @@ export const ExpensesTable: React.FC<ExpensesTableProps> = ({
                     
                     <TableCell>
                       <div className="space-y-1">
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 justify-end">
                           <Users className="h-3 w-3 text-muted-foreground" />
                           <span className="text-sm font-medium">{paidByName}</span>
                         </div>
@@ -381,7 +381,7 @@ export const ExpensesTable: React.FC<ExpensesTableProps> = ({
                     </TableCell>
                     
                     <TableCell>
-                      <div className="flex gap-1">
+                      <div className="flex gap-1 justify-end">
                         {expense.status === 'pending' && (
                           <>
                             <Button
