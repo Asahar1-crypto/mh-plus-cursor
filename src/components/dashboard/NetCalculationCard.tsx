@@ -36,46 +36,51 @@ export const NetCalculationCard: React.FC<NetCalculationCardProps> = ({
     if (!selectedMonth || !approvedExpenses) return approvedExpenses || [];
     
     const [year, month] = selectedMonth.split('-').map(Number);
+    const targetMonth = month - 1; // Convert to 0-based month
+    const targetYear = year;
     
     return approvedExpenses.filter(expense => {
       const expenseDate = new Date(expense.date);
-      return expenseDate.getFullYear() === year && 
-             expenseDate.getMonth() === month - 1;
+      const isSelectedMonth = expenseDate.getMonth() === targetMonth && expenseDate.getFullYear() === targetYear;
+      const isRelevant = expense.status === 'approved'; // Only approved, not paid
+      return isSelectedMonth && isRelevant;
     });
   }, [approvedExpenses, selectedMonth]);
 
-  // Calculate breakdown similar to MonthlyFoodPaymentCard
+  // Calculate breakdown using the same logic as MonthlyFoodPaymentCard
   const breakdown = useMemo(() => {
     if (!accountMembers || !filteredApprovedExpenses) return [];
 
     const userBalances: { [key: string]: UserBalance } = {};
 
-    // Initialize user balances
+    // Calculate what each person owes based on the rules:
+    // 1. split_equally = true: Only the payer owes their half
+    // 2. split_equally = false: The payer owes the full amount to the other person
+    
     accountMembers.forEach(member => {
+      let totalOwes = 0;
+      
+      // Go through all expenses and see what this member owes
+      filteredApprovedExpenses.forEach(expense => {
+        if (expense.paidById === member.user_id) {
+          // This member is designated as the one who should pay
+          if (expense.splitEqually) {
+            // Half-half: only owes their half
+            totalOwes += expense.amount / 2;
+          } else {
+            // Full payment: owes the full amount
+            totalOwes += expense.amount;
+          }
+        }
+        // If this member is NOT the payer, they don't owe anything for this expense
+      });
+      
       userBalances[member.user_id] = {
         userName: member.user_name,
-        totalPaid: 0,
-        shouldPay: 0,
-        balance: 0
+        totalPaid: 0, // Not used in this calculation
+        shouldPay: totalOwes,
+        balance: totalOwes // Positive means they owe money
       };
-    });
-
-    // Calculate total amount and what each user paid
-    let totalAmount = 0;
-    filteredApprovedExpenses.forEach(expense => {
-      totalAmount += expense.amount;
-      if (userBalances[expense.paidById]) {
-        userBalances[expense.paidById].totalPaid += expense.amount;
-      }
-    });
-
-    // Calculate how much each user should pay
-    const totalUsers = accountMembers.length;
-    const amountPerUser = totalAmount / totalUsers;
-
-    Object.values(userBalances).forEach(userBalance => {
-      userBalance.shouldPay = amountPerUser;
-      userBalance.balance = userBalance.shouldPay - userBalance.totalPaid;
     });
 
     return Object.values(userBalances);
