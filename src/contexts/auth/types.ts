@@ -11,6 +11,8 @@ export interface Profile {
   created_at: string;
   updated_at: string;
   selected_account_id: string | null;
+  is_super_admin: boolean | null;
+  last_login: string | null;
 }
 
 export interface Account {

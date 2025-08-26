@@ -21,6 +21,11 @@ import Children from "./pages/Children";
 import Expenses from "./pages/Expenses";
 import Reports from "./pages/Reports";
 
+// Admin pages
+import AdminDashboard from "./pages/admin/AdminDashboard";
+import AdminPricing from "./pages/admin/AdminPricing";
+import AdminTenants from "./pages/admin/AdminTenants";
+
 import AuthLayout from "./components/AuthLayout";
 import AppLayout from "./components/AppLayout";
 
@@ -58,6 +63,11 @@ const App = () => (
                 <Route path="/children" element={<Children />} />
                 <Route path="/expenses" element={<Expenses />} />
                 <Route path="/reports" element={<Reports />} />
+                
+                {/* Admin routes */}
+                <Route path="/admin/dashboard" element={<AdminDashboard />} />
+                <Route path="/admin/pricing" element={<AdminPricing />} />
+                <Route path="/admin/tenants" element={<AdminTenants />} />
               </Route>
               
               {/* Special routes */}

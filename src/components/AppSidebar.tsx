@@ -2,9 +2,10 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
-import { Home, CreditCard, User, Settings, Plus, Users, BarChart3, X } from 'lucide-react';
+import { Home, CreditCard, User, Settings, Plus, Users, BarChart3, X, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Logo } from '@/components/ui/Logo';
+import { useAuth } from '@/contexts/auth';
 
 interface SidebarItemProps {
   icon: React.ElementType;
@@ -43,8 +44,9 @@ interface AppSidebarProps {
 
 const AppSidebar: React.FC<AppSidebarProps> = ({ isMobile, isOpen, onClose }) => {
   const location = useLocation();
+  const { profile } = useAuth();
 
-  const sidebarItems = [
+  const regularItems = [
     { icon: Home, label: 'דשבורד', path: '/dashboard' },
     { icon: CreditCard, label: 'הוצאות', path: '/expenses' },
     { icon: Users, label: 'ילדים', path: '/children' },
@@ -52,6 +54,14 @@ const AppSidebar: React.FC<AppSidebarProps> = ({ isMobile, isOpen, onClose }) =>
     { icon: User, label: 'פרופיל', path: '/profile' },
     { icon: Settings, label: 'הגדרות', path: '/account-settings' },
   ];
+
+  const adminItems = [
+    { icon: Shield, label: 'ניהול מערכת', path: '/admin/dashboard' },
+  ];
+
+  const sidebarItems = profile?.is_super_admin 
+    ? [...regularItems, ...adminItems]
+    : regularItems;
 
   // Improved sidebar positioning and responsiveness
   const sidebarClasses = cn(
