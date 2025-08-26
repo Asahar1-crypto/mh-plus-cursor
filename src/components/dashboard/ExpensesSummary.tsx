@@ -26,7 +26,7 @@ export const ExpensesSummary: React.FC<ExpensesSummaryProps> = ({
     enabled: !!account?.id
   });
 
-  // Calculate totals and breakdown by user
+  // Calculate totals and breakdown by user with net calculation
   const summaryData = useMemo(() => {
     const calculateBreakdown = (expenses: Expense[]) => {
       const total = expenses.reduce((sum, exp) => sum + exp.amount, 0);
@@ -37,15 +37,31 @@ export const ExpensesSummary: React.FC<ExpensesSummaryProps> = ({
       }
 
       const breakdown = accountMembers.map(member => {
-        const userExpenses = expenses.filter(exp => exp.paidById === member.user_id);
-        const userTotal = userExpenses.reduce((sum, exp) => sum + exp.amount, 0);
-        const userCount = userExpenses.length;
+        let netBalance = 0; // חיובי = אדם זה חייב כסף, שלילי = מגיע לו כסף
+        let userExpensesCount = 0;
+        
+        expenses.forEach(exp => {
+          if (exp.paidById === member.user_id) {
+            // המשתמש שילם את ההוצאה
+            userExpensesCount++;
+            if (exp.splitEqually) {
+              // אם זה מתחלק שווה, הוא שילם הכל אבל צריך לקבל חזרה חצי
+              netBalance += exp.amount / 2;
+            } else {
+              // אם זה לא מתחלק, זה הוצאה רק שלו
+              netBalance += exp.amount;
+            }
+          } else if (exp.splitEqually) {
+            // המשתמש לא שילם אבל ההוצאה מתחלקת, אז הוא חייב חצי
+            netBalance -= exp.amount / 2;
+          }
+        });
         
         return {
           userId: member.user_id,
           userName: member.user_name,
-          total: userTotal,
-          count: userCount
+          total: netBalance, // זה הסכום נטו - אם חיובי הוא חייב, אם שלילי מגיע לו
+          count: userExpensesCount
         };
       });
       
@@ -184,9 +200,9 @@ export const ExpensesSummary: React.FC<ExpensesSummaryProps> = ({
       {accountMembers && accountMembers.length > 0 && (
         <Card className="border-0 bg-white/70 backdrop-blur-sm shadow-xl">
           <CardHeader>
-            <CardTitle className="text-xl font-bold text-gray-800">פירוט תשלומים לפי משתתף</CardTitle>
+            <CardTitle className="text-xl font-bold text-gray-800">חישוב נטו לפי משתתף</CardTitle>
             <CardDescription className="text-gray-600">
-              סכומים ששולמו על ידי כל משתתף
+              יתרות נטו - חיובי = חייב כסף, שלילי = מגיע כסף
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -196,10 +212,10 @@ export const ExpensesSummary: React.FC<ExpensesSummaryProps> = ({
                 <div>
                   <h4 className="text-lg font-semibold text-orange-800 mb-3 flex items-center">
                     <Clock className="h-5 w-5 mr-2" />
-                    ממתין לאישור
+                    חישוב נטו - ממתין לאישור
                   </h4>
                   <div className="space-y-2">
-                    {summaryData.pending.breakdown.filter(user => user.total > 0).map((userBreakdown) => (
+                    {summaryData.pending.breakdown.map((userBreakdown) => (
                       <div key={`pending-${userBreakdown.userId}`} className="flex items-center justify-between p-3 rounded-lg bg-orange-50">
                         <div className="flex items-center space-x-3">
                           <div className="h-8 w-8 rounded-full bg-orange-100 flex items-center justify-center text-orange-700 font-semibold text-sm">
@@ -208,7 +224,9 @@ export const ExpensesSummary: React.FC<ExpensesSummaryProps> = ({
                           <span className="font-medium text-orange-800">{userBreakdown.userName}</span>
                         </div>
                         <div className="text-left">
-                          <div className="font-bold text-orange-700">{formatCurrency(userBreakdown.total)}</div>
+                          <div className={`font-bold ${userBreakdown.total >= 0 ? 'text-red-600' : 'text-green-600'}`}>
+                            {userBreakdown.total >= 0 ? 'חייב' : 'מגיע'} {formatCurrency(Math.abs(userBreakdown.total))}
+                          </div>
                           <div className="text-sm text-orange-600">{userBreakdown.count} הוצאות</div>
                         </div>
                       </div>
@@ -222,10 +240,10 @@ export const ExpensesSummary: React.FC<ExpensesSummaryProps> = ({
                 <div>
                   <h4 className="text-lg font-semibold text-blue-800 mb-3 flex items-center">
                     <CheckCircle className="h-5 w-5 mr-2" />
-                    מאושר
+                    חישוב נטו - מאושר
                   </h4>
                   <div className="space-y-2">
-                    {summaryData.approved.breakdown.filter(user => user.total > 0).map((userBreakdown) => (
+                    {summaryData.approved.breakdown.map((userBreakdown) => (
                       <div key={`approved-${userBreakdown.userId}`} className="flex items-center justify-between p-3 rounded-lg bg-blue-50">
                         <div className="flex items-center space-x-3">
                           <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-semibold text-sm">
@@ -234,7 +252,9 @@ export const ExpensesSummary: React.FC<ExpensesSummaryProps> = ({
                           <span className="font-medium text-blue-800">{userBreakdown.userName}</span>
                         </div>
                         <div className="text-left">
-                          <div className="font-bold text-blue-700">{formatCurrency(userBreakdown.total)}</div>
+                          <div className={`font-bold ${userBreakdown.total >= 0 ? 'text-red-600' : 'text-green-600'}`}>
+                            {userBreakdown.total >= 0 ? 'חייב' : 'מגיע'} {formatCurrency(Math.abs(userBreakdown.total))}
+                          </div>
                           <div className="text-sm text-blue-600">{userBreakdown.count} הוצאות</div>
                         </div>
                       </div>
@@ -248,10 +268,10 @@ export const ExpensesSummary: React.FC<ExpensesSummaryProps> = ({
                 <div>
                   <h4 className="text-lg font-semibold text-green-800 mb-3 flex items-center">
                     <CreditCard className="h-5 w-5 mr-2" />
-                    שולם
+                    חישוב נטו - שולם
                   </h4>
                   <div className="space-y-2">
-                    {summaryData.paid.breakdown.filter(user => user.total > 0).map((userBreakdown) => (
+                    {summaryData.paid.breakdown.map((userBreakdown) => (
                       <div key={`paid-${userBreakdown.userId}`} className="flex items-center justify-between p-3 rounded-lg bg-green-50">
                         <div className="flex items-center space-x-3">
                           <div className="h-8 w-8 rounded-full bg-green-100 flex items-center justify-center text-green-700 font-semibold text-sm">
@@ -260,7 +280,9 @@ export const ExpensesSummary: React.FC<ExpensesSummaryProps> = ({
                           <span className="font-medium text-green-800">{userBreakdown.userName}</span>
                         </div>
                         <div className="text-left">
-                          <div className="font-bold text-green-700">{formatCurrency(userBreakdown.total)}</div>
+                          <div className={`font-bold ${userBreakdown.total >= 0 ? 'text-red-600' : 'text-green-600'}`}>
+                            {userBreakdown.total >= 0 ? 'חייב' : 'מגיע'} {formatCurrency(Math.abs(userBreakdown.total))}
+                          </div>
                           <div className="text-sm text-green-600">{userBreakdown.count} הוצאות</div>
                         </div>
                       </div>
