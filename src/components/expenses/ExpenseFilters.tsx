@@ -115,12 +115,12 @@ export const ExpenseFilters: React.FC<ExpenseFiltersProps> = ({
               <Tag className="h-3 w-3" />
               קטגוריה
             </div>
-            <Select value={selectedCategory || ''} onValueChange={(value) => setSelectedCategory(value || null)}>
+            <Select value={selectedCategory || 'all'} onValueChange={(value) => setSelectedCategory(value === 'all' ? null : value)}>
               <SelectTrigger className="bg-background/50 backdrop-blur-sm border border-border/50 hover:border-primary/30 transition-colors duration-200">
                 <SelectValue placeholder="כל הקטגוריות" />
               </SelectTrigger>
               <SelectContent className="bg-background/95 backdrop-blur-lg border border-border/50">
-                <SelectItem value="">כל הקטגוריות</SelectItem>
+                <SelectItem value="all">כל הקטגוריות</SelectItem>
                 {categories.map(category => (
                   <SelectItem key={category} value={category}>{category}</SelectItem>
                 ))}
@@ -134,12 +134,12 @@ export const ExpenseFilters: React.FC<ExpenseFiltersProps> = ({
               <User className="h-3 w-3" />
               ילד
             </div>
-            <Select value={selectedChild || ''} onValueChange={(value) => setSelectedChild(value || null)}>
+            <Select value={selectedChild || 'all'} onValueChange={(value) => setSelectedChild(value === 'all' ? null : value)}>
               <SelectTrigger className="bg-background/50 backdrop-blur-sm border border-border/50 hover:border-primary/30 transition-colors duration-200">
                 <SelectValue placeholder="כל הילדים" />
               </SelectTrigger>
               <SelectContent className="bg-background/95 backdrop-blur-lg border border-border/50">
-                <SelectItem value="">כל הילדים</SelectItem>
+                <SelectItem value="all">כל הילדים</SelectItem>
                 {childrenList.map(child => (
                   <SelectItem key={child.id} value={child.id}>{child.name}</SelectItem>
                 ))}
@@ -153,12 +153,12 @@ export const ExpenseFilters: React.FC<ExpenseFiltersProps> = ({
               <DollarSign className="h-3 w-3" />
               סטטוס
             </div>
-            <Select value={selectedStatus || ''} onValueChange={(value) => setSelectedStatus(value as Expense['status'] || null)}>
+            <Select value={selectedStatus || 'all'} onValueChange={(value) => setSelectedStatus(value === 'all' ? null : (value as Expense['status']))}>
               <SelectTrigger className="bg-background/50 backdrop-blur-sm border border-border/50 hover:border-primary/30 transition-colors duration-200">
                 <SelectValue placeholder="כל הסטטוסים" />
               </SelectTrigger>
               <SelectContent className="bg-background/95 backdrop-blur-lg border border-border/50">
-                <SelectItem value="">כל הסטטוסים</SelectItem>
+                <SelectItem value="all">כל הסטטוסים</SelectItem>
                 <SelectItem value="pending">ממתין לאישור</SelectItem>
                 <SelectItem value="approved">מאושר</SelectItem>
                 <SelectItem value="paid">שולם</SelectItem>
@@ -209,12 +209,12 @@ export const ExpenseFilters: React.FC<ExpenseFiltersProps> = ({
               <Users className="h-3 w-3" />
               משלם
             </div>
-            <Select value={selectedPayer || ''} onValueChange={(value) => setSelectedPayer(value || null)}>
+            <Select value={selectedPayer || 'all'} onValueChange={(value) => setSelectedPayer(value === 'all' ? null : value)}>
               <SelectTrigger className="bg-background/50 backdrop-blur-sm border border-border/50 hover:border-primary/30 transition-colors duration-200">
                 <SelectValue placeholder="כל המשלמים" />
               </SelectTrigger>
               <SelectContent className="bg-background/95 backdrop-blur-lg border border-border/50">
-                <SelectItem value="">כל המשלמים</SelectItem>
+                <SelectItem value="all">כל המשלמים</SelectItem>
                 <SelectItem value="split">הוצאות משותפות</SelectItem>
                 {accountMembers?.map(member => (
                   <SelectItem key={member.user_id} value={member.user_id}>
