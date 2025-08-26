@@ -291,7 +291,7 @@ export const ReceiptValidation: React.FC<ReceiptValidationProps> = ({
                       <SelectTrigger className="min-w-[120px]">
                         <SelectValue placeholder="בחר קטגוריה" />
                       </SelectTrigger>
-                      <SelectContent className="z-[110] bg-background border shadow-lg">
+                      <SelectContent className="z-[200] bg-background border shadow-lg pointer-events-auto max-h-[200px] overflow-y-auto">
                         {CATEGORIES.map((category) => (
                           <SelectItem key={category} value={category} className="cursor-pointer hover:bg-accent">
                             {category}
@@ -310,7 +310,7 @@ export const ReceiptValidation: React.FC<ReceiptValidationProps> = ({
                       <SelectTrigger className="min-w-[120px]">
                         <SelectValue placeholder="בחר ילד" />
                       </SelectTrigger>
-                      <SelectContent className="z-[110]">
+                      <SelectContent className="z-[200] bg-background border shadow-lg pointer-events-auto max-h-[200px] overflow-y-auto">
                         <SelectItem value="none">ללא שיוך</SelectItem>
                         {childrenList.map((child) => (
                           <SelectItem key={child.id} value={child.id}>
@@ -330,7 +330,7 @@ export const ReceiptValidation: React.FC<ReceiptValidationProps> = ({
                       <SelectTrigger className="min-w-[160px]">
                         <SelectValue placeholder="בחר סוג תשלום" />
                       </SelectTrigger>
-                      <SelectContent className="z-[110]">
+                      <SelectContent className="z-[200] bg-background border shadow-lg pointer-events-auto max-h-[200px] overflow-y-auto">
                         {PAYMENT_TYPES.map((type) => (
                           <SelectItem key={type.value} value={type.value}>
                             {type.label}
