@@ -291,9 +291,9 @@ export const ReceiptValidation: React.FC<ReceiptValidationProps> = ({
                       <SelectTrigger className="min-w-[120px]">
                         <SelectValue placeholder="בחר קטגוריה" />
                       </SelectTrigger>
-                      <SelectContent className="z-[200] bg-background border shadow-lg pointer-events-auto max-h-[200px] overflow-y-auto">
+                      <SelectContent className="z-[200]">
                         {CATEGORIES.map((category) => (
-                          <SelectItem key={category} value={category} className="cursor-pointer hover:bg-accent">
+                          <SelectItem key={category} value={category}>
                             {category}
                           </SelectItem>
                         ))}
@@ -310,7 +310,7 @@ export const ReceiptValidation: React.FC<ReceiptValidationProps> = ({
                       <SelectTrigger className="min-w-[120px]">
                         <SelectValue placeholder="בחר ילד" />
                       </SelectTrigger>
-                      <SelectContent className="z-[200] bg-background border shadow-lg pointer-events-auto max-h-[200px] overflow-y-auto">
+                      <SelectContent className="z-[200]">
                         <SelectItem value="none">ללא שיוך</SelectItem>
                         {childrenList.map((child) => (
                           <SelectItem key={child.id} value={child.id}>
@@ -330,7 +330,7 @@ export const ReceiptValidation: React.FC<ReceiptValidationProps> = ({
                       <SelectTrigger className="min-w-[160px]">
                         <SelectValue placeholder="בחר סוג תשלום" />
                       </SelectTrigger>
-                      <SelectContent className="z-[200] bg-background border shadow-lg pointer-events-auto max-h-[200px] overflow-y-auto">
+                      <SelectContent className="z-[200]">
                         {PAYMENT_TYPES.map((type) => (
                           <SelectItem key={type.value} value={type.value}>
                             {type.label}
