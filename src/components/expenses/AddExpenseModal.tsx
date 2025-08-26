@@ -60,9 +60,8 @@ export const AddExpenseModal: React.FC<{ onSubmitSuccess?: () => void }> = ({ on
       };
 
       const handleKeyDown = (e: KeyboardEvent) => {
-        // Prevent common navigation shortcuts
-        if (e.key === 'Escape' || 
-            (e.ctrlKey && e.key === 'w') || 
+        // Prevent common navigation shortcuts but allow Escape for cancel
+        if ((e.ctrlKey && e.key === 'w') || 
             (e.altKey && e.key === 'F4') ||
             (e.key === 'F5') ||
             (e.ctrlKey && e.key === 'r')) {
