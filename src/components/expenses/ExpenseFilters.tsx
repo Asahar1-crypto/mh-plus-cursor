@@ -1,8 +1,9 @@
-
 import React from 'react';
-import { Filter } from 'lucide-react';
+import { Filter, Calendar, User, Tag, DollarSign, Users } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { Expense, Child } from '@/contexts/expense/types';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/auth';
@@ -47,7 +48,8 @@ export const ExpenseFilters: React.FC<ExpenseFiltersProps> = ({
     queryFn: () => memberService.getAccountMembers(account!.id),
     enabled: !!account?.id
   });
-  // Categories for filtering - updated to include all categories used in the system
+
+  // Categories for filtering
   const categories = [
     'חינוך',
     'רפואה', 
@@ -61,18 +63,8 @@ export const ExpenseFilters: React.FC<ExpenseFiltersProps> = ({
 
   // Generate months for dropdown
   const months = [
-    { value: 0, label: 'ינואר' },
-    { value: 1, label: 'פברואר' },
-    { value: 2, label: 'מרץ' },
-    { value: 3, label: 'אפריל' },
-    { value: 4, label: 'מאי' },
-    { value: 5, label: 'יוני' },
-    { value: 6, label: 'יולי' },
-    { value: 7, label: 'אוגוסט' },
-    { value: 8, label: 'ספטמבר' },
-    { value: 9, label: 'אוקטובר' },
-    { value: 10, label: 'נובמבר' },
-    { value: 11, label: 'דצמבר' },
+    'ינואר', 'פברואר', 'מרץ', 'אפריל', 'מאי', 'יוני',
+    'יולי', 'אוגוסט', 'ספטמבר', 'אוקטובר', 'נובמבר', 'דצמבר'
   ];
 
   // Current year and few years back for filtering
@@ -82,125 +74,149 @@ export const ExpenseFilters: React.FC<ExpenseFiltersProps> = ({
     new Date().getFullYear() - 2
   ];
 
+  const hasActiveFilters = selectedCategory || selectedChild || selectedStatus || selectedPayer;
+
+  const clearAllFilters = () => {
+    setSelectedCategory(null);
+    setSelectedChild(null);
+    setSelectedStatus(null);
+    setSelectedPayer(null);
+  };
+
   return (
-    <Card className="bg-muted/40">
-      <CardHeader className="pb-3">
-        <CardTitle className="text-lg flex items-center">
-          <Filter className="mr-2 h-5 w-5" /> סינון הוצאות
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-          <div className="space-y-2">
-            <label className="text-sm font-medium">לפי חודש</label>
-            <div className="flex gap-2">
-              <Select 
-                value={selectedMonth?.toString()} 
-                onValueChange={(value) => setSelectedMonth(Number(value))}
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder={months[new Date().getMonth()].label} />
-                </SelectTrigger>
-                <SelectContent>
-                  {months.map((month) => (
-                    <SelectItem key={month.value} value={month.value.toString()}>
-                      {month.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-
-              <Select 
-                value={selectedYear?.toString()} 
-                onValueChange={(value) => setSelectedYear(Number(value))}
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder={new Date().getFullYear().toString()} />
-                </SelectTrigger>
-                <SelectContent>
-                  {years.map((year) => (
-                    <SelectItem key={year} value={year.toString()}>
-                      {year}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+    <Card className="bg-gradient-to-br from-card/90 to-card/80 backdrop-blur-sm border border-border/50 shadow-lg animate-fade-in">
+      <CardHeader className="pb-4">
+        <div className="flex items-center justify-between">
+          <CardTitle className="flex items-center gap-2 text-lg">
+            <div className="p-2 bg-gradient-to-br from-primary/20 to-primary/10 rounded-lg">
+              <Filter className="h-4 w-4 text-primary" />
             </div>
-          </div>
-
-          <div className="space-y-2">
-            <label className="text-sm font-medium">לפי קטגוריה</label>
-            <Select 
-              value={selectedCategory || 'all'} 
-              onValueChange={(value) => setSelectedCategory(value === 'all' ? null : value)}
+            סינון הוצאות
+          </CardTitle>
+          {hasActiveFilters && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={clearAllFilters}
+              className="text-muted-foreground hover:text-foreground"
             >
-              <SelectTrigger>
+              נקה הכל
+            </Button>
+          )}
+        </div>
+      </CardHeader>
+      
+      <CardContent className="space-y-6">
+        {/* Filter Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+          {/* Category Filter */}
+          <div className="space-y-2">
+            <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+              <Tag className="h-3 w-3" />
+              קטגוריה
+            </div>
+            <Select value={selectedCategory || ''} onValueChange={(value) => setSelectedCategory(value || null)}>
+              <SelectTrigger className="bg-background/50 backdrop-blur-sm border border-border/50 hover:border-primary/30 transition-colors duration-200">
                 <SelectValue placeholder="כל הקטגוריות" />
               </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">הכל</SelectItem>
-                {categories.map((category) => (
-                  <SelectItem key={category} value={category}>
-                    {category}
-                  </SelectItem>
+              <SelectContent className="bg-background/95 backdrop-blur-lg border border-border/50">
+                <SelectItem value="">כל הקטגוריות</SelectItem>
+                {categories.map(category => (
+                  <SelectItem key={category} value={category}>{category}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
 
+          {/* Child Filter */}
           <div className="space-y-2">
-            <label className="text-sm font-medium">לפי סטטוס</label>
-            <Select 
-              value={selectedStatus || 'all'} 
-              onValueChange={(value) => setSelectedStatus(value === 'all' ? null : value as Expense['status'])}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="כל הסטטוסים" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">הכל</SelectItem>
-                <SelectItem value="pending">ממתינה לאישור</SelectItem>
-                <SelectItem value="approved">אושרה</SelectItem>
-                <SelectItem value="rejected">נדחתה</SelectItem>
-                <SelectItem value="paid">שולמה</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-2">
-            <label className="text-sm font-medium">לפי שיוך לילד</label>
-            <Select 
-              value={selectedChild || 'all'} 
-              onValueChange={(value) => setSelectedChild(value === 'all' ? null : value)}
-            >
-              <SelectTrigger>
+            <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+              <User className="h-3 w-3" />
+              ילד
+            </div>
+            <Select value={selectedChild || ''} onValueChange={(value) => setSelectedChild(value || null)}>
+              <SelectTrigger className="bg-background/50 backdrop-blur-sm border border-border/50 hover:border-primary/30 transition-colors duration-200">
                 <SelectValue placeholder="כל הילדים" />
               </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">הכל</SelectItem>
-                <SelectItem value="general">הוצאה כללית</SelectItem>
-                {childrenList.map((child) => (
-                  <SelectItem key={child.id} value={child.id}>
-                    {child.name}
-                  </SelectItem>
+              <SelectContent className="bg-background/95 backdrop-blur-lg border border-border/50">
+                <SelectItem value="">כל הילדים</SelectItem>
+                {childrenList.map(child => (
+                  <SelectItem key={child.id} value={child.id}>{child.name}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
 
+          {/* Status Filter */}
           <div className="space-y-2">
-            <label className="text-sm font-medium">מי צריך לשלם</label>
-            <Select 
-              value={selectedPayer || 'all'} 
-              onValueChange={(value) => setSelectedPayer(value === 'all' ? null : value)}
-            >
-              <SelectTrigger>
+            <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+              <DollarSign className="h-3 w-3" />
+              סטטוס
+            </div>
+            <Select value={selectedStatus || ''} onValueChange={(value) => setSelectedStatus(value as Expense['status'] || null)}>
+              <SelectTrigger className="bg-background/50 backdrop-blur-sm border border-border/50 hover:border-primary/30 transition-colors duration-200">
+                <SelectValue placeholder="כל הסטטוסים" />
+              </SelectTrigger>
+              <SelectContent className="bg-background/95 backdrop-blur-lg border border-border/50">
+                <SelectItem value="">כל הסטטוסים</SelectItem>
+                <SelectItem value="pending">ממתין לאישור</SelectItem>
+                <SelectItem value="approved">מאושר</SelectItem>
+                <SelectItem value="paid">שולם</SelectItem>
+                <SelectItem value="rejected">נדחה</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Month Filter */}
+          <div className="space-y-2">
+            <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+              <Calendar className="h-3 w-3" />
+              חודש
+            </div>
+            <Select value={selectedMonth.toString()} onValueChange={(value) => setSelectedMonth(parseInt(value))}>
+              <SelectTrigger className="bg-background/50 backdrop-blur-sm border border-border/50 hover:border-primary/30 transition-colors duration-200">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="bg-background/95 backdrop-blur-lg border border-border/50">
+                {months.map((month, index) => (
+                  <SelectItem key={index} value={index.toString()}>{month}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Year Filter */}
+          <div className="space-y-2">
+            <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+              <Calendar className="h-3 w-3" />
+              שנה
+            </div>
+            <Select value={selectedYear.toString()} onValueChange={(value) => setSelectedYear(parseInt(value))}>
+              <SelectTrigger className="bg-background/50 backdrop-blur-sm border border-border/50 hover:border-primary/30 transition-colors duration-200">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="bg-background/95 backdrop-blur-lg border border-border/50">
+                {years.map(year => (
+                  <SelectItem key={year} value={year.toString()}>{year}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Payer Filter */}
+          <div className="space-y-2">
+            <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+              <Users className="h-3 w-3" />
+              משלם
+            </div>
+            <Select value={selectedPayer || ''} onValueChange={(value) => setSelectedPayer(value || null)}>
+              <SelectTrigger className="bg-background/50 backdrop-blur-sm border border-border/50 hover:border-primary/30 transition-colors duration-200">
                 <SelectValue placeholder="כל המשלמים" />
               </SelectTrigger>
-              <SelectContent className="bg-background border shadow-lg z-50">
-                <SelectItem value="all">הכל</SelectItem>
-                <SelectItem value="split">חצי-חצי</SelectItem>
-                {accountMembers?.map((member) => (
+              <SelectContent className="bg-background/95 backdrop-blur-lg border border-border/50">
+                <SelectItem value="">כל המשלמים</SelectItem>
+                <SelectItem value="split">הוצאות משותפות</SelectItem>
+                {accountMembers?.map(member => (
                   <SelectItem key={member.user_id} value={member.user_id}>
                     {member.user_name}
                   </SelectItem>
@@ -209,6 +225,57 @@ export const ExpenseFilters: React.FC<ExpenseFiltersProps> = ({
             </Select>
           </div>
         </div>
+
+        {/* Active Filters Display */}
+        {hasActiveFilters && (
+          <div className="flex flex-wrap gap-2 pt-4 border-t border-border/50">
+            <span className="text-sm text-muted-foreground">פילטרים פעילים:</span>
+            {selectedCategory && (
+              <Badge variant="secondary" className="gap-2 bg-primary/10 text-primary border-primary/20">
+                קטגוריה: {selectedCategory}
+                <button
+                  onClick={() => setSelectedCategory(null)}
+                  className="ml-1 hover:text-destructive"
+                >
+                  ×
+                </button>
+              </Badge>
+            )}
+            {selectedChild && (
+              <Badge variant="secondary" className="gap-2 bg-primary/10 text-primary border-primary/20">
+                ילד: {childrenList.find(c => c.id === selectedChild)?.name}
+                <button
+                  onClick={() => setSelectedChild(null)}
+                  className="ml-1 hover:text-destructive"
+                >
+                  ×
+                </button>
+              </Badge>
+            )}
+            {selectedStatus && (
+              <Badge variant="secondary" className="gap-2 bg-primary/10 text-primary border-primary/20">
+                סטטוס: {selectedStatus === 'pending' ? 'ממתין' : selectedStatus === 'approved' ? 'מאושר' : selectedStatus === 'paid' ? 'שולם' : 'נדחה'}
+                <button
+                  onClick={() => setSelectedStatus(null)}
+                  className="ml-1 hover:text-destructive"
+                >
+                  ×
+                </button>
+              </Badge>
+            )}
+            {selectedPayer && (
+              <Badge variant="secondary" className="gap-2 bg-primary/10 text-primary border-primary/20">
+                משלם: {selectedPayer === 'split' ? 'משותף' : accountMembers?.find(m => m.user_id === selectedPayer)?.user_name}
+                <button
+                  onClick={() => setSelectedPayer(null)}
+                  className="ml-1 hover:text-destructive"
+                >
+                  ×
+                </button>
+              </Badge>
+            )}
+          </div>
+        )}
       </CardContent>
     </Card>
   );
