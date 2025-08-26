@@ -20,7 +20,6 @@ import { toast } from 'sonner';
 import { 
   Check, 
   X, 
-  DollarSign, 
   Calendar, 
   User, 
   Tag, 
@@ -39,13 +38,15 @@ interface ExpensesTableProps {
   approveExpense: (id: string) => Promise<void>;
   rejectExpense: (id: string) => Promise<void>;
   markAsPaid: (id: string) => Promise<void>;
+  updateExpenseStatus: (id: string, status: Expense['status']) => Promise<void>;
 }
 
 export const ExpensesTable: React.FC<ExpensesTableProps> = ({ 
   expenses, 
   approveExpense, 
   rejectExpense, 
-  markAsPaid 
+  markAsPaid,
+  updateExpenseStatus
 }) => {
   const { account } = useAuth();
   const [selectedPendingExpenses, setSelectedPendingExpenses] = useState<string[]>([]);
@@ -141,6 +142,15 @@ export const ExpensesTable: React.FC<ExpensesTableProps> = ({
       toast.success('ההוצאה סומנה כשולמה');
     } catch (error) {
       toast.error('שגיאה בסימון ההוצאה כשולמה');
+    }
+  };
+
+  const handleStatusChange = async (expenseId: string, newStatus: Expense['status']) => {
+    try {
+      await updateExpenseStatus(expenseId, newStatus);
+      toast.success('הסטטוס עודכן בהצלחה');
+    } catch (error) {
+      toast.error('שגיאה בעדכון הסטטוס');
     }
   };
 
@@ -379,7 +389,20 @@ export const ExpensesTable: React.FC<ExpensesTableProps> = ({
                     
                     <TableCell className="text-right">
                       <div className="flex justify-end">
-                        <StatusBadge status={expense.status} />
+                        <Select
+                          value={expense.status}
+                          onValueChange={(value) => handleStatusChange(expense.id, value as Expense['status'])}
+                        >
+                          <SelectTrigger className="w-32 h-8 text-xs">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="pending">ממתין</SelectItem>
+                            <SelectItem value="approved">מאושר</SelectItem>
+                            <SelectItem value="paid">שולם</SelectItem>
+                            <SelectItem value="rejected">נדחה</SelectItem>
+                          </SelectContent>
+                        </Select>
                       </div>
                     </TableCell>
                     

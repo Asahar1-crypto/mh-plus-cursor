@@ -35,6 +35,7 @@ export const ExpenseProvider = ({ children }: ExpenseProviderProps) => {
     approveExpense,
     rejectExpense,
     markAsPaid,
+    updateExpenseStatus,
     addChild,
     uploadReceipt,
     isSubmitting
@@ -63,6 +64,7 @@ export const ExpenseProvider = ({ children }: ExpenseProviderProps) => {
     approveExpense,
     rejectExpense,
     markAsPaid,
+    updateExpenseStatus,
     addChild,
     getPendingExpenses,
     getApprovedExpenses,

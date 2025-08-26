@@ -23,6 +23,7 @@ const ExpensesPage = () => {
     approveExpense, 
     rejectExpense, 
     markAsPaid,
+    updateExpenseStatus,
     isLoading,
     refreshData
   } = useExpense();
@@ -256,6 +257,7 @@ const ExpensesPage = () => {
                   approveExpense={approveExpense}
                   rejectExpense={rejectExpense}
                   markAsPaid={markAsPaid}
+                  updateExpenseStatus={updateExpenseStatus}
                 />
               </TabsContent>
 

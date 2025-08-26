@@ -10,6 +10,7 @@ export interface ExpenseActions {
   approveExpense: (id: string) => Promise<void>;
   rejectExpense: (id: string) => Promise<void>;
   markAsPaid: (id: string) => Promise<void>;
+  updateExpenseStatus: (id: string, status: 'pending' | 'approved' | 'rejected' | 'paid') => Promise<void>;
   addChild: (child: Omit<Child, 'id'>) => Promise<void>;
   uploadReceipt: (expenseId: string, receiptUrl: string) => Promise<void>;
   isSubmitting: boolean;
@@ -189,6 +190,7 @@ export const useExpenseActions = (
     approveExpense,
     rejectExpense,
     markAsPaid,
+    updateExpenseStatus,
     addChild,
     uploadReceipt,
     isSubmitting
