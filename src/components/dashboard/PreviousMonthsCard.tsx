@@ -1,8 +1,8 @@
 import React, { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/auth';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Clock, Calendar } from 'lucide-react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Clock, Calendar, CheckCircle } from 'lucide-react';
 import { memberService } from '@/contexts/auth/services/account';
 import type { Expense } from '@/contexts/expense/types';
 
@@ -74,67 +74,52 @@ export const PreviousMonthsCard: React.FC<PreviousMonthsCardProps> = ({
   const totalCount = previousMonthsExpenses.length;
 
   return (
-    <Card className="relative overflow-hidden bg-gradient-to-br from-background/95 to-background/80 backdrop-blur-sm border border-border/50 hover:border-primary/30 transition-all duration-500 group animate-fade-in">
-      {/* Background gradient effect */}
-      <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-secondary/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+    <Card className="bg-gradient-to-br from-card/90 to-card/95 backdrop-blur-lg border border-border/50 shadow-xl hover:shadow-2xl overflow-hidden relative group hover:scale-105 transition-all duration-500">
+      <div className="absolute inset-0 bg-gradient-to-br from-amber-500/10 to-orange-500/15 opacity-60 group-hover:opacity-90 transition-opacity duration-300"></div>
+      <div className="absolute -top-20 -right-20 w-40 h-40 bg-amber-400/20 rounded-full blur-3xl group-hover:scale-150 transition-transform duration-700"></div>
       
-      <CardHeader className="relative pb-2">
-        <CardTitle className="flex items-center gap-2 text-lg font-bold">
-          <div className="p-2 rounded-xl bg-gradient-to-br from-amber-100 to-orange-100 dark:from-amber-950/50 dark:to-orange-950/50 group-hover:scale-110 transition-transform duration-300">
-            <Calendar className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+      <CardHeader className="pb-3 p-4 sm:p-6 relative z-10">
+        <div className="flex items-center justify-between">
+          <CardDescription className="text-sm font-semibold text-amber-700 dark:text-amber-300 bg-amber-100/50 dark:bg-amber-900/30 px-3 py-1 rounded-full">
+            הוצאות מחודשים קודמים
+          </CardDescription>
+          <div className="p-2 bg-amber-500/20 rounded-full group-hover:bg-amber-500/30 transition-colors duration-300">
+            <Calendar className="h-5 w-5 text-amber-600 dark:text-amber-400 animate-pulse group-hover:animate-ping transition-all duration-300" />
           </div>
-          <span className="bg-gradient-to-r from-amber-600 to-orange-600 bg-clip-text text-transparent">
-            חודשים קודמים
-          </span>
+        </div>
+        <CardTitle className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-amber-600 to-orange-600 bg-clip-text text-transparent group-hover:scale-110 transition-transform duration-300 origin-left">
+          ₪{totalAmount.toFixed(0)}
         </CardTitle>
       </CardHeader>
       
-      <CardContent className="relative space-y-4">
-        {/* Total amount */}
-        <div className="text-center p-3 bg-gradient-to-r from-muted/50 to-muted/30 backdrop-blur-sm rounded-xl border border-border/50">
-          <div className="text-2xl font-bold">₪{totalAmount.toLocaleString()}</div>
-          <div className="text-sm text-muted-foreground">{totalCount} הוצאות מאושרות</div>
+      <CardContent className="p-4 sm:p-6 pt-0 space-y-3 relative z-10">
+        <div className="flex items-center gap-3">
+          <div className="w-3 h-3 bg-amber-500 rounded-full animate-pulse shadow-lg shadow-amber-500/50"></div>
+          <span className="text-sm font-medium text-muted-foreground">
+            {totalCount} הוצאות ממתינות לתשלום
+          </span>
         </div>
 
-        {/* Status indicator */}
-        <div className="text-center">
-          <div className="text-sm font-semibold text-muted-foreground mb-3 flex items-center justify-center gap-2">
-            <div className="w-2 h-2 bg-amber-500 rounded-full animate-pulse"></div>
-            ממתינות לתשלום
-          </div>
-          
-          {totalCount === 0 ? (
-            <div className="p-4 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/30 rounded-xl border border-green-200 dark:border-green-800">
-              <div className="text-green-700 dark:text-green-400 font-medium">
+        {totalCount === 0 ? (
+          <div className="text-xs space-y-2 mt-4 pt-4 border-t border-green-200/50 bg-green-100/30 dark:bg-green-900/20 backdrop-blur-sm rounded-lg p-3">
+            <div className="flex items-center justify-center gap-2">
+              <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
+              <span className="text-green-700 dark:text-green-300 font-medium">
                 אין הוצאות ממתינות מחודשים קודמים
-              </div>
+              </span>
             </div>
-          ) : (
-            <div className="p-4 bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-950/30 dark:to-orange-950/30 rounded-xl border border-amber-200 dark:border-amber-800">
-              <div className="flex items-center justify-center gap-2 mb-2">
-                <Clock className="h-5 w-5 text-amber-600 animate-pulse" />
-                <div className="font-bold text-amber-700 dark:text-amber-400">
-                  {totalCount} הוצאות ממתינות לתשלום
-                </div>
-              </div>
-              <div className="text-xs text-muted-foreground bg-background/50 p-2 rounded-lg">
-                הוצאות שאושרו בחודשים קודמים ועדיין לא שולמו
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Individual breakdown if there are expenses */}
-        {breakdown.length > 0 && (
-          <div className="space-y-2 pt-2 border-t border-border/50">
-            <div className="text-sm font-medium text-center text-muted-foreground">פילוח לפי משתמש:</div>
-            {breakdown.map((user, index) => (
-              <div key={index} className="flex justify-between items-center p-2 bg-gradient-to-r from-background/80 to-background/60 backdrop-blur-sm rounded-lg border border-border/30">
-                <span className="text-sm font-medium">{user.userName}</span>
-                <span className="text-sm font-bold">₪{user.amount.toLocaleString()} ({user.count})</span>
-              </div>
-            ))}
           </div>
+        ) : (
+          breakdown.length > 0 && (
+            <div className="text-xs space-y-2 mt-4 pt-4 border-t border-amber-200/50 bg-background/30 backdrop-blur-sm rounded-lg p-3">
+              {breakdown.map((user, index) => (
+                <div key={index} className="flex justify-between items-center text-muted-foreground hover:text-foreground transition-colors duration-200">
+                  <span className="font-semibold">{user.userName}:</span>
+                  <span className="font-mono bg-amber-100/50 dark:bg-amber-900/30 px-2 py-1 rounded">₪{user.amount.toFixed(0)} ({user.count})</span>
+                </div>
+              ))}
+            </div>
+          )
         )}
       </CardContent>
     </Card>
