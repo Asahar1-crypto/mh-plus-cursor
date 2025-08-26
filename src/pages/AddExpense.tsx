@@ -7,8 +7,8 @@ import { ExpenseCard } from '@/components/expenses/ExpenseCard';
 const AddExpense = () => {
   const navigate = useNavigate();
   return (
-    <div className="container mx-auto animate-fade-in py-6">
-      <h1 className="text-3xl font-bold mb-6">הוספת הוצאה חדשה</h1>
+    <div className="container mx-auto animate-fade-in py-6" dir="rtl">
+      <h1 className="text-3xl font-bold mb-6 text-right">הוספת הוצאה חדשה</h1>
       
       <ExpenseCard 
         title="פרטי ההוצאה"
