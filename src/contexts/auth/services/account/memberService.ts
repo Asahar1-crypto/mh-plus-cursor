@@ -10,24 +10,37 @@ export const memberService = {
     try {
       console.log(`Getting members for account ${accountId}`);
       
-      const { data, error } = await supabase
+      // First get account members
+      const { data: members, error: membersError } = await supabase
         .from('account_members')
-        .select(`
-          user_id,
-          role,
-          joined_at,
-          profiles!inner(name)
-        `)
+        .select('user_id, role, joined_at')
         .eq('account_id', accountId);
       
-      if (error) {
-        console.error('Error getting account members:', error);
-        throw error;
+      if (membersError) {
+        console.error('Error getting account members:', membersError);
+        throw membersError;
       }
-      
-      return (data || []).map(member => ({
+
+      if (!members || members.length === 0) {
+        return [];
+      }
+
+      // Then get names for all user IDs
+      const userIds = members.map(m => m.user_id);
+      const { data: profiles, error: profilesError } = await supabase
+        .from('profiles')
+        .select('id, name')
+        .in('id', userIds);
+
+      if (profilesError) {
+        console.error('Error getting profiles:', profilesError);
+        // Continue without names if profiles fetch fails
+      }
+
+      // Combine the data
+      return members.map(member => ({
         user_id: member.user_id,
-        user_name: member.profiles?.name || 'משתמש לא ידוע',
+        user_name: profiles?.find(p => p.id === member.user_id)?.name || 'משתמש לא ידוע',
         role: member.role,
         joined_at: member.joined_at
       }));
