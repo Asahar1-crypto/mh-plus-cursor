@@ -12,7 +12,7 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { Switch } from '@/components/ui/switch';
 import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
-import { Calendar as CalendarIcon } from 'lucide-react';
+import { Calendar as CalendarIcon, DollarSign, Users, User, ArrowLeftRight } from 'lucide-react';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
@@ -75,25 +75,45 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({ onSubmitSuccess, onCan
       let includeInMonthlyBalance = true;
       let splitEqually = false;
       
-      const currentUser = accountMembers?.find(m => m.role === 'admin')?.user_id || '';
-      const otherUser = accountMembers?.find(m => m.role !== 'admin')?.user_id || accountMembers?.[1]?.user_id || '';
+      const currentUser = accountMembers?.find(m => m.role === 'admin')?.user_id || accountMembers?.[0]?.user_id || '';
+      const otherUser = accountMembers?.find(m => m.user_id !== currentUser)?.user_id || '';
       
       switch (data.paymentType) {
-        case 'i_paid_they_owe':
-          paidById = otherUser; // They need to pay back
+        case 'i_paid_shared':
+          // אני שילמתי - הוצאה משותפת (חצי החזר)
+          paidById = otherUser; // They owe me half
+          splitEqually = true;
           includeInMonthlyBalance = true;
           break;
-        case 'they_paid_i_owe':
-          paidById = currentUser; // I need to pay back
+        case 'i_paid_theirs':
+          // אני שילמתי - הוצאה של נטלי (החזר מלא)
+          paidById = otherUser; // They owe me full amount
+          splitEqually = false;
           includeInMonthlyBalance = true;
           break;
-        case 'i_paid_my_expense':
-          paidById = currentUser; // It's my expense only
-          includeInMonthlyBalance = false;
+        case 'they_paid_shared':
+          // נטלי שילמה - הוצאה משותפת (חצי החזר)
+          paidById = currentUser; // I owe them half
+          splitEqually = true;
+          includeInMonthlyBalance = true;
           break;
-        case 'they_paid_their_expense':
-          paidById = otherUser; // It's their expense only
-          includeInMonthlyBalance = false;
+        case 'they_paid_mine':
+          // נטלי שילמה - הוצאה שלי (החזר מלא)
+          paidById = currentUser; // I owe them full amount
+          splitEqually = false;
+          includeInMonthlyBalance = true;
+          break;
+        case 'i_owe_them':
+          // אני צריך לשלם לנטלי (ללא תשלום מוקדם)
+          paidById = currentUser; // I owe them
+          splitEqually = false;
+          includeInMonthlyBalance = true;
+          break;
+        case 'they_owe_me':
+          // נטלי צריכה לשלם לי (ללא תשלום מוקדם)
+          paidById = otherUser; // They owe me
+          splitEqually = false;
+          includeInMonthlyBalance = true;
           break;
         default:
           paidById = currentUser;
@@ -292,64 +312,100 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({ onSubmitSuccess, onCan
         <FormField
           control={form.control}
           name="paymentType"
-          render={({ field }) => (
-            <FormItem className="space-y-3">
-              <FormLabel className="text-base">מי שילם ומי צריך לשלם?</FormLabel>
-              <FormControl>
-                <RadioGroup
-                  onValueChange={field.onChange}
-                  defaultValue={field.value}
-                  className="space-y-4"
-                  dir="rtl"
-                >
-                  {accountMembers && accountMembers.length >= 2 && (
-                    <>
-                      <div className="flex items-center space-x-3 space-x-reverse">
-                        <RadioGroupItem value="i_paid_they_owe" id="i_paid_they_owe" />
-                        <label 
-                          htmlFor="i_paid_they_owe" 
-                          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
-                        >
-                          אני שילמתי ו{accountMembers.find(m => m.user_id !== (accountMembers.find(m => m.role === 'admin')?.user_id || accountMembers[0].user_id))?.user_name || 'השותף'} צריך/צריכה להחזיר לי
-                        </label>
+          render={({ field }) => {
+            const currentUserName = accountMembers?.find(m => m.role === 'admin')?.user_name || 'אני';
+            const otherUserName = accountMembers?.find(m => m.user_id !== (accountMembers?.find(m => m.role === 'admin')?.user_id || accountMembers?.[0]?.user_id))?.user_name || 'השותף';
+            
+            const paymentOptions = [
+              {
+                value: 'i_paid_shared',
+                label: `אני שילמתי - הוצאה משותפת`,
+                description: `${otherUserName} יחזיר לי חצי מהסכום`,
+                icon: <Users className="h-4 w-4" />,
+                color: 'text-blue-600 dark:text-blue-400'
+              },
+              {
+                value: 'i_paid_theirs',
+                label: `אני שילמתי - הוצאה של ${otherUserName}`,
+                description: `${otherUserName} יחזיר לי את מלוא הסכום`,
+                icon: <User className="h-4 w-4" />,
+                color: 'text-green-600 dark:text-green-400'
+              },
+              {
+                value: 'they_paid_shared',
+                label: `${otherUserName} שילם/ה - הוצאה משותפת`,
+                description: `אני אחזיר ל${otherUserName} חצי מהסכום`,
+                icon: <Users className="h-4 w-4" />,
+                color: 'text-blue-600 dark:text-blue-400'
+              },
+              {
+                value: 'they_paid_mine',
+                label: `${otherUserName} שילם/ה - הוצאה שלי`,
+                description: `אני אחזיר ל${otherUserName} את מלוא הסכום`,
+                icon: <User className="h-4 w-4" />,
+                color: 'text-red-600 dark:text-red-400'
+              },
+              {
+                value: 'i_owe_them',
+                label: `אני צריך לשלם ל${otherUserName}`,
+                description: 'חוב ללא תשלום מוקדם (כמו מזונות, דמי ילדים)',
+                icon: <ArrowLeftRight className="h-4 w-4" />,
+                color: 'text-orange-600 dark:text-orange-400'
+              },
+              {
+                value: 'they_owe_me',
+                label: `${otherUserName} צריך/צריכה לשלם לי`,
+                description: 'חוב ללא תשלום מוקדם (כמו מזונות, השתתפות)',
+                icon: <ArrowLeftRight className="h-4 w-4" />,
+                color: 'text-purple-600 dark:text-purple-400'
+              }
+            ];
+
+            return (
+              <FormItem className="space-y-4">
+                <FormLabel className="text-lg font-semibold">מי שילם ומי צריך לשלם?</FormLabel>
+                <FormControl>
+                  <RadioGroup
+                    onValueChange={field.onChange}
+                    defaultValue={field.value}
+                    className="space-y-3"
+                    dir="rtl"
+                  >
+                    {accountMembers && accountMembers.length >= 2 && paymentOptions.map((option) => (
+                      <div 
+                        key={option.value}
+                        className="flex items-start space-x-3 space-x-reverse rounded-lg border p-4 hover:bg-muted/50 transition-colors"
+                      >
+                        <RadioGroupItem 
+                          value={option.value} 
+                          id={option.value}
+                          className="mt-1" 
+                        />
+                        <div className="flex-1 space-y-1">
+                          <label 
+                            htmlFor={option.value} 
+                            className="flex items-center gap-2 text-sm font-medium leading-none cursor-pointer"
+                          >
+                            <span className={option.color}>
+                              {option.icon}
+                            </span>
+                            {option.label}
+                          </label>
+                          <p className="text-xs text-muted-foreground">
+                            {option.description}
+                          </p>
+                        </div>
                       </div>
-                      <div className="flex items-center space-x-3 space-x-reverse">
-                        <RadioGroupItem value="they_paid_i_owe" id="they_paid_i_owe" />
-                        <label 
-                          htmlFor="they_paid_i_owe" 
-                          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
-                        >
-                          {accountMembers.find(m => m.user_id !== (accountMembers.find(m => m.role === 'admin')?.user_id || accountMembers[0].user_id))?.user_name || 'השותף'} שילם/ה ואני צריך/צריכה להחזיר לו/לה
-                        </label>
-                      </div>
-                      <div className="flex items-center space-x-3 space-x-reverse">
-                        <RadioGroupItem value="i_paid_my_expense" id="i_paid_my_expense" />
-                        <label 
-                          htmlFor="i_paid_my_expense" 
-                          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
-                        >
-                          אני שילמתי וזה רק עליי (אין החזר)
-                        </label>
-                      </div>
-                      <div className="flex items-center space-x-3 space-x-reverse">
-                        <RadioGroupItem value="they_paid_their_expense" id="they_paid_their_expense" />
-                        <label 
-                          htmlFor="they_paid_their_expense" 
-                          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
-                        >
-                          {accountMembers.find(m => m.user_id !== (accountMembers.find(m => m.role === 'admin')?.user_id || accountMembers[0].user_id))?.user_name || 'השותף'} שילם/ה וזה רק עליו/עליה (אין החזר)
-                        </label>
-                      </div>
-                    </>
-                  )}
-                </RadioGroup>
-              </FormControl>
-              <FormDescription>
-                בחר את הסיטואציה המתאימה - מי שילם בפועל ומי צריך לשלם
-              </FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
+                    ))}
+                  </RadioGroup>
+                </FormControl>
+                <FormDescription>
+                  בחר את המצב המתאים - מי שילם בפועל ואיך לחלק את ההוצאה
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            );
+          }}
         />
         
         <FormField

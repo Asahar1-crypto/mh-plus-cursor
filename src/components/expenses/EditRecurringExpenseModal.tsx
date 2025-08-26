@@ -4,14 +4,16 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Switch } from '@/components/ui/switch';
 import { Expense, Child } from '@/contexts/expense/types';
 import { useToast } from '@/hooks/use-toast';
 import { toast } from 'sonner';
+import { Users, User, ArrowLeftRight } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/auth';
 import { memberService } from '@/contexts/auth/services/account/memberService';
@@ -22,8 +24,16 @@ const editRecurringExpenseSchema = z.object({
   description: z.string().min(1, 'נדרש תיאור'),
   category: z.string().min(1, 'נדרש לבחור קטגוריה'),
   childId: z.string().optional(),
-  paidById: z.string().min(1, 'נדרש לבחור מי משלם'),
-  splitEqually: z.boolean(),
+  paymentType: z.enum([
+    'i_paid_shared', 
+    'i_paid_theirs', 
+    'they_paid_shared', 
+    'they_paid_mine', 
+    'i_owe_them', 
+    'they_owe_me'
+  ], {
+    message: 'יש לבחור את סוג התשלום'
+  }),
   frequency: z.enum(['monthly', 'weekly', 'yearly']),
   hasEndDate: z.boolean(),
   endDate: z.string().optional(),
@@ -63,30 +73,52 @@ export const EditRecurringExpenseModal: React.FC<EditRecurringExpenseModalProps>
       description: '',
       category: '',
       childId: '',
-      paidById: '',
-      splitEqually: false,
+      paymentType: undefined,
       frequency: 'monthly',
       hasEndDate: false,
       endDate: '',
     },
   });
 
+  // Convert existing expense data to payment type
+  const getPaymentTypeFromExpense = (expense: Expense) => {
+    if (!accountMembers) return undefined;
+    
+    const currentUser = accountMembers.find(m => m.role === 'admin')?.user_id || accountMembers[0]?.user_id || '';
+    const isCurrentUserPaying = expense.paidById === currentUser;
+    const isSplitEqually = expense.splitEqually;
+    
+    // Logic to determine payment type based on existing data
+    if (isCurrentUserPaying && isSplitEqually) {
+      return 'they_paid_shared'; // They paid, shared expense, I owe half
+    } else if (isCurrentUserPaying && !isSplitEqually) {
+      return 'they_paid_mine'; // They paid, my expense, I owe full
+    } else if (!isCurrentUserPaying && isSplitEqually) {
+      return 'i_paid_shared'; // I paid, shared expense, they owe half
+    } else if (!isCurrentUserPaying && !isSplitEqually) {
+      return 'i_paid_theirs'; // I paid, their expense, they owe full
+    }
+    
+    return undefined;
+  };
+
   // Reset form when expense changes
   useEffect(() => {
-    if (expense) {
+    if (expense && accountMembers) {
+      const paymentType = getPaymentTypeFromExpense(expense);
+      
       form.reset({
         amount: expense.amount,
         description: expense.description,
         category: expense.category || '',
         childId: expense.childId || '',
-        paidById: expense.paidById,
-        splitEqually: expense.splitEqually,
+        paymentType: paymentType,
         frequency: (expense.frequency as 'monthly' | 'weekly' | 'yearly') || 'monthly',
         hasEndDate: expense.hasEndDate || false,
         endDate: expense.endDate || '',
       });
     }
-  }, [expense, form]);
+  }, [expense, accountMembers, form]);
 
   const categories = [
     'חינוך',
@@ -105,15 +137,53 @@ export const EditRecurringExpenseModal: React.FC<EditRecurringExpenseModalProps>
     setIsSubmitting(true);
 
     try {
+      // Determine paidById and expense settings based on payment type
+      let paidById: string;
+      let includeInMonthlyBalance = true;
+      let splitEqually = false;
+      
+      const currentUser = accountMembers?.find(m => m.role === 'admin')?.user_id || accountMembers?.[0]?.user_id || '';
+      const otherUser = accountMembers?.find(m => m.user_id !== currentUser)?.user_id || '';
+      
+      switch (data.paymentType) {
+        case 'i_paid_shared':
+          paidById = otherUser;
+          splitEqually = true;
+          break;
+        case 'i_paid_theirs':
+          paidById = otherUser;
+          splitEqually = false;
+          break;
+        case 'they_paid_shared':
+          paidById = currentUser;
+          splitEqually = true;
+          break;
+        case 'they_paid_mine':
+          paidById = currentUser;
+          splitEqually = false;
+          break;
+        case 'i_owe_them':
+          paidById = currentUser;
+          splitEqually = false;
+          break;
+        case 'they_owe_me':
+          paidById = otherUser;
+          splitEqually = false;
+          break;
+        default:
+          paidById = currentUser;
+      }
+
       const updateData: any = {
         amount: data.amount,
         description: data.description,
         category: data.category,
-        paid_by_id: data.paidById,
-        split_equally: data.splitEqually,
+        paid_by_id: paidById,
+        split_equally: splitEqually,
         frequency: data.frequency,
         has_end_date: data.hasEndDate,
         end_date: data.hasEndDate ? data.endDate : null,
+        include_in_monthly_balance: includeInMonthlyBalance,
         updated_at: new Date().toISOString(),
       };
 
@@ -143,7 +213,7 @@ export const EditRecurringExpenseModal: React.FC<EditRecurringExpenseModalProps>
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>עריכת הוצאה חוזרת</DialogTitle>
           <DialogDescription>
@@ -243,73 +313,124 @@ export const EditRecurringExpenseModal: React.FC<EditRecurringExpenseModalProps>
               )}
             />
 
-            <div className="grid grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="paidById"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>מי משלם</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="בחר מי משלם" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {accountMembers?.map((member) => (
-                          <SelectItem key={member.user_id} value={member.user_id}>
-                            {member.user_name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+            <FormField
+              control={form.control}
+              name="paymentType"
+              render={({ field }) => {
+                const currentUserName = accountMembers?.find(m => m.role === 'admin')?.user_name || 'אני';
+                const otherUserName = accountMembers?.find(m => m.user_id !== (accountMembers?.find(m => m.role === 'admin')?.user_id || accountMembers?.[0]?.user_id))?.user_name || 'השותף';
+                
+                const paymentOptions = [
+                  {
+                    value: 'i_paid_shared',
+                    label: `אני אשלם - הוצאה משותפת`,
+                    description: `${otherUserName} יחזיר לי חצי מהסכום`,
+                    icon: <Users className="h-4 w-4" />,
+                    color: 'text-blue-600 dark:text-blue-400'
+                  },
+                  {
+                    value: 'i_paid_theirs',
+                    label: `אני אשלם - הוצאה של ${otherUserName}`,
+                    description: `${otherUserName} יחזיר לי את מלוא הסכום`,
+                    icon: <User className="h-4 w-4" />,
+                    color: 'text-green-600 dark:text-green-400'
+                  },
+                  {
+                    value: 'they_paid_shared',
+                    label: `${otherUserName} ישלם - הוצאה משותפת`,
+                    description: `אני אחזיר ל${otherUserName} חצי מהסכום`,
+                    icon: <Users className="h-4 w-4" />,
+                    color: 'text-blue-600 dark:text-blue-400'
+                  },
+                  {
+                    value: 'they_paid_mine',
+                    label: `${otherUserName} ישלם - הוצאה שלי`,
+                    description: `אני אחזיר ל${otherUserName} את מלוא הסכום`,
+                    icon: <User className="h-4 w-4" />,
+                    color: 'text-red-600 dark:text-red-400'
+                  },
+                  {
+                    value: 'i_owe_them',
+                    label: `אני צריך לשלם ל${otherUserName}`,
+                    description: 'חוב ללא תשלום מוקדם (כמו מזונות, דמי ילדים)',
+                    icon: <ArrowLeftRight className="h-4 w-4" />,
+                    color: 'text-orange-600 dark:text-orange-400'
+                  },
+                  {
+                    value: 'they_owe_me',
+                    label: `${otherUserName} צריך לשלם לי`,
+                    description: 'חוב ללא תשלום מוקדם (כמו מזונות, השתתפות)',
+                    icon: <ArrowLeftRight className="h-4 w-4" />,
+                    color: 'text-purple-600 dark:text-purple-400'
+                  }
+                ];
 
-              <FormField
-                control={form.control}
-                name="frequency"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>תדירות</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="בחר תדירות" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="monthly">חודשי</SelectItem>
-                        <SelectItem value="weekly">שבועי</SelectItem>
-                        <SelectItem value="yearly">שנתי</SelectItem>
-                      </SelectContent>
-                    </Select>
+                return (
+                  <FormItem className="space-y-4">
+                    <FormLabel className="text-base font-semibold">מי ישלם ומי צריך לשלם?</FormLabel>
+                    <FormControl>
+                      <RadioGroup
+                        onValueChange={field.onChange}
+                        value={field.value}
+                        className="space-y-3"
+                        dir="rtl"
+                      >
+                        {accountMembers && accountMembers.length >= 2 && paymentOptions.map((option) => (
+                          <div 
+                            key={option.value}
+                            className="flex items-start space-x-3 space-x-reverse rounded-lg border p-3 hover:bg-muted/50 transition-colors"
+                          >
+                            <RadioGroupItem 
+                              value={option.value} 
+                              id={option.value}
+                              className="mt-1" 
+                            />
+                            <div className="flex-1 space-y-1">
+                              <label 
+                                htmlFor={option.value} 
+                                className="flex items-center gap-2 text-sm font-medium leading-none cursor-pointer"
+                              >
+                                <span className={option.color}>
+                                  {option.icon}
+                                </span>
+                                {option.label}
+                              </label>
+                              <p className="text-xs text-muted-foreground">
+                                {option.description}
+                              </p>
+                            </div>
+                          </div>
+                        ))}
+                      </RadioGroup>
+                    </FormControl>
+                    <FormDescription>
+                      בחר את המצב המתאים להוצאה חוזרת זו
+                    </FormDescription>
                     <FormMessage />
                   </FormItem>
-                )}
-              />
-            </div>
+                );
+              }}
+            />
 
             <FormField
               control={form.control}
-              name="splitEqually"
+              name="frequency"
               render={({ field }) => (
-                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
-                  <div className="space-y-0.5">
-                    <FormLabel>חלוקה שווה</FormLabel>
-                    <div className="text-sm text-muted-foreground">
-                      האם לחלק את ההוצאה שווה בשווה בין בני הזוג
-                    </div>
-                  </div>
-                  <FormControl>
-                    <Switch
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
-                    />
-                  </FormControl>
+                <FormItem>
+                  <FormLabel>תדירות</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="בחר תדירות" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="monthly">חודשי</SelectItem>
+                      <SelectItem value="weekly">שבועי</SelectItem>
+                      <SelectItem value="yearly">שנתי</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
                 </FormItem>
               )}
             />
