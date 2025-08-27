@@ -37,11 +37,24 @@ export const PreviousMonthsCard: React.FC<PreviousMonthsCardProps> = ({
     const [year, month] = selectedMonth.split('-').map(Number);
     const selectedDate = new Date(year, month - 1, 1); // First day of selected month
     
-    return approvedExpenses.filter(expense => {
+    console.log('🔍 PreviousMonthsCard Debug:');
+    console.log('Selected month:', selectedMonth);
+    console.log('Selected date (first day):', selectedDate);
+    console.log('Total approved expenses:', approvedExpenses.length);
+    
+    const filtered = approvedExpenses.filter(expense => {
       const expenseDate = new Date(expense.date);
-      // Include only expenses that are before the selected month and not paid
-      return expenseDate < selectedDate && expense.status === 'approved';
+      const isBeforeSelectedMonth = expenseDate < selectedDate;
+      const isApproved = expense.status === 'approved';
+      
+      console.log(`Expense: ${expense.description} (${expense.date}) - Before selected: ${isBeforeSelectedMonth}, Status: ${expense.status}, Included: ${isBeforeSelectedMonth && isApproved}`);
+      
+      // Include only expenses that are before the selected month and approved
+      return isBeforeSelectedMonth && isApproved;
     });
+    
+    console.log('Filtered previous months expenses:', filtered.length);
+    return filtered;
   }, [approvedExpenses, selectedMonth]);
 
   // Calculate breakdown by user
