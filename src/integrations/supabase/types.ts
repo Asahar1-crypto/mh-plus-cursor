@@ -586,6 +586,10 @@ export type Database = {
         Args: { account_uuid: string; user_uuid: string }
         Returns: boolean
       }
+      validate_invitation_access: {
+        Args: { invitation_uuid: string }
+        Returns: boolean
+      }
     }
     Enums: {
       account_member_role: "admin" | "member"
