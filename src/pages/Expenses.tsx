@@ -23,10 +23,27 @@ const ExpensesPage = () => {
     approveExpense, 
     rejectExpense, 
     markAsPaid,
-    updateExpenseStatus,
     isLoading,
     refreshData
   } = useExpense();
+
+  // Create a status update function that uses existing functions
+  const updateExpenseStatus = async (id: string, status: Expense['status']) => {
+    switch (status) {
+      case 'approved':
+        return await approveExpense(id);
+      case 'rejected':
+        return await rejectExpense(id);
+      case 'paid':
+        return await markAsPaid(id);
+      case 'pending':
+        // For now, we'll handle pending status separately if needed
+        console.log('Pending status change not implemented yet');
+        break;
+      default:
+        console.warn('Unknown status:', status);
+    }
+  };
 
   const handleRefresh = async () => {
     await refreshData();
