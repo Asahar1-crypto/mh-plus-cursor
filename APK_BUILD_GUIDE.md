@@ -60,11 +60,23 @@ npx cap open android
 ```
 
 ## שלב 8: בניית APK ב-Android Studio
-1. Android Studio יפתח את הפרויקט
-2. חכה שהפרויקט יטען ו-Gradle ירוץ
-3. לך ל-Menu: **Build** → **Build Bundle(s) / APK(s)** → **Build APK(s)**
-4. חכה שהבנייה תסתיים
-5. ב-Event Log יופיע קישור ל-APK שנבנה
+
+### פתיחת הפרויקט:
+1. Android Studio יפתח את הפרויקט אוטומטית
+2. **חשוב**: חכה שהפרויקט יטען לחלוטין - זה יכול לקחת כמה דקות בפעם הראשונה
+3. תראה בתחתית המסך את ההודעות של Gradle Build - חכה שיסתיים
+
+### בניית APK:
+1. כשהפרויקט נטען, לך לתפריט העליון
+2. בחר: **Build** → **Build Bundle(s) / APK(s)** → **Build APK(s)**
+3. תתחיל בנייה - תראה progress bar בתחתית המסך
+4. חכה שהבנייה תסתיים (יכול לקחת כמה דקות)
+5. כשמסתיים, יופיע הודעה: "APK(s) generated successfully"
+6. לחץ על "locate" או "Event Log" כדי למצוא את ה-APK
+
+### אם יש שגיאות:
+- וודא שיש לך חיבור לאינטרנט (Gradle צריך להוריד dependencies)
+- נסה: **Build** → **Clean Project** ואז **Build** → **Rebuild Project**
 
 ## מיקום קובץ ה-APK
 ה-APK יישמר במיקום:
