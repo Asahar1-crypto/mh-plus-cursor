@@ -6,6 +6,20 @@
 - Android Studio מותקן ומוגדר
 - Git מותקן
 
+### התקנת Git ב-Windows:
+1. היכנס לאתר: https://git-scm.com/download/win
+2. הורד את הקובץ המתאים למערכת שלך (64-bit או 32-bit)
+3. הרץ את ההתקנה עם כל ההגדרות ברירת המחדל
+4. אחרי ההתקנה, פתח Command Prompt חדש (חשוב!)
+5. בדוק שהתקנה הצליחה על ידי הרצת: `git --version`
+
+### בדיקה אם Git מותקן:
+פתח Command Prompt וכתב:
+```bash
+git --version
+```
+אם תראה גרסה (למשל: git version 2.41.0), Git מותקן. אם לא - בצע התקנה.
+
 ## שלב 1: העברת הפרויקט ל-GitHub
 1. לחץ על כפתור "Export to GitHub" בלובייבל
 2. צור repository חדש ב-GitHub שלך
