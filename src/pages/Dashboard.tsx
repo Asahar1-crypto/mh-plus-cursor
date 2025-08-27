@@ -69,7 +69,7 @@ const Dashboard = () => {
     });
   }, [expenses, selectedMonth]);
 
-  // Calculate filtered data
+  // Calculate filtered data for current month
   const { filteredPending, filteredApproved, filteredPaid, pendingTotal, approvedTotal, paidTotal } = useMemo(() => {
     const pending = filteredExpenses.filter(exp => exp.status === 'pending');
     const approved = filteredExpenses.filter(exp => exp.status === 'approved');
@@ -84,6 +84,11 @@ const Dashboard = () => {
       paidTotal: paid.reduce((sum, exp) => sum + exp.amount, 0)
     };
   }, [filteredExpenses]);
+
+  // Get ALL approved expenses (not filtered by month) for PreviousMonthsCard
+  const allApprovedExpenses = useMemo(() => {
+    return expenses.filter(exp => exp.status === 'approved');
+  }, [expenses]);
 
   if (!user || !account) {
     return (
@@ -157,6 +162,7 @@ const Dashboard = () => {
             approvedExpenses={filteredApproved}
             paidExpenses={filteredPaid}
             selectedMonth={selectedMonth}
+            allApprovedExpenses={allApprovedExpenses}
           />
         </div>
         

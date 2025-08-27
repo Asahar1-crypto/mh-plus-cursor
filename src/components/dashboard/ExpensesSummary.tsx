@@ -14,13 +14,15 @@ interface ExpensesSummaryProps {
   approvedExpenses: Expense[];
   paidExpenses: Expense[];
   selectedMonth?: string;
+  allApprovedExpenses?: Expense[];
 }
 
 export const ExpensesSummary: React.FC<ExpensesSummaryProps> = ({
   pendingExpenses,
   approvedExpenses, 
   paidExpenses,
-  selectedMonth
+  selectedMonth,
+  allApprovedExpenses
 }) => {
   const { account } = useAuth();
   
@@ -208,7 +210,7 @@ export const ExpensesSummary: React.FC<ExpensesSummaryProps> = ({
       
       {/* Previous Months Card */}
       <PreviousMonthsCard 
-        approvedExpenses={approvedExpenses}
+        approvedExpenses={allApprovedExpenses || approvedExpenses}
         selectedMonth={selectedMonth}
       />
     </div>
