@@ -1,9 +1,17 @@
-# מדריך בניית APK לאפליקציית מחציות פלוס
+# מדריך בניית אפליקציות Android ו-iOS לאפליקציית מחציות פלוס
 
 ## דרישות מוקדמות
+
+### לאפליקציית Android:
 - מחשב Windows/Mac/Linux
 - Node.js מותקן (גרסה 16 או יותר חדשה)
 - Android Studio מותקן ומוגדר
+- Git מותקן
+
+### לאפליקציית iOS:
+- **מחשב Mac בלבד** (iOS development זמין רק על macOS)
+- Xcode מותקן מה-App Store
+- Node.js מותקן (גרסה 16 או יותר חדשה)
 - Git מותקן
 
 ### התקנת Git ב-Windows:
@@ -34,32 +42,50 @@ cd YOUR_REPO_NAME
 npm install
 ```
 
-## שלב 3: הוספת פלטפורמת Android
+## שלב 3: הוספת פלטפורמות
+
+### עבור Android:
 ```bash
 npx cap add android
-```
-
-## שלב 4: עדכון Dependencies של Android
-```bash
 npx cap update android
 ```
 
-## שלב 5: בניית הפרויקט
+### עבור iOS (רק על Mac):
+```bash
+npx cap add ios
+npx cap update ios
+```
+
+## שלב 4: בניית הפרויקט
 ```bash
 npm run build
 ```
 
-## שלב 6: סנכרון עם Capacitor
+## שלב 5: סנכרון עם Capacitor
+
+### עבור Android:
 ```bash
 npx cap sync android
 ```
 
-## שלב 7: פתיחת הפרויקט ב-Android Studio
+### עבור iOS:
+```bash
+npx cap sync ios
+```
+
+## שלב 6: פתיחה ובנייה
+
+### Android - פתיחת הפרויקט ב-Android Studio:
 ```bash
 npx cap open android
 ```
 
-## שלב 8: בניית APK ב-Android Studio
+### iOS - פתיחת הפרויקט ב-Xcode (Mac בלבד):
+```bash
+npx cap open ios
+```
+
+## שלב 7: בניית APK ב-Android Studio
 
 ### פתיחת הפרויקט:
 1. Android Studio יפתח את הפרויקט אוטומטית
@@ -78,16 +104,47 @@ npx cap open android
 - וודא שיש לך חיבור לאינטרנט (Gradle צריך להוריד dependencies)
 - נסה: **Build** → **Clean Project** ואז **Build** → **Rebuild Project**
 
-## מיקום קובץ ה-APK
-ה-APK יישמר במיקום:
+## שלב 8: בניית IPA ב-Xcode (Mac בלבד)
+
+### פתיחת הפרויקט:
+1. Xcode יפתח את הפרויקט אוטומטית
+2. **חשוב**: חכה שהפרויקט יטען לחלוטין
+3. בחר את ה-Device או Simulator שתרצה להריץ עליו
+
+### בניית IPA:
+1. כשהפרויקט נטען, לך לתפריט העליון
+2. בחר: **Product** → **Archive**
+3. חכה שהבנייה תסתיים
+4. ב-Organizer יופיע ה-Archive שנבנה
+5. לחץ "Distribute App" לייצוא IPA או העלאה ל-App Store
+
+### הרצה על Simulator:
+1. בחר Simulator מהרשימה העליונה
+2. לחץ על כפתור ה-Play (▶️)
+3. האפליקציה תיפתח ב-Simulator
+
+## מיקום קבצים
+
+### Android APK:
 ```
 android/app/build/outputs/apk/debug/app-debug.apk
 ```
 
-## שלב 9: התקנה על מכשיר Android
+### iOS (נמצא ב-Xcode Organizer):
+- Archive: נמצא דרך Window → Organizer
+- IPA: נשמר במיקום שתבחר בזמן הייצוא
+
+## התקנה על מכשירים
+
+### Android:
 1. העבר את קובץ ה-APK למכשיר Android
 2. הפעל "Unknown Sources" בהגדרות הביטחון
 3. לחץ על קובץ ה-APK והתקן
+
+### iOS:
+1. לבדיקה על מכשיר פיזי: חבר את המכשיר ובחר אותו ב-Xcode
+2. לייצור: השתמש ב-Archive ו-Distribute App
+3. לפרסום: העלה ל-App Store Connect
 
 ## טיפים חשובים:
 - לבניית APK לפרסום (Release), השתמש ב-"Generate Signed Bundle / APK"
