@@ -113,6 +113,45 @@ export type Database = {
           },
         ]
       }
+      audit_logs: {
+        Row: {
+          action: string
+          created_at: string | null
+          id: string
+          ip_address: unknown | null
+          new_data: Json | null
+          old_data: Json | null
+          record_id: string | null
+          table_name: string
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string | null
+          id?: string
+          ip_address?: unknown | null
+          new_data?: Json | null
+          old_data?: Json | null
+          record_id?: string | null
+          table_name: string
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string | null
+          id?: string
+          ip_address?: unknown | null
+          new_data?: Json | null
+          old_data?: Json | null
+          record_id?: string | null
+          table_name?: string
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       budgets: {
         Row: {
           account_id: string
@@ -561,6 +600,16 @@ export type Database = {
       get_current_user_email: {
         Args: Record<PropertyKey, never>
         Returns: string
+      }
+      get_invitation_by_id_secure: {
+        Args: { invitation_uuid: string }
+        Returns: {
+          accepted_at: string
+          account_id: string
+          email: string
+          expires_at: string
+          id: string
+        }[]
       }
       get_system_setting: {
         Args: { key_name: string }
