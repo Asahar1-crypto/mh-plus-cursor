@@ -1,10 +1,12 @@
 import React, { useState, useCallback } from 'react';
-import { Upload, FileImage, FileText, Camera, X, Loader2 } from 'lucide-react';
+import { Upload, FileImage, FileText, Camera, X, Loader2, Smartphone } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/auth';
+import { Camera as CapacitorCamera, CameraResultType, CameraSource } from '@capacitor/camera';
+import { Capacitor } from '@capacitor/core';
 
 interface ReceiptUploadProps {
   onScanComplete: (scanResult: any) => void;
@@ -90,6 +92,64 @@ export const ReceiptUpload: React.FC<ReceiptUploadProps> = ({ onScanComplete, on
     // Clear the input value to allow selecting the same file again
     e.target.value = '';
   }, [handleFileSelect]);
+
+  const handleCameraCapture = useCallback(async () => {
+    try {
+      console.log('🔍 ReceiptUpload: Taking photo with camera');
+      
+      const image = await CapacitorCamera.getPhoto({
+        quality: 90,
+        allowEditing: false,
+        resultType: CameraResultType.DataUrl,
+        source: CameraSource.Camera,
+      });
+
+      if (image.dataUrl) {
+        // Convert data URL to File object
+        const response = await fetch(image.dataUrl);
+        const blob = await response.blob();
+        const file = new File([blob], `receipt-${Date.now()}.jpg`, { type: 'image/jpeg' });
+        
+        handleFileSelect(file);
+      }
+    } catch (error) {
+      console.error('🔍 ReceiptUpload: Camera error', error);
+      toast({
+        variant: "destructive",
+        title: "שגיאה במצלמה",
+        description: "לא הצלחנו לצלם תמונה. בדוק הרשאות המצלמה."
+      });
+    }
+  }, [handleFileSelect, toast]);
+
+  const handleGallerySelect = useCallback(async () => {
+    try {
+      console.log('🔍 ReceiptUpload: Selecting from gallery');
+      
+      const image = await CapacitorCamera.getPhoto({
+        quality: 90,
+        allowEditing: false,
+        resultType: CameraResultType.DataUrl,
+        source: CameraSource.Photos,
+      });
+
+      if (image.dataUrl) {
+        // Convert data URL to File object
+        const response = await fetch(image.dataUrl);
+        const blob = await response.blob();
+        const file = new File([blob], `receipt-${Date.now()}.jpg`, { type: 'image/jpeg' });
+        
+        handleFileSelect(file);
+      }
+    } catch (error) {
+      console.error('🔍 ReceiptUpload: Gallery error', error);
+      toast({
+        variant: "destructive",
+        title: "שגיאה בבחירת תמונה",
+        description: "לא הצלחנו לבחור תמונה מהגלריה."
+      });
+    }
+  }, [handleFileSelect, toast]);
 
   const uploadFileToStorage = async (file: File): Promise<string> => {
     if (!account?.id) {
@@ -203,12 +263,33 @@ export const ReceiptUpload: React.FC<ReceiptUploadProps> = ({ onScanComplete, on
                 <span>•</span>
                 <span>עד 5MB</span>
               </div>
-              <input
-                type="file"
-                accept=".jpg,.jpeg,.png"
-                onChange={handleFileInput}
-                className="w-full p-3 border border-dashed border-muted-foreground/50 rounded-lg cursor-pointer file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-primary-foreground hover:file:bg-primary/90"
-              />
+              {Capacitor.isNativePlatform() ? (
+                <div className="space-y-2 w-full">
+                  <Button 
+                    onClick={handleCameraCapture}
+                    variant="outline"
+                    className="w-full"
+                  >
+                    <Camera className="mr-2 h-4 w-4" />
+                    צלם חשבונית
+                  </Button>
+                  <Button 
+                    onClick={handleGallerySelect}
+                    variant="outline"
+                    className="w-full"
+                  >
+                    <FileImage className="mr-2 h-4 w-4" />
+                    בחר מהגלריה
+                  </Button>
+                </div>
+              ) : (
+                <input
+                  type="file"
+                  accept=".jpg,.jpeg,.png"
+                  onChange={handleFileInput}
+                  className="w-full p-3 border border-dashed border-muted-foreground/50 rounded-lg cursor-pointer file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-primary-foreground hover:file:bg-primary/90"
+                />
+              )}
             </CardContent>
           </Card>
         </div>
