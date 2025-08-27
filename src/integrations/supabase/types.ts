@@ -635,6 +635,20 @@ export type Database = {
         Args: { account_uuid: string; user_uuid: string }
         Returns: boolean
       }
+      upsert_subscription_secure: {
+        Args: {
+          p_canceled_at?: string
+          p_current_period_end?: string
+          p_current_period_start?: string
+          p_status: string
+          p_stripe_customer_id: string
+          p_stripe_subscription_id: string
+          p_subscription_starts_at?: string
+          p_tenant_id: string
+          p_trial_ends_at?: string
+        }
+        Returns: string
+      }
       validate_invitation_access: {
         Args: { invitation_uuid: string }
         Returns: boolean
