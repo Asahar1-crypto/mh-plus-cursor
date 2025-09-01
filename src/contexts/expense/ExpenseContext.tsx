@@ -37,6 +37,7 @@ export const ExpenseProvider = ({ children }: ExpenseProviderProps) => {
     markAsPaid,
     updateExpenseStatus,
     addChild,
+    updateChild,
     uploadReceipt,
     isSubmitting
   } = useExpenseActions(user, account, expenses, setExpenses, childrenList, setChildrenList, refreshData);
@@ -66,6 +67,7 @@ export const ExpenseProvider = ({ children }: ExpenseProviderProps) => {
     markAsPaid,
     updateExpenseStatus,
     addChild,
+    updateChild,
     getPendingExpenses,
     getApprovedExpenses,
     getPaidExpenses,

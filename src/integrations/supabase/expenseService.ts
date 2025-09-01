@@ -205,5 +205,33 @@ export const expenseService = {
       console.error('Error adding child:', error);
       throw error;
     }
+  },
+
+  async updateChild(user: User, account: Account, id: string, updates: Partial<Omit<Child, 'id'>>): Promise<void> {
+    console.log(`Updating child ${id} in account ${account.id} (${account.name})`);
+    console.log('Updates:', updates);
+    
+    const updateData: any = {};
+    
+    if (updates.name !== undefined) {
+      updateData.name = updates.name;
+    }
+    
+    if (updates.birthDate !== undefined) {
+      updateData.birth_date = updates.birthDate;
+    }
+
+    const { error } = await supabase
+      .from('children')
+      .update(updateData)
+      .eq('id', id)
+      .eq('account_id', account.id);
+
+    if (error) {
+      console.error('Error updating child:', error);
+      throw error;
+    }
+
+    console.log('Successfully updated child');
   }
 };

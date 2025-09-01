@@ -12,6 +12,7 @@ export interface ExpenseActions {
   markAsPaid: (id: string) => Promise<void>;
   updateExpenseStatus: (id: string, status: 'pending' | 'approved' | 'rejected' | 'paid') => Promise<void>;
   addChild: (child: Omit<Child, 'id'>) => Promise<void>;
+  updateChild: (id: string, updates: Partial<Omit<Child, 'id'>>) => Promise<void>;
   uploadReceipt: (expenseId: string, receiptUrl: string) => Promise<void>;
   isSubmitting: boolean;
 }
@@ -71,6 +72,30 @@ export const useExpenseActions = (
     } catch (error: any) {
       console.error('Failed to add child:', error);
       toast.error(`שגיאה בהוספת ילד/ה: ${error.message || 'אנא נסה שוב'}`);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const updateChild = async (id: string, updates: Partial<Omit<Child, 'id'>>): Promise<void> => {
+    if (!user) {
+      toast.error('יש להתחבר כדי לעדכן פרטי ילד/ה');
+      return;
+    }
+
+    if (!account) {
+      toast.error('לא נמצא חשבון פעיל');
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      await expenseService.updateChild(user, account, id, updates);
+      await refreshData(); // Refresh data to show updated child
+      toast.success('פרטי הילד/ה עודכנו בהצלחה');
+    } catch (error: any) {
+      console.error('Failed to update child:', error);
+      toast.error(`שגיאה בעדכון פרטי ילד/ה: ${error.message || 'אנא נסה שוב'}`);
     } finally {
       setIsSubmitting(false);
     }
@@ -192,6 +217,7 @@ export const useExpenseActions = (
     markAsPaid,
     updateExpenseStatus,
     addChild,
+    updateChild,
     uploadReceipt,
     isSubmitting
   };

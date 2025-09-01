@@ -40,6 +40,7 @@ export interface ExpenseContextType {
   markAsPaid: (id: string) => Promise<void>;
   updateExpenseStatus: (id: string, status: 'pending' | 'approved' | 'rejected' | 'paid') => Promise<void>;
   addChild: (child: Omit<Child, 'id'>) => Promise<void>;
+  updateChild: (id: string, updates: Partial<Omit<Child, 'id'>>) => Promise<void>;
   getPendingExpenses: () => Expense[];
   getApprovedExpenses: () => Expense[];
   getPaidExpenses: () => Expense[];

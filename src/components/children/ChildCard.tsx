@@ -1,12 +1,14 @@
 
 import React, { useState } from 'react';
 import { format } from 'date-fns';
-import { UserPlus } from 'lucide-react';
+import { UserPlus, Edit3 } from 'lucide-react';
 import { Card, CardHeader, CardContent, CardFooter, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Dialog, DialogTrigger } from '@/components/ui/dialog';
 import { useAuth } from '@/contexts/AuthContext';
 import { Child } from '@/contexts/ExpenseContext';
+import EditChildForm from './EditChildForm';
 
 interface ChildCardProps {
   child: Child;
@@ -17,6 +19,7 @@ const ChildCard: React.FC<ChildCardProps> = ({ child }) => {
   const [isPending, setIsPending] = useState(false);
   const [email, setEmail] = useState('');
   const [showInvite, setShowInvite] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
   
   const handleSendInvitation = async () => {
     if (!email) return;
@@ -43,10 +46,26 @@ const ChildCard: React.FC<ChildCardProps> = ({ child }) => {
   return (
     <Card className="overflow-hidden">
       <CardHeader className="pb-2">
-        <CardTitle>{child.name}</CardTitle>
-        <CardDescription>
-          {format(new Date(child.birthDate), 'dd/MM/yyyy')} ({age} שנים)
-        </CardDescription>
+        <div className="flex items-start justify-between">
+          <div>
+            <CardTitle>{child.name}</CardTitle>
+            <CardDescription>
+              {format(new Date(child.birthDate), 'dd/MM/yyyy')} ({age} שנים)
+            </CardDescription>
+          </div>
+          <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+            <DialogTrigger asChild>
+              <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                <Edit3 className="h-4 w-4" />
+              </Button>
+            </DialogTrigger>
+            <EditChildForm 
+              child={child} 
+              open={editDialogOpen} 
+              setOpen={setEditDialogOpen} 
+            />
+          </Dialog>
+        </div>
       </CardHeader>
       <CardContent className="pb-2">
         <div className="space-y-2">
