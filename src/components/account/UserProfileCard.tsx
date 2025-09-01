@@ -3,10 +3,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { useAuth } from '@/contexts/auth';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { User, Save, Edit2 } from 'lucide-react';
+import { User, Save, Edit2, Mail } from 'lucide-react';
 
 const UserProfileCard: React.FC = () => {
   const { user, profile, refreshProfile } = useAuth();
@@ -14,6 +15,8 @@ const UserProfileCard: React.FC = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [name, setName] = useState(profile?.name || '');
   const [isLoading, setIsLoading] = useState(false);
+  const [isEmailDialogOpen, setIsEmailDialogOpen] = useState(false);
+  const [newEmail, setNewEmail] = useState('');
 
   const handleSave = async () => {
     if (!user || !name.trim()) return;
@@ -64,15 +67,75 @@ const UserProfileCard: React.FC = () => {
       <CardContent className="space-y-4">
         <div className="space-y-2">
           <Label htmlFor="email">כתובת מייל</Label>
-          <Input
-            id="email"
-            type="email"
-            value={user.email || ''}
-            disabled
-            className="bg-muted"
-          />
+          <div className="flex items-center gap-2">
+            <Input
+              id="email"
+              type="email"
+              value={user.email || ''}
+              disabled
+              className="bg-muted flex-1"
+            />
+            <Dialog open={isEmailDialogOpen} onOpenChange={setIsEmailDialogOpen}>
+              <DialogTrigger asChild>
+                <Button variant="outline" size="sm">
+                  <Mail className="h-4 w-4" />
+                  שנה
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>שנה כתובת מייל</DialogTitle>
+                  <DialogDescription>
+                    הזן כתובת מייל חדשה. תקבל אימייל אישור בשתי הכתובות.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="current-email">כתובת נוכחית</Label>
+                    <Input
+                      id="current-email"
+                      type="email"
+                      value={user.email || ''}
+                      disabled
+                      className="bg-muted"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="new-email">כתובת חדשה</Label>
+                    <Input
+                      id="new-email"
+                      type="email"
+                      value={newEmail}
+                      onChange={(e) => setNewEmail(e.target.value)}
+                      placeholder="הזן כתובת מייל חדשה"
+                    />
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button 
+                    variant="outline" 
+                    onClick={() => {
+                      setIsEmailDialogOpen(false);
+                      setNewEmail('');
+                    }}
+                  >
+                    ביטול
+                  </Button>
+                  <Button 
+                    onClick={() => {
+                      console.log('שינוי מייל ל:', newEmail);
+                      // כאן נוסיף את הלוגיקה בשלב הבא
+                    }}
+                    disabled={!newEmail.trim() || newEmail === user.email}
+                  >
+                    שלח אישור
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          </div>
           <p className="text-xs text-muted-foreground">
-            כתובת המייל לא ניתנת לשינוי
+            כתובת המייל ניתנת לשינוי אחרי אישור באימייל
           </p>
         </div>
 
