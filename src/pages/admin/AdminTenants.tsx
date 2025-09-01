@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { ArrowLeft, Search, Users, Calendar, DollarSign, MoreHorizontal, RefreshCw } from 'lucide-react';
+import { ArrowLeft, Search, Users, Calendar, DollarSign, MoreHorizontal, RefreshCw, Eye, Activity, Database } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/auth';
@@ -32,8 +32,21 @@ interface Tenant {
   trial_ends_at: string | null;
   created_at: string;
   owner_name: string;
+  owner_email: string;
+  owner_last_login: string | null;
   total_members: number;
   total_expenses: number;
+  monthly_price: number;
+  last_activity: string | null;
+  monthly_expenses_count: number;
+  data_size_mb: number;
+  member_details: Array<{
+    name: string;
+    email: string;
+    role: string;
+    last_login: string | null;
+    joined_at: string;
+  }>;
 }
 
 const AdminTenants: React.FC = () => {
@@ -45,6 +58,10 @@ const AdminTenants: React.FC = () => {
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [deleteDialog, setDeleteDialog] = useState<{ open: boolean; tenant: Tenant | null }>({
+    open: false,
+    tenant: null
+  });
+  const [viewDetailsDialog, setViewDetailsDialog] = useState<{ open: boolean; tenant: Tenant | null }>({
     open: false,
     tenant: null
   });
@@ -62,6 +79,15 @@ const AdminTenants: React.FC = () => {
     try {
       setLoading(true);
 
+      // קבלת מחיר חודשי מההגדרות
+      const { data: priceData } = await supabase
+        .from('system_settings')
+        .select('setting_value')
+        .eq('setting_key', 'monthly_price')
+        .single();
+
+      const monthlyPrice = parseFloat(priceData?.setting_value || '50');
+
       // שאילתה מורכבת לקבלת כל הנתונים הנדרשים
       const { data, error } = await supabase
         .from('accounts')
@@ -71,25 +97,75 @@ const AdminTenants: React.FC = () => {
           subscription_status,
           trial_ends_at,
           created_at,
-          profiles!accounts_owner_id_fkey(name),
-          account_members(count),
+          owner_id,
+          profiles!accounts_owner_id_fkey(name, last_login),
+          account_members(
+            user_id,
+            role,
+            joined_at,
+            profiles!account_members_user_id_fkey(name, last_login)
+          ),
           expenses(count)
         `);
 
       if (error) throw error;
 
-      const formattedTenants: Tenant[] = data?.map(tenant => ({
-        id: tenant.id,
-        name: tenant.name,
-        subscription_status: tenant.subscription_status || 'trial',
-        trial_ends_at: tenant.trial_ends_at,
-        created_at: tenant.created_at,
-        owner_name: (tenant.profiles as any)?.name || 'לא ידוע',
-        total_members: (tenant.account_members as any)?.length || 0,
-        total_expenses: (tenant.expenses as any)?.length || 0
-      })) || [];
+      // קבלת פעילות אחרונה ונתונים נוספים
+      const tenantsWithDetails = await Promise.all(
+        (data || []).map(async (tenant) => {
+          // קבלת הוצאות מהחודש הנוכחי
+          const currentMonth = new Date();
+          const firstDay = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1);
+          
+          const { data: monthlyExpenses } = await supabase
+            .from('expenses')
+            .select('id')
+            .eq('account_id', tenant.id)
+            .gte('created_at', firstDay.toISOString());
 
-      setTenants(formattedTenants);
+          // קבלת פעילות אחרונה
+          const { data: lastActivity } = await supabase
+            .from('expenses')
+            .select('created_at')
+            .eq('account_id', tenant.id)
+            .order('created_at', { ascending: false })
+            .limit(1);
+
+          // הכנת רשימת חברים מפורטת
+          const memberDetails = (tenant.account_members || []).map((member: any) => ({
+            name: member.profiles?.name || 'לא ידוע',
+            email: member.profiles?.email || 'לא ידוע',
+            role: member.role,
+            last_login: member.profiles?.last_login,
+            joined_at: member.joined_at
+          }));
+
+          // חישוב גודל נתונים משוער (MB)
+          const expenseCount = (tenant.expenses as any)?.length || 0;
+          const memberCount = (tenant.account_members as any)?.length || 0;
+          const estimatedDataSize = (expenseCount * 0.5) + (memberCount * 0.1); // הערכה גסה
+
+          return {
+            id: tenant.id,
+            name: tenant.name,
+            subscription_status: tenant.subscription_status || 'trial',
+            trial_ends_at: tenant.trial_ends_at,
+            created_at: tenant.created_at,
+            owner_name: (tenant.profiles as any)?.name || 'לא ידוע',
+            owner_email: tenant.owner_id, // נשלוף מאוחר יותר את האימייל
+            owner_last_login: (tenant.profiles as any)?.last_login,
+            total_members: (tenant.account_members as any)?.length || 0,
+            total_expenses: expenseCount,
+            monthly_price: tenant.subscription_status === 'active' ? monthlyPrice : 0,
+            last_activity: lastActivity?.[0]?.created_at || null,
+            monthly_expenses_count: monthlyExpenses?.length || 0,
+            data_size_mb: parseFloat(estimatedDataSize.toFixed(2)),
+            member_details: memberDetails
+          };
+        })
+      );
+
+      setTenants(tenantsWithDetails);
     } catch (error) {
       console.error('Error loading tenants:', error);
       toast({
@@ -337,9 +413,11 @@ const AdminTenants: React.FC = () => {
                     <th className="text-right p-4">שם המשפחה</th>
                     <th className="text-right p-4">בעלים</th>
                     <th className="text-right p-4">סטטוס</th>
-                    <th className="text-right p-4">תוקף ניסיון</th>
+                    <th className="text-right p-4">מחיר חודשי</th>
                     <th className="text-right p-4">חברים</th>
-                    <th className="text-right p-4">הוצאות</th>
+                    <th className="text-right p-4">כניסה אחרונה</th>
+                    <th className="text-right p-4">פעילות חודשית</th>
+                    <th className="text-right p-4">גודל נתונים</th>
                     <th className="text-right p-4">נרשם</th>
                     <th className="text-right p-4">פעולות</th>
                   </tr>
@@ -348,25 +426,59 @@ const AdminTenants: React.FC = () => {
                   {filteredTenants.map((tenant) => (
                     <tr key={tenant.id} className="border-b hover:bg-muted/50">
                       <td className="p-4 font-medium">{tenant.name}</td>
-                      <td className="p-4">{tenant.owner_name}</td>
+                      <td className="p-4">
+                        <div>
+                          <div className="font-medium">{tenant.owner_name}</div>
+                          <div className="text-xs text-muted-foreground">
+                            {tenant.total_members} חברים במשפחה
+                          </div>
+                        </div>
+                      </td>
                       <td className="p-4">
                         {getStatusBadge(tenant.subscription_status, tenant.trial_ends_at)}
                       </td>
                       <td className="p-4">
-                        {tenant.trial_ends_at ? (
-                          <span className={
-                            getTrialStatus(tenant.trial_ends_at)?.includes('פג תוקף') || 
-                            getTrialStatus(tenant.trial_ends_at)?.includes('נותרו') 
-                              ? 'text-red-600 font-medium' : ''
-                          }>
-                            {getTrialStatus(tenant.trial_ends_at)}
-                          </span>
+                        <div className="font-semibold">
+                          {tenant.monthly_price > 0 ? `₪${tenant.monthly_price}` : 'חינם'}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          {tenant.subscription_status === 'trial' ? 'תקופת ניסיון' : 
+                           tenant.subscription_status === 'active' ? 'משלם' : 'לא פעיל'}
+                        </div>
+                      </td>
+                      <td className="p-4">
+                        <div className="flex items-center gap-1">
+                          <Users className="h-3 w-3" />
+                          <span className="font-medium">{tenant.total_members}</span>
+                        </div>
+                      </td>
+                      <td className="p-4">
+                        {tenant.owner_last_login ? (
+                          <div>
+                            <div className="text-sm">
+                              {new Date(tenant.owner_last_login).toLocaleDateString('he-IL')}
+                            </div>
+                            <div className="text-xs text-muted-foreground">
+                              {Math.ceil((Date.now() - new Date(tenant.owner_last_login).getTime()) / (1000 * 60 * 60 * 24))} ימים
+                            </div>
+                          </div>
                         ) : (
-                          <span className="text-muted-foreground">-</span>
+                          <span className="text-muted-foreground text-sm">מעולם לא נכנס</span>
                         )}
                       </td>
-                      <td className="p-4">{tenant.total_members}</td>
-                      <td className="p-4">{tenant.total_expenses}</td>
+                      <td className="p-4">
+                        <div className="flex items-center gap-1">
+                          <Activity className="h-3 w-3" />
+                          <span className="font-medium">{tenant.monthly_expenses_count}</span>
+                          <span className="text-xs text-muted-foreground">הוצאות</span>
+                        </div>
+                      </td>
+                      <td className="p-4">
+                        <div className="flex items-center gap-1">
+                          <Database className="h-3 w-3" />
+                          <span className="text-sm">{tenant.data_size_mb}MB</span>
+                        </div>
+                      </td>
                       <td className="p-4">
                         {new Date(tenant.created_at).toLocaleDateString('he-IL')}
                       </td>
@@ -382,6 +494,14 @@ const AdminTenants: React.FC = () => {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
+                            <DropdownMenuItem
+                              onClick={() => {
+                                setViewDetailsDialog({ open: true, tenant });
+                              }}
+                            >
+                              <Eye className="h-4 w-4 ml-2" />
+                              פרטי משפחה
+                            </DropdownMenuItem>
                             {tenant.subscription_status === 'trial' && (
                               <DropdownMenuItem
                                 onClick={() => extendTrial(tenant.id)}
@@ -450,6 +570,113 @@ const AdminTenants: React.FC = () => {
               >
                 מחק
               </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        {/* View Details Dialog */}
+        <AlertDialog open={viewDetailsDialog.open} onOpenChange={(open) => setViewDetailsDialog({ open, tenant: null })}>
+          <AlertDialogContent className="max-w-4xl">
+            <AlertDialogHeader>
+              <AlertDialogTitle>פרטי משפחת {viewDetailsDialog.tenant?.name}</AlertDialogTitle>
+            </AlertDialogHeader>
+            
+            {viewDetailsDialog.tenant && (
+              <div className="space-y-6">
+                {/* סטטיסטיקות כלליות */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div className="text-center p-3 bg-muted rounded-lg">
+                    <div className="text-2xl font-bold">{viewDetailsDialog.tenant.total_members}</div>
+                    <div className="text-sm text-muted-foreground">חברים</div>
+                  </div>
+                  <div className="text-center p-3 bg-muted rounded-lg">
+                    <div className="text-2xl font-bold">₪{viewDetailsDialog.tenant.monthly_price}</div>
+                    <div className="text-sm text-muted-foreground">מחיר חודשי</div>
+                  </div>
+                  <div className="text-center p-3 bg-muted rounded-lg">
+                    <div className="text-2xl font-bold">{viewDetailsDialog.tenant.monthly_expenses_count}</div>
+                    <div className="text-sm text-muted-foreground">הוצאות חודש זה</div>
+                  </div>
+                  <div className="text-center p-3 bg-muted rounded-lg">
+                    <div className="text-2xl font-bold">{viewDetailsDialog.tenant.data_size_mb}MB</div>
+                    <div className="text-sm text-muted-foreground">גודל נתונים</div>
+                  </div>
+                </div>
+
+                {/* רשימת חברים */}
+                <div>
+                  <h3 className="text-lg font-semibold mb-3">חברי המשפחה</h3>
+                  <div className="border rounded-lg">
+                    <table className="w-full">
+                      <thead>
+                        <tr className="border-b bg-muted/50">
+                          <th className="text-right p-3">שם</th>
+                          <th className="text-right p-3">תפקיד</th>
+                          <th className="text-right p-3">כניסה אחרונה</th>
+                          <th className="text-right p-3">הצטרף</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {viewDetailsDialog.tenant.member_details.map((member, index) => (
+                          <tr key={index} className="border-b last:border-b-0">
+                            <td className="p-3 font-medium">{member.name}</td>
+                            <td className="p-3">
+                              <Badge variant={member.role === 'admin' ? 'default' : 'secondary'}>
+                                {member.role === 'admin' ? 'מנהל' : 'חבר'}
+                              </Badge>
+                            </td>
+                            <td className="p-3">
+                              {member.last_login ? (
+                                <div>
+                                  <div className="text-sm">
+                                    {new Date(member.last_login).toLocaleDateString('he-IL')}
+                                  </div>
+                                  <div className="text-xs text-muted-foreground">
+                                    {Math.ceil((Date.now() - new Date(member.last_login).getTime()) / (1000 * 60 * 60 * 24))} ימים
+                                  </div>
+                                </div>
+                              ) : (
+                                <span className="text-muted-foreground text-sm">מעולם לא נכנס</span>
+                              )}
+                            </td>
+                            <td className="p-3">
+                              {new Date(member.joined_at).toLocaleDateString('he-IL')}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                {/* מידע נוסף */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <h4 className="font-medium mb-2">מידע כללי</h4>
+                    <div className="space-y-2 text-sm">
+                      <div>תאריך הקמה: {new Date(viewDetailsDialog.tenant.created_at).toLocaleDateString('he-IL')}</div>
+                      <div>סטטוס: {getStatusBadge(viewDetailsDialog.tenant.subscription_status, viewDetailsDialog.tenant.trial_ends_at)}</div>
+                      {viewDetailsDialog.tenant.trial_ends_at && (
+                        <div>תוקף ניסיון: {getTrialStatus(viewDetailsDialog.tenant.trial_ends_at)}</div>
+                      )}
+                    </div>
+                  </div>
+                  <div>
+                    <h4 className="font-medium mb-2">פעילות</h4>
+                    <div className="space-y-2 text-sm">
+                      <div>סה"כ הוצאות: {viewDetailsDialog.tenant.total_expenses}</div>
+                      <div>הוצאות חודש זה: {viewDetailsDialog.tenant.monthly_expenses_count}</div>
+                      {viewDetailsDialog.tenant.last_activity && (
+                        <div>פעילות אחרונה: {new Date(viewDetailsDialog.tenant.last_activity).toLocaleDateString('he-IL')}</div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+            
+            <AlertDialogFooter>
+              <AlertDialogCancel>סגור</AlertDialogCancel>
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
