@@ -38,7 +38,7 @@ const AppHeader: React.FC<AppHeaderProps> = ({ onMenuClick, isMobile }) => {
             </Button>
           )}
           <Link to="/" className="flex items-center hover:opacity-80 transition-opacity">
-            <Logo size="sm" showText={!isMobile} />
+            <Logo size="md" showText={!isMobile} />
           </Link>
         </div>
         

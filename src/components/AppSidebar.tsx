@@ -102,7 +102,7 @@ const AppSidebar: React.FC<AppSidebarProps> = ({ isMobile, isOpen, onClose }) =>
         
         <div className="p-6 pt-8 flex-1 overflow-y-auto">
           <div className="mb-6">
-            <Logo size="md" />
+            <Logo size="lg" />
           </div>
           <nav className="space-y-1">
             {sidebarItems.map((item) => (
