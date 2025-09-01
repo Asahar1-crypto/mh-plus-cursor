@@ -21,6 +21,7 @@ import AddExpense from "./pages/AddExpense";
 import Children from "./pages/Children";
 import Expenses from "./pages/Expenses";
 import Reports from "./pages/Reports";
+import IndexPage from "./pages/Index";
 
 // Admin pages
 import AdminDashboard from "./pages/admin/AdminDashboard";
@@ -65,6 +66,7 @@ const App = () => (
                 <Route path="/children" element={<Children />} />
                 <Route path="/expenses" element={<Expenses />} />
                 <Route path="/reports" element={<Reports />} />
+                <Route path="/test-email" element={<IndexPage />} />
                 
                 {/* Admin routes */}
                 <Route path="/admin/dashboard" element={<AdminDashboard />} />
