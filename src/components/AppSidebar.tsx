@@ -52,7 +52,6 @@ const AppSidebar: React.FC<AppSidebarProps> = ({ isMobile, isOpen, onClose }) =>
     { icon: Users, label: 'ילדים', path: '/children' },
     { icon: BarChart3, label: 'דוחות', path: '/reports' },
     { icon: UserCog, label: 'ניהול חשבון', path: '/account-management' },
-    { icon: User, label: 'פרופיל', path: '/profile' },
     { icon: Settings, label: 'הגדרות', path: '/account-settings' },
   ];
 
