@@ -588,6 +588,17 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
+      get_account_invitations: {
+        Args: { account_uuid: string }
+        Returns: {
+          accepted_at: string
+          created_at: string
+          email: string
+          expires_at: string
+          id: string
+          invitation_id: string
+        }[]
+      }
       get_account_members_with_details: {
         Args: { account_uuid: string }
         Returns: {
