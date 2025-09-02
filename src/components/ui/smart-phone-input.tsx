@@ -79,8 +79,7 @@ const SmartPhoneInput = forwardRef<HTMLInputElement, SmartPhoneInputProps>(
           )}>
             {/* Country Prefix */}
             <div className="flex items-center pr-3 border-l border-border/30 h-14">
-              <span className="text-2xl ml-3">🇮🇱</span>
-              <span className="text-sm text-muted-foreground ml-1">+972</span>
+              <span className="text-sm text-muted-foreground ml-3">+972</span>
             </div>
 
             {/* Phone Icon */}
