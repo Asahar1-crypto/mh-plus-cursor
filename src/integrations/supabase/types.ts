@@ -712,6 +712,17 @@ export type Database = {
         Args: { key_name: string }
         Returns: string
       }
+      get_unverified_users: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          created_at: string
+          email: string
+          email_confirmed_at: string
+          id: string
+          last_sign_in_at: string
+          raw_user_meta_data: Json
+        }[]
+      }
       get_user_account_ids: {
         Args: { user_uuid: string }
         Returns: string[]

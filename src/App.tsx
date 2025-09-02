@@ -28,6 +28,7 @@ import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminPricing from "./pages/admin/AdminPricing";
 import AdminTenants from "./pages/admin/AdminTenants";
 import AdminEmailSettings from "./pages/admin/AdminEmailSettings";
+import AdminUnverifiedUsers from "./pages/admin/AdminUnverifiedUsers";
 
 import AuthLayout from "./components/AuthLayout";
 import AppLayout from "./components/AppLayout";
@@ -74,6 +75,7 @@ const App = () => (
                 <Route path="/admin/pricing" element={<AdminPricing />} />
                 <Route path="/admin/tenants" element={<AdminTenants />} />
                 <Route path="/admin/email-settings" element={<AdminEmailSettings />} />
+                <Route path="/admin/unverified-users" element={<AdminUnverifiedUsers />} />
               </Route>
               
               {/* Special routes */}
