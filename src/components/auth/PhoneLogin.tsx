@@ -66,7 +66,13 @@ const PhoneLogin: React.FC<PhoneLoginProps> = ({ onBack }) => {
     }
   };
 
-  const handleSendOtp = async () => {
+  const handleSendOtp = async (e?: React.FormEvent) => {
+    // Prevent form submission from refreshing the page
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    
     if (!phoneNumber.trim()) {
       setPhoneError('אנא הזן מספר טלפון');
       return;
@@ -79,17 +85,25 @@ const PhoneLogin: React.FC<PhoneLoginProps> = ({ onBack }) => {
 
     try {
       const normalizedPhone = normalizePhoneNumber(phoneNumber);
+      console.log('Sending OTP to:', normalizedPhone);
+      
       const result = await sendPhoneOtp(normalizedPhone);
+      console.log('OTP sent successfully, result:', result);
       
-      setUserInfo({
-        userId: result.userId,
-        userName: result.userName
-      });
-      
-      setShowOtpVerification(true);
+      if (result && result.userId) {
+        setUserInfo({
+          userId: result.userId,
+          userName: result.userName
+        });
+        
+        setShowOtpVerification(true);
+        console.log('Moving to OTP verification screen');
+      } else {
+        setPhoneError('שגיאה בשליחת קוד האימות');
+      }
     } catch (error) {
-      // Error handling is done in the service
       console.error('Failed to send OTP:', error);
+      setPhoneError('שגיאה בשליחת קוד האימות');
     }
   };
 
