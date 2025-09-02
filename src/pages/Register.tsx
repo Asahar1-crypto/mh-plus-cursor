@@ -18,21 +18,10 @@ const registerSchema = z.object({
   password: z.string().min(6, { message: 'סיסמה חייבת להיות לפחות 6 תווים' }),
   confirmPassword: z.string().min(6, { message: 'סיסמה חייבת להיות לפחות 6 תווים' }),
   verificationMethod: z.enum(['email', 'sms'], { message: 'בחר שיטת אימות' }),
-  phoneNumber: z.string().optional(),
+  phoneNumber: z.string().min(1, { message: 'מספר טלפון נדרש' }).regex(/^05\d{8}$/, { message: 'פורמט מספר טלפון לא תקין (05xxxxxxxx)' }),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "הסיסמאות אינן תואמות",
   path: ["confirmPassword"],
-}).refine((data) => {
-  if (data.verificationMethod === 'sms' && !data.phoneNumber) {
-    return false;
-  }
-  if (data.verificationMethod === 'sms' && data.phoneNumber && !/^05\d{8}$/.test(data.phoneNumber)) {
-    return false;
-  }
-  return true;
-}, {
-  message: "מספר טלפון נדרש לאימות SMS (פורמט: 05xxxxxxxx)",
-  path: ["phoneNumber"],
 });
 
 const Register = () => {
@@ -66,7 +55,7 @@ const Register = () => {
       email: emailFromInvitation || '',
       password: '',
       confirmPassword: '',
-      verificationMethod: 'email',
+      verificationMethod: 'sms',
       phoneNumber: '',
     },
   });
@@ -239,29 +228,27 @@ const Register = () => {
                   )}
                 />
 
-                {selectedVerificationMethod === 'sms' && (
-                  <FormField
-                    control={form.control}
-                    name="phoneNumber"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>מספר טלפון</FormLabel>
-                        <FormControl>
-                          <Input 
-                            placeholder="05xxxxxxxx" 
-                            {...field}
-                            dir="ltr"
-                            className="text-left" 
-                          />
-                        </FormControl>
-                        <FormMessage />
-                        <p className="text-sm text-muted-foreground">
-                          הזן מספר טלפון ישראלי (05xxxxxxxx)
-                        </p>
-                      </FormItem>
-                    )}
-                  />
-                )}
+                <FormField
+                  control={form.control}
+                  name="phoneNumber"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>מספר טלפון</FormLabel>
+                      <FormControl>
+                        <Input 
+                          placeholder="05xxxxxxxx" 
+                          {...field}
+                          dir="ltr"
+                          className="text-left" 
+                        />
+                      </FormControl>
+                      <FormMessage />
+                      <p className="text-sm text-muted-foreground">
+                        הזן מספר טלפון ישראלי (05xxxxxxxx)
+                      </p>
+                    </FormItem>
+                  )}
+                />
                 
                 <Button type="submit" className="w-full" disabled={isLoading}>
                   {isLoading ? (
