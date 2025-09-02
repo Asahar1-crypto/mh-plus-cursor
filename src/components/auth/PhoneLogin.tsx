@@ -169,6 +169,12 @@ const PhoneLogin: React.FC<PhoneLoginProps> = ({ onBack }) => {
               placeholder="050-123-4567"
               value={phoneNumber}
               onChange={(e) => handlePhoneChange(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  handleSendOtp(e);
+                }
+              }}
               className={`pl-20 text-lg ${phoneError ? 'border-destructive' : ''} transition-all duration-200 focus:shadow-glow`}
               maxLength={12}
             />
@@ -180,6 +186,7 @@ const PhoneLogin: React.FC<PhoneLoginProps> = ({ onBack }) => {
 
         <div className="space-y-3">
           <Button 
+            type="button"
             onClick={handleSendOtp}
             disabled={isLoading || !phoneNumber.trim()}
             className="w-full bg-gradient-to-r from-primary to-primary-glow hover:from-primary-glow hover:to-primary text-white font-semibold py-3 text-lg shadow-lg transform transition-all duration-200 hover:scale-105 disabled:transform-none"
