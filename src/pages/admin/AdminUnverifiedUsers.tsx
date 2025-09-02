@@ -20,11 +20,22 @@ interface UnverifiedUser {
   raw_user_meta_data: any;
 }
 
+interface UserStats {
+  total: number;
+  lastDay: number;
+  lastWeek: number;
+  lastMonth: number;
+}
+
 const AdminUnverifiedUsers: React.FC = () => {
   const { user, profile } = useAuth();
   const { toast } = useToast();
   const [unverifiedUsers, setUnverifiedUsers] = useState<UnverifiedUser[]>([]);
+  const [filteredUsers, setFilteredUsers] = useState<UnverifiedUser[]>([]);
   const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState<UserStats>({ total: 0, lastDay: 0, lastWeek: 0, lastMonth: 0 });
+  const [searchTerm, setSearchTerm] = useState('');
+  const [timeFilter, setTimeFilter] = useState<'all' | 'day' | 'week' | 'month'>('all');
 
   // בדיקת הרשאות Super Admin
   if (!profile?.is_super_admin) {
@@ -35,6 +46,51 @@ const AdminUnverifiedUsers: React.FC = () => {
     loadUnverifiedUsers();
   }, []);
 
+  useEffect(() => {
+    filterUsers();
+  }, [unverifiedUsers, searchTerm, timeFilter]);
+
+  const calculateStats = (users: UnverifiedUser[]): UserStats => {
+    const now = new Date();
+    const dayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+    const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+
+    return {
+      total: users.length,
+      lastDay: users.filter(u => new Date(u.created_at) > dayAgo).length,
+      lastWeek: users.filter(u => new Date(u.created_at) > weekAgo).length,
+      lastMonth: users.filter(u => new Date(u.created_at) > monthAgo).length,
+    };
+  };
+
+  const filterUsers = () => {
+    let filtered = unverifiedUsers;
+
+    // Filter by search term
+    if (searchTerm) {
+      filtered = filtered.filter(user => 
+        user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (user.raw_user_meta_data?.name && user.raw_user_meta_data.name.toLowerCase().includes(searchTerm.toLowerCase()))
+      );
+    }
+
+    // Filter by time
+    const now = new Date();
+    if (timeFilter === 'day') {
+      const dayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+      filtered = filtered.filter(user => new Date(user.created_at) > dayAgo);
+    } else if (timeFilter === 'week') {
+      const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      filtered = filtered.filter(user => new Date(user.created_at) > weekAgo);
+    } else if (timeFilter === 'month') {
+      const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+      filtered = filtered.filter(user => new Date(user.created_at) > monthAgo);
+    }
+
+    setFilteredUsers(filtered);
+  };
+
   const loadUnverifiedUsers = async () => {
     try {
       setLoading(true);
@@ -44,6 +100,7 @@ const AdminUnverifiedUsers: React.FC = () => {
       if (error) throw error;
 
       setUnverifiedUsers(data || []);
+      setStats(calculateStats(data || []));
     } catch (error) {
       console.error('Error loading unverified users:', error);
       toast({
@@ -112,6 +169,53 @@ const AdminUnverifiedUsers: React.FC = () => {
     }
   };
 
+  const deleteOldUsers = async (days: number) => {
+    const cutoffDate = new Date();
+    cutoffDate.setDate(cutoffDate.getDate() - days);
+    
+    const usersToDelete = unverifiedUsers.filter(user => 
+      new Date(user.created_at) < cutoffDate
+    );
+
+    if (usersToDelete.length === 0) {
+      toast({
+        title: 'אין משתמשים למחיקה',
+        description: `לא נמצאו משתמשים ישנים מ-${days} ימים`,
+      });
+      return;
+    }
+
+    if (!confirm(`האם אתה בטוח שברצונך למחוק ${usersToDelete.length} משתמשים ישנים מ-${days} ימים?`)) {
+      return;
+    }
+
+    let successCount = 0;
+    let errorCount = 0;
+
+    for (const user of usersToDelete) {
+      try {
+        const { error } = await supabase.functions.invoke('delete-user', {
+          body: { userId: user.id }
+        });
+
+        if (error) throw error;
+        successCount++;
+      } catch (error) {
+        console.error(`Error deleting user ${user.email}:`, error);
+        errorCount++;
+      }
+    }
+
+    toast({
+      title: 'סיים מחיקה',
+      description: `נמחקו ${successCount} משתמשים בהצלחה${errorCount > 0 ? `, ${errorCount} שגיאות` : ''}`,
+      variant: errorCount > 0 ? 'destructive' : 'default'
+    });
+
+    // Refresh the list
+    loadUnverifiedUsers();
+  };
+
   const getTimeAgo = (dateString: string) => {
     const date = new Date(dateString);
     const now = new Date();
@@ -155,17 +259,114 @@ const AdminUnverifiedUsers: React.FC = () => {
           </Button>
         </div>
 
-        {/* Stats Card */}
+        {/* Stats Cards */}
+        <div className="grid gap-4 md:grid-cols-4">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">סה"כ משתמשים לא מאומתים</CardTitle>
+              <AlertTriangle className="h-4 w-4 text-orange-500" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{stats.total}</div>
+              <p className="text-xs text-muted-foreground">
+                משתמשים שעדיין לא השלימו אימות אימייל
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">השבוע</CardTitle>
+              <Clock className="h-4 w-4 text-blue-500" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{stats.lastWeek}</div>
+              <p className="text-xs text-muted-foreground">משתמשים חדשים השבוע</p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">היום</CardTitle>
+              <Clock className="h-4 w-4 text-green-500" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{stats.lastDay}</div>
+              <p className="text-xs text-muted-foreground">משתמשים חדשים היום</p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">החודש</CardTitle>
+              <Clock className="h-4 w-4 text-purple-500" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{stats.lastMonth}</div>
+              <p className="text-xs text-muted-foreground">משתמשים חדשים החודש</p>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Filters and Actions */}
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">סה"כ משתמשים לא מאומתים</CardTitle>
-            <AlertTriangle className="h-4 w-4 text-orange-500" />
+          <CardHeader>
+            <CardTitle>סינון ופעולות</CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{unverifiedUsers.length}</div>
-            <p className="text-xs text-muted-foreground">
-              משתמשים שעדיין לא השלימו אימות אימייל
-            </p>
+          <CardContent className="space-y-4">
+            <div className="flex flex-col sm:flex-row gap-4">
+              <div className="flex-1">
+                <input
+                  type="text"
+                  placeholder="חפש לפי אימייל או שם..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full px-3 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                />
+              </div>
+              <div className="flex gap-2">
+                <select
+                  value={timeFilter}
+                  onChange={(e) => setTimeFilter(e.target.value as any)}
+                  className="px-3 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                >
+                  <option value="all">כל הזמנים</option>
+                  <option value="day">היום</option>
+                  <option value="week">השבוע</option>
+                  <option value="month">החודש</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap gap-2">
+              <Button
+                onClick={() => deleteOldUsers(7)}
+                variant="destructive"
+                size="sm"
+                className="gap-1"
+              >
+                <Trash2 className="h-3 w-3" />
+                מחק ישנים מ-7 ימים
+              </Button>
+              <Button
+                onClick={() => deleteOldUsers(30)}
+                variant="destructive"
+                size="sm"
+                className="gap-1"
+              >
+                <Trash2 className="h-3 w-3" />
+                מחק ישנים מ-30 ימים
+              </Button>
+              <Button
+                onClick={() => deleteOldUsers(90)}
+                variant="destructive"
+                size="sm"
+                className="gap-1"
+              >
+                <Trash2 className="h-3 w-3" />
+                מחק ישנים מ-90 ימים
+              </Button>
+            </div>
           </CardContent>
         </Card>
 
@@ -178,12 +379,17 @@ const AdminUnverifiedUsers: React.FC = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {unverifiedUsers.length === 0 ? (
+            {filteredUsers.length === 0 ? (
               <div className="text-center py-8">
                 <UserX className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                <h3 className="text-lg font-semibold mb-2">אין משתמשים לא מאומתים</h3>
+                <h3 className="text-lg font-semibold mb-2">
+                  {searchTerm || timeFilter !== 'all' ? 'אין תוצאות' : 'אין משתמשים לא מאומתים'}
+                </h3>
                 <p className="text-muted-foreground">
-                  כל המשתמשים במערכת אימתו את כתובת האימייל שלהם
+                  {searchTerm || timeFilter !== 'all' 
+                    ? 'נסה לשנות את החיפוש או הסינון'
+                    : 'כל המשתמשים במערכת אימתו את כתובת האימייל שלהם'
+                  }
                 </p>
               </div>
             ) : (
@@ -200,7 +406,7 @@ const AdminUnverifiedUsers: React.FC = () => {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {unverifiedUsers.map((user) => (
+                    {filteredUsers.map((user) => (
                       <TableRow key={user.id}>
                         <TableCell className="font-medium">{user.email}</TableCell>
                         <TableCell>
