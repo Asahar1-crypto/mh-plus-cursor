@@ -116,7 +116,7 @@ const Register = () => {
   
   return (
     <div className="container mx-auto py-10 px-4 flex items-center justify-center min-h-[calc(100vh-4rem)]">
-      <div className="w-full max-w-md">
+      <div className="w-full max-w-2xl">
         <Card className="border-border shadow-lg animate-fade-in">
           <CardHeader className="text-center">
             <CardTitle className="text-2xl font-bold">הרשמה</CardTitle>
@@ -136,128 +136,156 @@ const Register = () => {
           </CardHeader>
           <CardContent>
             <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                <FormField
-                  control={form.control}
-                  name="name"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>שם</FormLabel>
-                      <FormControl>
-                        <Input placeholder="ישראל ישראלי" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="email"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>אימייל</FormLabel>
-                      <FormControl>
-                        <Input 
-                          placeholder="your@email.com" 
-                          {...field} 
-                          disabled={!!emailFromInvitation} // Disable editing if coming from invitation 
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="password"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>סיסמה</FormLabel>
-                      <FormControl>
-                        <Input type="password" placeholder="******" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="confirmPassword"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>אימות סיסמה</FormLabel>
-                      <FormControl>
-                        <Input type="password" placeholder="******" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                {/* Personal Information Section */}
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold text-foreground border-b pb-2">פרטים אישיים</h3>
+                  
+                  <FormField
+                    control={form.control}
+                    name="name"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>שם מלא</FormLabel>
+                        <FormControl>
+                          <Input placeholder="ישראל ישראלי" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="email"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>כתובת אימייל</FormLabel>
+                        <FormControl>
+                          <Input 
+                            type="email"
+                            placeholder="your@email.com" 
+                            {...field} 
+                            disabled={!!emailFromInvitation}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="phoneNumber"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>מספר טלפון</FormLabel>
+                        <FormControl>
+                          <Input 
+                            placeholder="05xxxxxxxx" 
+                            {...field}
+                            dir="ltr"
+                            className="text-left" 
+                          />
+                        </FormControl>
+                        <FormMessage />
+                        <p className="text-sm text-muted-foreground">
+                          מספר טלפון ישראלי (נדרש לאימות SMS)
+                        </p>
+                      </FormItem>
+                    )}
+                  />
+                </div>
 
-                <FormField
-                  control={form.control}
-                  name="verificationMethod"
-                  render={({ field }) => (
-                    <FormItem className="space-y-3">
-                      <FormLabel>שיטת אימות החשבון</FormLabel>
-                      <FormControl>
-                        <RadioGroup
-                          onValueChange={field.onChange}
-                          defaultValue={field.value}
-                          className="flex flex-col space-y-2"
-                        >
-                          <div className="flex items-center space-x-2 rtl:space-x-reverse">
-                            <RadioGroupItem value="email" id="email" />
-                            <FormLabel htmlFor="email" className="cursor-pointer">
-                              אימות באמצעות אימייל
-                            </FormLabel>
-                          </div>
-                          <div className="flex items-center space-x-2 rtl:space-x-reverse">
-                            <RadioGroupItem value="sms" id="sms" />
-                            <FormLabel htmlFor="sms" className="cursor-pointer">
-                              אימות באמצעות SMS
-                            </FormLabel>
-                          </div>
-                        </RadioGroup>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                {/* Security Section */}
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold text-foreground border-b pb-2">אבטחה</h3>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="password"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>סיסמה</FormLabel>
+                          <FormControl>
+                            <Input type="password" placeholder="לפחות 6 תווים" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={form.control}
+                      name="confirmPassword"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>אימות סיסמה</FormLabel>
+                          <FormControl>
+                            <Input type="password" placeholder="חזור על הסיסמה" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                </div>
 
-                <FormField
-                  control={form.control}
-                  name="phoneNumber"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>מספר טלפון</FormLabel>
-                      <FormControl>
-                        <Input 
-                          placeholder="05xxxxxxxx" 
-                          {...field}
-                          dir="ltr"
-                          className="text-left" 
-                        />
-                      </FormControl>
-                      <FormMessage />
-                      <p className="text-sm text-muted-foreground">
-                        הזן מספר טלפון ישראלי (05xxxxxxxx)
-                      </p>
-                    </FormItem>
-                  )}
-                />
+                {/* Verification Method Section */}
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold text-foreground border-b pb-2">שיטת אימות</h3>
+                  
+                  <FormField
+                    control={form.control}
+                    name="verificationMethod"
+                    render={({ field }) => (
+                      <FormItem className="space-y-3">
+                        <FormLabel className="text-base">בחר איך תרצה לאמת את החשבון</FormLabel>
+                        <FormControl>
+                          <RadioGroup
+                            onValueChange={field.onChange}
+                            defaultValue={field.value}
+                            className="grid grid-cols-1 md:grid-cols-2 gap-4"
+                          >
+                            <div className="flex items-center space-x-3 rtl:space-x-reverse p-3 rounded-lg border border-border hover:bg-muted/50 transition-colors">
+                              <RadioGroupItem value="sms" id="sms" />
+                              <div className="flex-1">
+                                <FormLabel htmlFor="sms" className="cursor-pointer font-medium">
+                                  SMS
+                                </FormLabel>
+                                <p className="text-sm text-muted-foreground">
+                                  קוד אימות יישלח לטלפון
+                                </p>
+                              </div>
+                            </div>
+                            <div className="flex items-center space-x-3 rtl:space-x-reverse p-3 rounded-lg border border-border hover:bg-muted/50 transition-colors">
+                              <RadioGroupItem value="email" id="email" />
+                              <div className="flex-1">
+                                <FormLabel htmlFor="email" className="cursor-pointer font-medium">
+                                  אימייל
+                                </FormLabel>
+                                <p className="text-sm text-muted-foreground">
+                                  לינק אימות יישלח לאימייל
+                                </p>
+                              </div>
+                            </div>
+                          </RadioGroup>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
                 
-                <Button type="submit" className="w-full" disabled={isLoading}>
+                <Button type="submit" className="w-full h-12 text-base" disabled={isLoading}>
                   {isLoading ? (
                     <span className="flex items-center gap-2">
                       <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-r-transparent" />
                       יוצר חשבון...
                     </span>
                   ) : (
-                    'הרשמה'
+                    'יצירת חשבון'
                   )}
                 </Button>
               </form>
