@@ -7,8 +7,11 @@ const corsHeaders = {
 };
 
 interface SendSMSRequest {
-  phone_number: string;
-  purpose: 'verification' | '2fa' | 'login';
+  to?: string;
+  phone_number?: string;
+  message?: string;
+  purpose?: 'verification' | '2fa' | 'login' | 'test';
+  testMode?: boolean;
 }
 
 const handler = async (req: Request): Promise<Response> => {
@@ -43,37 +46,16 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    const { phone_number, purpose }: SendSMSRequest = await req.json();
+    const { to, phone_number, message, purpose, testMode }: SendSMSRequest = await req.json();
 
-    if (!phone_number) {
+    // Handle phone number from either 'to' or 'phone_number' field
+    const targetPhoneNumber = to || phone_number;
+
+    if (!targetPhoneNumber) {
       return new Response(
         JSON.stringify({ error: 'Phone number is required' }),
         { 
           status: 400,
-          headers: { 'Content-Type': 'application/json', ...corsHeaders }
-        }
-      );
-    }
-
-    // Generate a 6-digit verification code
-    const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
-
-    // Save the verification code to the database
-    const { error: dbError } = await supabaseClient
-      .from('sms_verification_codes')
-      .insert({
-        user_id: user.id,
-        phone_number: phone_number,
-        code: verificationCode,
-        expires_at: new Date(Date.now() + 10 * 60 * 1000).toISOString() // 10 minutes
-      });
-
-    if (dbError) {
-      console.error('Database error:', dbError);
-      return new Response(
-        JSON.stringify({ error: 'Failed to save verification code' }),
-        { 
-          status: 500,
           headers: { 'Content-Type': 'application/json', ...corsHeaders }
         }
       );
@@ -95,17 +77,62 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    // Create the SMS message
-    const smsMessage = purpose === '2fa' 
-      ? `קוד האימות שלך הוא: ${verificationCode}. הקוד תקף למשך 10 דקות.`
-      : `קוד האימות למספר הטלפון שלך הוא: ${verificationCode}. הקוד תקף למשך 10 דקות.`;
+    // Handle test mode - just return success without sending SMS
+    if (testMode) {
+      console.log('Test mode - checking Twilio credentials');
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          message: 'Twilio connection test successful',
+          testMode: true
+        }),
+        {
+          status: 200,
+          headers: { 'Content-Type': 'application/json', ...corsHeaders }
+        }
+      );
+    }
+
+    let smsMessage = message;
+    let verificationCode = '';
+
+    // If no custom message provided, generate verification code and message
+    if (!smsMessage) {
+      verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
+      
+      // Save the verification code to the database
+      const { error: dbError } = await supabaseClient
+        .from('sms_verification_codes')
+        .insert({
+          user_id: user.id,
+          phone_number: targetPhoneNumber,
+          code: verificationCode,
+          expires_at: new Date(Date.now() + 10 * 60 * 1000).toISOString() // 10 minutes
+        });
+
+      if (dbError) {
+        console.error('Database error:', dbError);
+        return new Response(
+          JSON.stringify({ error: 'Failed to save verification code' }),
+          { 
+            status: 500,
+            headers: { 'Content-Type': 'application/json', ...corsHeaders }
+          }
+        );
+      }
+
+      // Create the SMS message
+      smsMessage = purpose === '2fa' 
+        ? `קוד האימות שלך הוא: ${verificationCode}. הקוד תקף למשך 10 דקות.`
+        : `קוד האימות למספר הטלפון שלך הוא: ${verificationCode}. הקוד תקף למשך 10 דקות.`;
+    }
 
     // Send SMS via Twilio API
     const twilioUrl = `https://api.twilio.com/2010-04-01/Accounts/${twilioAccountSid}/Messages.json`;
     
     const formData = new URLSearchParams();
     formData.append('From', twilioPhoneNumber);
-    formData.append('To', phone_number);
+    formData.append('To', targetPhoneNumber);
     formData.append('Body', smsMessage);
 
     const twilioResponse = await fetch(twilioUrl, {

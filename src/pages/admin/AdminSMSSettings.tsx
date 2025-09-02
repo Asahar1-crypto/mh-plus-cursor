@@ -124,12 +124,23 @@ const AdminSMSSettings: React.FC = () => {
 
       if (response.error) {
         console.error('SMS Connection test error:', response.error);
-        setConnectionStatus('error');
-        toast({
-          title: 'שגיאה בחיבור',
-          description: response.error.message || 'שגיאה בבדיקת החיבור לשירות SMS',
-          variant: 'destructive'
-        });
+        
+        // בדיקה אם השגיאה היא Unauthorized - זה אומר שחסרים סודות
+        if (response.error.message === 'Unauthorized') {
+          setConnectionStatus('error');
+          toast({
+            title: 'נדרשת הגדרת סודות Twilio',
+            description: 'עליך להגדיר TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN ו-TWILIO_PHONE_NUMBER בהגדרות הפונקציות של Supabase',
+            variant: 'destructive'
+          });
+        } else {
+          setConnectionStatus('error');
+          toast({
+            title: 'שגיאה בחיבור',
+            description: response.error.message || 'שגיאה בבדיקת החיבור לשירות SMS',
+            variant: 'destructive'
+          });
+        }
       } else {
         setConnectionStatus('connected');
         toast({
@@ -287,10 +298,11 @@ const AdminSMSSettings: React.FC = () => {
   };
 
   const updateTwilioCredentials = async () => {
-    // פתיחת דיאלוג לעדכון פרטי Twilio
+    // הפניה להגדרות הפונקציות של Supabase
+    window.open('https://supabase.com/dashboard/project/hchmfsilgfrzhenafbzi/settings/functions', '_blank');
     toast({
-      title: 'עדכון פרטי Twilio',
-      description: 'עבור אל הגדרות הפונקציות בSupabase לעדכון פרטי Twilio'
+      title: 'הגדרת פרטי Twilio',
+      description: 'עבור להגדרות הפונקציות של Supabase והגדר את TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN ו-TWILIO_PHONE_NUMBER'
     });
   };
 
