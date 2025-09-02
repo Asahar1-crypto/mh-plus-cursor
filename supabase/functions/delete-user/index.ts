@@ -114,7 +114,19 @@ serve(async (req) => {
       throw new Error(`Failed to delete account memberships: ${membersError.message}`);
     }
 
-    // 4. Delete from profiles
+    // 4. Delete accounts owned by the user (this will cascade delete related data)
+    logStep("Deleting accounts owned by user");
+    const { error: accountsError } = await supabaseClient
+      .from('accounts')
+      .delete()
+      .eq('owner_id', user_id);
+    
+    if (accountsError) {
+      logStep("Error deleting owned accounts", accountsError);
+      throw new Error(`Failed to delete owned accounts: ${accountsError.message}`);
+    }
+
+    // 5. Delete from profiles
     logStep("Deleting user profile");
     const { error: profileDeleteError } = await supabaseClient
       .from('profiles')
