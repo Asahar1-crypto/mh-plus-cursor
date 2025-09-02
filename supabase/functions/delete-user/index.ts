@@ -126,8 +126,34 @@ serve(async (req) => {
       throw new Error(`Failed to delete account memberships: ${membersError.message}`);
     }
 
-    // 4. Delete accounts owned by the user (this will cascade delete related data)
-    logStep("Deleting accounts owned by user");
+    // 4. Check if user owns any accounts with other members
+    logStep("Checking owned accounts");
+    const { data: ownedAccounts, error: ownedAccountsError } = await supabaseClient
+      .from('accounts')
+      .select(`
+        id,
+        name,
+        account_members(count)
+      `)
+      .eq('owner_id', user_id);
+
+    if (ownedAccountsError) {
+      logStep("Error checking owned accounts", ownedAccountsError);
+      throw new Error(`Failed to check owned accounts: ${ownedAccountsError.message}`);
+    }
+
+    // Check if any owned account has other members
+    const accountsWithMembers = (ownedAccounts || []).filter(
+      (account: any) => (account.account_members as any[])?.[0]?.count > 1
+    );
+
+    if (accountsWithMembers.length > 0) {
+      const accountNames = accountsWithMembers.map((acc: any) => acc.name).join(', ');
+      throw new Error(`Cannot delete user: User owns accounts with other members: ${accountNames}. Transfer ownership first or remove other members.`);
+    }
+
+    // 5. Delete accounts owned by the user (only if they have no other members)
+    logStep("Deleting empty accounts owned by user");
     const { error: accountsError } = await supabaseClient
       .from('accounts')
       .delete()
@@ -138,7 +164,7 @@ serve(async (req) => {
       throw new Error(`Failed to delete owned accounts: ${accountsError.message}`);
     }
 
-    // 5. Delete from profiles
+    // 6. Delete from profiles
     logStep("Deleting user profile");
     const { error: profileDeleteError } = await supabaseClient
       .from('profiles')
@@ -150,7 +176,7 @@ serve(async (req) => {
       throw new Error(`Failed to delete profile: ${profileDeleteError.message}`);
     }
 
-    // 5. Finally, delete from auth.users using admin API
+    // 7. Finally, delete from auth.users using admin API
     logStep("Deleting user from auth system");
     const { error: authDeleteError } = await supabaseClient.auth.admin.deleteUser(user_id);
     
@@ -159,7 +185,7 @@ serve(async (req) => {
       throw new Error(`Failed to delete user from auth: ${authDeleteError.message}`);
     }
 
-    // 6. Record the deletion in deleted_users table
+    // 8. Record the deletion in deleted_users table
     logStep("Recording user deletion");
     const { error: recordError } = await supabaseClient
       .from('deleted_users')
