@@ -35,7 +35,7 @@ export const registrationService = {
         password,
         options: {
           data: { name, phone_number: phoneNumber },
-          emailRedirectTo: `${window.location.origin}/#/verify-email`
+          emailRedirectTo: `${window.location.origin}/verify-email`
         }
       });
       
