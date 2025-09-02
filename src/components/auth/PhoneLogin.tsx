@@ -19,6 +19,15 @@ const PhoneLogin: React.FC<PhoneLoginProps> = ({ onBack }) => {
   const [userInfo, setUserInfo] = useState<{ userId?: string; userName?: string }>({});
   const [phoneError, setPhoneError] = useState('');
 
+  // Add logging to track state changes
+  React.useEffect(() => {
+    console.log('PhoneLogin state changed - showOtpVerification:', showOtpVerification);
+  }, [showOtpVerification]);
+
+  React.useEffect(() => {
+    console.log('PhoneLogin userInfo changed:', userInfo);
+  }, [userInfo]);
+
   const normalizePhoneNumber = (phone: string): string => {
     // Remove all non-digit characters
     const digitsOnly = phone.replace(/\D/g, '');
