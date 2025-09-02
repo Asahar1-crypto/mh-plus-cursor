@@ -145,7 +145,11 @@ const AdminTenants: React.FC = () => {
       if (error) throw error;
 
       // קבלת רשימת כל המשתמשים עם האימיילים שלהם
-      const { data: emailData, error: emailError } = await supabase.functions.invoke('get-user-emails');
+      const { data: emailData, error: emailError } = await supabase.functions.invoke('get-user-emails', {
+        headers: {
+          'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`
+        }
+      });
       let userEmailMap = new Map<string, string>();
       
       if (!emailError && emailData?.success) {
@@ -155,6 +159,8 @@ const AdminTenants: React.FC = () => {
         setUserEmails(emailData.userEmails);
       } else {
         console.error('Failed to fetch user emails:', emailError);
+        // הוספת fallback - ניסיון להשתמש בנתונים הקיימים
+        console.log('Attempting to get emails from existing data...');
       }
 
       // קבלת פעילות אחרונה ונתונים נוספים

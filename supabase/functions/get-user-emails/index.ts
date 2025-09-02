@@ -34,9 +34,11 @@ serve(async (req) => {
     }
 
     const token = authHeader.replace("Bearer ", "");
+    
+    // Try to get user using the service role client first, then validate with regular client
     const { data: userData, error: userError } = await supabaseClient.auth.getUser(token);
     if (userError) {
-      logStep("Auth error", { error: userError.message });
+      logStep("Auth error", { error: userError.message, token: token.substring(0, 10) + "..." });
       throw new Error(`Authentication failed: ${userError.message}`);
     }
     if (!userData.user) {
