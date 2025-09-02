@@ -15,11 +15,19 @@ const VerifyEmail = () => {
   const [isVerifying, setIsVerifying] = useState(false);
   
   const email = location.state?.email || searchParams.get('email') || '';
-  const token = searchParams.get('token');
+  const token = searchParams.get('token') || searchParams.get('access_token');
+  const type = searchParams.get('type');
   
   useEffect(() => {
     // Handle different verification scenarios
     const handleVerification = async () => {
+      // Handle email verification from link
+      if (token && type === 'signup') {
+        console.log('Email verification token detected:', token);
+        await verifyEmailWithToken(token);
+        return;
+      }
+      
       // If user is already authenticated (came from email link), handle immediately
       if (isAuthenticated) {
         console.log("User is authenticated, processing pending invitations");
@@ -47,8 +55,8 @@ const VerifyEmail = () => {
     };
     
     handleVerification();
-  }, [token, isAuthenticated, navigate]);
-  
+  }, [token, type, isAuthenticated, navigate]);
+
   const verifyEmailWithToken = async (token: string) => {
     setIsVerifying(true);
     try {
@@ -73,6 +81,7 @@ const VerifyEmail = () => {
       setIsVerifying(false);
     }
   };
+  
   
   return (
     <div className="container mx-auto py-10 px-4 flex items-center justify-center min-h-[calc(100vh-4rem)]">
