@@ -54,6 +54,7 @@ const AdminTenants: React.FC = () => {
   const { profile } = useAuth();
   const { toast } = useToast();
   const [tenants, setTenants] = useState<Tenant[]>([]);
+  const [deletedUsers, setDeletedUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
@@ -94,6 +95,7 @@ const AdminTenants: React.FC = () => {
 
   useEffect(() => {
     loadTenants();
+    loadDeletedUsers();
   }, []);
 
   const loadTenants = async () => {
@@ -210,6 +212,23 @@ const AdminTenants: React.FC = () => {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadDeletedUsers = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('deleted_users')
+        .select(`
+          *,
+          deleted_by_profile:profiles!deleted_users_deleted_by_fkey(name)
+        `)
+        .order('deleted_at', { ascending: false });
+
+      if (error) throw error;
+      setDeletedUsers(data || []);
+    } catch (error) {
+      console.error('Error loading deleted users:', error);
     }
   };
 
@@ -444,6 +463,7 @@ const AdminTenants: React.FC = () => {
         });
         // רענן את הנתונים
         await loadTenants();
+        await loadDeletedUsers();
         // סגור דיאלוגים פתוחים
         setViewDetailsDialog({ open: false, tenant: null });
         setDeleteMemberDialog({ open: false, tenant: null, member: null });
@@ -585,6 +605,18 @@ const AdminTenants: React.FC = () => {
               </div>
               <div className="text-2xl font-bold text-red-600">
                 {tenants.filter(t => t.subscription_status === 'expired').length}
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center gap-2">
+                <UserMinus className="h-4 w-4 text-gray-500" />
+                <span className="text-sm text-muted-foreground">נמחקו</span>
+              </div>
+              <div className="text-2xl font-bold text-gray-600">
+                {deletedUsers.length}
               </div>
             </CardContent>
           </Card>
@@ -749,6 +781,66 @@ const AdminTenants: React.FC = () => {
             </div>
           </CardContent>
         </Card>
+
+        {/* Deleted Users Section */}
+        {deletedUsers.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle>משתמשים שנמחקו על ידי אדמין ({deletedUsers.length})</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b">
+                      <th className="text-right p-4">שם</th>
+                      <th className="text-right p-4">אימייל</th>
+                      <th className="text-right p-4">נמחק על ידי</th>
+                      <th className="text-right p-4">תאריך מחיקה</th>
+                      <th className="text-right p-4">משפחות שנמחקו</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {deletedUsers.map((deletedUser) => (
+                      <tr key={deletedUser.id} className="border-b hover:bg-muted/50">
+                        <td className="p-4">
+                          <div className="font-medium">{deletedUser.name || 'לא ידוע'}</div>
+                          <div className="text-xs text-muted-foreground">ID: {deletedUser.original_user_id}</div>
+                        </td>
+                        <td className="p-4">{deletedUser.email}</td>
+                        <td className="p-4">
+                          {deletedUser.deleted_by_profile?.name || 'לא ידוע'}
+                        </td>
+                        <td className="p-4">
+                          {new Date(deletedUser.deleted_at).toLocaleDateString('he-IL', {
+                            year: 'numeric',
+                            month: '2-digit',
+                            day: '2-digit',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          })}
+                        </td>
+                        <td className="p-4">
+                          {deletedUser.accounts_deleted && deletedUser.accounts_deleted.length > 0 ? (
+                            <div className="text-sm">
+                              {deletedUser.accounts_deleted.map((accountName: string, index: number) => (
+                                <Badge key={index} variant="outline" className="mr-1 mb-1">
+                                  {accountName}
+                                </Badge>
+                              ))}
+                            </div>
+                          ) : (
+                            <span className="text-muted-foreground">אין משפחות</span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Delete Tenant Dialog */}
         <AlertDialog open={deleteDialog.open} onOpenChange={(open) => {

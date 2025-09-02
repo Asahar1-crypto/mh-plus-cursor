@@ -228,6 +228,47 @@ export type Database = {
           },
         ]
       }
+      deleted_users: {
+        Row: {
+          accounts_deleted: string[] | null
+          created_at: string
+          deleted_at: string
+          deleted_by: string
+          email: string
+          id: string
+          name: string | null
+          original_user_id: string
+        }
+        Insert: {
+          accounts_deleted?: string[] | null
+          created_at?: string
+          deleted_at?: string
+          deleted_by: string
+          email: string
+          id?: string
+          name?: string | null
+          original_user_id: string
+        }
+        Update: {
+          accounts_deleted?: string[] | null
+          created_at?: string
+          deleted_at?: string
+          deleted_by?: string
+          email?: string
+          id?: string
+          name?: string | null
+          original_user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "deleted_users_deleted_by_fkey"
+            columns: ["deleted_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       expense_children: {
         Row: {
           child_id: string

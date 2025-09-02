@@ -76,6 +76,18 @@ serve(async (req) => {
       email: userToDelete.user.email 
     });
 
+    // Get user profile info and accounts before deletion
+    const { data: userProfile } = await supabaseClient
+      .from('profiles')
+      .select('name')
+      .eq('id', user_id)
+      .single();
+
+    const { data: userAccounts } = await supabaseClient
+      .from('accounts')
+      .select('name')
+      .eq('owner_id', user_id);
+
     // Start deletion process - delete in proper order to avoid foreign key constraints
 
     // 1. Delete from scanned_receipts
@@ -145,6 +157,23 @@ serve(async (req) => {
     if (authDeleteError) {
       logStep("Error deleting user from auth", authDeleteError);
       throw new Error(`Failed to delete user from auth: ${authDeleteError.message}`);
+    }
+
+    // 6. Record the deletion in deleted_users table
+    logStep("Recording user deletion");
+    const { error: recordError } = await supabaseClient
+      .from('deleted_users')
+      .insert({
+        original_user_id: user_id,
+        email: userToDelete.user.email,
+        name: userProfile?.name || null,
+        deleted_by: userData.user.id,
+        accounts_deleted: userAccounts?.map(acc => acc.name) || []
+      });
+
+    if (recordError) {
+      logStep("Warning: Failed to record deletion", recordError);
+      // Don't fail the entire operation if recording fails
     }
 
     logStep("User deletion completed successfully", { 
