@@ -110,6 +110,7 @@ const AdminTenants: React.FC = () => {
   }, []);
 
   const loadTenants = async () => {
+    console.log('🚀 loadTenants function called');
     try {
       setLoading(true);
 
@@ -1132,6 +1133,9 @@ const AdminTenants: React.FC = () => {
           <AlertDialogContent className="max-w-4xl">
             <AlertDialogHeader>
               <AlertDialogTitle>פרטי משפחת {viewDetailsDialog.tenant?.name}</AlertDialogTitle>
+              <AlertDialogDescription>
+                מידע מפורט על המשפחה, חברים, הוצאות ופעילות.
+              </AlertDialogDescription>
             </AlertDialogHeader>
             
             {viewDetailsDialog.tenant && (
