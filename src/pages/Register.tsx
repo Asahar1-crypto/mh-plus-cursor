@@ -10,10 +10,12 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { useAuth } from '@/contexts/auth';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useEffect, useState } from 'react';
+import SmsVerification from '@/components/auth/SmsVerification';
 
 const registerSchema = z.object({
   name: z.string().min(2, { message: 'שם חייב להיות לפחות 2 תווים' }),
   email: z.string().email({ message: 'אימייל לא תקין' }),
+  phoneNumber: z.string().min(10, { message: 'מספר טלפון חייב להיות לפחות 10 ספרות' }),
   password: z.string().min(6, { message: 'סיסמה חייבת להיות לפחות 6 תווים' }),
   confirmPassword: z.string().min(6, { message: 'סיסמה חייבת להיות לפחות 6 תווים' }),
 }).refine((data) => data.password === data.confirmPassword, {
@@ -27,6 +29,8 @@ const Register = () => {
   const [searchParams] = useSearchParams();
   const [emailFromInvitation, setEmailFromInvitation] = useState<string>('');
   const [invitationId, setInvitationId] = useState<string | null>(null);
+  const [showSmsVerification, setShowSmsVerification] = useState(false);
+  const [registrationData, setRegistrationData] = useState<z.infer<typeof registerSchema> | null>(null);
   
   useEffect(() => {
     // Check if there's an invitationId in the URL
@@ -50,6 +54,7 @@ const Register = () => {
     defaultValues: {
       name: '',
       email: emailFromInvitation || '',
+      phoneNumber: '',
       password: '',
       confirmPassword: '',
     },
@@ -64,12 +69,28 @@ const Register = () => {
   
   const onSubmit = async (data: z.infer<typeof registerSchema>) => {
     try {
-      console.log("Registering with data:", { ...data, invitationId });
+      console.log("Proceeding to SMS verification with data:", { ...data, invitationId });
       
+      // Store registration data for later use
+      setRegistrationData(data);
+      
+      // Show SMS verification step
+      setShowSmsVerification(true);
+    } catch (error) {
+      console.error('Registration error:', error);
+    }
+  };
+
+  const handleSmsVerificationComplete = async (verified: boolean) => {
+    if (!verified || !registrationData) {
+      return;
+    }
+
+    try {
       // If we have an invitationId, store it along with the email for auto-linking after verification
       if (invitationId) {
         const pendingInvitations = {
-          email: data.email,
+          email: registrationData.email,
           invitations: [{ 
             invitationId,
             // Empty values since we don't have this data yet, will be fetched during auth check
@@ -80,22 +101,36 @@ const Register = () => {
         };
         
         localStorage.setItem('pendingInvitationsAfterRegistration', JSON.stringify(pendingInvitations));
-        console.log(`Stored invitation ${invitationId} for email ${data.email} for processing after verification`);
-        
-        // Verify that data was stored
-        setTimeout(() => {
-          const storedData = localStorage.getItem('pendingInvitationsAfterRegistration');
-          console.log("Verification - stored pendingInvitationsAfterRegistration:", storedData);
-        }, 100);
+        console.log(`Stored invitation ${invitationId} for email ${registrationData.email} for processing after verification`);
       }
       
-      await register(data.name, data.email, data.password);
-      navigate('/verify-email', { state: { email: data.email } });
+      // Complete registration with phone verification
+      await register(registrationData.name, registrationData.email, registrationData.password, registrationData.phoneNumber);
+      navigate('/verify-email', { state: { email: registrationData.email } });
     } catch (error) {
       console.error('Registration error:', error);
     }
   };
+
+  const handleBackToForm = () => {
+    setShowSmsVerification(false);
+    setRegistrationData(null);
+  };
   
+  if (showSmsVerification && registrationData) {
+    return (
+      <div className="container mx-auto py-10 px-4 flex items-center justify-center min-h-[calc(100vh-4rem)]">
+        <div className="w-full max-w-md">
+          <SmsVerification
+            phoneNumber={registrationData.phoneNumber}
+            onVerificationComplete={handleSmsVerificationComplete}
+            onBack={handleBackToForm}
+          />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="container mx-auto py-10 px-4 flex items-center justify-center min-h-[calc(100vh-4rem)]">
       <div className="w-full max-w-md">
@@ -109,7 +144,7 @@ const Register = () => {
                   הרשמה עם האימייל: {emailFromInvitation}
                   {invitationId && (
                     <div className="mt-1 text-green-700">
-                      תחובר אוטומטית לחשבון המשותף אחרי אימות האימייל
+                      תחובר אוטומטית לחשבון המשותף אחרי אימות האימייל ומספר הטלפון
                     </div>
                   )}
                 </div>
@@ -153,6 +188,28 @@ const Register = () => {
                 
                 <FormField
                   control={form.control}
+                  name="phoneNumber"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>מספר טלפון</FormLabel>
+                      <FormControl>
+                        <Input 
+                          placeholder="050-1234567" 
+                          {...field} 
+                          onChange={(e) => {
+                            // Allow only numbers, spaces, and dashes
+                            const value = e.target.value.replace(/[^\d\s-]/g, '');
+                            field.onChange(value);
+                          }}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
                   name="password"
                   render={({ field }) => (
                     <FormItem>
@@ -183,10 +240,10 @@ const Register = () => {
                   {isLoading ? (
                     <span className="flex items-center gap-2">
                       <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-r-transparent" />
-                      יוצר חשבון...
+                      מתקדם לאימות SMS...
                     </span>
                   ) : (
-                    'הרשמה'
+                    'המשך לאימות SMS'
                   )}
                 </Button>
               </form>

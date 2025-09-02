@@ -7,7 +7,7 @@ import { User } from '../../types';
  * Service for user registration
  */
 export const registrationService = {
-  register: async (name: string, email: string, password: string) => {
+  register: async (name: string, email: string, password: string, phoneNumber?: string) => {
     try {
       console.log(`Registering user: ${name} (${email})`);
       
@@ -35,7 +35,7 @@ export const registrationService = {
         email,
         password,
         options: {
-          data: { name },
+          data: { name, phone_number: phoneNumber },
           emailRedirectTo: `${window.location.origin}/verify-email`
         }
       });
@@ -68,6 +68,21 @@ export const registrationService = {
         
         toast.success('נרשמת בהצלחה! בדוק את האימייל שלך לאישור החשבון');
         
+        // Update profile with phone number if provided
+        if (phoneNumber) {
+          const { error: profileError } = await supabase
+            .from('profiles')
+            .update({ 
+              phone_number: phoneNumber,
+              phone_verified: true // Mark as verified since SMS was already verified
+            })
+            .eq('id', data.user.id);
+
+          if (profileError) {
+            console.error('Error updating profile with phone:', profileError);
+          }
+        }
+
         // Create user object
         const user: User = {
           id: data.user.id,
