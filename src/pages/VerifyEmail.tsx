@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/auth';
 import { CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
 const VerifyEmail = () => {
   const { verifyEmail, isAuthenticated } = useAuth();
@@ -14,7 +15,7 @@ const VerifyEmail = () => {
   const [verificationStatus, setVerificationStatus] = useState<'pending' | 'success' | 'error'>('pending');
   const [isVerifying, setIsVerifying] = useState(false);
   
-  const email = location.state?.email || '';
+  const email = location.state?.email || searchParams.get('email') || '';
   const token = searchParams.get('token');
   
   useEffect(() => {
@@ -52,7 +53,35 @@ const VerifyEmail = () => {
   const verifyEmailWithToken = async (token: string) => {
     setIsVerifying(true);
     try {
-      const result = await verifyEmail(token);
+      let result = false;
+      
+      // If we have both email and token from URL params, try custom verification first
+      if (email && token) {
+        try {
+          console.log('Attempting custom email verification with SendGrid token');
+          const { error } = await supabase.auth.verifyOtp({
+            email: email,
+            token: token,
+            type: 'signup'
+          });
+          
+          if (error) {
+            console.log('Custom verification failed, trying standard verification:', error);
+            // Fallback to standard verification
+            result = await verifyEmail(token);
+          } else {
+            console.log('Custom verification successful');
+            result = true;
+          }
+        } catch (customError) {
+          console.log('Custom verification error, falling back to standard:', customError);
+          result = await verifyEmail(token);
+        }
+      } else {
+        // Standard verification
+        result = await verifyEmail(token);
+      }
+      
       setVerificationStatus(result ? 'success' : 'error');
       
       // If verification was successful, check for pending invitations
