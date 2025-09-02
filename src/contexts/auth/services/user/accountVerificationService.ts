@@ -12,27 +12,27 @@ const PASSWORD_RESET_ERROR_MESSAGE = 'איפוס הסיסמה נכשל, אנא �
  * Service for account verification and recovery operations
  */
 export const accountVerificationService = {
-  // Verify email function
-  verifyEmail: async (token: string): Promise<boolean> => {
+  // Verify email function using custom verification endpoint
+  verifyEmail: async (token: string, email?: string): Promise<boolean> => {
     try {
-      console.log("Attempting to verify email with token");
+      console.log("Attempting to verify email with custom token");
       
-      // Check if user is already authenticated (coming from email link)
-      const { data: session } = await supabase.auth.getSession();
-      if (session.session) {
-        console.log("User already authenticated via email verification");
-        toast.success(EMAIL_VERIFICATION_SUCCESS_MESSAGE);
-        return true;
+      if (!email) {
+        console.error("Email is required for verification");
+        toast.error(EMAIL_VERIFICATION_ERROR_MESSAGE);
+        return false;
       }
       
-      // Try to verify with token hash
-      const { error } = await supabase.auth.verifyOtp({
-        token_hash: token,
-        type: 'email'
+      // Call our custom verification function
+      const { data, error } = await supabase.functions.invoke('verify-email', {
+        body: {
+          token,
+          email
+        }
       });
       
-      if (error) {
-        console.error("Email verification error from Supabase:", error);
+      if (error || !data?.success) {
+        console.error("Email verification error:", error);
         toast.error(EMAIL_VERIFICATION_ERROR_MESSAGE);
         return false;
       }

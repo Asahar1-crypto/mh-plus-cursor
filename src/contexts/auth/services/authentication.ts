@@ -50,8 +50,8 @@ export async function logout() {
   return userService.logout();
 }
 
-export async function verifyEmail(token: string) {
-  return userService.verifyEmail(token);
+export async function verifyEmail(token: string, email?: string) {
+  return userService.verifyEmail(token, email);
 }
 
 export async function resetPassword(email: string) {

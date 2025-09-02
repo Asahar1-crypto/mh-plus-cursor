@@ -6,10 +6,10 @@ export const usePasswordActions = (
   setIsLoading: (isLoading: boolean) => void,
   checkAndSetUserData: (forceRefresh?: boolean) => Promise<void>
 ) => {
-  const verifyEmail = async (token: string): Promise<boolean> => {
+  const verifyEmail = async (token: string, email?: string): Promise<boolean> => {
     setIsLoading(true);
     try {
-      const result = await authService.verifyEmail(token);
+      const result = await authService.verifyEmail(token, email);
       if (result) {
         await checkAndSetUserData();
         toast.success('האימייל אומת בהצלחה');

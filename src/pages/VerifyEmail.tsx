@@ -14,7 +14,7 @@ const VerifyEmail = () => {
   const [verificationStatus, setVerificationStatus] = useState<'pending' | 'success' | 'error'>('pending');
   const [isVerifying, setIsVerifying] = useState(false);
   
-  const email = location.state?.email || '';
+  const email = location.state?.email || searchParams.get('email') || '';
   const token = searchParams.get('token');
   
   useEffect(() => {
@@ -52,7 +52,7 @@ const VerifyEmail = () => {
   const verifyEmailWithToken = async (token: string) => {
     setIsVerifying(true);
     try {
-      const result = await verifyEmail(token);
+      const result = await verifyEmail(token, email);
       setVerificationStatus(result ? 'success' : 'error');
       
       // If verification was successful, check for pending invitations
