@@ -21,8 +21,8 @@ export const userService = {
   },
 
   // Registration
-  register: (name: string, email: string, password: string) => {
-    return registrationService.register(name, email, password);
+  register: (name: string, email: string, password: string, verificationMethod?: string, phoneNumber?: string) => {
+    return registrationService.register(name, email, password, verificationMethod, phoneNumber);
   },
 
   // Verification & Recovery

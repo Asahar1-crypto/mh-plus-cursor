@@ -7,7 +7,7 @@ import { User } from '../../types';
  * Service for user registration
  */
 export const registrationService = {
-  register: async (name: string, email: string, password: string) => {
+  register: async (name: string, email: string, password: string, verificationMethod: string = 'email', phoneNumber?: string) => {
     try {
       console.log(`Registering user: ${name} (${email})`);
       
@@ -30,13 +30,19 @@ export const registrationService = {
         console.error("Error checking invitations:", invitationsError);
       }
       
-      // Sign up with Supabase - use built-in email confirmation
+      // Sign up with Supabase
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
-          data: { name },
-          emailRedirectTo: `${window.location.origin}/verify-email`
+          data: { 
+            name,
+            verification_method: verificationMethod,
+            phone_number: phoneNumber
+          },
+          emailRedirectTo: verificationMethod === 'email' 
+            ? `${window.location.origin}/verify-email`
+            : undefined
         }
       });
       
@@ -66,7 +72,29 @@ export const registrationService = {
           console.log('Stored pending invitations');
         }
         
-        toast.success('נרשמת בהצלחה! בדוק את האימייל שלך לאישור החשבון');
+        // Send SMS verification if selected
+        if (verificationMethod === 'sms' && phoneNumber) {
+          try {
+            const { error: smsError } = await supabase.functions.invoke('send-sms', {
+              body: {
+                phone_number: phoneNumber,
+                purpose: 'verification'
+              }
+            });
+            
+            if (smsError) {
+              console.error('SMS sending error:', smsError);
+              toast.error('שגיאה בשליחת SMS');
+            } else {
+              toast.success('נרשמת בהצלחה! קוד אימות נשלח למספר הטלפון שלך');
+            }
+          } catch (smsError) {
+            console.error('SMS error:', smsError);
+            toast.error('שגיאה בשליחת SMS');
+          }
+        } else {
+          toast.success('נרשמת בהצלחה! בדוק את האימייל שלך לאישור החשבון');
+        }
         
         // Create user object
         const user: User = {

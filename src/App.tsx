@@ -11,6 +11,8 @@ import Home from "./pages/Home";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import VerifyEmail from "./pages/VerifyEmail";
+import VerifySMS from "./pages/VerifySMS";
+import TwoFactorAuth from "./pages/TwoFactorAuth";
 import ForgotPassword from "./pages/ForgotPassword";
 import Dashboard from "./pages/Dashboard";
 import AccountSettings from "./pages/AccountSettings";
@@ -55,6 +57,7 @@ const App = () => (
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />
                 <Route path="/verify-email" element={<VerifyEmail />} />
+                <Route path="/verify-sms" element={<VerifySMS />} />
                 <Route path="/forgot-password" element={<ForgotPassword />} />
               </Route>
               
@@ -67,6 +70,7 @@ const App = () => (
                 <Route path="/children" element={<Children />} />
                 <Route path="/expenses" element={<Expenses />} />
                 <Route path="/reports" element={<Reports />} />
+                <Route path="/two-factor-auth" element={<TwoFactorAuth />} />
                 <Route path="/test-email" element={<IndexPage />} />
                 
                 {/* Admin routes */}

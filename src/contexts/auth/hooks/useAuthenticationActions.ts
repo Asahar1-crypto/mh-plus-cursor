@@ -27,10 +27,10 @@ export const useAuthenticationActions = (
     }
   };
 
-  const register = async (name: string, email: string, password: string): Promise<void> => {
+  const register = async (name: string, email: string, password: string, verificationMethod?: string, phoneNumber?: string): Promise<void> => {
     setIsLoading(true);
     try {
-      await authService.register(name, email, password);
+      await authService.register(name, email, password, verificationMethod, phoneNumber);
       toast.success('נרשמת בהצלחה! בדוק את האימייל לאישור החשבון');
     } catch (error: any) {
       console.error('Registration failed:', error);

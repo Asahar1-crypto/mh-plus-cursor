@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useAuth } from '@/contexts/auth';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useEffect, useState } from 'react';
@@ -16,9 +17,22 @@ const registerSchema = z.object({
   email: z.string().email({ message: 'אימייל לא תקין' }),
   password: z.string().min(6, { message: 'סיסמה חייבת להיות לפחות 6 תווים' }),
   confirmPassword: z.string().min(6, { message: 'סיסמה חייבת להיות לפחות 6 תווים' }),
+  verificationMethod: z.enum(['email', 'sms'], { message: 'בחר שיטת אימות' }),
+  phoneNumber: z.string().optional(),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "הסיסמאות אינן תואמות",
   path: ["confirmPassword"],
+}).refine((data) => {
+  if (data.verificationMethod === 'sms' && !data.phoneNumber) {
+    return false;
+  }
+  if (data.verificationMethod === 'sms' && data.phoneNumber && !/^05\d{8}$/.test(data.phoneNumber)) {
+    return false;
+  }
+  return true;
+}, {
+  message: "מספר טלפון נדרש לאימות SMS (פורמט: 05xxxxxxxx)",
+  path: ["phoneNumber"],
 });
 
 const Register = () => {
@@ -52,8 +66,12 @@ const Register = () => {
       email: emailFromInvitation || '',
       password: '',
       confirmPassword: '',
+      verificationMethod: 'email',
+      phoneNumber: '',
     },
   });
+  
+  const selectedVerificationMethod = form.watch('verificationMethod');
   
   // Update form when emailFromInvitation changes
   useEffect(() => {
@@ -89,8 +107,19 @@ const Register = () => {
         }, 100);
       }
       
-      await register(data.name, data.email, data.password);
-      navigate('/verify-email', { state: { email: data.email } });
+      await register(data.name, data.email, data.password, data.verificationMethod, data.phoneNumber);
+      
+      if (data.verificationMethod === 'sms') {
+        navigate('/verify-sms', { 
+          state: { 
+            email: data.email,
+            phoneNumber: data.phoneNumber,
+            purpose: 'verification' 
+          } 
+        });
+      } else {
+        navigate('/verify-email', { state: { email: data.email } });
+      }
     } catch (error) {
       console.error('Registration error:', error);
     }
@@ -178,6 +207,61 @@ const Register = () => {
                     </FormItem>
                   )}
                 />
+
+                <FormField
+                  control={form.control}
+                  name="verificationMethod"
+                  render={({ field }) => (
+                    <FormItem className="space-y-3">
+                      <FormLabel>שיטת אימות החשבון</FormLabel>
+                      <FormControl>
+                        <RadioGroup
+                          onValueChange={field.onChange}
+                          defaultValue={field.value}
+                          className="flex flex-col space-y-2"
+                        >
+                          <div className="flex items-center space-x-2 rtl:space-x-reverse">
+                            <RadioGroupItem value="email" id="email" />
+                            <FormLabel htmlFor="email" className="cursor-pointer">
+                              אימות באמצעות אימייל
+                            </FormLabel>
+                          </div>
+                          <div className="flex items-center space-x-2 rtl:space-x-reverse">
+                            <RadioGroupItem value="sms" id="sms" />
+                            <FormLabel htmlFor="sms" className="cursor-pointer">
+                              אימות באמצעות SMS
+                            </FormLabel>
+                          </div>
+                        </RadioGroup>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {selectedVerificationMethod === 'sms' && (
+                  <FormField
+                    control={form.control}
+                    name="phoneNumber"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>מספר טלפון</FormLabel>
+                        <FormControl>
+                          <Input 
+                            placeholder="05xxxxxxxx" 
+                            {...field}
+                            dir="ltr"
+                            className="text-left" 
+                          />
+                        </FormControl>
+                        <FormMessage />
+                        <p className="text-sm text-muted-foreground">
+                          הזן מספר טלפון ישראלי (05xxxxxxxx)
+                        </p>
+                      </FormItem>
+                    )}
+                  />
+                )}
                 
                 <Button type="submit" className="w-full" disabled={isLoading}>
                   {isLoading ? (
