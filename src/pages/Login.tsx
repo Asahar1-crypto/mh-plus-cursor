@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Button } from '@/components/ui/button';
+import { ModernButton } from '@/components/ui/modern-button';
 import { Input } from '@/components/ui/input';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -141,23 +141,15 @@ const Login = () => {
                     </Link>
                   </div>
                   
-                  <Button 
+                  <ModernButton 
                     type="submit" 
-                    className="w-full bg-gradient-to-r from-primary to-primary-glow hover:from-primary-glow hover:to-primary text-white font-semibold py-3 text-lg shadow-lg transform transition-all duration-200 hover:scale-105 disabled:transform-none" 
-                    disabled={isLoading}
+                    className="w-full mt-2" 
+                    size="lg"
+                    loading={isLoading}
+                    variant="gradient"
                   >
-                    {isLoading ? (
-                      <span className="flex items-center gap-2">
-                        <span className="h-5 w-5 animate-spin rounded-full border-2 border-current border-r-transparent" />
-                        מתחבר...
-                      </span>
-                    ) : (
-                      <span className="flex items-center gap-2">
-                        <Mail className="w-5 h-5" />
-                        התחבר
-                      </span>
-                    )}
-                  </Button>
+                    {isLoading ? 'מתחבר...' : 'התחבר'}
+                  </ModernButton>
                 </form>
               </Form>
             </div>
