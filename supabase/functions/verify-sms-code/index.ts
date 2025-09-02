@@ -13,12 +13,16 @@ serve(async (req) => {
   }
 
   try {
-    const { phoneNumber, code } = await req.json()
+    const { phoneNumber, code, verificationType = 'registration' } = await req.json()
     
-    console.log('Verification request received:', { phoneNumber, code })
+    console.log('Verification request received:', { phoneNumber, code, verificationType })
     
     if (!phoneNumber || !code) {
       throw new Error('Phone number and code are required')
+    }
+
+    if (!['registration', 'login'].includes(verificationType)) {
+      throw new Error('Invalid verification type')
     }
 
     // Normalize phone number for Israel (same logic as send-sms)
@@ -49,6 +53,7 @@ serve(async (req) => {
       .select('*')
       .eq('phone_number', normalizedPhone)  // Use normalized phone number
       .eq('code', code)
+      .eq('verification_type', verificationType)  // Filter by verification type
       .eq('verified', false)
       .gt('expires_at', new Date().toISOString())
       .order('created_at', { ascending: false })
@@ -87,11 +92,60 @@ serve(async (req) => {
 
     console.log('SMS verification successful for phone:', phoneNumber)
 
+    // If this is a login verification, we need to create a Supabase session
+    let sessionData = null;
+    if (verificationType === 'login' && verificationData.user_id) {
+      console.log('Creating session for login verification...');
+      
+      // Get user data from auth.users
+      const { data: authUser, error: authError } = await supabase.auth.admin
+        .getUserById(verificationData.user_id);
+
+      if (authError || !authUser.user) {
+        console.error('Error getting auth user:', authError);
+        return new Response(
+          JSON.stringify({ 
+            verified: false,
+            error: 'User authentication failed'
+          }),
+          {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            status: 400,
+          },
+        );
+      }
+
+      // Generate session tokens for the user
+      const { data: sessionResult, error: sessionError } = await supabase.auth.admin
+        .generateLink({
+          type: 'magiclink',
+          email: authUser.user.email!,
+          options: {
+            redirectTo: `${Deno.env.get('SUPABASE_URL')}/auth/v1/callback`
+          }
+        });
+
+      if (sessionError) {
+        console.error('Error generating session:', sessionError);
+      } else {
+        sessionData = {
+          userId: authUser.user.id,
+          email: authUser.user.email,
+          sessionUrl: sessionResult.properties?.action_link
+        };
+        console.log('Session created successfully for user:', authUser.user.id);
+      }
+    }
+
+    const response = { 
+      verified: true,
+      message: 'Phone number verified successfully',
+      verificationType,
+      ...(sessionData && { session: sessionData })
+    };
+
     return new Response(
-      JSON.stringify({ 
-        verified: true,
-        message: 'Phone number verified successfully'
-      }),
+      JSON.stringify(response),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 200,

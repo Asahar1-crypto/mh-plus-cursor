@@ -528,6 +528,7 @@ export type Database = {
           id: string
           phone_number: string
           user_id: string | null
+          verification_type: string | null
           verified: boolean
           verified_at: string | null
         }
@@ -539,6 +540,7 @@ export type Database = {
           id?: string
           phone_number: string
           user_id?: string | null
+          verification_type?: string | null
           verified?: boolean
           verified_at?: string | null
         }
@@ -550,6 +552,7 @@ export type Database = {
           id?: string
           phone_number?: string
           user_id?: string | null
+          verification_type?: string | null
           verified?: boolean
           verified_at?: string | null
         }

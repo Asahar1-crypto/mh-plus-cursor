@@ -4,6 +4,7 @@ import { AuthContext } from './AuthContext';
 import { useAuthState } from './hooks/useAuthState';
 import { useAuthActions } from './hooks/useAuthActions';
 import { useAuthSubscriptions } from './hooks/useAuthSubscriptions';
+import { phoneAuthService } from './services/phoneAuthService';
 
 interface AuthProviderProps {
   children: ReactNode;
@@ -72,6 +73,32 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     performInitialCheck();
   }, []);
 
+  // Phone authentication functions
+  const sendPhoneOtp = async (phoneNumber: string) => {
+    setIsLoading(true);
+    try {
+      const result = await phoneAuthService.sendPhoneLoginOtp(phoneNumber);
+      return result;
+    } catch (error) {
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const loginWithPhone = async (phoneNumber: string, otp: string) => {
+    setIsLoading(true);
+    try {
+      const result = await phoneAuthService.phoneLogin(phoneNumber, otp);
+      // After successful phone login, check and set user data
+      await checkAndSetUserData();
+    } catch (error) {
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const authContextValue = {
     user,
     profile,
@@ -89,7 +116,9 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     resetPassword,
     switchAccount,
     updateAccountName,
-    refreshProfile
+    refreshProfile,
+    sendPhoneOtp,
+    loginWithPhone
   };
 
   return (

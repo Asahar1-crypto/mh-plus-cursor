@@ -63,4 +63,7 @@ export interface AuthContextType {
   switchAccount: (accountId: string) => Promise<void>;
   updateAccountName: (newName: string) => Promise<void>;
   refreshProfile: () => Promise<void>;
+  // New phone authentication methods
+  sendPhoneOtp: (phoneNumber: string) => Promise<{ userId?: string; userName?: string }>;
+  loginWithPhone: (phoneNumber: string, otp: string) => Promise<void>;
 }
