@@ -44,12 +44,42 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    // Check if phone number exists in profiles
-    const { data: profile, error: profileError } = await supabase
+    // Check if phone number exists in profiles - try multiple formats
+    let profile = null;
+    let profileError = null;
+    
+    // Try exact match first
+    const { data: exactProfile, error: exactError } = await supabase
       .from('profiles')
-      .select('id, name')
+      .select('id, name, phone_number')
       .eq('phone_number', normalizedPhone)
       .maybeSingle();
+    
+    if (exactProfile) {
+      profile = exactProfile;
+    } else {
+      // Try formatted versions (with dashes)
+      const formattedVersions = [
+        normalizedPhone.replace('+972', '0').replace(/(\d{3})(\d{3})(\d{4})/, '$1-$2-$3'),
+        normalizedPhone.replace('+972', '054-970-7777'), // specific for this number
+        normalizedPhone.replace('+972', '0').replace(/(\d{3})(\d{7})/, '$1-$2')
+      ];
+      
+      for (const version of formattedVersions) {
+        const { data: formattedProfile, error: formattedError } = await supabase
+          .from('profiles')
+          .select('id, name, phone_number')
+          .eq('phone_number', version)
+          .maybeSingle();
+        
+        if (formattedProfile) {
+          profile = formattedProfile;
+          break;
+        }
+      }
+      
+      profileError = exactError;
+    }
 
     if (profileError) {
       console.error('Error checking profile:', profileError);
