@@ -27,7 +27,44 @@ const handler = async (req: Request): Promise<Response> => {
 
   try {
     console.log('Processing SMS request...');
-    // Initialize Supabase client
+    
+    // Parse the request body first to check for testMode
+    const { to, phone_number, message, purpose, testMode }: SendSMSRequest = await req.json();
+    
+    // Handle test mode - just check Twilio credentials without authentication
+    if (testMode) {
+      console.log('Test mode - checking Twilio credentials');
+      
+      // Get Twilio credentials
+      const twilioAccountSid = Deno.env.get('TWILIO_ACCOUNT_SID');
+      const twilioAuthToken = Deno.env.get('TWILIO_AUTH_TOKEN');
+      const twilioPhoneNumber = Deno.env.get('TWILIO_PHONE_NUMBER');
+      
+      if (!twilioAccountSid || !twilioAuthToken || !twilioPhoneNumber) {
+        console.error('Twilio credentials not found');
+        return new Response(
+          JSON.stringify({ error: 'SMS service not configured' }),
+          { 
+            status: 500,
+            headers: { 'Content-Type': 'application/json', ...corsHeaders }
+          }
+        );
+      }
+      
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          message: 'Twilio connection test successful',
+          testMode: true
+        }),
+        {
+          status: 200,
+          headers: { 'Content-Type': 'application/json', ...corsHeaders }
+        }
+      );
+    }
+    
+    // Initialize Supabase client for non-test requests
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_ANON_KEY') ?? '',
@@ -51,8 +88,6 @@ const handler = async (req: Request): Promise<Response> => {
         }
       );
     }
-
-    const { to, phone_number, message, purpose, testMode }: SendSMSRequest = await req.json();
 
     // Handle phone number from either 'to' or 'phone_number' field
     const targetPhoneNumber = to || phone_number;
@@ -83,21 +118,6 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    // Handle test mode - just return success without sending SMS
-    if (testMode) {
-      console.log('Test mode - checking Twilio credentials');
-      return new Response(
-        JSON.stringify({ 
-          success: true, 
-          message: 'Twilio connection test successful',
-          testMode: true
-        }),
-        {
-          status: 200,
-          headers: { 'Content-Type': 'application/json', ...corsHeaders }
-        }
-      );
-    }
 
     let smsMessage = message;
     let verificationCode = '';
