@@ -219,13 +219,21 @@ const AdminUnverifiedUsers: React.FC = () => {
     try {
       console.log('Deleting user:', { userId, email });
       
-      // שלח את הטוקן הנוכחי עם הבקשה
-      const { data: { session } } = await supabase.auth.getSession();
+      // רענן את הטוקן לפני השליחה
+      const { data: { session }, error: sessionError } = await supabase.auth.refreshSession();
+      
+      if (sessionError) {
+        console.error('Session refresh error:', sessionError);
+        throw new Error('Failed to refresh session');
+      }
+      
       const accessToken = session?.access_token;
       
       if (!accessToken) {
-        throw new Error('No access token found');
+        throw new Error('No access token found after refresh');
       }
+      
+      console.log('Using refreshed token for delete operation');
       
       const { data, error } = await supabase.functions.invoke('delete-user', {
         body: { user_id: userId },
@@ -284,12 +292,18 @@ const AdminUnverifiedUsers: React.FC = () => {
 
     for (const user of usersToDelete) {
       try {
-        // שלח את הטוקן הנוכחי עם הבקשה
-        const { data: { session } } = await supabase.auth.getSession();
+        // רענן את הטוקן לפני השליחה
+        const { data: { session }, error: sessionError } = await supabase.auth.refreshSession();
+        
+        if (sessionError) {
+          console.error('Session refresh error:', sessionError);
+          throw new Error('Failed to refresh session');
+        }
+        
         const accessToken = session?.access_token;
         
         if (!accessToken) {
-          throw new Error('No access token found');
+          throw new Error('No access token found after refresh');
         }
         
         const { error } = await supabase.functions.invoke('delete-user', {
