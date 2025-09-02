@@ -126,14 +126,14 @@ serve(async (req) => {
       throw new Error(`Failed to delete account memberships: ${membersError.message}`);
     }
 
-    // 4. Check if user owns any accounts with other members
-    logStep("Checking owned accounts");
+    // 4. Handle account ownership - transfer ownership or set to null
+    logStep("Handling account ownership");
     const { data: ownedAccounts, error: ownedAccountsError } = await supabaseClient
       .from('accounts')
       .select(`
         id,
         name,
-        account_members(count)
+        account_members!inner(user_id, role)
       `)
       .eq('owner_id', user_id);
 
@@ -142,29 +142,35 @@ serve(async (req) => {
       throw new Error(`Failed to check owned accounts: ${ownedAccountsError.message}`);
     }
 
-    // Check if any owned account has other members
-    const accountsWithMembers = (ownedAccounts || []).filter(
-      (account: any) => (account.account_members as any[])?.[0]?.count > 1
-    );
+    // For each owned account, transfer ownership to another admin or set to null
+    for (const account of ownedAccounts || []) {
+      const members = (account.account_members as any[]) || [];
+      const otherAdmins = members.filter(member => 
+        member.user_id !== user_id && member.role === 'admin'
+      );
 
-    if (accountsWithMembers.length > 0) {
-      const accountNames = accountsWithMembers.map((acc: any) => acc.name).join(', ');
-      throw new Error(`Cannot delete user: User owns accounts with other members: ${accountNames}. Transfer ownership first or remove other members.`);
+      let newOwnerId = null;
+      if (otherAdmins.length > 0) {
+        // Transfer ownership to first available admin
+        newOwnerId = otherAdmins[0].user_id;
+        logStep(`Transferring ownership of account ${account.name} to admin ${newOwnerId}`);
+      } else {
+        // No other admins - account will have no owner but remain active
+        logStep(`Account ${account.name} will have no owner after user deletion`);
+      }
+
+      const { error: transferError } = await supabaseClient
+        .from('accounts')
+        .update({ owner_id: newOwnerId })
+        .eq('id', account.id);
+
+      if (transferError) {
+        logStep("Error transferring ownership", transferError);
+        throw new Error(`Failed to transfer ownership: ${transferError.message}`);
+      }
     }
 
-    // 5. Delete accounts owned by the user (only if they have no other members)
-    logStep("Deleting empty accounts owned by user");
-    const { error: accountsError } = await supabaseClient
-      .from('accounts')
-      .delete()
-      .eq('owner_id', user_id);
-    
-    if (accountsError) {
-      logStep("Error deleting owned accounts", accountsError);
-      throw new Error(`Failed to delete owned accounts: ${accountsError.message}`);
-    }
-
-    // 6. Delete from profiles
+    // 5. Delete from profiles
     logStep("Deleting user profile");
     const { error: profileDeleteError } = await supabaseClient
       .from('profiles')
@@ -176,7 +182,7 @@ serve(async (req) => {
       throw new Error(`Failed to delete profile: ${profileDeleteError.message}`);
     }
 
-    // 7. Finally, delete from auth.users using admin API
+    // 6. Finally, delete from auth.users using admin API
     logStep("Deleting user from auth system");
     const { error: authDeleteError } = await supabaseClient.auth.admin.deleteUser(user_id);
     
@@ -185,7 +191,7 @@ serve(async (req) => {
       throw new Error(`Failed to delete user from auth: ${authDeleteError.message}`);
     }
 
-    // 8. Record the deletion in deleted_users table
+    // 7. Record the deletion in deleted_users table
     logStep("Recording user deletion");
     const { error: recordError } = await supabaseClient
       .from('deleted_users')
