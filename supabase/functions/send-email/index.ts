@@ -4,6 +4,9 @@ import sgMail from "npm:@sendgrid/mail@7.7.0";
 
 // Initialize SendGrid with the API key
 const sendgridApiKey = Deno.env.get("SENDGRID_API_KEY");
+console.log("SendGrid API Key exists:", !!sendgridApiKey);
+console.log("SendGrid API Key length:", sendgridApiKey?.length || 0);
+console.log("SendGrid API Key starts with:", sendgridApiKey?.substring(0, 10) || "N/A");
 if (!sendgridApiKey) {
   console.error("SENDGRID_API_KEY environment variable is not set!");
 }
