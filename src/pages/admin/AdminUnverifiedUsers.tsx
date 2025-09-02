@@ -219,27 +219,25 @@ const AdminUnverifiedUsers: React.FC = () => {
     try {
       console.log('Deleting user:', { userId, email });
       
-      // רענן את הטוקן לפני השליחה
-      const { data: { session }, error: sessionError } = await supabase.auth.refreshSession();
+      // בדוק אם המשתמש עדיין מחובר
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
       
-      if (sessionError) {
-        console.error('Session refresh error:', sessionError);
-        throw new Error('Failed to refresh session');
+      if (userError || !user) {
+        console.error('User not authenticated:', userError);
+        toast({
+          title: 'שגיאה באותנטיקציה',
+          description: 'נדרש להתחבר מחדש למערכת',
+          variant: 'destructive'
+        });
+        // הפנה למסך התחברות
+        window.location.href = '/login';
+        return;
       }
       
-      const accessToken = session?.access_token;
-      
-      if (!accessToken) {
-        throw new Error('No access token found after refresh');
-      }
-      
-      console.log('Using refreshed token for delete operation');
+      console.log('User is authenticated, proceeding with delete');
       
       const { data, error } = await supabase.functions.invoke('delete-user', {
-        body: { user_id: userId },
-        headers: {
-          'Authorization': `Bearer ${accessToken}`
-        }
+        body: { user_id: userId }
       });
 
       if (error) {
@@ -292,25 +290,23 @@ const AdminUnverifiedUsers: React.FC = () => {
 
     for (const user of usersToDelete) {
       try {
-        // רענן את הטוקן לפני השליחה
-        const { data: { session }, error: sessionError } = await supabase.auth.refreshSession();
+        // בדוק אם המשתמש עדיין מחובר
+        const { data: { user: currentUser }, error: userError } = await supabase.auth.getUser();
         
-        if (sessionError) {
-          console.error('Session refresh error:', sessionError);
-          throw new Error('Failed to refresh session');
-        }
-        
-        const accessToken = session?.access_token;
-        
-        if (!accessToken) {
-          throw new Error('No access token found after refresh');
+        if (userError || !currentUser) {
+          console.error('User not authenticated:', userError);
+          toast({
+            title: 'שגיאה באותנטיקציה',
+            description: 'נדרש להתחבר מחדש למערכת',
+            variant: 'destructive'
+          });
+          // הפנה למסך התחברות
+          window.location.href = '/login';
+          return;
         }
         
         const { error } = await supabase.functions.invoke('delete-user', {
-          body: { user_id: user.id },
-          headers: {
-            'Authorization': `Bearer ${accessToken}`
-          }
+          body: { user_id: user.id }
         });
 
         if (error) throw error;
