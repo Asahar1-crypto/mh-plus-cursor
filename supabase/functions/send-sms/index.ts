@@ -15,12 +15,18 @@ interface SendSMSRequest {
 }
 
 const handler = async (req: Request): Promise<Response> => {
+  console.log('=== SMS FUNCTION STARTED ===');
+  console.log('Method:', req.method);
+  console.log('URL:', req.url);
+  
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
+    console.log('Handling CORS preflight request');
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
+    console.log('Processing SMS request...');
     // Initialize Supabase client
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
