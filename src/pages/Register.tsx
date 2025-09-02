@@ -3,10 +3,11 @@ import React from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { ModernInput } from '@/components/ui/modern-input';
+import { ModernButton } from '@/components/ui/modern-button';
+import { SmartPhoneInput } from '@/components/ui/smart-phone-input';
+import AnimatedBackground from '@/components/ui/animated-background';
 import { useAuth } from '@/contexts/auth';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useEffect, useState } from 'react';
@@ -136,134 +137,108 @@ const Register = () => {
   }
 
   return (
-    <div className="container mx-auto py-10 px-4 flex items-center justify-center min-h-[calc(100vh-4rem)]">
-      <div className="w-full max-w-md">
-        <Card className="border-border shadow-lg animate-fade-in">
-          <CardHeader className="text-center">
-            <CardTitle className="text-2xl font-bold">הרשמה</CardTitle>
-            <CardDescription>
-              צור חשבון חדש במערכת מחציות פלוס
-              {emailFromInvitation && (
-                <div className="mt-2 text-sm bg-blue-50 p-2 rounded border border-blue-100">
-                  הרשמה עם האימייל: {emailFromInvitation}
-                  {invitationId && (
-                    <div className="mt-1 text-green-700">
-                      תחובר אוטומטית לחשבון המשותף אחרי אימות האימייל ומספר הטלפון
+    <>
+      <AnimatedBackground />
+      <div className="container mx-auto py-10 px-4 flex items-center justify-center min-h-[calc(100vh-4rem)] relative z-10">
+        <div className="w-full max-w-md">
+          <Card className="glass border-glass-border shadow-card animate-fade-in backdrop-blur-lg">
+            <CardHeader className="text-center space-y-4">
+              <CardTitle className="text-3xl font-bold bg-gradient-to-r from-primary to-primary-glow bg-clip-text text-transparent">
+                הרשמה למערכת
+              </CardTitle>
+              <CardDescription className="text-base">
+                צור חשבון חדש במערכת מחציות פלוס
+                {emailFromInvitation && (
+                  <div className="mt-3 p-3 bg-gradient-to-r from-blue-50 to-blue-100 rounded-xl border border-blue-200">
+                    <div className="text-sm text-blue-800 font-medium">
+                      הרשמה עם האימייל: {emailFromInvitation}
                     </div>
-                  )}
-                </div>
-              )}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                <FormField
-                  control={form.control}
-                  name="name"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>שם</FormLabel>
-                      <FormControl>
-                        <Input placeholder="ישראל ישראלי" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
+                    {invitationId && (
+                      <div className="mt-2 text-xs text-green-700 bg-green-50 p-2 rounded-lg">
+                        תחובר אוטומטית לחשבון המשותף אחרי אימות האימייל ומספר הטלפון
+                      </div>
+                    )}
+                  </div>
+                )}
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                <ModernInput
+                  label="שם מלא"
+                  icon="user"
+                  placeholder="ישראל ישראלי"
+                  value={form.watch('name')}
+                  onChange={(e) => form.setValue('name', e.target.value)}
+                  validation={form.formState.errors.name ? 'invalid' : form.watch('name') && form.watch('name').length >= 2 ? 'valid' : 'none'}
+                  validationMessage={form.formState.errors.name?.message}
                 />
                 
-                <FormField
-                  control={form.control}
-                  name="email"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>אימייל</FormLabel>
-                      <FormControl>
-                        <Input 
-                          placeholder="your@email.com" 
-                          {...field} 
-                          disabled={!!emailFromInvitation} // Disable editing if coming from invitation 
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
+                <ModernInput
+                  label="כתובת אימייל"
+                  icon="email"
+                  type="email"
+                  placeholder="your@email.com"
+                  value={form.watch('email')}
+                  onChange={(e) => form.setValue('email', e.target.value)}
+                  disabled={!!emailFromInvitation}
+                  validation={form.formState.errors.email ? 'invalid' : form.watch('email') && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.watch('email')) ? 'valid' : 'none'}
+                  validationMessage={form.formState.errors.email?.message}
                 />
                 
-                <FormField
-                  control={form.control}
-                  name="phoneNumber"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>מספר טלפון</FormLabel>
-                      <FormControl>
-                        <Input 
-                          placeholder="050-1234567" 
-                          {...field} 
-                          onChange={(e) => {
-                            // Allow only numbers, spaces, and dashes
-                            const value = e.target.value.replace(/[^\d\s-]/g, '');
-                            field.onChange(value);
-                          }}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
+                <SmartPhoneInput
+                  label="מספר טלפון"
+                  value={form.watch('phoneNumber')}
+                  onChange={(value) => form.setValue('phoneNumber', value)}
+                  validation={form.formState.errors.phoneNumber ? 'invalid' : form.watch('phoneNumber') && form.watch('phoneNumber').length >= 10 ? 'valid' : 'none'}
+                  validationMessage={form.formState.errors.phoneNumber?.message}
                 />
                 
-                <FormField
-                  control={form.control}
-                  name="password"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>סיסמה</FormLabel>
-                      <FormControl>
-                        <Input type="password" placeholder="******" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
+                <ModernInput
+                  label="סיסמה"
+                  icon="password"
+                  type="password"
+                  placeholder="******"
+                  value={form.watch('password')}
+                  onChange={(e) => form.setValue('password', e.target.value)}
+                  validation={form.formState.errors.password ? 'invalid' : form.watch('password') && form.watch('password').length >= 6 ? 'valid' : 'none'}
+                  validationMessage={form.formState.errors.password?.message}
                 />
                 
-                <FormField
-                  control={form.control}
-                  name="confirmPassword"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>אימות סיסמה</FormLabel>
-                      <FormControl>
-                        <Input type="password" placeholder="******" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
+                <ModernInput
+                  label="אימות סיסמה"
+                  icon="password"
+                  type="password"
+                  placeholder="******"
+                  value={form.watch('confirmPassword')}
+                  onChange={(e) => form.setValue('confirmPassword', e.target.value)}
+                  validation={form.formState.errors.confirmPassword ? 'invalid' : form.watch('confirmPassword') && form.watch('password') === form.watch('confirmPassword') ? 'valid' : 'none'}
+                  validationMessage={form.formState.errors.confirmPassword?.message}
                 />
                 
-                <Button type="submit" className="w-full" disabled={isLoading}>
-                  {isLoading ? (
-                    <span className="flex items-center gap-2">
-                      <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-r-transparent" />
-                      מתקדם לאימות SMS...
-                    </span>
-                  ) : (
-                    'המשך לאימות SMS'
-                  )}
-                </Button>
+                <ModernButton 
+                  type="submit" 
+                  className="w-full mt-8" 
+                  size="lg"
+                  loading={isLoading}
+                  variant="gradient"
+                >
+                  {isLoading ? 'מתקדם לאימות SMS...' : 'המשך לאימות SMS'}
+                </ModernButton>
               </form>
-            </Form>
-          </CardContent>
-          <CardFooter className="flex justify-center">
-            <p className="text-sm text-muted-foreground">
-              כבר יש לך חשבון?{' '}
-              <Link to="/login" className="text-brand-600 hover:underline">
-                התחבר כאן
-              </Link>
-            </p>
-          </CardFooter>
-        </Card>
+            </CardContent>
+            <CardFooter className="flex justify-center pt-6">
+              <p className="text-sm text-muted-foreground">
+                כבר יש לך חשבון?{' '}
+                <Link to="/login" className="text-primary hover:text-primary-glow transition-colors duration-300 font-medium">
+                  התחבר כאן
+                </Link>
+              </p>
+            </CardFooter>
+          </Card>
+        </div>
       </div>
-    </div>
+    </>
   );
 };
 

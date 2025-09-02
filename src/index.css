@@ -28,9 +28,10 @@
     --ring: 195 100% 49%;
     --radius: 1rem;
 
-    /* אפקטים מודרניים */
-    --gradient-primary: linear-gradient(135deg, hsl(195 100% 49%), hsl(195 100% 65%));
-    --gradient-secondary: linear-gradient(135deg, hsl(180 70% 55%), hsl(180 70% 70%));
+    /* גרדיאנטים מודרניים - עיצוב חדשני */
+    --gradient-primary: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    --gradient-secondary: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    --gradient-accent: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
     --gradient-background: linear-gradient(135deg, hsl(200 100% 99%), hsl(195 50% 97%));
     --gradient-glass: linear-gradient(135deg, rgba(255,255,255,0.25), rgba(255,255,255,0.1));
     
@@ -41,10 +42,10 @@
     --shadow-glow: 0 0 40px hsl(195 100% 49% / 0.3);
     --shadow-card: 0 8px 32px rgba(14, 165, 233, 0.1);
     
-    /* אפקט זכוכית */
-    --glass-bg: rgba(255, 255, 255, 0.15);
-    --glass-border: rgba(255, 255, 255, 0.25);
-    --glass-backdrop: blur(10px);
+    /* אפקטי זכוכית מתקדמים */
+    --glass-bg: rgba(255, 255, 255, 0.1);
+    --glass-border: rgba(255, 255, 255, 0.2);
+    --glass-backdrop: blur(20px);
 
     /* סיידבאר */
     --sidebar-background: 200 100% 99%;
@@ -117,12 +118,20 @@
     border: 1px solid var(--glass-border);
   }
   
+  .border-glass-border {
+    border-color: var(--glass-border);
+  }
+  
   .gradient-primary {
     background: var(--gradient-primary);
   }
   
   .gradient-secondary {
     background: var(--gradient-secondary);
+  }
+  
+  .gradient-accent {
+    background: var(--gradient-accent);
   }
   
   .shadow-glow {
