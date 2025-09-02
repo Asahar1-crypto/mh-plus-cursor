@@ -366,6 +366,19 @@ const AdminEmailSettings: React.FC = () => {
                     <Settings className="h-4 w-4" />
                     בדוק חיבור
                   </Button>
+                  <Button onClick={saveSettings} disabled={saving} className="gap-2">
+                    {saving ? (
+                      <>
+                        <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                        שומר...
+                      </>
+                    ) : (
+                      <>
+                        <Settings className="h-4 w-4" />
+                        שמור הגדרות
+                      </>
+                    )}
+                  </Button>
                 </div>
               </CardContent>
             </Card>
