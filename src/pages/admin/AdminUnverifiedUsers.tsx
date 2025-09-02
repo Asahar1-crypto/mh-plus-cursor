@@ -217,24 +217,31 @@ const AdminUnverifiedUsers: React.FC = () => {
     }
 
     try {
-      const { error } = await supabase.functions.invoke('delete-user', {
-        body: { userId }
+      console.log('Deleting user:', { userId, email });
+      const { data, error } = await supabase.functions.invoke('delete-user', {
+        body: { user_id: userId } // תיקון: השתמש ב-user_id במקום userId
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Delete user error:', error);
+        throw error;
+      }
+
+      console.log('Delete user response:', data);
 
       toast({
         title: 'נמחק בהצלחה',
         description: `המשתמש ${email} נמחק מהמערכת`,
       });
 
-      loadUnverifiedUsers();
-      loadOrphanedUsers();
+      // רענן את שני הטאבים
+      await loadUnverifiedUsers();
+      await loadOrphanedUsers();
     } catch (error) {
       console.error('Error deleting user:', error);
       toast({
         title: 'שגיאה',
-        description: 'שגיאה במחיקת המשתמש',
+        description: `שגיאה במחיקת המשתמש: ${error instanceof Error ? error.message : 'שגיאה לא ידועה'}`,
         variant: 'destructive'
       });
     }
@@ -266,7 +273,7 @@ const AdminUnverifiedUsers: React.FC = () => {
     for (const user of usersToDelete) {
       try {
         const { error } = await supabase.functions.invoke('delete-user', {
-          body: { userId: user.id }
+          body: { user_id: user.id } // תיקון: השתמש ב-user_id במקום userId
         });
 
         if (error) throw error;
