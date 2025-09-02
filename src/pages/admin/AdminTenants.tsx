@@ -130,6 +130,15 @@ const AdminTenants: React.FC = () => {
 
       if (error) throw error;
 
+      // קבלת רשימת כל המשתמשים עם האימיילים שלהם
+      const { data: authUsers } = await supabase.auth.admin.listUsers();
+      const userEmailMap = new Map<string, string>();
+      authUsers?.users.forEach((user: any) => {
+        if (user.id && user.email) {
+          userEmailMap.set(user.id, user.email);
+        }
+      });
+
       // קבלת פעילות אחרונה ונתונים נוספים
       const tenantsWithDetails = await Promise.all(
         (data || []).map(async (tenant) => {
@@ -151,10 +160,10 @@ const AdminTenants: React.FC = () => {
             .order('created_at', { ascending: false })
             .limit(1);
 
-          // הכנת רשימת חברים מפורטת
+          // הכנת רשימת חברים מפורטת עם האימיילים הנכונים
           const memberDetails = (tenant.account_members || []).map((member: any) => ({
             name: member.profiles?.name || 'לא ידוע',
-            email: member.profiles?.email || 'לא ידוע',
+            email: userEmailMap.get(member.user_id) || 'לא ידוע',
             role: member.role,
             user_id: member.user_id,
             last_login: member.profiles?.last_login,
@@ -173,7 +182,7 @@ const AdminTenants: React.FC = () => {
             trial_ends_at: tenant.trial_ends_at,
             created_at: tenant.created_at,
             owner_name: (tenant.profiles as any)?.name || 'לא ידוע',
-            owner_email: tenant.owner_id, // נשלוף מאוחר יותר את האימייל
+            owner_email: userEmailMap.get(tenant.owner_id) || 'לא ידוע',
             owner_last_login: (tenant.profiles as any)?.last_login,
             total_members: (tenant.account_members as any)?.length || 0,
             total_expenses: expenseCount,
