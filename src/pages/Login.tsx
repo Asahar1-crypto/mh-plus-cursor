@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -9,6 +9,10 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/contexts/auth';
 import { Link, useNavigate } from 'react-router-dom';
+import { Mail, Lock, Sparkles } from 'lucide-react';
+import AuthMethodToggle from '@/components/auth/AuthMethodToggle';
+import PhoneLogin from '@/components/auth/PhoneLogin';
+import AnimatedBackground from '@/components/ui/animated-background';
 
 const loginSchema = z.object({
   email: z.string().email({ message: 'אימייל לא תקין' }),
@@ -18,6 +22,7 @@ const loginSchema = z.object({
 const Login = () => {
   const { login, isLoading } = useAuth();
   const navigate = useNavigate();
+  const [authMethod, setAuthMethod] = useState<'email' | 'phone'>('email');
   
   const form = useForm<z.infer<typeof loginSchema>>({
     resolver: zodResolver(loginSchema),
@@ -35,71 +40,133 @@ const Login = () => {
       console.error('Login error:', error);
     }
   };
+
+  const handleBackToEmailLogin = () => {
+    setAuthMethod('email');
+  };
+
+  if (authMethod === 'phone') {
+    return (
+      <>
+        <AnimatedBackground />
+        <div className="container mx-auto py-10 px-4 flex items-center justify-center min-h-[calc(100vh-4rem)]">
+          <div className="w-full max-w-md">
+            <PhoneLogin onBack={handleBackToEmailLogin} />
+          </div>
+        </div>
+      </>
+    );
+  }
   
   return (
-    <div className="container mx-auto py-10 px-4 flex items-center justify-center min-h-[calc(100vh-4rem)]">
+    <>
+      <AnimatedBackground />
+      <div className="container mx-auto py-10 px-4 flex items-center justify-center min-h-[calc(100vh-4rem)]">
       <div className="w-full max-w-md">
-        <Card className="border-border shadow-lg animate-fade-in">
+        <Card className="border-border shadow-lg animate-fade-in glass shadow-card">
           <CardHeader className="text-center">
-            <CardTitle className="text-2xl font-bold">התחברות</CardTitle>
+            <div className="flex items-center justify-center gap-2 mb-2">
+              <Sparkles className="w-6 h-6 text-primary animate-pulse" />
+              <CardTitle className="text-2xl font-bold bg-gradient-to-r from-primary to-primary-glow bg-clip-text text-transparent">
+                ברוכים הבאים
+              </CardTitle>
+            </div>
             <CardDescription>
-              הכנס את פרטי ההתחברות שלך
+              בחר את שיטת ההתחברות המועדפת עליך
             </CardDescription>
           </CardHeader>
-          <CardContent>
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                <FormField
-                  control={form.control}
-                  name="email"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>אימייל</FormLabel>
-                      <FormControl>
-                        <Input placeholder="your@email.com" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="password"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>סיסמה</FormLabel>
-                      <FormControl>
-                        <Input type="password" placeholder="******" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <div className="text-right">
-                  <Link to="/forgot-password" className="text-sm text-brand-600 hover:underline">
-                    שכחת סיסמה?
-                  </Link>
-                </div>
-                
-                <Button type="submit" className="w-full" disabled={isLoading}>
-                  {isLoading ? (
-                    <span className="flex items-center gap-2">
-                      <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-r-transparent" />
-                      מתחבר...
-                    </span>
-                  ) : (
-                    'התחבר'
-                  )}
-                </Button>
-              </form>
-            </Form>
+          
+          <CardContent className="space-y-6">
+            {/* Auth Method Toggle */}
+            <AuthMethodToggle 
+              method={authMethod} 
+              onChange={setAuthMethod}
+              disabled={isLoading}
+            />
+
+            {/* Email Login Form */}
+            <div className="space-y-4">
+              <Form {...form}>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                  <FormField
+                    control={form.control}
+                    name="email"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-sm font-medium">כתובת אימייל</FormLabel>
+                        <FormControl>
+                          <div className="relative">
+                            <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
+                              <Mail className="w-4 h-4 text-muted-foreground" />
+                            </div>
+                            <Input 
+                              placeholder="your@email.com" 
+                              {...field} 
+                              className="pl-10 transition-all duration-200 focus:shadow-glow"
+                            />
+                          </div>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="password"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-sm font-medium">סיסמה</FormLabel>
+                        <FormControl>
+                          <div className="relative">
+                            <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
+                              <Lock className="w-4 h-4 text-muted-foreground" />
+                            </div>
+                            <Input 
+                              type="password" 
+                              placeholder="******" 
+                              {...field} 
+                              className="pl-10 transition-all duration-200 focus:shadow-glow"
+                            />
+                          </div>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <div className="text-right">
+                    <Link to="/forgot-password" className="text-sm text-primary hover:text-primary-glow transition-colors duration-200 hover:underline">
+                      שכחת סיסמה?
+                    </Link>
+                  </div>
+                  
+                  <Button 
+                    type="submit" 
+                    className="w-full bg-gradient-to-r from-primary to-primary-glow hover:from-primary-glow hover:to-primary text-white font-semibold py-3 text-lg shadow-lg transform transition-all duration-200 hover:scale-105 disabled:transform-none" 
+                    disabled={isLoading}
+                  >
+                    {isLoading ? (
+                      <span className="flex items-center gap-2">
+                        <span className="h-5 w-5 animate-spin rounded-full border-2 border-current border-r-transparent" />
+                        מתחבר...
+                      </span>
+                    ) : (
+                      <span className="flex items-center gap-2">
+                        <Mail className="w-5 h-5" />
+                        התחבר
+                      </span>
+                    )}
+                  </Button>
+                </form>
+              </Form>
+            </div>
           </CardContent>
+          
           <CardFooter className="flex justify-center">
             <p className="text-sm text-muted-foreground">
               עדיין אין לך חשבון?{' '}
-              <Link to="/register" className="text-brand-600 hover:underline">
+              <Link to="/register" className="text-primary hover:text-primary-glow transition-colors duration-200 hover:underline font-medium">
                 הירשם כאן
               </Link>
             </p>
@@ -107,6 +174,7 @@ const Login = () => {
         </Card>
       </div>
     </div>
+    </>
   );
 };
 
