@@ -66,19 +66,30 @@ export const authenticationService = {
   logout: async (): Promise<void> => {
     try {
       console.log("Attempting logout");
-      const { error } = await supabase.auth.signOut();
+      
+      // Clear session storage and localStorage before signOut
+      sessionStorage.clear();
+      localStorage.removeItem('supabase.auth.token');
+      
+      const { error } = await supabase.auth.signOut({
+        scope: 'global' // This ensures complete logout
+      });
       
       if (error) {
         console.error("Logout error from Supabase:", error);
-        throw error;
+        // Even if there's an error, we want to clear local state
+        console.log("Clearing local state despite error");
       }
       
-      console.log("Logout successful");
+      console.log("Logout completed");
       toast.info(LOGOUT_SUCCESS_MESSAGE);
     } catch (error) {
       console.error('Logout failed:', error);
+      // Clear local storage even on error
+      sessionStorage.clear();
+      localStorage.removeItem('supabase.auth.token');
       toast.error(LOGOUT_ERROR_MESSAGE);
-      throw error;
+      // Don't throw error - we want to continue with local logout
     }
   },
 };
