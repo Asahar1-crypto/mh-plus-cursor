@@ -891,7 +891,10 @@ const AdminTenants: React.FC = () => {
                       <tbody>
                         {viewDetailsDialog.tenant.member_details.map((member, index) => (
                           <tr key={index} className="border-b last:border-b-0">
-                            <td className="p-3 font-medium">{member.name}</td>
+                            <td className="p-3">
+                              <div className="font-medium">{member.name}</div>
+                              <div className="text-sm text-muted-foreground">{member.email}</div>
+                            </td>
                             <td className="p-3">
                               <Badge variant={member.role === 'admin' ? 'default' : 'secondary'}>
                                 {member.role === 'admin' ? 'מנהל' : 'חבר'}
