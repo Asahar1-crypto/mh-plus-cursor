@@ -105,7 +105,7 @@ const Register = () => {
       }
       
       // Complete registration with phone verification
-      await register(registrationData.name, registrationData.email, registrationData.password, registrationData.phoneNumber);
+      await register(registrationData.name, registrationData.email, registrationData.password);
       navigate('/verify-email', { state: { email: registrationData.email } });
     } catch (error) {
       console.error('Registration error:', error);

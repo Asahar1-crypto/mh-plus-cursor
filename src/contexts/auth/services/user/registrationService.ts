@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from 'sonner';
 import { User } from '../../types';
@@ -48,6 +47,30 @@ export const registrationService = {
       if (data?.user) {
         console.log('User created successfully with Supabase auth');
         
+        // Update profile with phone number after successful registration
+        if (phoneNumber) {
+          try {
+            // Wait a bit for the profile to be created by the trigger
+            setTimeout(async () => {
+              const { error: profileError } = await supabase
+                .from('profiles')
+                .update({ 
+                  phone_number: phoneNumber,
+                  phone_verified: true 
+                })
+                .eq('id', data.user.id);
+
+              if (profileError) {
+                console.error('Error updating profile with phone:', profileError);
+              } else {
+                console.log('Profile updated with phone number');
+              }
+            }, 1000);
+          } catch (updateError) {
+            console.error('Error in profile update:', updateError);
+          }
+        }
+        
         // Handle pending invitations
         if (invitations && invitations.length > 0) {
           console.log(`Found ${invitations.length} pending invitations for ${email}`);
@@ -68,21 +91,6 @@ export const registrationService = {
         
         toast.success('נרשמת בהצלחה! בדוק את האימייל שלך לאישור החשבון');
         
-        // Update profile with phone number if provided
-        if (phoneNumber) {
-          const { error: profileError } = await supabase
-            .from('profiles')
-            .update({ 
-              phone_number: phoneNumber,
-              phone_verified: true // Mark as verified since SMS was already verified
-            })
-            .eq('id', data.user.id);
-
-          if (profileError) {
-            console.error('Error updating profile with phone:', profileError);
-          }
-        }
-
         // Create user object
         const user: User = {
           id: data.user.id,
