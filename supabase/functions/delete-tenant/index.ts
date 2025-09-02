@@ -86,19 +86,35 @@ serve(async (req) => {
 
     // Delete in proper order to avoid foreign key constraints
     
-    // 1. Delete expense-children relationships
-    logStep("Deleting expense-children relationships");
-    await supabaseClient
-      .from('expense_children')
-      .delete()
-      .in('expense_id', 
-        supabaseClient
-          .from('expenses')
-          .select('id')
-          .eq('account_id', tenant_id)
-      );
+    // 1. Get all expenses for this tenant first
+    const { data: expenses, error: expensesListError } = await supabaseClient
+      .from('expenses')
+      .select('id')
+      .eq('account_id', tenant_id);
 
-    // 2. Delete expenses
+    if (expensesListError) {
+      logStep("Error getting expenses list", expensesListError);
+      throw new Error(`Failed to get expenses list: ${expensesListError.message}`);
+    }
+
+    // 2. Delete expense-children relationships
+    if (expenses && expenses.length > 0) {
+      logStep("Deleting expense-children relationships", { count: expenses.length });
+      const expenseIds = expenses.map(e => e.id);
+      const { error: expenseChildrenError } = await supabaseClient
+        .from('expense_children')
+        .delete()
+        .in('expense_id', expenseIds);
+      
+      if (expenseChildrenError) {
+        logStep("Error deleting expense-children", expenseChildrenError);
+        throw new Error(`Failed to delete expense-children: ${expenseChildrenError.message}`);
+      }
+    } else {
+      logStep("No expenses found, skipping expense-children deletion");
+    }
+
+    // 3. Delete expenses
     logStep("Deleting expenses");
     const { error: expensesError } = await supabaseClient
       .from('expenses')
@@ -110,7 +126,7 @@ serve(async (req) => {
       throw new Error(`Failed to delete expenses: ${expensesError.message}`);
     }
 
-    // 3. Delete children
+    // 4. Delete children
     logStep("Deleting children");
     const { error: childrenError } = await supabaseClient
       .from('children')
@@ -122,7 +138,7 @@ serve(async (req) => {
       throw new Error(`Failed to delete children: ${childrenError.message}`);
     }
 
-    // 4. Delete budgets
+    // 5. Delete budgets
     logStep("Deleting budgets");
     const { error: budgetsError } = await supabaseClient
       .from('budgets')
@@ -134,7 +150,7 @@ serve(async (req) => {
       throw new Error(`Failed to delete budgets: ${budgetsError.message}`);
     }
 
-    // 5. Delete invitations
+    // 6. Delete invitations
     logStep("Deleting invitations");
     const { error: invitationsError } = await supabaseClient
       .from('invitations')
@@ -146,7 +162,7 @@ serve(async (req) => {
       throw new Error(`Failed to delete invitations: ${invitationsError.message}`);
     }
 
-    // 6. Delete account memberships
+    // 7. Delete account memberships
     logStep("Deleting account memberships");
     const { error: membersError } = await supabaseClient
       .from('account_members')
@@ -158,7 +174,7 @@ serve(async (req) => {
       throw new Error(`Failed to delete account members: ${membersError.message}`);
     }
 
-    // 7. Finally, delete the account itself
+    // 8. Finally, delete the account itself
     logStep("Deleting account");
     const { error: accountError } = await supabaseClient
       .from('accounts')
