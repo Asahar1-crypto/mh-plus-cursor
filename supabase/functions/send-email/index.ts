@@ -83,18 +83,27 @@ async function loadEmailSettings() {
 }
 
 serve(async (req) => {
+  console.log("=== SEND EMAIL FUNCTION STARTED ===");
+  console.log("Method:", req.method);
+  console.log("URL:", req.url);
+  
   // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
+    console.log("Handling CORS preflight request");
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
     console.log("Received request to send email");
+    console.log("SendGrid API Key available:", !!sendgridApiKey);
+    console.log("SendGrid API Key starts with SG:", sendgridApiKey?.startsWith("SG."));
     
     // Parse request body
     let requestBody;
     try {
-      requestBody = await req.json() as EmailRequest;
+      const textBody = await req.text();
+      console.log("Raw request body:", textBody);
+      requestBody = JSON.parse(textBody) as EmailRequest;
       console.log("Request body parsed successfully:", JSON.stringify({
         to: requestBody.to,
         subject: requestBody.subject,

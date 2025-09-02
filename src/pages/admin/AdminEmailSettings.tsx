@@ -264,6 +264,7 @@ const AdminEmailSettings: React.FC = () => {
 
     try {
       setTesting(true);
+      console.log('Sending test email to:', testEmail);
       
       const response = await supabase.functions.invoke('send-email', {
         body: {
@@ -282,22 +283,37 @@ const AdminEmailSettings: React.FC = () => {
         }
       });
 
+      console.log('Test email response:', response);
+
       if (response.error) {
-        throw new Error(response.error.message);
+        console.error('Test email error:', response.error);
+        throw new Error(response.error.message || 'שגיאה בשליחת אימייל הבדיקה');
       }
 
-      toast({
-        title: 'הצלחה',
-        description: `אימייל בדיקה נשלח ל-${testEmail}`
-      });
+      // בדיקה אם התגובה מצביעה על הצלחה
+      if (response.data?.success) {
+        toast({
+          title: 'הצלחה',
+          description: `אימייל בדיקה נשלח ל-${testEmail}`
+        });
+        setConnectionStatus('connected');
+      } else if (response.data?.warning) {
+        toast({
+          title: 'אזהרה',
+          description: response.data.warning || 'שגיאה בשליחת האימייל אך השירות זמין',
+          variant: 'destructive'
+        });
+        setConnectionStatus('error');
+      } else {
+        throw new Error('תגובה לא צפויה מהשירות');
+      }
       
-      setConnectionStatus('connected');
       await loadEmailLogs();
     } catch (error: any) {
       console.error('Error sending test email:', error);
       toast({
         title: 'שגיאה',
-        description: `שגיאה בשליחת אימייל הבדיקה: ${error.message}`,
+        description: error.message || 'שגיאה בשליחת אימייל הבדיקה',
         variant: 'destructive'
       });
       setConnectionStatus('error');
