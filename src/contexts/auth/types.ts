@@ -18,6 +18,8 @@ export interface Profile {
 export interface Account {
   id: string;
   name: string;
+  subscription_status?: string;
+  trial_ends_at?: string;
   // Legacy fields (will be removed in future)
   ownerId?: string;
   sharedWithId?: string;

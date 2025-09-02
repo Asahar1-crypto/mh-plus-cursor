@@ -4,6 +4,7 @@ import { Navigate, Outlet } from 'react-router-dom';
 import { useAuth } from '@/contexts/auth';
 import AppHeader from './AppHeader';
 import AppSidebar from './AppSidebar';
+import TrialStatusBanner from './TrialStatusBanner';
 
 const AppLayout = () => {
   const { isAuthenticated, isLoading } = useAuth();
@@ -51,6 +52,7 @@ const AppLayout = () => {
           isMobile={isMobile}
         />
         <main className="flex-1 p-4 md:p-6 lg:p-8 overflow-x-hidden bg-gradient-to-br from-background to-accent/20">
+          <TrialStatusBanner />
           <Outlet />
         </main>
       </div>

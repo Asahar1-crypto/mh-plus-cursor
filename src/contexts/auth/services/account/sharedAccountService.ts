@@ -11,6 +11,8 @@ export const sharedAccountService = {
       .from('accounts')
       .select(`
         *,
+        subscription_status,
+        trial_ends_at,
         owner_profile:profiles!accounts_owner_id_fkey(name)
       `)
       .eq('shared_with_id', userId)
@@ -31,6 +33,8 @@ export const sharedAccountService = {
       return {
         id: sharedAccounts[0].id,
         name: sharedAccounts[0].name,
+        subscription_status: sharedAccounts[0].subscription_status,
+        trial_ends_at: sharedAccounts[0].trial_ends_at,
         ownerId: sharedAccounts[0].owner_id,
         ownerName: ownerName, 
         sharedWithId: userId,
@@ -50,6 +54,8 @@ export const sharedAccountService = {
       .from('accounts')
       .select(`
         *,
+        subscription_status,
+        trial_ends_at,
         owner_profile:profiles!accounts_owner_id_fkey(name)
       `)
       .eq('shared_with_id', userId);
@@ -64,6 +70,8 @@ export const sharedAccountService = {
       return {
         id: account.id,
         name: account.name,
+        subscription_status: account.subscription_status,
+        trial_ends_at: account.trial_ends_at,
         ownerId: account.owner_id,
         ownerName: account.owner_profile?.name,
         sharedWithId: userId,

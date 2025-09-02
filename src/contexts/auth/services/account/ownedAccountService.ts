@@ -9,7 +9,7 @@ export const ownedAccountService = {
     
     const { data: ownedAccounts, error: ownedError } = await supabase
       .from('accounts')
-      .select('*')
+      .select('*, subscription_status, trial_ends_at')
       .eq('owner_id', userId)
       .limit(1);
       
@@ -39,6 +39,8 @@ export const ownedAccountService = {
         return {
           id: ownedAccounts[0].id,
           name: ownedAccounts[0].name,
+          subscription_status: ownedAccounts[0].subscription_status,
+          trial_ends_at: ownedAccounts[0].trial_ends_at,
           ownerId: ownedAccounts[0].owner_id,
           sharedWithId: sharedWithId,
           sharedWithEmail: sharedWithEmail,
@@ -49,6 +51,8 @@ export const ownedAccountService = {
       return {
         id: ownedAccounts[0].id,
         name: ownedAccounts[0].name,
+        subscription_status: ownedAccounts[0].subscription_status,
+        trial_ends_at: ownedAccounts[0].trial_ends_at,
         ownerId: ownedAccounts[0].owner_id,
         sharedWithEmail: sharedWithEmail
       };
@@ -65,6 +69,8 @@ export const ownedAccountService = {
       .from('accounts')
       .select(`
         *,
+        subscription_status,
+        trial_ends_at,
         shared_profile:profiles!accounts_shared_with_id_fkey(name)
       `)
       .eq('owner_id', userId);
@@ -79,6 +85,8 @@ export const ownedAccountService = {
       return {
         id: account.id,
         name: account.name,
+        subscription_status: account.subscription_status,
+        trial_ends_at: account.trial_ends_at,
         ownerId: account.owner_id,
         sharedWithId: account.shared_with_id,
         sharedWithEmail: account.shared_with_email,
