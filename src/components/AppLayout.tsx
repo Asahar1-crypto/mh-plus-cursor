@@ -5,9 +5,10 @@ import { useAuth } from '@/contexts/auth';
 import AppHeader from './AppHeader';
 import AppSidebar from './AppSidebar';
 import TrialStatusBanner from './TrialStatusBanner';
+import NoAccountScreen from './NoAccountScreen';
 
 const AppLayout = () => {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, account, user } = useAuth();
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
 
@@ -37,6 +38,11 @@ const AppLayout = () => {
   // Redirect to login if not authenticated
   if (!isAuthenticated) {
     return <Navigate to="/login" />;
+  }
+
+  // Show no account screen if user is authenticated but has no account
+  if (isAuthenticated && user && !account) {
+    return <NoAccountScreen />;
   }
 
   return (
