@@ -119,11 +119,25 @@ serve(async (req) => {
 
     // If in test mode, just return success without sending
     if (testMode) {
-      console.log("Test mode - not actually sending email");
+      console.log("Test mode - checking if SendGrid API key is configured");
+      
+      if (!sendgridApiKey) {
+        return new Response(
+          JSON.stringify({ 
+            error: "SendGrid API key not configured",
+            message: "יש להגדיר מפתח SendGrid API"
+          }),
+          {
+            status: 400,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          }
+        );
+      }
+      
       return new Response(
         JSON.stringify({ 
           success: true, 
-          message: "Test mode - email not sent",
+          message: "Test mode - SendGrid API key is configured",
           details: { to, subject }
         }),
         {

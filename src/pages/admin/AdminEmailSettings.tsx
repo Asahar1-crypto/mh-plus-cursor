@@ -155,17 +155,35 @@ const AdminEmailSettings: React.FC = () => {
           to: 'test@example.com',
           subject: 'Test Connection',
           text: 'Test connection to SendGrid',
-          testMode: true // מצב בדיקה בלבד
+          testMode: true // מצב בדיקה בלבד - לא שולח אימייל אמיתי
         }
       });
 
+      console.log('Connection test response:', response);
+
       if (response.error) {
+        console.error('Connection test error:', response.error);
         setConnectionStatus('error');
+        toast({
+          title: 'שגיאה בחיבור',
+          description: response.error.message || 'שגיאה בבדיקת החיבור לשירות האימייל',
+          variant: 'destructive'
+        });
       } else {
         setConnectionStatus('connected');
+        toast({
+          title: 'החיבור תקין',
+          description: 'החיבור לשירות SendGrid פועל כראוי'
+        });
       }
-    } catch (error) {
+    } catch (error: any) {
+      console.error('Connection check failed:', error);
       setConnectionStatus('error');
+      toast({
+        title: 'שגיאה בחיבור',
+        description: 'שגיאה בבדיקת החיבור לשירות האימייל',
+        variant: 'destructive'
+      });
     }
   };
 
