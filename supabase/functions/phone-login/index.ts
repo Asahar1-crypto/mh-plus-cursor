@@ -105,14 +105,14 @@ serve(async (req) => {
 
     console.log('Profile found for phone:', profile);
 
-    // Check rate limiting - max 3 OTP per hour
-    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+    // Check rate limiting - max 5 OTP per 30 minutes (more permissive)
+    const thirtyMinutesAgo = new Date(Date.now() - 30 * 60 * 1000).toISOString();
     const { count: recentAttempts, error: countError } = await supabase
       .from('sms_verification_codes')
       .select('*', { count: 'exact', head: true })
       .eq('phone_number', normalizedPhone)
       .eq('verification_type', 'login')
-      .gte('created_at', oneHourAgo);
+      .gte('created_at', thirtyMinutesAgo);
 
     if (countError) {
       console.error('Error checking rate limit:', countError);
@@ -125,7 +125,7 @@ serve(async (req) => {
       );
     }
 
-    if ((recentAttempts || 0) >= 3) {
+    if ((recentAttempts || 0) >= 5) {
       console.log('Rate limit exceeded for phone:', normalizedPhone);
       return new Response(
         JSON.stringify({ error: 'Too many attempts. Please try again later.' }),
