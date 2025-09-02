@@ -131,13 +131,16 @@ const AdminTenants: React.FC = () => {
       if (error) throw error;
 
       // קבלת רשימת כל המשתמשים עם האימיילים שלהם
-      const { data: authUsers } = await supabase.auth.admin.listUsers();
-      const userEmailMap = new Map<string, string>();
-      authUsers?.users.forEach((user: any) => {
-        if (user.id && user.email) {
-          userEmailMap.set(user.id, user.email);
-        }
-      });
+      const { data: emailData, error: emailError } = await supabase.functions.invoke('get-user-emails');
+      let userEmailMap = new Map<string, string>();
+      
+      if (!emailError && emailData?.success) {
+        Object.entries(emailData.userEmails).forEach(([userId, email]) => {
+          userEmailMap.set(userId, email as string);
+        });
+      } else {
+        console.error('Failed to fetch user emails:', emailError);
+      }
 
       // קבלת פעילות אחרונה ונתונים נוספים
       const tenantsWithDetails = await Promise.all(
