@@ -26,8 +26,8 @@ export const userService = {
   },
 
   // Verification & Recovery
-  verifyEmail: (token: string, email?: string): Promise<boolean> => {
-    return accountVerificationService.verifyEmail(token, email);
+  verifyEmail: (token: string): Promise<boolean> => {
+    return accountVerificationService.verifyEmail(token);
   },
   
   resetPassword: (email: string): Promise<void> => {

@@ -52,7 +52,7 @@ const VerifyEmail = () => {
   const verifyEmailWithToken = async (token: string) => {
     setIsVerifying(true);
     try {
-      const result = await verifyEmail(token, email);
+      const result = await verifyEmail(token);
       setVerificationStatus(result ? 'success' : 'error');
       
       // If verification was successful, check for pending invitations
