@@ -53,10 +53,10 @@ const ModernInput = forwardRef<HTMLInputElement, ModernInputProps>(
           {/* Floating Label */}
           <label 
             className={cn(
-              "absolute right-4 transition-all duration-300 pointer-events-none",
+              "absolute transition-all duration-300 pointer-events-none z-10",
               isFocused || props.value 
-                ? "top-2 text-xs text-primary font-medium" 
-                : "top-4 text-sm text-muted-foreground"
+                ? "top-1 right-4 text-xs text-primary font-medium" 
+                : "top-1/2 right-4 -translate-y-1/2 text-sm text-muted-foreground"
             )}
           >
             {label}
@@ -74,7 +74,7 @@ const ModernInput = forwardRef<HTMLInputElement, ModernInputProps>(
           )}>
             {/* Leading Icon */}
             {icon && (
-              <div className="absolute right-4 top-1/2 transform -translate-y-1/2 text-muted-foreground">
+              <div className="absolute right-4 top-1/2 transform -translate-y-1/2 text-muted-foreground z-20">
                 {getIcon()}
               </div>
             )}
@@ -84,7 +84,7 @@ const ModernInput = forwardRef<HTMLInputElement, ModernInputProps>(
               type={actualType}
               className={cn(
                 "w-full bg-transparent border-none outline-none transition-all duration-300",
-                "pt-6 pb-2 text-sm",
+                "h-14 text-sm placeholder-transparent",
                 icon ? "pr-12 pl-4" : "px-4",
                 isPasswordType ? "pl-4 pr-20" : "",
                 validation !== 'none' && !isPasswordType ? "pr-12" : "",

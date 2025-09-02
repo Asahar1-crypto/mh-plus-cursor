@@ -60,10 +60,10 @@ const SmartPhoneInput = forwardRef<HTMLInputElement, SmartPhoneInputProps>(
           {/* Floating Label */}
           <label 
             className={cn(
-              "absolute right-4 transition-all duration-300 pointer-events-none",
+              "absolute transition-all duration-300 pointer-events-none z-10",
               isFocused || formattedValue 
-                ? "top-2 text-xs text-primary font-medium" 
-                : "top-4 text-sm text-muted-foreground"
+                ? "top-1 right-4 text-xs text-primary font-medium" 
+                : "top-1/2 right-4 -translate-y-1/2 text-sm text-muted-foreground"
             )}
           >
             {label}
@@ -78,13 +78,13 @@ const SmartPhoneInput = forwardRef<HTMLInputElement, SmartPhoneInputProps>(
             validation === 'invalid' && "ring-2 ring-red-500/50"
           )}>
             {/* Country Prefix */}
-            <div className="flex items-center pr-3 border-l border-border/30">
+            <div className="flex items-center pr-3 border-l border-border/30 h-14">
               <span className="text-2xl ml-3">🇮🇱</span>
               <span className="text-sm text-muted-foreground ml-1">+972</span>
             </div>
 
             {/* Phone Icon */}
-            <div className="absolute right-4 top-1/2 transform -translate-y-1/2 text-muted-foreground">
+            <div className="absolute right-4 top-1/2 transform -translate-y-1/2 text-muted-foreground z-20">
               <Phone className="w-5 h-5" />
             </div>
 
@@ -93,8 +93,8 @@ const SmartPhoneInput = forwardRef<HTMLInputElement, SmartPhoneInputProps>(
               type="tel"
               className={cn(
                 "w-full bg-transparent border-none outline-none transition-all duration-300",
-                "pt-6 pb-2 px-4 text-sm",
-                "pr-12",
+                "h-14 text-sm placeholder-transparent",
+                "pr-12 pl-4",
                 className
               )}
               ref={ref}
@@ -102,7 +102,6 @@ const SmartPhoneInput = forwardRef<HTMLInputElement, SmartPhoneInputProps>(
               onChange={handleInputChange}
               onFocus={() => setIsFocused(true)}
               onBlur={() => setIsFocused(false)}
-              placeholder="050-123-4567"
               maxLength={12} // XXX-XXX-XXXX format
               {...props}
             />
