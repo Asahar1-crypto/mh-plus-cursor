@@ -158,22 +158,28 @@ const AdminEmailSettings: React.FC = () => {
     try {
       setSaving(true);
       
-      // שמירת הגדרות במסד הנתונים
-      const { error } = await supabase
-        .from('system_settings')
-        .upsert([
-          { setting_key: 'email_sender_email', setting_value: settings.senderEmail },
-          { setting_key: 'email_sender_name', setting_value: settings.senderName },
-          { setting_key: 'email_reply_to', setting_value: settings.replyToEmail },
-          { setting_key: 'email_invitation_subject', setting_value: settings.invitationSubject },
-          { setting_key: 'email_invitation_template', setting_value: settings.invitationTemplate },
-          { setting_key: 'email_reset_password_subject', setting_value: settings.resetPasswordSubject },
-          { setting_key: 'email_reset_password_template', setting_value: settings.resetPasswordTemplate },
-          { setting_key: 'email_verification_subject', setting_value: settings.verificationSubject },
-          { setting_key: 'email_verification_template', setting_value: settings.verificationTemplate }
-        ]);
+      const settingsToSave = [
+        { setting_key: 'email_sender_email', setting_value: settings.senderEmail },
+        { setting_key: 'email_sender_name', setting_value: settings.senderName },
+        { setting_key: 'email_reply_to', setting_value: settings.replyToEmail },
+        { setting_key: 'email_invitation_subject', setting_value: settings.invitationSubject },
+        { setting_key: 'email_invitation_template', setting_value: settings.invitationTemplate },
+        { setting_key: 'email_reset_password_subject', setting_value: settings.resetPasswordSubject },
+        { setting_key: 'email_reset_password_template', setting_value: settings.resetPasswordTemplate },
+        { setting_key: 'email_verification_subject', setting_value: settings.verificationSubject },
+        { setting_key: 'email_verification_template', setting_value: settings.verificationTemplate }
+      ];
 
-      if (error) throw error;
+      // שמירת כל הגדרה בנפרד
+      for (const setting of settingsToSave) {
+        const { error } = await supabase
+          .from('system_settings')
+          .upsert(setting, {
+            onConflict: 'setting_key'
+          });
+
+        if (error) throw error;
+      }
 
       toast({
         title: 'הצלחה',
