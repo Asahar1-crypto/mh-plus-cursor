@@ -527,7 +527,7 @@ export type Database = {
           expires_at: string
           id: string
           phone_number: string
-          user_id: string
+          user_id: string | null
           verified: boolean
           verified_at: string | null
         }
@@ -538,7 +538,7 @@ export type Database = {
           expires_at?: string
           id?: string
           phone_number: string
-          user_id: string
+          user_id?: string | null
           verified?: boolean
           verified_at?: string | null
         }
@@ -549,7 +549,7 @@ export type Database = {
           expires_at?: string
           id?: string
           phone_number?: string
-          user_id?: string
+          user_id?: string | null
           verified?: boolean
           verified_at?: string | null
         }
