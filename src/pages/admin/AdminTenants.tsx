@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { ArrowLeft, Search, Users, Calendar, DollarSign, MoreHorizontal, RefreshCw, Eye, Activity, Database, Trash2, UserMinus } from 'lucide-react';
+import { ArrowLeft, Search, Users, Calendar, DollarSign, MoreHorizontal, RefreshCw, Eye, Activity, Database, Trash2, UserMinus, UserPlus } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/auth';
@@ -71,6 +71,15 @@ const AdminTenants: React.FC = () => {
     tenant: null,
     member: null
   });
+  const [addMemberDialog, setAddMemberDialog] = useState<{ 
+    open: boolean; 
+    tenant: Tenant | null; 
+  }>({
+    open: false,
+    tenant: null
+  });
+  const [newMemberEmail, setNewMemberEmail] = useState('');
+  const [newMemberRole, setNewMemberRole] = useState<'admin' | 'member'>('member');
   const [confirmationInput, setConfirmationInput] = useState('');
   const [viewDetailsDialog, setViewDetailsDialog] = useState<{ open: boolean; tenant: Tenant | null }>({
     open: false,
@@ -315,6 +324,42 @@ const AdminTenants: React.FC = () => {
       toast({
         title: 'שגיאה',
         description: error.message || 'שגיאה במחיקת המשפחה',
+        variant: 'destructive'
+      });
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const addTenantMember = async (tenantId: string, userEmail: string, role: 'admin' | 'member') => {
+    try {
+      setActionLoading(`add-${tenantId}`);
+      
+      const { data, error } = await supabase.functions.invoke('add-tenant-member', {
+        body: {
+          tenant_id: tenantId,
+          user_email: userEmail,
+          role: role
+        }
+      });
+
+      if (error) throw error;
+      if (!data.success) throw new Error(data.error);
+
+      toast({
+        title: 'הצלחה',
+        description: `המשתמש "${userEmail}" נוסף למשפחה בהצלחה`,
+      });
+
+      await loadTenants();
+      setAddMemberDialog({ open: false, tenant: null });
+      setNewMemberEmail('');
+      setNewMemberRole('member');
+    } catch (error: any) {
+      console.error('Error adding member:', error);
+      toast({
+        title: 'שגיאה',
+        description: error.message || 'שגיאה בהוספת המשתמש',
         variant: 'destructive'
       });
     } finally {
@@ -688,6 +733,67 @@ const AdminTenants: React.FC = () => {
           </AlertDialogContent>
         </AlertDialog>
 
+        {/* Add Member Dialog */}
+        <AlertDialog open={addMemberDialog.open} onOpenChange={(open) => {
+          setAddMemberDialog({ open, tenant: null });
+          setNewMemberEmail('');
+          setNewMemberRole('member');
+        }}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>הוספת משתמש למשפחה</AlertDialogTitle>
+              <AlertDialogDescription>
+                הוסף משתמש קיים במערכת למשפחת "{addMemberDialog.tenant?.name}"
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">כתובת אימייל</label>
+                <Input
+                  type="email"
+                  value={newMemberEmail}
+                  onChange={(e) => setNewMemberEmail(e.target.value)}
+                  placeholder="הכנס כתובת אימייל של המשתמש"
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <label className="text-sm font-medium">תפקיד</label>
+                <select
+                  value={newMemberRole}
+                  onChange={(e) => setNewMemberRole(e.target.value as 'admin' | 'member')}
+                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring"
+                >
+                  <option value="member">חבר</option>
+                  <option value="admin">מנהל</option>
+                </select>
+              </div>
+
+              <div className="bg-blue-50 p-3 rounded border-r-4 border-blue-500">
+                <p className="text-sm text-blue-800">
+                  <strong>שים לב:</strong> המשתמש חייב להיות כבר רשום במערכת. 
+                  אם הוא לא רשום, הוא צריך להירשם קודם.
+                </p>
+              </div>
+            </div>
+
+            <AlertDialogFooter>
+              <AlertDialogCancel>ביטול</AlertDialogCancel>
+              <AlertDialogAction
+                disabled={!newMemberEmail.trim() || actionLoading === `add-${addMemberDialog.tenant?.id}`}
+                onClick={() => {
+                  if (addMemberDialog.tenant && newMemberEmail.trim()) {
+                    addTenantMember(addMemberDialog.tenant.id, newMemberEmail.trim(), newMemberRole);
+                  }
+                }}
+              >
+                {actionLoading === `add-${addMemberDialog.tenant?.id}` ? 'מוסיף...' : 'הוסף למשפחה'}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
         {/* Delete Member Dialog */}
         <AlertDialog open={deleteMemberDialog.open} onOpenChange={(open) => 
           setDeleteMemberDialog({ open, tenant: null, member: null })
@@ -756,7 +862,21 @@ const AdminTenants: React.FC = () => {
 
                 {/* רשימת חברים */}
                 <div>
-                  <h3 className="text-lg font-semibold mb-3">חברי המשפחה</h3>
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="text-lg font-semibold">חברי המשפחה</h3>
+                    <Button
+                      size="sm"
+                      onClick={() => {
+                        setAddMemberDialog({ open: true, tenant: viewDetailsDialog.tenant });
+                        setNewMemberEmail('');
+                        setNewMemberRole('member');
+                      }}
+                      className="gap-2"
+                    >
+                      <UserPlus className="h-4 w-4" />
+                      הוסף חבר
+                    </Button>
+                  </div>
                   <div className="border rounded-lg">
                     <table className="w-full">
                        <thead>
