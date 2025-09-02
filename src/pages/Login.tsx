@@ -24,6 +24,12 @@ const Login = () => {
   const navigate = useNavigate();
   const [authMethod, setAuthMethod] = useState<'email' | 'phone'>('email');
   
+  // Add logging to track auth method changes
+  const handleAuthMethodChange = (method: 'email' | 'phone') => {
+    console.log('Auth method changing from', authMethod, 'to', method);
+    setAuthMethod(method);
+  };
+  
   const form = useForm<z.infer<typeof loginSchema>>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
@@ -42,6 +48,7 @@ const Login = () => {
   };
 
   const handleBackToEmailLogin = () => {
+    console.log('Back to email login called');
     setAuthMethod('email');
   };
 
@@ -80,7 +87,7 @@ const Login = () => {
             {/* Auth Method Toggle */}
             <AuthMethodToggle 
               method={authMethod} 
-              onChange={setAuthMethod}
+              onChange={handleAuthMethodChange}
               disabled={isLoading}
             />
 
