@@ -89,8 +89,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     resetPassword,
     switchAccount,
     updateAccountName,
-    refreshProfile,
-    checkAndSetUserData
+    refreshProfile
   };
 
   return (

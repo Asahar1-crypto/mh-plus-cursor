@@ -13,9 +13,6 @@ export interface Profile {
   selected_account_id: string | null;
   is_super_admin: boolean | null;
   last_login: string | null;
-  phone_number?: string | null;
-  phone_verified?: boolean | null;
-  two_factor_enabled?: boolean | null;
 }
 
 export interface Account {
@@ -56,7 +53,7 @@ export interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
-  register: (name: string, email: string, password: string, verificationMethod?: string, phoneNumber?: string) => Promise<void>;
+  register: (name: string, email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   sendInvitation: (email: string) => Promise<void>;
   removeInvitation: () => Promise<void>;
@@ -66,5 +63,4 @@ export interface AuthContextType {
   switchAccount: (accountId: string) => Promise<void>;
   updateAccountName: (newName: string) => Promise<void>;
   refreshProfile: () => Promise<void>;
-  checkAndSetUserData: (forceRefresh?: boolean) => Promise<void>;
 }

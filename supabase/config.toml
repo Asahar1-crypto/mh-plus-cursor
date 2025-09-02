@@ -24,9 +24,3 @@ verify_jwt = true
 
 [functions.delete-user]
 verify_jwt = true
-
-[functions.send-sms]
-verify_jwt = true
-
-[functions.verify-sms]
-verify_jwt = true

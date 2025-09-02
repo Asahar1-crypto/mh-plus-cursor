@@ -42,8 +42,8 @@ export async function login(email: string, password: string) {
   }
 }
 
-export async function register(name: string, email: string, password: string, verificationMethod?: string, phoneNumber?: string) {
-  return userService.register(name, email, password, verificationMethod, phoneNumber);
+export async function register(name: string, email: string, password: string) {
+  return userService.register(name, email, password);
 }
 
 export async function logout() {

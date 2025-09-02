@@ -442,10 +442,7 @@ export type Database = {
           is_super_admin: boolean | null
           last_login: string | null
           name: string
-          phone_number: string | null
-          phone_verified: boolean | null
           selected_account_id: string | null
-          two_factor_enabled: boolean | null
           updated_at: string
         }
         Insert: {
@@ -454,10 +451,7 @@ export type Database = {
           is_super_admin?: boolean | null
           last_login?: string | null
           name: string
-          phone_number?: string | null
-          phone_verified?: boolean | null
           selected_account_id?: string | null
-          two_factor_enabled?: boolean | null
           updated_at?: string
         }
         Update: {
@@ -466,10 +460,7 @@ export type Database = {
           is_super_admin?: boolean | null
           last_login?: string | null
           name?: string
-          phone_number?: string | null
-          phone_verified?: boolean | null
           selected_account_id?: string | null
-          two_factor_enabled?: boolean | null
           updated_at?: string
         }
         Relationships: []
@@ -516,42 +507,6 @@ export type Database = {
           processed_at?: string | null
           updated_at?: string
           user_id?: string
-        }
-        Relationships: []
-      }
-      sms_verification_codes: {
-        Row: {
-          attempts: number
-          code: string
-          created_at: string
-          expires_at: string
-          id: string
-          phone_number: string
-          user_id: string
-          verified: boolean
-          verified_at: string | null
-        }
-        Insert: {
-          attempts?: number
-          code: string
-          created_at?: string
-          expires_at?: string
-          id?: string
-          phone_number: string
-          user_id: string
-          verified?: boolean
-          verified_at?: string | null
-        }
-        Update: {
-          attempts?: number
-          code?: string
-          created_at?: string
-          expires_at?: string
-          id?: string
-          phone_number?: string
-          user_id?: string
-          verified?: boolean
-          verified_at?: string | null
         }
         Relationships: []
       }
