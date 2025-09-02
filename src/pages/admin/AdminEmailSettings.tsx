@@ -96,8 +96,45 @@ const AdminEmailSettings: React.FC = () => {
   const loadSettings = async () => {
     try {
       setLoading(true);
-      // כאן נטען הגדרות מהמערכת אם יש
-      // לעת עתה נשתמש בברירות מחדל
+      
+      // טעינת הגדרות מהמערכת
+      const { data, error } = await supabase
+        .from('system_settings')
+        .select('setting_key, setting_value')
+        .in('setting_key', [
+          'email_sender_email',
+          'email_sender_name', 
+          'email_reply_to',
+          'email_invitation_subject',
+          'email_invitation_template',
+          'email_reset_password_subject',
+          'email_reset_password_template',
+          'email_verification_subject',
+          'email_verification_template'
+        ]);
+
+      if (error) throw error;
+
+      // עדכון state עם הנתונים שנטענו
+      if (data && data.length > 0) {
+        const settingsMap = data.reduce((acc, item) => {
+          acc[item.setting_key] = item.setting_value;
+          return acc;
+        }, {} as Record<string, string>);
+
+        setSettings(prev => ({
+          ...prev,
+          senderEmail: settingsMap.email_sender_email || prev.senderEmail,
+          senderName: settingsMap.email_sender_name || prev.senderName,
+          replyToEmail: settingsMap.email_reply_to || prev.replyToEmail,
+          invitationSubject: settingsMap.email_invitation_subject || prev.invitationSubject,
+          invitationTemplate: settingsMap.email_invitation_template || prev.invitationTemplate,
+          resetPasswordSubject: settingsMap.email_reset_password_subject || prev.resetPasswordSubject,
+          resetPasswordTemplate: settingsMap.email_reset_password_template || prev.resetPasswordTemplate,
+          verificationSubject: settingsMap.email_verification_subject || prev.verificationSubject,
+          verificationTemplate: settingsMap.email_verification_template || prev.verificationTemplate
+        }));
+      }
     } catch (error) {
       console.error('Error loading email settings:', error);
       toast({
