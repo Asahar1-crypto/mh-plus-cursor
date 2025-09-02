@@ -75,8 +75,16 @@ const UserProfileCard: React.FC = () => {
     
     setIsLoading(true);
     try {
-      // נשלח OTP למספר החדש
-      await sendPhoneOtp(phoneNumber);
+      // נשלח SMS באמצעות ה-edge function
+      const { error } = await supabase.functions.invoke('send-sms', {
+        body: { 
+          phoneNumber: phoneNumber,
+          message: `קוד האימות שלך הוא: ${Math.floor(100000 + Math.random() * 900000)}`
+        }
+      });
+
+      if (error) throw error;
+      
       setShowOtpInput(true);
       toast({
         title: "קוד אימות נשלח",
