@@ -79,13 +79,13 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    // SendGrid doesn't have native SMS API, but we can use their email-to-SMS feature
-    // or integrate with their partner Twilio. For now, let's use a simple HTTP approach
-    // Note: You'll need to configure SendGrid for SMS or use their Twilio integration
+    // Get Twilio credentials
+    const twilioAccountSid = Deno.env.get('TWILIO_ACCOUNT_SID');
+    const twilioAuthToken = Deno.env.get('TWILIO_AUTH_TOKEN');
+    const twilioPhoneNumber = Deno.env.get('TWILIO_PHONE_NUMBER');
     
-    const sendGridApiKey = Deno.env.get('SENDGRID_API_KEY');
-    if (!sendGridApiKey) {
-      console.error('SendGrid API key not found');
+    if (!twilioAccountSid || !twilioAuthToken || !twilioPhoneNumber) {
+      console.error('Twilio credentials not found');
       return new Response(
         JSON.stringify({ error: 'SMS service not configured' }),
         { 
@@ -95,18 +95,42 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    // For demo purposes, we'll simulate SMS sending
-    // In production, you'd integrate with SendGrid's SMS service or Twilio
-    console.log(`SMS Code for ${phone_number}: ${verificationCode}`);
-    
-    // Simulate sending SMS via HTTP request
-    // Replace this with actual SendGrid SMS API call
+    // Create the SMS message
     const smsMessage = purpose === '2fa' 
       ? `קוד האימות שלך הוא: ${verificationCode}. הקוד תקף למשך 10 דקות.`
       : `קוד האימות למספר הטלפון שלך הוא: ${verificationCode}. הקוד תקף למשך 10 דקות.`;
 
-    // Log the SMS for demo purposes (in production, send actual SMS)
-    console.log(`Sending SMS to ${phone_number}: ${smsMessage}`);
+    // Send SMS via Twilio API
+    const twilioUrl = `https://api.twilio.com/2010-04-01/Accounts/${twilioAccountSid}/Messages.json`;
+    
+    const formData = new URLSearchParams();
+    formData.append('From', twilioPhoneNumber);
+    formData.append('To', phone_number);
+    formData.append('Body', smsMessage);
+
+    const twilioResponse = await fetch(twilioUrl, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Basic ${btoa(`${twilioAccountSid}:${twilioAuthToken}`)}`,
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: formData,
+    });
+
+    if (!twilioResponse.ok) {
+      const errorData = await twilioResponse.text();
+      console.error('Failed to send SMS via Twilio:', errorData);
+      return new Response(
+        JSON.stringify({ error: 'Failed to send SMS' }),
+        { 
+          status: 500,
+          headers: { 'Content-Type': 'application/json', ...corsHeaders }
+        }
+      );
+    }
+
+    const twilioResult = await twilioResponse.json();
+    console.log('SMS sent successfully via Twilio:', twilioResult.sid);
 
     return new Response(
       JSON.stringify({ 
