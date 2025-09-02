@@ -35,8 +35,12 @@ serve(async (req) => {
 
     const token = authHeader.replace("Bearer ", "");
     const { data: userData, error: userError } = await supabaseClient.auth.getUser(token);
-    if (userError || !userData.user) {
-      throw new Error("Authentication failed");
+    if (userError) {
+      logStep("Auth error", { error: userError.message });
+      throw new Error(`Authentication failed: ${userError.message}`);
+    }
+    if (!userData.user) {
+      throw new Error("User not found");
     }
 
     logStep("User authenticated", { userId: userData.user.id });
