@@ -85,6 +85,7 @@ const AdminTenants: React.FC = () => {
     open: false,
     tenant: null
   });
+  const [userEmails, setUserEmails] = useState<Record<string, string>>({});
 
   // בדיקת הרשאות Super Admin
   if (!profile?.is_super_admin) {
@@ -138,6 +139,7 @@ const AdminTenants: React.FC = () => {
         Object.entries(emailData.userEmails).forEach(([userId, email]) => {
           userEmailMap.set(userId, email as string);
         });
+        setUserEmails(emailData.userEmails);
       } else {
         console.error('Failed to fetch user emails:', emailError);
       }
@@ -405,6 +407,58 @@ const AdminTenants: React.FC = () => {
       toast({
         title: 'שגיאה',
         description: error.message || 'שגיאה בהסרת המשתמש',
+        variant: 'destructive'
+      });
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleDeleteUser = async (userId: string) => {
+    if (!userId) return;
+    
+    const userEmail = userEmails[userId] || 'משתמש לא ידוע';
+    
+    if (!confirm(`האם אתה בטוח שברצונך למחוק את המשתמש ${userEmail} לגמרי מהמערכת?\n\nפעולה זו תמחק את המשתמש מכל המשפחות ותמנע ממנו להתחבר עד שיעשה רישום מחדש.`)) {
+      return;
+    }
+
+    // אישור נוסף
+    if (!confirm("זאת אזהרה אחרונה! המחיקה היא בלתי הפיכה. האם להמשיך?")) {
+      return;
+    }
+
+    try {
+      setActionLoading(`delete-user-${userId}`);
+      
+      const { data, error } = await supabase.functions.invoke('delete-user', {
+        body: { user_id: userId }
+      });
+
+      if (error) throw error;
+
+      if (data.success) {
+        toast({
+          title: 'הצלחה',
+          description: data.message,
+        });
+        // רענן את הנתונים
+        await loadTenants();
+        // סגור דיאלוגים פתוחים
+        setViewDetailsDialog({ open: false, tenant: null });
+        setDeleteMemberDialog({ open: false, tenant: null, member: null });
+      } else {
+        toast({
+          title: 'שגיאה',
+          description: data.error || "שגיאה במחיקת המשתמש",
+          variant: 'destructive'
+        });
+      }
+    } catch (error: any) {
+      console.error('Error deleting user:', error);
+      toast({
+        title: 'שגיאה',
+        description: "שגיאה במחיקת המשתמש: " + error.message,
         variant: 'destructive'
       });
     } finally {
@@ -944,21 +998,32 @@ const AdminTenants: React.FC = () => {
                                {new Date(member.joined_at).toLocaleDateString('he-IL')}
                              </td>
                              <td className="p-3">
-                               <Button
-                                 variant="ghost"
-                                 size="sm"
-                                 className="text-destructive hover:text-destructive"
-                                 disabled={actionLoading === `${viewDetailsDialog.tenant.id}-${member.user_id}`}
-                                 onClick={() => {
-                                   setDeleteMemberDialog({ 
-                                     open: true, 
-                                     tenant: viewDetailsDialog.tenant, 
-                                     member: member
-                                   });
-                                 }}
-                               >
-                                 <UserMinus className="h-4 w-4" />
-                               </Button>
+                               <div className="flex gap-1">
+                                 <Button
+                                   variant="ghost"
+                                   size="sm"
+                                   className="text-destructive hover:text-destructive"
+                                   disabled={actionLoading === `${viewDetailsDialog.tenant.id}-${member.user_id}`}
+                                   onClick={() => {
+                                     setDeleteMemberDialog({ 
+                                       open: true, 
+                                       tenant: viewDetailsDialog.tenant, 
+                                       member: member
+                                     });
+                                   }}
+                                 >
+                                   <UserMinus className="h-4 w-4" />
+                                 </Button>
+                                 <Button
+                                   variant="ghost"
+                                   size="sm"
+                                   className="text-destructive hover:text-destructive"
+                                   disabled={actionLoading === `delete-user-${member.user_id}`}
+                                   onClick={() => handleDeleteUser(member.user_id || '')}
+                                 >
+                                   <Trash2 className="h-4 w-4" />
+                                 </Button>
+                               </div>
                              </td>
                           </tr>
                         ))}
