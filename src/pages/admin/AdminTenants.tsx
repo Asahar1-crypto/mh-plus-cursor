@@ -145,6 +145,7 @@ const AdminTenants: React.FC = () => {
       if (error) throw error;
 
       // קבלת רשימת כל המשתמשים עם האימיילים שלהם
+      console.log('Attempting to fetch user emails...');
       const { data: emailData, error: emailError } = await supabase.functions.invoke('get-user-emails', {
         headers: {
           'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`
@@ -152,15 +153,27 @@ const AdminTenants: React.FC = () => {
       });
       let userEmailMap = new Map<string, string>();
       
+      console.log('Email fetch result:', { emailData, emailError });
+      
       if (!emailError && emailData?.success) {
         Object.entries(emailData.userEmails).forEach(([userId, email]) => {
           userEmailMap.set(userId, email as string);
         });
         setUserEmails(emailData.userEmails);
+        console.log('Successfully loaded user emails:', Object.keys(emailData.userEmails).length);
       } else {
         console.error('Failed to fetch user emails:', emailError);
-        // הוספת fallback - ניסיון להשתמש בנתונים הקיימים
-        console.log('Attempting to get emails from existing data...');
+        console.log('Using fallback: getting current user email from session');
+        
+        // Fallback: לפחות לאפשר את המייל של המשתמש הנוכחי
+        const currentSession = await supabase.auth.getSession();
+        if (currentSession.data.session?.user?.email) {
+          userEmailMap.set(
+            currentSession.data.session.user.id, 
+            currentSession.data.session.user.email
+          );
+          console.log('Added current user email:', currentSession.data.session.user.email);
+        }
       }
 
       // קבלת פעילות אחרונה ונתונים נוספים
@@ -185,14 +198,18 @@ const AdminTenants: React.FC = () => {
             .limit(1);
 
           // הכנת רשימת חברים מפורטת עם האימיילים הנכונים
-          const memberDetails = (tenant.account_members || []).map((member: any) => ({
-            name: member.profiles?.name || 'לא ידוע',
-            email: userEmailMap.get(member.user_id) || 'לא ידוע',
-            role: member.role,
-            user_id: member.user_id,
-            last_login: member.profiles?.last_login,
-            joined_at: member.joined_at
-          }));
+          const memberDetails = (tenant.account_members || []).map((member: any) => {
+            const email = userEmailMap.get(member.user_id) || 'לא ידוע';
+            console.log(`Member ${member.user_id}: name=${member.profiles?.name}, email=${email}`);
+            return {
+              name: member.profiles?.name || 'לא ידוע',
+              email: email,
+              role: member.role,
+              user_id: member.user_id,
+              last_login: member.profiles?.last_login,
+              joined_at: member.joined_at
+            };
+          });
 
           // חישוב גודל נתונים משוער (MB)
           const expenseCount = (tenant.expenses as any)?.length || 0;
@@ -886,28 +903,30 @@ const AdminTenants: React.FC = () => {
           <AlertDialogContent>
             <AlertDialogHeader>
               <AlertDialogTitle className="text-destructive">⚠️ מחיקת משפחה - פעולה בלתי הפיכה</AlertDialogTitle>
-              <AlertDialogDescription className="space-y-3">
-                <div>
-                  אתה עומד למחוק את משפחת <strong>"{deleteDialog.tenant?.name}"</strong> לצמיתות.
+              <AlertDialogDescription asChild>
+                <div className="space-y-3">
+                  <div>
+                    אתה עומד למחוק את משפחת <strong>"{deleteDialog.tenant?.name}"</strong> לצמיתות.
+                  </div>
+                  <div className="bg-destructive/10 p-3 rounded border-r-4 border-destructive">
+                    <strong>פעולה זו תמחק:</strong>
+                    <ul className="list-disc list-inside mt-2 space-y-1">
+                      <li>את כל החברים במשפחה</li>
+                      <li>את כל ההוצאות והנתונים</li>
+                      <li>את כל הילדים והקשורים</li>
+                      <li>את כל ההזמנות וההגדרות</li>
+                    </ul>
+                  </div>
+                  <div>
+                    <strong>אישור:</strong> הקלד את שם המשפחה בדיוק כדי לאשר את המחיקה:
+                  </div>
+                  <Input
+                    value={confirmationInput}
+                    onChange={(e) => setConfirmationInput(e.target.value)}
+                    placeholder={`הקלד: ${deleteDialog.tenant?.name}`}
+                    className="mt-2"
+                  />
                 </div>
-                <div className="bg-destructive/10 p-3 rounded border-r-4 border-destructive">
-                  <strong>פעולה זו תמחק:</strong>
-                  <ul className="list-disc list-inside mt-2 space-y-1">
-                    <li>את כל החברים במשפחה</li>
-                    <li>את כל ההוצאות והנתונים</li>
-                    <li>את כל הילדים והקשורים</li>
-                    <li>את כל ההזמנות וההגדרות</li>
-                  </ul>
-                </div>
-                <div>
-                  <strong>אישור:</strong> הקלד את שם המשפחה בדיוק כדי לאשר את המחיקה:
-                </div>
-                <Input
-                  value={confirmationInput}
-                  onChange={(e) => setConfirmationInput(e.target.value)}
-                  placeholder={`הקלד: ${deleteDialog.tenant?.name}`}
-                  className="mt-2"
-                />
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
