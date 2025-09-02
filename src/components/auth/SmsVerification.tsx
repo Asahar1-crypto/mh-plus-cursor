@@ -4,6 +4,8 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { useConfetti } from '@/components/ui/confetti';
+import { CelebrationModal } from '@/components/ui/celebration-modal';
 
 interface SmsVerificationProps {
   phoneNumber: string;
@@ -20,6 +22,8 @@ const SmsVerification: React.FC<SmsVerificationProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [isResending, setIsResending] = useState(false);
   const [countdown, setCountdown] = useState(0);
+  const [showCelebration, setShowCelebration] = useState(false);
+  const { isActive: confettiActive, fire: fireConfetti, ConfettiComponent } = useConfetti();
 
   useEffect(() => {
     // Start countdown for resend button
@@ -75,8 +79,10 @@ const SmsVerification: React.FC<SmsVerificationProps> = ({
         return;
       }
 
-      toast.success('המספר אומת בהצלחה!');
-      onVerificationComplete(true);
+      // הפעלת קונפטי וחגיגה
+      fireConfetti();
+      setShowCelebration(true);
+      toast.success('המספר אומת בהצלחה! 🎉');
     } catch (error) {
       console.error('Error verifying code:', error);
       toast.error('שגיאה באימות הקוד');
@@ -90,72 +96,90 @@ const SmsVerification: React.FC<SmsVerificationProps> = ({
     sendVerificationCode();
   }, []);
 
+  const handleCelebrationClose = () => {
+    setShowCelebration(false);
+    onVerificationComplete(true);
+  };
+
   return (
-    <Card className="border-border shadow-lg animate-fade-in">
-      <CardHeader className="text-center">
-        <CardTitle className="text-2xl font-bold">אימות מספר טלפון</CardTitle>
-        <CardDescription>
-          נשלח קוד אימות למספר {phoneNumber}
-          <br />
-          אנא הזן את הקוד בן 6 הספרות
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="space-y-2">
-          <Input
-            type="text"
-            placeholder="123456"
-            value={code}
-            onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
-            className="text-center text-lg tracking-widest"
-            maxLength={6}
-          />
-        </div>
+    <>
+      <Card className="border-border shadow-lg animate-fade-in">
+        <CardHeader className="text-center">
+          <CardTitle className="text-2xl font-bold">אימות מספר טלפון</CardTitle>
+          <CardDescription>
+            נשלח קוד אימות למספר {phoneNumber}
+            <br />
+            אנא הזן את הקוד בן 6 הספרות
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Input
+              type="text"
+              placeholder="123456"
+              value={code}
+              onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+              className="text-center text-lg tracking-widest"
+              maxLength={6}
+            />
+          </div>
 
-        <div className="space-y-2">
-          <Button 
-            onClick={verifyCode} 
-            className="w-full" 
-            disabled={isLoading || code.length !== 6}
-          >
-            {isLoading ? (
-              <span className="flex items-center gap-2">
-                <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-r-transparent" />
-                מאמת...
-              </span>
-            ) : (
-              'אמת קוד'
-            )}
-          </Button>
+          <div className="space-y-2">
+            <Button 
+              onClick={verifyCode} 
+              className="w-full" 
+              disabled={isLoading || code.length !== 6}
+            >
+              {isLoading ? (
+                <span className="flex items-center gap-2">
+                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-r-transparent" />
+                  מאמת...
+                </span>
+              ) : (
+                'אמת קוד'
+              )}
+            </Button>
 
-          <Button
-            variant="outline"
-            onClick={sendVerificationCode}
-            className="w-full"
-            disabled={isResending || countdown > 0}
-          >
-            {isResending ? (
-              <span className="flex items-center gap-2">
-                <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-r-transparent" />
-                שולח...
-              </span>
-            ) : countdown > 0 ? (
-              `שלח שוב בעוד ${countdown} שניות`
-            ) : (
-              'שלח קוד שוב'
-            )}
-          </Button>
+            <Button
+              variant="outline"
+              onClick={sendVerificationCode}
+              className="w-full"
+              disabled={isResending || countdown > 0}
+            >
+              {isResending ? (
+                <span className="flex items-center gap-2">
+                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-r-transparent" />
+                  שולח...
+                </span>
+              ) : countdown > 0 ? (
+                `שלח שוב בעוד ${countdown} שניות`
+              ) : (
+                'שלח קוד שוב'
+              )}
+            </Button>
 
-          <Button
-            variant="ghost"
-            onClick={onBack}
-            className="w-full"
-          >
-            חזור לעריכת פרטים
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
+            <Button
+              variant="ghost"
+              onClick={onBack}
+              className="w-full"
+            >
+              חזור לעריכת פרטים
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Confetti Animation */}
+      <ConfettiComponent duration={4000} particleCount={100} />
+
+      {/* Success Celebration Modal */}
+      <CelebrationModal
+        isOpen={showCelebration}
+        title="🎉 ברכות!"
+        message="מספר הטלפון שלך אומת בהצלחה! ברוכים הבאים לאפליקציה"
+        onClose={handleCelebrationClose}
+      />
+    </>
   );
 };
 

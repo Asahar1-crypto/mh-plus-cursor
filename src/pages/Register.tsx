@@ -11,6 +11,8 @@ import { useAuth } from '@/contexts/auth';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import SmsVerification from '@/components/auth/SmsVerification';
+import { useConfetti } from '@/components/ui/confetti';
+import { CelebrationModal } from '@/components/ui/celebration-modal';
 
 const registerSchema = z.object({
   name: z.string().min(2, { message: 'שם חייב להיות לפחות 2 תווים' }),
@@ -31,6 +33,8 @@ const Register = () => {
   const [invitationId, setInvitationId] = useState<string | null>(null);
   const [showSmsVerification, setShowSmsVerification] = useState(false);
   const [registrationData, setRegistrationData] = useState<z.infer<typeof registerSchema> | null>(null);
+  const [showCelebration, setShowCelebration] = useState(false);
+  const { isActive: confettiActive, fire: fireConfetti, ConfettiComponent } = useConfetti();
   
   useEffect(() => {
     // Check if there's an invitationId in the URL
