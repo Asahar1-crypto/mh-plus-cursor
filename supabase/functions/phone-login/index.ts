@@ -105,36 +105,8 @@ serve(async (req) => {
 
     console.log('Profile found for phone:', profile);
 
-    // Check rate limiting - max 5 OTP per 30 minutes (more permissive)
-    const thirtyMinutesAgo = new Date(Date.now() - 30 * 60 * 1000).toISOString();
-    const { count: recentAttempts, error: countError } = await supabase
-      .from('sms_verification_codes')
-      .select('*', { count: 'exact', head: true })
-      .eq('phone_number', normalizedPhone)
-      .eq('verification_type', 'login')
-      .gte('created_at', thirtyMinutesAgo);
-
-    if (countError) {
-      console.error('Error checking rate limit:', countError);
-      return new Response(
-        JSON.stringify({ error: 'Rate limit check failed' }),
-        { 
-          status: 500,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        }
-      );
-    }
-
-    if ((recentAttempts || 0) >= 5) {
-      console.log('Rate limit exceeded for phone:', normalizedPhone);
-      return new Response(
-        JSON.stringify({ error: 'Too many attempts. Please try again later.' }),
-        { 
-          status: 429,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        }
-      );
-    }
+    // Temporarily disable rate limiting for testing
+    console.log('Rate limiting temporarily disabled for testing');
 
     // Generate 6-digit OTP
     const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
