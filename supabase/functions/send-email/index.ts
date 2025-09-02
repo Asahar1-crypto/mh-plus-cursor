@@ -82,7 +82,7 @@ serve(async (req) => {
     // Configure the email message - Using the new sender email
     const msg = {
       to,
-      from: "service@mhplus.online", // Updated sender email
+      from: "family@mhplus.online", // Updated sender email
       subject,
       text,
       html,
