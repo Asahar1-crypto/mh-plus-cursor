@@ -63,7 +63,7 @@ const SmartPhoneInput = forwardRef<HTMLInputElement, SmartPhoneInputProps>(
               "absolute transition-all duration-300 pointer-events-none z-10",
               isFocused || formattedValue 
                 ? "top-1 right-4 text-xs text-primary font-medium" 
-                : "top-1/2 right-4 -translate-y-1/2 text-sm text-muted-foreground"
+                : "top-1/2 right-12 -translate-y-1/2 text-sm text-muted-foreground"
             )}
           >
             {label}
