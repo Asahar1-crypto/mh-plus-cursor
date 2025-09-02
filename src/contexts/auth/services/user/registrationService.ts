@@ -30,14 +30,18 @@ export const registrationService = {
         console.error("Error checking invitations:", invitationsError);
       }
       
-      // Sign up with Supabase without auto-confirmation - we'll handle email via SendGrid
+      // Generate unique verification token for custom email
+      const verificationToken = crypto.randomUUID();
+      
+      // Sign up with Supabase without email confirmation (we'll handle it via SendGrid)
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
+          emailRedirectTo: `${window.location.origin}/verify-email?token=${verificationToken}`,
           data: {
             name,
-            email_confirm: false // Prevent auto-email
+            verification_token: verificationToken
           }
         }
       });
@@ -47,75 +51,47 @@ export const registrationService = {
         throw error;
       }
       
-      if (data && data.user && !data.user.email_confirmed_at) {
+      if (data) {
         console.log('Registration successful:', data);
         
-        // Send verification email via SendGrid immediately
+        // Send verification email via SendGrid
         try {
-          const verificationLink = `${window.location.origin}/verify-email?user_id=${data.user.id}&email=${encodeURIComponent(email)}`;
+          const verificationLink = `${window.location.origin}/verify-email?token=${verificationToken}&email=${encodeURIComponent(email)}`;
           
-          console.log('Sending verification email via SendGrid to:', email);
-          
-          const emailResponse = await supabase.functions.invoke('send-email', {
+          await supabase.functions.invoke('send-email', {
             body: {
               to: email,
               subject: 'אימות חשבון - מחציות פלוס',
               html: `
-                <div dir="rtl" style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-                  <div style="text-align: center; margin-bottom: 30px;">
-                    <h1 style="color: #333; margin-bottom: 10px;">ברוכים הבאים למחציות פלוס!</h1>
-                    <p style="color: #666; font-size: 16px;">מערכת ניהול הוצאות משפחתיות</p>
-                  </div>
-                  
-                  <div style="background-color: #f8f9fa; padding: 25px; border-radius: 8px; margin-bottom: 25px;">
-                    <p style="margin: 0 0 15px 0; font-size: 16px;">שלום <strong>${name}</strong>,</p>
-                    <p style="margin: 0; color: #666; line-height: 1.6;">
-                      תודה על הרישום למערכת מחציות פלוס. כדי להשלים את הרישום ולאמת את כתובת האימייל שלך, אנא לחץ על הכפתור הבא:
-                    </p>
-                  </div>
-                  
-                  <div style="text-align: center; margin: 35px 0;">
+                <div dir="rtl" style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                  <h1 style="color: #333; text-align: center;">ברוכים הבאים למחציות פלוס!</h1>
+                  <p>שלום ${name},</p>
+                  <p>תודה על הרישום למערכת מחציות פלוס. כדי להשלים את הרישום ולאמת את כתובת האימייל שלך, אנא לחץ על הקישור הבא:</p>
+                  <div style="text-align: center; margin: 30px 0;">
                     <a href="${verificationLink}" 
-                       style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
-                              color: white; 
-                              padding: 15px 40px; 
-                              text-decoration: none; 
-                              border-radius: 8px; 
-                              display: inline-block; 
-                              font-weight: bold;
-                              font-size: 16px;
-                              box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);">
-                      ✅ אמת את החשבון שלך
+                       style="background-color: #4CAF50; color: white; padding: 15px 30px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold;">
+                      אמת את החשבון שלך
                     </a>
                   </div>
-                  
-                  <div style="background-color: #fff3cd; border: 1px solid #ffeaa7; border-radius: 6px; padding: 15px; margin: 25px 0;">
-                    <p style="margin: 0; color: #856404; font-size: 14px;">
-                      <strong>הקישור לא עובד?</strong><br>
-                      העתק והדבק את הכתובת הבאה בדפדפן:
-                    </p>
-                    <p style="word-break: break-all; background-color: #f5f5f5; padding: 8px; border-radius: 4px; margin: 10px 0 0 0; font-family: monospace; font-size: 12px;">
-                      ${verificationLink}
-                    </p>
-                  </div>
-                  
-                  <div style="border-top: 1px solid #eee; padding-top: 20px; margin-top: 30px;">
-                    <p style="color: #666; font-size: 14px; margin: 0 0 10px 0; text-align: center;">
-                      אם לא ביקשת לפתוח חשבון, אנא התעלם מהודעה זו.
-                    </p>
-                    <p style="color: #999; font-size: 12px; text-align: center; margin: 0;">
-                      מחציות פלוס - מערכת ניהול הוצאות משפחתיות<br>
-                      © 2025 כל הזכויות שמורות
-                    </p>
-                  </div>
+                  <p>אם הקישור לא עובד, העתק והדבק את הכתובת הבאה בדפדפן:</p>
+                  <p style="word-break: break-all; background-color: #f5f5f5; padding: 10px; border-radius: 3px;">
+                    ${verificationLink}
+                  </p>
+                  <p style="color: #666; font-size: 14px; margin-top: 30px;">
+                    אם לא ביקשת לפתוח חשבון, אנא התעלם מהודעה זו.
+                  </p>
+                  <hr style="margin: 30px 0; border: none; border-top: 1px solid #eee;">
+                  <p style="color: #999; font-size: 12px; text-align: center;">
+                    מחציות פלוס - מערכת ניהול הוצאות משפחתיות
+                  </p>
                 </div>
               `
             }
           });
           
-          console.log('Verification email sent via SendGrid, response:', emailResponse);
+          console.log('Verification email sent via SendGrid');
         } catch (emailError) {
-          console.error('Failed to send verification email via SendGrid:', emailError);
+          console.error('Failed to send verification email:', emailError);
           // Continue with registration even if email fails
         }
         

@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -15,7 +16,6 @@ const VerifyEmail = () => {
   const [isVerifying, setIsVerifying] = useState(false);
   
   const email = location.state?.email || searchParams.get('email') || '';
-  const userId = searchParams.get('user_id');
   const token = searchParams.get('token');
   
   useEffect(() => {
@@ -41,53 +41,14 @@ const VerifyEmail = () => {
         return;
       }
       
-      // If we have user_id and email, verify directly
-      if (userId && email) {
-        await verifyEmailDirectly(userId, email);
-      } else if (token) {
+      // If we have a token, verify email manually
+      if (token) {
         await verifyEmailWithToken(token);
       }
     };
     
     handleVerification();
-  }, [token, userId, email, isAuthenticated, navigate]);
-  
-  const verifyEmailDirectly = async (userId: string, email: string) => {
-    setIsVerifying(true);
-    try {
-      console.log('Attempting direct email verification for user:', userId);
-      
-      // Update user's email_confirmed_at directly via admin API
-      const { error } = await supabase.auth.admin.updateUserById(userId, {
-        email_confirm: true
-      });
-      
-      if (error) {
-        throw error;
-      }
-      
-      console.log('Email verification successful');
-      setVerificationStatus('success');
-      
-      // Check for pending invitations
-      const pendingInvitationsData = localStorage.getItem('pendingInvitationsAfterRegistration');
-      if (pendingInvitationsData) {
-        console.log("Email verified, redirecting to dashboard to handle invitations");
-        setTimeout(() => {
-          navigate('/dashboard');
-        }, 1500);
-      } else {
-        setTimeout(() => {
-          navigate('/login');
-        }, 2000);
-      }
-    } catch (error) {
-      console.error('Direct email verification failed:', error);
-      setVerificationStatus('error');
-    } finally {
-      setIsVerifying(false);
-    }
-  };
+  }, [token, isAuthenticated, navigate]);
   
   const verifyEmailWithToken = async (token: string) => {
     setIsVerifying(true);
@@ -146,7 +107,7 @@ const VerifyEmail = () => {
     <div className="container mx-auto py-10 px-4 flex items-center justify-center min-h-[calc(100vh-4rem)]">
       <Card className="w-full max-w-md border-border shadow-lg animate-fade-in">
         <CardHeader className="text-center">
-          {(token || userId) ? (
+          {token ? (
             <>
               {verificationStatus === 'pending' && (
                 <div className="mx-auto mb-4 h-12 w-12 rounded-full bg-muted flex items-center justify-center">
@@ -187,7 +148,7 @@ const VerifyEmail = () => {
           )}
         </CardHeader>
         <CardContent>
-          {!(token || userId) && (
+          {!token && (
             <div className="text-center text-muted-foreground">
               <p>לא קיבלת אימייל? בדוק את תיבת הספאם שלך או חזור למסך ההרשמה ונסה שוב.</p>
             </div>
