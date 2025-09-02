@@ -820,6 +820,20 @@ const AdminTenants: React.FC = () => {
                 <div className="mt-3 p-2 bg-muted rounded">
                   <strong>תפקיד:</strong> {deleteMemberDialog.member?.role === 'admin' ? 'מנהל' : 'חבר'}
                 </div>
+
+                {/* אזהרה מיוחדת למנהל אחרון */}
+                {deleteMemberDialog.member?.role === 'admin' && 
+                 deleteMemberDialog.tenant?.member_details?.filter(m => m.role === 'admin').length === 1 && (
+                  <div className="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded">
+                    <div className="flex items-center gap-2 text-yellow-800">
+                      <span className="text-yellow-600">⚠️</span>
+                      <strong>אזהרה:</strong>
+                    </div>
+                    <p className="text-sm text-yellow-700 mt-1">
+                      זהו המנהל האחרון במשפחה זו. הסרתו תשאיר את המשפחה ללא מנהל.
+                    </p>
+                  </div>
+                )}
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>

@@ -88,7 +88,8 @@ serve(async (req) => {
       name: (member as any).profiles?.name 
     });
 
-    // Check if this is the last admin - prevent deletion if so
+    // Check if this is the last admin - warn but allow super admin to proceed
+    let isLastAdmin = false;
     if (member.role === 'admin') {
       const { data: adminCount, error: adminCountError } = await supabaseClient
         .from('account_members')
@@ -100,8 +101,10 @@ serve(async (req) => {
         throw new Error("Failed to check admin count");
       }
 
-      if ((adminCount?.length || 0) <= 1) {
-        throw new Error("Cannot remove the last admin from a tenant");
+      isLastAdmin = (adminCount?.length || 0) <= 1;
+      
+      if (isLastAdmin) {
+        logStep("Warning: Removing last admin from tenant", { tenantId: tenant_id });
       }
     }
 
