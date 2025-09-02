@@ -8,6 +8,7 @@ const corsHeaders = {
 
 interface DeleteUserRequest {
   user_id: string;
+  admin_promotions?: Record<string, string>; // account_id -> new_admin_user_id
 }
 
 const logStep = (step: string, details?: any) => {
@@ -59,7 +60,8 @@ serve(async (req) => {
     logStep("Super admin verified");
 
     // Parse request body
-    const { user_id }: DeleteUserRequest = await req.json();
+    const requestBody = await req.json();
+    const { user_id, admin_promotions }: DeleteUserRequest = requestBody;
 
     if (!user_id) {
       throw new Error("Missing required parameter: user_id");
@@ -114,7 +116,95 @@ serve(async (req) => {
       throw new Error(`Failed to delete invitations: ${invitationsError.message}`);
     }
 
-    // 3. Delete from account_members
+    // 3. Delete from account_members AFTER checking admin roles
+    logStep("Checking admin roles in accounts first");
+    const { data: adminMemberships, error: adminError } = await supabaseClient
+      .from('account_members')
+      .select(`
+        account_id,
+        accounts!inner(name)
+      `)
+      .eq('user_id', user_id)
+      .eq('role', 'admin');
+
+    if (adminError) {
+      logStep("Error checking admin memberships", adminError);
+      throw new Error(`Failed to check admin memberships: ${adminError.message}`);
+    }
+
+
+    // Get detailed info about accounts where user is admin
+    const accountsWhereAdmin = [];
+    for (const membership of adminMemberships || []) {
+      const { data: accountMembers, error: membersError } = await supabaseClient
+        .from('account_members')
+        .select(`
+          user_id,
+          role,
+          profiles!inner(name)
+        `)
+        .eq('account_id', membership.account_id)
+        .neq('user_id', user_id);
+
+      if (membersError) {
+        logStep("Error fetching account members", membersError);
+        continue;
+      }
+
+      if (accountMembers && accountMembers.length > 0) {
+        accountsWhereAdmin.push({
+          account_id: membership.account_id,
+          account_name: (membership.accounts as any).name,
+          other_members: accountMembers.map((member: any) => ({
+            user_id: member.user_id,
+            name: member.profiles.name,
+            role: member.role
+          }))
+        });
+      }
+    }
+
+    // Check if we need to handle admin promotions
+
+    // If user is admin in accounts with other members and no promotions provided, return info for UI
+    if (accountsWhereAdmin.length > 0 && !admin_promotions) {
+      logStep("User is admin in accounts with other members, returning info for confirmation");
+      return new Response(
+        JSON.stringify({
+          success: false,
+          requires_admin_promotion: true,
+          admin_accounts: accountsWhereAdmin,
+          message: "המשתמש הוא אדמין במשפחות עם חברים נוספים. יש לבחור מי יהפוך לאדמין במקומו."
+        }),
+        {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 200,
+        }
+      );
+    }
+
+    // Handle admin promotions if provided
+    if (admin_promotions) {
+      logStep("Processing admin promotions");
+      for (const [accountId, newAdminId] of Object.entries(admin_promotions)) {
+        if (newAdminId) {
+          const { error: promoteError } = await supabaseClient
+            .from('account_members')
+            .update({ role: 'admin' })
+            .eq('account_id', accountId)
+            .eq('user_id', newAdminId);
+
+          if (promoteError) {
+            logStep("Error promoting new admin", promoteError);
+            throw new Error(`Failed to promote new admin: ${promoteError.message}`);
+          }
+
+          logStep(`Promoted user ${newAdminId} to admin in account ${accountId}`);
+        }
+      }
+    }
+
+    // Now delete from account_members
     logStep("Deleting account memberships");
     const { error: membersError } = await supabaseClient
       .from('account_members')
@@ -126,39 +216,15 @@ serve(async (req) => {
       throw new Error(`Failed to delete account memberships: ${membersError.message}`);
     }
 
-    // 4. Handle account ownership - transfer ownership or set to null
-    logStep("Handling account ownership");
-    const { data: ownedAccounts, error: ownedAccountsError } = await supabaseClient
+    // Update ownership for owned accounts
+    const { data: ownedAccounts } = await supabaseClient
       .from('accounts')
-      .select(`
-        id,
-        name,
-        account_members!inner(user_id, role)
-      `)
+      .select('id, name')
       .eq('owner_id', user_id);
 
-    if (ownedAccountsError) {
-      logStep("Error checking owned accounts", ownedAccountsError);
-      throw new Error(`Failed to check owned accounts: ${ownedAccountsError.message}`);
-    }
-
-    // For each owned account, transfer ownership to another admin or set to null
     for (const account of ownedAccounts || []) {
-      const members = (account.account_members as any[]) || [];
-      const otherAdmins = members.filter(member => 
-        member.user_id !== user_id && member.role === 'admin'
-      );
-
-      let newOwnerId = null;
-      if (otherAdmins.length > 0) {
-        // Transfer ownership to first available admin
-        newOwnerId = otherAdmins[0].user_id;
-        logStep(`Transferring ownership of account ${account.name} to admin ${newOwnerId}`);
-      } else {
-        // No other admins - account will have no owner but remain active
-        logStep(`Account ${account.name} will have no owner after user deletion`);
-      }
-
+      const newOwnerId = admin_promotions?.[account.id] || null;
+      
       const { error: transferError } = await supabaseClient
         .from('accounts')
         .update({ owner_id: newOwnerId })
@@ -168,9 +234,11 @@ serve(async (req) => {
         logStep("Error transferring ownership", transferError);
         throw new Error(`Failed to transfer ownership: ${transferError.message}`);
       }
+
+      logStep(`Transferred ownership of account ${account.name} to ${newOwnerId || 'null'}`);
     }
 
-    // 5. Delete from profiles
+    // 4. Delete from profiles
     logStep("Deleting user profile");
     const { error: profileDeleteError } = await supabaseClient
       .from('profiles')
@@ -182,7 +250,7 @@ serve(async (req) => {
       throw new Error(`Failed to delete profile: ${profileDeleteError.message}`);
     }
 
-    // 6. Finally, delete from auth.users using admin API
+    // 5. Finally, delete from auth.users using admin API
     logStep("Deleting user from auth system");
     const { error: authDeleteError } = await supabaseClient.auth.admin.deleteUser(user_id);
     
@@ -191,7 +259,7 @@ serve(async (req) => {
       throw new Error(`Failed to delete user from auth: ${authDeleteError.message}`);
     }
 
-    // 7. Record the deletion in deleted_users table
+    // 6. Record the deletion in deleted_users table
     logStep("Recording user deletion");
     const { error: recordError } = await supabaseClient
       .from('deleted_users')

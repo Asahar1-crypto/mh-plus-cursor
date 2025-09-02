@@ -82,6 +82,17 @@ const AdminTenants: React.FC = () => {
   const [newMemberEmail, setNewMemberEmail] = useState('');
   const [newMemberRole, setNewMemberRole] = useState<'admin' | 'member'>('member');
   const [confirmationInput, setConfirmationInput] = useState('');
+  const [adminPromotionDialog, setAdminPromotionDialog] = useState<{
+    open: boolean;
+    userToDelete: string;
+    adminAccounts: any[];
+    promotions: Record<string, string>;
+  }>({
+    open: false,
+    userToDelete: '',
+    adminAccounts: [],
+    promotions: {}
+  });
   const [viewDetailsDialog, setViewDetailsDialog] = useState<{ open: boolean; tenant: Tenant | null }>({
     open: false,
     tenant: null
@@ -433,28 +444,46 @@ const AdminTenants: React.FC = () => {
     }
   };
 
-  const handleDeleteUser = async (userId: string) => {
+  const handleDeleteUser = async (userId: string, adminPromotions?: Record<string, string>) => {
     if (!userId) return;
     
     const userEmail = userEmails[userId] || 'משתמש לא ידוע';
     
-    if (!confirm(`האם אתה בטוח שברצונך למחוק את המשתמש ${userEmail} לגמרי מהמערכת?\n\nפעולה זו תמחק את המשתמש מכל המשפחות ותמנע ממנו להתחבר עד שיעשה רישום מחדש.`)) {
-      return;
-    }
+    // First attempt - check if user is admin and needs promotions
+    if (!adminPromotions) {
+      if (!confirm(`האם אתה בטוח שברצונך למחוק את המשתמש ${userEmail} לגמרי מהמערכת?\n\nפעולה זו תמחק את המשתמש מכל המשפחות ותמנע ממנו להתחבר עד שיעשה רישום מחדש.`)) {
+        return;
+      }
 
-    // אישור נוסף
-    if (!confirm("זאת אזהרה אחרונה! המחיקה היא בלתי הפיכה. האם להמשיך?")) {
-      return;
+      // אישור נוסף
+      if (!confirm("זאת אזהרה אחרונה! המחיקה היא בלתי הפיכה. האם להמשיך?")) {
+        return;
+      }
     }
 
     try {
       setActionLoading(`delete-user-${userId}`);
       
       const { data, error } = await supabase.functions.invoke('delete-user', {
-        body: { user_id: userId }
+        body: { 
+          user_id: userId,
+          admin_promotions: adminPromotions 
+        }
       });
 
       if (error) throw error;
+
+      // Check if admin promotion is required
+      if (data.requires_admin_promotion) {
+        setAdminPromotionDialog({
+          open: true,
+          userToDelete: userId,
+          adminAccounts: data.admin_accounts,
+          promotions: {}
+        });
+        setActionLoading(null);
+        return;
+      }
 
       if (data.success) {
         toast({
@@ -467,6 +496,7 @@ const AdminTenants: React.FC = () => {
         // סגור דיאלוגים פתוחים
         setViewDetailsDialog({ open: false, tenant: null });
         setDeleteMemberDialog({ open: false, tenant: null, member: null });
+        setAdminPromotionDialog({ open: false, userToDelete: '', adminAccounts: [], promotions: {} });
       } else {
         toast({
           title: 'שגיאה',
@@ -998,6 +1028,75 @@ const AdminTenants: React.FC = () => {
                 }}
               >
                 {actionLoading === `${deleteMemberDialog.tenant?.id}-${deleteMemberDialog.member?.user_id}` ? 'מסיר...' : 'הסר מהמשפחה'}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        {/* Admin Promotion Dialog */}
+        <AlertDialog open={adminPromotionDialog.open} onOpenChange={(open) => {
+          if (!open) {
+            setAdminPromotionDialog({ open: false, userToDelete: '', adminAccounts: [], promotions: {} });
+          }
+        }}>
+          <AlertDialogContent className="max-w-2xl">
+            <AlertDialogHeader>
+              <AlertDialogTitle>בחירת אדמין חדש</AlertDialogTitle>
+              <AlertDialogDescription>
+                המשתמש שאתה מוחק הוא אדמין במשפחות הבאות. יש לבחור מי יהפוך לאדמין במקומו או להשאיר ללא אדמין.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            
+            <div className="space-y-4 max-h-96 overflow-y-auto">
+              {adminPromotionDialog.adminAccounts.map((account) => (
+                <div key={account.account_id} className="border rounded-lg p-4">
+                  <h4 className="font-semibold mb-3">משפחת {account.account_name}</h4>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">בחר מנהל חדש:</label>
+                    <select
+                      value={adminPromotionDialog.promotions[account.account_id] || ''}
+                      onChange={(e) => {
+                        setAdminPromotionDialog(prev => ({
+                          ...prev,
+                          promotions: {
+                            ...prev.promotions,
+                            [account.account_id]: e.target.value
+                          }
+                        }));
+                      }}
+                      className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                    >
+                      <option value="">השאר ללא מנהל</option>
+                      {account.other_members.map((member: any) => (
+                        <option key={member.user_id} value={member.user_id}>
+                          {member.name} ({member.role === 'admin' ? 'מנהל' : 'חבר'})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  
+                  <div className="mt-3 p-2 bg-muted rounded text-sm">
+                    <strong>חברים במשפחה:</strong>
+                    {account.other_members.map((member: any, index: number) => (
+                      <div key={member.user_id} className="text-xs text-muted-foreground">
+                        • {member.name} ({member.role === 'admin' ? 'מנהל' : 'חבר'})
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <AlertDialogFooter>
+              <AlertDialogCancel>ביטול</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={() => {
+                  handleDeleteUser(adminPromotionDialog.userToDelete, adminPromotionDialog.promotions);
+                }}
+                disabled={actionLoading === `delete-user-${adminPromotionDialog.userToDelete}`}
+                className="bg-destructive hover:bg-destructive/90"
+              >
+                {actionLoading === `delete-user-${adminPromotionDialog.userToDelete}` ? 'מוחק...' : 'המשך במחיקה'}
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
