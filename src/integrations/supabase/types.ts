@@ -708,6 +708,19 @@ export type Database = {
           id: string
         }[]
       }
+      get_orphaned_verified_users: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          created_at: string
+          email: string
+          email_confirmed_at: string
+          has_profile: boolean
+          id: string
+          last_sign_in_at: string
+          profile_name: string
+          raw_user_meta_data: Json
+        }[]
+      }
       get_system_setting: {
         Args: { key_name: string }
         Returns: string
