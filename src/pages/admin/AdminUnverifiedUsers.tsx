@@ -218,8 +218,20 @@ const AdminUnverifiedUsers: React.FC = () => {
 
     try {
       console.log('Deleting user:', { userId, email });
+      
+      // שלח את הטוקן הנוכחי עם הבקשה
+      const { data: { session } } = await supabase.auth.getSession();
+      const accessToken = session?.access_token;
+      
+      if (!accessToken) {
+        throw new Error('No access token found');
+      }
+      
       const { data, error } = await supabase.functions.invoke('delete-user', {
-        body: { user_id: userId } // תיקון: השתמש ב-user_id במקום userId
+        body: { user_id: userId },
+        headers: {
+          'Authorization': `Bearer ${accessToken}`
+        }
       });
 
       if (error) {
@@ -272,8 +284,19 @@ const AdminUnverifiedUsers: React.FC = () => {
 
     for (const user of usersToDelete) {
       try {
+        // שלח את הטוקן הנוכחי עם הבקשה
+        const { data: { session } } = await supabase.auth.getSession();
+        const accessToken = session?.access_token;
+        
+        if (!accessToken) {
+          throw new Error('No access token found');
+        }
+        
         const { error } = await supabase.functions.invoke('delete-user', {
-          body: { user_id: user.id } // תיקון: השתמש ב-user_id במקום userId
+          body: { user_id: user.id },
+          headers: {
+            'Authorization': `Bearer ${accessToken}`
+          }
         });
 
         if (error) throw error;
