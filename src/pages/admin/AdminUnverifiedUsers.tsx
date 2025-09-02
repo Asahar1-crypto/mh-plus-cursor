@@ -219,23 +219,6 @@ const AdminUnverifiedUsers: React.FC = () => {
     try {
       console.log('Deleting user:', { userId, email });
       
-      // בדוק אם המשתמש עדיין מחובר
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
-      
-      if (userError || !user) {
-        console.error('User not authenticated:', userError);
-        toast({
-          title: 'שגיאה באותנטיקציה',
-          description: 'נדרש להתחבר מחדש למערכת',
-          variant: 'destructive'
-        });
-        // הפנה למסך התחברות
-        window.location.href = '/login';
-        return;
-      }
-      
-      console.log('User is authenticated, proceeding with delete');
-      
       const { data, error } = await supabase.functions.invoke('delete-user', {
         body: { user_id: userId }
       });
@@ -290,21 +273,6 @@ const AdminUnverifiedUsers: React.FC = () => {
 
     for (const user of usersToDelete) {
       try {
-        // בדוק אם המשתמש עדיין מחובר
-        const { data: { user: currentUser }, error: userError } = await supabase.auth.getUser();
-        
-        if (userError || !currentUser) {
-          console.error('User not authenticated:', userError);
-          toast({
-            title: 'שגיאה באותנטיקציה',
-            description: 'נדרש להתחבר מחדש למערכת',
-            variant: 'destructive'
-          });
-          // הפנה למסך התחברות
-          window.location.href = '/login';
-          return;
-        }
-        
         const { error } = await supabase.functions.invoke('delete-user', {
           body: { user_id: user.id }
         });
