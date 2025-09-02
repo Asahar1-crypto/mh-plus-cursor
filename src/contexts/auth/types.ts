@@ -13,6 +13,9 @@ export interface Profile {
   selected_account_id: string | null;
   is_super_admin: boolean | null;
   last_login: string | null;
+  phone_number?: string | null;
+  phone_verified?: boolean | null;
+  two_factor_enabled?: boolean | null;
 }
 
 export interface Account {
