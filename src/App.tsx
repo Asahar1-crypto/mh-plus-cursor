@@ -27,6 +27,7 @@ import IndexPage from "./pages/Index";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminPricing from "./pages/admin/AdminPricing";
 import AdminTenants from "./pages/admin/AdminTenants";
+import AdminEmailSettings from "./pages/admin/AdminEmailSettings";
 
 import AuthLayout from "./components/AuthLayout";
 import AppLayout from "./components/AppLayout";
@@ -72,6 +73,7 @@ const App = () => (
                 <Route path="/admin/dashboard" element={<AdminDashboard />} />
                 <Route path="/admin/pricing" element={<AdminPricing />} />
                 <Route path="/admin/tenants" element={<AdminTenants />} />
+                <Route path="/admin/email-settings" element={<AdminEmailSettings />} />
               </Route>
               
               {/* Special routes */}
