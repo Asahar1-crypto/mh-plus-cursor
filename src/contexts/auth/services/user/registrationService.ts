@@ -30,11 +30,12 @@ export const registrationService = {
         console.error("Error checking invitations:", invitationsError);
       }
       
-      // Sign up with Supabase
+      // Sign up with Supabase - CRITICAL FIX: Added emailRedirectTo
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
+          emailRedirectTo: `${window.location.origin}/verify-email`,
           data: {
             name
           }

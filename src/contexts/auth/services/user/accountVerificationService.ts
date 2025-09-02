@@ -17,7 +17,15 @@ export const accountVerificationService = {
     try {
       console.log("Attempting to verify email with token");
       
-      // For email verification, we'll use Supabase's built-in functionality
+      // Check if user is already authenticated (coming from email link)
+      const { data: session } = await supabase.auth.getSession();
+      if (session.session) {
+        console.log("User already authenticated via email verification");
+        toast.success(EMAIL_VERIFICATION_SUCCESS_MESSAGE);
+        return true;
+      }
+      
+      // Try to verify with token hash
       const { error } = await supabase.auth.verifyOtp({
         token_hash: token,
         type: 'email'
@@ -25,7 +33,8 @@ export const accountVerificationService = {
       
       if (error) {
         console.error("Email verification error from Supabase:", error);
-        throw error;
+        toast.error(EMAIL_VERIFICATION_ERROR_MESSAGE);
+        return false;
       }
       
       console.log("Email verification successful");
@@ -44,7 +53,7 @@ export const accountVerificationService = {
       console.log(`Attempting password reset for ${email}`);
       
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: window.location.origin + '/reset-password'
+        redirectTo: `${window.location.origin}/reset-password`
       });
       
       if (error) {

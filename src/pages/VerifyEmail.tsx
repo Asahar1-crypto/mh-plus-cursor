@@ -18,21 +18,36 @@ const VerifyEmail = () => {
   const token = searchParams.get('token');
   
   useEffect(() => {
-    // If we have a token, verify email
-    if (token) {
-      verifyEmailWithToken(token);
-    }
-    
-    // If user is already authenticated, redirect to dashboard
-    if (isAuthenticated) {
-      // Check if we have pending invitations from registration
-      const pendingInvitationsData = localStorage.getItem('pendingInvitationsAfterRegistration');
-      if (pendingInvitationsData) {
-        // We'll redirect to dashboard and the automatic linking will happen there
-        navigate('/dashboard');
+    // Handle different verification scenarios
+    const handleVerification = async () => {
+      // If user is already authenticated (came from email link), handle immediately
+      if (isAuthenticated) {
+        console.log("User is authenticated, processing pending invitations");
+        setVerificationStatus('success');
+        
+        // Check if we have pending invitations from registration
+        const pendingInvitationsData = localStorage.getItem('pendingInvitationsAfterRegistration');
+        if (pendingInvitationsData) {
+          console.log("Found pending invitations, redirecting to dashboard");
+          setTimeout(() => {
+            navigate('/dashboard');
+          }, 1500);
+        } else {
+          setTimeout(() => {
+            navigate('/dashboard');
+          }, 2000);
+        }
+        return;
       }
-    }
-  }, [token, isAuthenticated]);
+      
+      // If we have a token, verify email manually
+      if (token) {
+        await verifyEmailWithToken(token);
+      }
+    };
+    
+    handleVerification();
+  }, [token, isAuthenticated, navigate]);
   
   const verifyEmailWithToken = async (token: string) => {
     setIsVerifying(true);
@@ -40,11 +55,19 @@ const VerifyEmail = () => {
       const result = await verifyEmail(token);
       setVerificationStatus(result ? 'success' : 'error');
       
-      // If verification was successful, redirect to login
+      // If verification was successful, check for pending invitations
       if (result) {
-        setTimeout(() => {
-          navigate('/login');
-        }, 2000);
+        const pendingInvitationsData = localStorage.getItem('pendingInvitationsAfterRegistration');
+        if (pendingInvitationsData) {
+          console.log("Email verified, redirecting to dashboard to handle invitations");
+          setTimeout(() => {
+            navigate('/dashboard');
+          }, 1500);
+        } else {
+          setTimeout(() => {
+            navigate('/login');
+          }, 2000);
+        }
       }
     } finally {
       setIsVerifying(false);
