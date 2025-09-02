@@ -15,16 +15,23 @@ interface PhoneLoginProps {
 const PhoneLogin: React.FC<PhoneLoginProps> = ({ onBack }) => {
   const { sendPhoneOtp, isLoading } = useAuth();
   const [phoneNumber, setPhoneNumber] = useState('');
-  const [showOtpVerification, setShowOtpVerification] = useState(false);
-  const [userInfo, setUserInfo] = useState<{ userId?: string; userName?: string }>({});
+  const [showOtpVerification, setShowOtpVerification] = useState(
+    () => sessionStorage.getItem('phoneLogin_showOtp') === 'true'
+  );
+  const [userInfo, setUserInfo] = useState<{ userId?: string; userName?: string }>(() => {
+    const stored = sessionStorage.getItem('phoneLogin_userInfo');
+    return stored ? JSON.parse(stored) : {};
+  });
   const [phoneError, setPhoneError] = useState('');
 
-  // Add logging to track state changes
+  // Save state to sessionStorage whenever it changes
   React.useEffect(() => {
+    sessionStorage.setItem('phoneLogin_showOtp', showOtpVerification.toString());
     console.log('PhoneLogin state changed - showOtpVerification:', showOtpVerification);
   }, [showOtpVerification]);
 
   React.useEffect(() => {
+    sessionStorage.setItem('phoneLogin_userInfo', JSON.stringify(userInfo));
     console.log('PhoneLogin userInfo changed:', userInfo);
   }, [userInfo]);
 
