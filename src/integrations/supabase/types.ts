@@ -630,6 +630,10 @@ export type Database = {
         Args: { user_uuid: string }
         Returns: string[]
       }
+      has_active_subscription: {
+        Args: { account_uuid: string }
+        Returns: boolean
+      }
       is_account_admin: {
         Args: { account_uuid: string; user_uuid: string }
         Returns: boolean
@@ -645,6 +649,10 @@ export type Database = {
       remove_account_member: {
         Args: { account_uuid: string; user_uuid: string }
         Returns: boolean
+      }
+      update_expired_trials: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
       }
       upsert_subscription_secure: {
         Args: {
