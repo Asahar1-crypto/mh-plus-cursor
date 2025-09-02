@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { ArrowLeft, Search, Users, Calendar, DollarSign, MoreHorizontal, RefreshCw, Eye, Activity, Database } from 'lucide-react';
+import { ArrowLeft, Search, Users, Calendar, DollarSign, MoreHorizontal, RefreshCw, Eye, Activity, Database, Trash2, UserMinus } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/auth';
@@ -44,6 +44,7 @@ interface Tenant {
     name: string;
     email: string;
     role: string;
+    user_id: string;
     last_login: string | null;
     joined_at: string;
   }>;
@@ -61,6 +62,16 @@ const AdminTenants: React.FC = () => {
     open: false,
     tenant: null
   });
+  const [deleteMemberDialog, setDeleteMemberDialog] = useState<{ 
+    open: boolean; 
+    tenant: Tenant | null; 
+    member: { name: string; email: string; role: string; user_id?: string } | null 
+  }>({
+    open: false,
+    tenant: null,
+    member: null
+  });
+  const [confirmationInput, setConfirmationInput] = useState('');
   const [viewDetailsDialog, setViewDetailsDialog] = useState<{ open: boolean; tenant: Tenant | null }>({
     open: false,
     tenant: null
@@ -136,6 +147,7 @@ const AdminTenants: React.FC = () => {
             name: member.profiles?.name || 'לא ידוע',
             email: member.profiles?.email || 'לא ידוע',
             role: member.role,
+            user_id: member.user_id,
             last_login: member.profiles?.last_login,
             joined_at: member.joined_at
           }));
@@ -269,6 +281,73 @@ const AdminTenants: React.FC = () => {
       toast({
         title: 'שגיאה',
         description: 'שגיאה בהארכת תקופת הניסיון',
+        variant: 'destructive'
+      });
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const deleteTenant = async (tenantId: string, tenantName: string) => {
+    try {
+      setActionLoading(tenantId);
+      
+      const { data, error } = await supabase.functions.invoke('delete-tenant', {
+        body: {
+          tenant_id: tenantId,
+          confirmation_name: tenantName
+        }
+      });
+
+      if (error) throw error;
+      if (!data.success) throw new Error(data.error);
+
+      toast({
+        title: 'הצלחה',
+        description: `המשפחה "${tenantName}" נמחקה בהצלחה`,
+      });
+
+      await loadTenants();
+      setDeleteDialog({ open: false, tenant: null });
+      setConfirmationInput('');
+    } catch (error: any) {
+      console.error('Error deleting tenant:', error);
+      toast({
+        title: 'שגיאה',
+        description: error.message || 'שגיאה במחיקת המשפחה',
+        variant: 'destructive'
+      });
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const removeTenantMember = async (tenantId: string, userId: string, memberName: string) => {
+    try {
+      setActionLoading(`${tenantId}-${userId}`);
+      
+      const { data, error } = await supabase.functions.invoke('remove-tenant-member', {
+        body: {
+          tenant_id: tenantId,
+          user_id: userId
+        }
+      });
+
+      if (error) throw error;
+      if (!data.success) throw new Error(data.error);
+
+      toast({
+        title: 'הצלחה',
+        description: `המשתמש "${memberName}" הוסר מהמשפחה בהצלחה`,
+      });
+
+      await loadTenants();
+      setDeleteMemberDialog({ open: false, tenant: null, member: null });
+    } catch (error: any) {
+      console.error('Error removing member:', error);
+      toast({
+        title: 'שגיאה',
+        description: error.message || 'שגיאה בהסרת המשתמש',
         variant: 'destructive'
       });
     } finally {
@@ -532,6 +611,17 @@ const AdminTenants: React.FC = () => {
                             >
                               הפסק גישה
                             </DropdownMenuItem>
+                            
+                            <DropdownMenuItem
+                              onClick={() => {
+                                setDeleteDialog({ open: true, tenant });
+                                setConfirmationInput('');
+                              }}
+                              className="text-red-600"
+                            >
+                              <Trash2 className="h-4 w-4 ml-2" />
+                              מחק משפחה
+                            </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </td>
@@ -549,26 +639,87 @@ const AdminTenants: React.FC = () => {
           </CardContent>
         </Card>
 
-        {/* Delete Dialog */}
-        <AlertDialog open={deleteDialog.open} onOpenChange={(open) => setDeleteDialog({ open, tenant: null })}>
+        {/* Delete Tenant Dialog */}
+        <AlertDialog open={deleteDialog.open} onOpenChange={(open) => {
+          setDeleteDialog({ open, tenant: null });
+          setConfirmationInput('');
+        }}>
           <AlertDialogContent>
             <AlertDialogHeader>
-              <AlertDialogTitle>מחיקת משפחה</AlertDialogTitle>
-              <AlertDialogDescription>
-                האם אתה בטוח שברצונך למחוק את משפחת "{deleteDialog.tenant?.name}"?
-                פעולה זו תמחק את כל הנתונים הקשורים למשפחה ולא ניתן לבטלה.
+              <AlertDialogTitle className="text-destructive">⚠️ מחיקת משפחה - פעולה בלתי הפיכה</AlertDialogTitle>
+              <AlertDialogDescription className="space-y-3">
+                <div>
+                  אתה עומד למחוק את משפחת <strong>"{deleteDialog.tenant?.name}"</strong> לצמיתות.
+                </div>
+                <div className="bg-destructive/10 p-3 rounded border-r-4 border-destructive">
+                  <strong>פעולה זו תמחק:</strong>
+                  <ul className="list-disc list-inside mt-2 space-y-1">
+                    <li>את כל החברים במשפחה</li>
+                    <li>את כל ההוצאות והנתונים</li>
+                    <li>את כל הילדים והקשורים</li>
+                    <li>את כל ההזמנות וההגדרות</li>
+                  </ul>
+                </div>
+                <div>
+                  <strong>אישור:</strong> הקלד את שם המשפחה בדיוק כדי לאשר את המחיקה:
+                </div>
+                <Input
+                  value={confirmationInput}
+                  onChange={(e) => setConfirmationInput(e.target.value)}
+                  placeholder={`הקלד: ${deleteDialog.tenant?.name}`}
+                  className="mt-2"
+                />
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel>ביטול</AlertDialogCancel>
               <AlertDialogAction
-                className="bg-red-600 hover:bg-red-700"
+                className="bg-destructive hover:bg-destructive/90"
+                disabled={confirmationInput !== deleteDialog.tenant?.name || actionLoading === deleteDialog.tenant?.id}
                 onClick={() => {
-                  // כאן תהיה לוגיקת המחיקה
-                  setDeleteDialog({ open: false, tenant: null });
+                  if (deleteDialog.tenant && confirmationInput === deleteDialog.tenant.name) {
+                    deleteTenant(deleteDialog.tenant.id, deleteDialog.tenant.name);
+                  }
                 }}
               >
-                מחק
+                {actionLoading === deleteDialog.tenant?.id ? 'מוחק...' : 'מחק לצמיתות'}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        {/* Delete Member Dialog */}
+        <AlertDialog open={deleteMemberDialog.open} onOpenChange={(open) => 
+          setDeleteMemberDialog({ open, tenant: null, member: null })
+        }>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>הסרת משתמש מהמשפחה</AlertDialogTitle>
+              <AlertDialogDescription>
+                האם אתה בטוח שברצונך להסיר את <strong>{deleteMemberDialog.member?.name}</strong> 
+                ממשפחת "{deleteMemberDialog.tenant?.name}"?
+                
+                <div className="mt-3 p-2 bg-muted rounded">
+                  <strong>תפקיד:</strong> {deleteMemberDialog.member?.role === 'admin' ? 'מנהל' : 'חבר'}
+                </div>
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>ביטול</AlertDialogCancel>
+              <AlertDialogAction
+                className="bg-destructive hover:bg-destructive/90"
+                disabled={actionLoading === `${deleteMemberDialog.tenant?.id}-${deleteMemberDialog.member?.user_id}`}
+                onClick={() => {
+                  if (deleteMemberDialog.tenant && deleteMemberDialog.member?.user_id) {
+                    removeTenantMember(
+                      deleteMemberDialog.tenant.id, 
+                      deleteMemberDialog.member.user_id, 
+                      deleteMemberDialog.member.name
+                    );
+                  }
+                }}
+              >
+                {actionLoading === `${deleteMemberDialog.tenant?.id}-${deleteMemberDialog.member?.user_id}` ? 'מסיר...' : 'הסר מהמשפחה'}
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
@@ -608,14 +759,15 @@ const AdminTenants: React.FC = () => {
                   <h3 className="text-lg font-semibold mb-3">חברי המשפחה</h3>
                   <div className="border rounded-lg">
                     <table className="w-full">
-                      <thead>
-                        <tr className="border-b bg-muted/50">
-                          <th className="text-right p-3">שם</th>
-                          <th className="text-right p-3">תפקיד</th>
-                          <th className="text-right p-3">כניסה אחרונה</th>
-                          <th className="text-right p-3">הצטרף</th>
-                        </tr>
-                      </thead>
+                       <thead>
+                         <tr className="border-b bg-muted/50">
+                           <th className="text-right p-3">שם</th>
+                           <th className="text-right p-3">תפקיד</th>
+                           <th className="text-right p-3">כניסה אחרונה</th>
+                           <th className="text-right p-3">הצטרף</th>
+                           <th className="text-right p-3">פעולות</th>
+                         </tr>
+                       </thead>
                       <tbody>
                         {viewDetailsDialog.tenant.member_details.map((member, index) => (
                           <tr key={index} className="border-b last:border-b-0">
@@ -639,9 +791,26 @@ const AdminTenants: React.FC = () => {
                                 <span className="text-muted-foreground text-sm">מעולם לא נכנס</span>
                               )}
                             </td>
-                            <td className="p-3">
-                              {new Date(member.joined_at).toLocaleDateString('he-IL')}
-                            </td>
+                             <td className="p-3">
+                               {new Date(member.joined_at).toLocaleDateString('he-IL')}
+                             </td>
+                             <td className="p-3">
+                               <Button
+                                 variant="ghost"
+                                 size="sm"
+                                 className="text-destructive hover:text-destructive"
+                                 disabled={actionLoading === `${viewDetailsDialog.tenant.id}-${member.user_id}`}
+                                 onClick={() => {
+                                   setDeleteMemberDialog({ 
+                                     open: true, 
+                                     tenant: viewDetailsDialog.tenant, 
+                                     member: member
+                                   });
+                                 }}
+                               >
+                                 <UserMinus className="h-4 w-4" />
+                               </Button>
+                             </td>
                           </tr>
                         ))}
                       </tbody>

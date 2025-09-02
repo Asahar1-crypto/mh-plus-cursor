@@ -9,3 +9,9 @@ verify_jwt = true
 
 [functions.generate-recurring-expenses]
 verify_jwt = false
+
+[functions.delete-tenant]
+verify_jwt = true
+
+[functions.remove-tenant-member]
+verify_jwt = true
