@@ -18,11 +18,31 @@ serve(async (req) => {
     console.log('Verification request received:', { phoneNumber, code, verificationType })
     
     if (!phoneNumber || !code) {
-      throw new Error('Phone number and code are required')
+      console.error('Missing required fields:', { phoneNumber: !!phoneNumber, code: !!code })
+      return new Response(
+        JSON.stringify({ 
+          verified: false,
+          error: 'Phone number and code are required'
+        }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 400,
+        },
+      )
     }
 
     if (!['registration', 'login'].includes(verificationType)) {
-      throw new Error('Invalid verification type')
+      console.error('Invalid verification type:', verificationType)
+      return new Response(
+        JSON.stringify({ 
+          verified: false,
+          error: 'Invalid verification type'
+        }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 400,
+        },
+      )
     }
 
     // Normalize phone number for Israel (same logic as send-sms)
@@ -61,9 +81,29 @@ serve(async (req) => {
       .maybeSingle()  // Use maybeSingle instead of single
 
     console.log('Database query result:', { verificationData, fetchError })
+    console.log('Query parameters used:', {
+      normalizedPhone,
+      code,
+      verificationType,
+      currentTime: new Date().toISOString()
+    })
 
-    if (fetchError || !verificationData) {
-      console.error('Verification code not found or expired:', fetchError)
+    if (fetchError) {
+      console.error('Database fetch error:', fetchError)
+      return new Response(
+        JSON.stringify({ 
+          verified: false,
+          error: 'Database error: ' + fetchError.message
+        }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 400,
+        },
+      )
+    }
+
+    if (!verificationData) {
+      console.error('No verification data found for:', { normalizedPhone, code, verificationType })
       return new Response(
         JSON.stringify({ 
           verified: false,
