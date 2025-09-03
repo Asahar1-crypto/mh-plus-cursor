@@ -37,7 +37,7 @@ interface AccountStats {
 }
 
 const AccountManagement = () => {
-  const { user, account, userAccounts, profile } = useAuth();
+  const { user, account, userAccounts, profile, sendInvitation } = useAuth();
   const [currentAccount, setCurrentAccount] = useState<Account | null>(null);
   const [members, setMembers] = useState<AccountMember[]>([]);
   const [stats, setStats] = useState<AccountStats>({
@@ -162,20 +162,11 @@ const AccountManagement = () => {
     }
 
     try {
-      // קרא לפונקציה לשליחת הזמנה (נניח שיש לנו edge function)
-      const { data, error } = await supabase.functions.invoke('send-invitation', {
-        body: {
-          email: newMemberEmail.trim(),
-          accountId: account.id
-        }
-      });
-
-      if (error) throw error;
-
-      toast.success('ההזמנה נשלחה בהצלחה');
+      // השתמש בפונקציה מה-auth context כמו בהגדרות
+      await sendInvitation(newMemberEmail.trim());
       setNewMemberEmail('');
       loadStats(); // רענן סטטיסטיקות
-
+      loadAccountData(); // רענן נתוני החשבון
     } catch (error) {
       console.error('Error sending invitation:', error);
       toast.error('שגיאה בשליחת ההזמנה');
