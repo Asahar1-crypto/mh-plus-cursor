@@ -11,7 +11,6 @@ import AccountDebugInfo from '@/components/debug/AccountDebugInfo';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent } from '@/components/ui/card';
 import { CalendarIcon } from 'lucide-react';
-import CharacterWelcome from '@/components/ui/CharacterWelcome';
 
 const Dashboard = () => {
   const { user, account } = useAuth();
@@ -123,10 +122,6 @@ const Dashboard = () => {
         </div>
         
         <div className="animate-fade-in [animation-delay:200ms]">
-          <CharacterWelcome userName={user?.name} variant="excited" />
-        </div>
-        
-        <div className="animate-fade-in [animation-delay:300ms]">
           <DashboardHeader userName={user?.name} />
         </div>
         
