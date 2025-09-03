@@ -125,106 +125,109 @@ const ExpensesPage = () => {
 
       <div className="relative z-10 w-full max-w-7xl mx-auto py-4 sm:py-8 px-4 sm:px-6">
         {/* Modern Header */}
-        <div className="mb-8 animate-fade-in">
-          <div className="flex flex-col lg:flex-row lg:justify-between lg:items-start gap-6">
+        <div className="mb-6 sm:mb-8 animate-fade-in">
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4 sm:gap-6">
             {/* Title Section */}
-            <div className="space-y-2">
-              <div className="flex items-center gap-3">
-                <div className="p-3 bg-gradient-to-br from-primary/20 to-primary/10 rounded-xl backdrop-blur-sm border border-primary/20">
-                  <CreditCard className="h-6 w-6 text-primary" />
+            <div className="space-y-1 sm:space-y-2">
+              <div className="flex items-center gap-2 sm:gap-3">
+                <div className="p-2 sm:p-3 bg-gradient-to-br from-primary/20 to-primary/10 rounded-xl backdrop-blur-sm border border-primary/20">
+                  <CreditCard className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
                 </div>
                 <div>
-                  <h1 className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
+                  <h1 className="text-xl sm:text-2xl lg:text-3xl xl:text-4xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
                     ניהול הוצאות משותפות
                   </h1>
-                  <p className="text-muted-foreground mt-1">צפייה, הוספה ואישור של הוצאות משותפות</p>
+                  <p className="text-sm sm:text-base text-muted-foreground mt-1 hidden sm:block">צפייה, הוספה ואישור של הוצאות משותפות</p>
                 </div>
               </div>
             </div>
 
             {/* Action Buttons */}
-            <div className="flex gap-3">
+            <div className="flex gap-2 sm:gap-3 w-full sm:w-auto">
               <Button
                 variant="outline"
                 onClick={handleRefresh}
                 disabled={isLoading}
-                className="flex items-center gap-2 bg-background/80 backdrop-blur-sm border-border/50 hover:bg-background hover:border-primary/30 transition-all duration-300"
+                size="sm"
+                className="flex items-center gap-1 sm:gap-2 bg-background/80 backdrop-blur-sm border-border/50 hover:bg-background hover:border-primary/30 transition-all duration-300 flex-1 sm:flex-none"
               >
                 <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
-                רענון
+                <span className="hidden sm:inline">רענון</span>
               </Button>
-              <AddExpenseModal onSubmitSuccess={refreshData} />
+              <div className="flex-1 sm:flex-none">
+                <AddExpenseModal onSubmitSuccess={refreshData} />
+              </div>
             </div>
           </div>
         </div>
 
         {/* Quick Stats Cards */}
-        <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-8 animate-fade-in [animation-delay:200ms]">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4 mb-6 sm:mb-8 animate-fade-in [animation-delay:200ms]">
           <Card className="bg-gradient-to-br from-card/80 to-card/60 backdrop-blur-sm border border-border/50 hover:border-primary/30 transition-all duration-300 group">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-blue-500/10 rounded-lg group-hover:bg-blue-500/20 transition-colors duration-300">
-                  <TrendingUp className="h-4 w-4 text-blue-600" />
+            <CardContent className="p-3 sm:p-4">
+              <div className="flex items-center gap-2 sm:gap-3">
+                <div className="p-1.5 sm:p-2 bg-blue-500/10 rounded-lg group-hover:bg-blue-500/20 transition-colors duration-300">
+                  <TrendingUp className="h-3 w-3 sm:h-4 sm:w-4 text-blue-600" />
                 </div>
-                <div>
-                  <p className="text-xs text-muted-foreground">סה"כ הוצאות</p>
-                  <p className="text-lg font-bold">{stats.total}</p>
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs text-muted-foreground truncate">סה"כ הוצאות</p>
+                  <p className="text-base sm:text-lg font-bold">{stats.total}</p>
                 </div>
               </div>
             </CardContent>
           </Card>
 
           <Card className="bg-gradient-to-br from-card/80 to-card/60 backdrop-blur-sm border border-border/50 hover:border-primary/30 transition-all duration-300 group">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-yellow-500/10 rounded-lg group-hover:bg-yellow-500/20 transition-colors duration-300">
-                  <Clock className="h-4 w-4 text-yellow-600" />
+            <CardContent className="p-3 sm:p-4">
+              <div className="flex items-center gap-2 sm:gap-3">
+                <div className="p-1.5 sm:p-2 bg-yellow-500/10 rounded-lg group-hover:bg-yellow-500/20 transition-colors duration-300">
+                  <Clock className="h-3 w-3 sm:h-4 sm:w-4 text-yellow-600" />
                 </div>
-                <div>
-                  <p className="text-xs text-muted-foreground">ממתינות</p>
-                  <p className="text-lg font-bold">{stats.pending}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-gradient-to-br from-card/80 to-card/60 backdrop-blur-sm border border-border/50 hover:border-primary/30 transition-all duration-300 group">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-green-500/10 rounded-lg group-hover:bg-green-500/20 transition-colors duration-300">
-                  <TrendingUp className="h-4 w-4 text-green-600" />
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground">מאושרות</p>
-                  <p className="text-lg font-bold">{stats.approved}</p>
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs text-muted-foreground truncate">ממתינות</p>
+                  <p className="text-base sm:text-lg font-bold">{stats.pending}</p>
                 </div>
               </div>
             </CardContent>
           </Card>
 
           <Card className="bg-gradient-to-br from-card/80 to-card/60 backdrop-blur-sm border border-border/50 hover:border-primary/30 transition-all duration-300 group">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-blue-500/10 rounded-lg group-hover:bg-blue-500/20 transition-colors duration-300">
-                  <CreditCard className="h-4 w-4 text-blue-600" />
+            <CardContent className="p-3 sm:p-4">
+              <div className="flex items-center gap-2 sm:gap-3">
+                <div className="p-1.5 sm:p-2 bg-green-500/10 rounded-lg group-hover:bg-green-500/20 transition-colors duration-300">
+                  <TrendingUp className="h-3 w-3 sm:h-4 sm:w-4 text-green-600" />
                 </div>
-                <div>
-                  <p className="text-xs text-muted-foreground">שולמו</p>
-                  <p className="text-lg font-bold">{stats.paid}</p>
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs text-muted-foreground truncate">מאושרות</p>
+                  <p className="text-base sm:text-lg font-bold">{stats.approved}</p>
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-card/80 to-card/60 backdrop-blur-sm border border-border/50 hover:border-primary/30 transition-all duration-300 group col-span-2 lg:col-span-1">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-purple-500/10 rounded-lg group-hover:bg-purple-500/20 transition-colors duration-300">
-                  <TrendingUp className="h-4 w-4 text-purple-600" />
+          <Card className="bg-gradient-to-br from-card/80 to-card/60 backdrop-blur-sm border border-border/50 hover:border-primary/30 transition-all duration-300 group">
+            <CardContent className="p-3 sm:p-4">
+              <div className="flex items-center gap-2 sm:gap-3">
+                <div className="p-1.5 sm:p-2 bg-blue-500/10 rounded-lg group-hover:bg-blue-500/20 transition-colors duration-300">
+                  <CreditCard className="h-3 w-3 sm:h-4 sm:w-4 text-blue-600" />
                 </div>
-                <div>
-                  <p className="text-xs text-muted-foreground">סכום כולל</p>
-                  <p className="text-lg font-bold">₪{stats.totalAmount.toFixed(0)}</p>
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs text-muted-foreground truncate">שולמו</p>
+                  <p className="text-base sm:text-lg font-bold">{stats.paid}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-gradient-to-br from-card/80 to-card/60 backdrop-blur-sm border border-border/50 hover:border-primary/30 transition-all duration-300 group sm:col-span-2 md:col-span-1 lg:col-span-1">
+            <CardContent className="p-3 sm:p-4">
+              <div className="flex items-center gap-2 sm:gap-3">
+                <div className="p-1.5 sm:p-2 bg-purple-500/10 rounded-lg group-hover:bg-purple-500/20 transition-colors duration-300">
+                  <TrendingUp className="h-3 w-3 sm:h-4 sm:w-4 text-purple-600" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs text-muted-foreground truncate">סכום כולל</p>
+                  <p className="text-base sm:text-lg font-bold">₪{stats.totalAmount.toFixed(0)}</p>
                 </div>
               </div>
             </CardContent>
@@ -233,24 +236,28 @@ const ExpensesPage = () => {
 
         {/* Main Content with Tabs */}
         <Card className="bg-gradient-to-br from-card/90 to-card/80 backdrop-blur-lg border border-border/50 shadow-2xl animate-fade-in [animation-delay:400ms]">
-          <CardContent className="p-6">
-            <Tabs defaultValue="regular" className="space-y-6">
+          <CardContent className="p-4 sm:p-6">
+            <Tabs defaultValue="regular" className="space-y-4 sm:space-y-6">
               <TabsList className="grid w-full grid-cols-2 bg-muted/50 backdrop-blur-sm">
                 <TabsTrigger 
                   value="regular" 
-                  className="data-[state=active]:bg-background data-[state=active]:shadow-lg transition-all duration-300"
+                  className="data-[state=active]:bg-background data-[state=active]:shadow-lg transition-all duration-300 text-xs sm:text-sm"
                 >
-                  הוצאות רגילות ({filteredExpenses.length})
+                  <span className="hidden sm:inline">הוצאות רגילות</span>
+                  <span className="sm:hidden">רגילות</span>
+                  <span className="mr-1">({filteredExpenses.length})</span>
                 </TabsTrigger>
                 <TabsTrigger 
                   value="recurring"
-                  className="data-[state=active]:bg-background data-[state=active]:shadow-lg transition-all duration-300"
+                  className="data-[state=active]:bg-background data-[state=active]:shadow-lg transition-all duration-300 text-xs sm:text-sm"
                 >
-                  הוצאות חוזרות ({recurringExpenses.length})
+                  <span className="hidden sm:inline">הוצאות חוזרות</span>
+                  <span className="sm:hidden">חוזרות</span>
+                  <span className="mr-1">({recurringExpenses.length})</span>
                 </TabsTrigger>
               </TabsList>
 
-              <TabsContent value="regular" className="space-y-6 animate-fade-in">
+              <TabsContent value="regular" className="space-y-4 sm:space-y-6 animate-fade-in">
                 {/* Filtering options */}
                 <ExpenseFilters 
                   selectedCategory={selectedCategory}
@@ -278,7 +285,7 @@ const ExpensesPage = () => {
                 />
               </TabsContent>
 
-              <TabsContent value="recurring" className="space-y-6 animate-fade-in">
+              <TabsContent value="recurring" className="space-y-4 sm:space-y-6 animate-fade-in">
                 <RecurringExpensesTable 
                   expenses={recurringExpenses}
                   childrenList={childrenList}

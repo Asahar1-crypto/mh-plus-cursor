@@ -303,7 +303,7 @@ export const ExpensesTable: React.FC<ExpensesTableProps> = ({
                     className="border-b border-border/30 hover:bg-muted/20 transition-colors duration-200 group animate-fade-in"
                     style={{ animationDelay: `${index * 50}ms` }}
                   >
-                    <TableCell className="w-12">
+                    <TableCell className="w-8 lg:w-12 p-2 lg:p-4">
                       {expense.status === 'pending' && (
                         <Checkbox
                           checked={selectedPendingExpenses.includes(expense.id)}
@@ -332,49 +332,49 @@ export const ExpensesTable: React.FC<ExpensesTableProps> = ({
                       )}
                     </TableCell>
                     
-                    <TableCell className="font-medium text-right">
-                      <div className="flex items-center gap-2 justify-end">
-                        <span>{format(new Date(expense.date), 'dd/MM/yyyy')}</span>
+                    <TableCell className="font-medium text-right p-2 lg:p-4">
+                      <div className="flex items-center gap-1 lg:gap-2 justify-end">
+                        <span className="text-xs lg:text-sm">{format(new Date(expense.date), 'dd/MM/yyyy')}</span>
                         <Calendar className="h-3 w-3 text-muted-foreground" />
                       </div>
                     </TableCell>
                     
-                    <TableCell className="text-right">
-                      <div className="max-w-xs text-right">
-                        <p className="font-medium truncate">{expense.description}</p>
-                        <p className="text-xs text-muted-foreground">נוצר על ידי: {creatorName}</p>
+                    <TableCell className="text-right p-2 lg:p-4">
+                      <div className="max-w-[120px] lg:max-w-xs text-right">
+                        <p className="font-medium truncate text-xs lg:text-sm">{expense.description}</p>
+                        <p className="text-xs text-muted-foreground hidden lg:block">נוצר על ידי: {creatorName}</p>
                       </div>
                     </TableCell>
                     
-                    <TableCell className="text-right">
-                      <div className="flex items-center gap-2 justify-end">
-                        <span className="font-bold text-lg">₪{expense.amount}</span>
+                    <TableCell className="text-right p-2 lg:p-4">
+                      <div className="flex items-center gap-1 lg:gap-2 justify-end">
+                        <span className="font-bold text-sm lg:text-lg">₪{expense.amount}</span>
                       </div>
                     </TableCell>
                     
-                    <TableCell className="text-right">
+                    <TableCell className="text-right p-2 lg:p-4 hidden md:table-cell">
                       <div className="flex justify-end">
-                        <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
+                        <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20 text-xs">
                           {expense.category || 'לא צוין'}
                         </Badge>
                       </div>
                     </TableCell>
                     
-                    <TableCell className="text-right">
+                    <TableCell className="text-right p-2 lg:p-4 hidden lg:table-cell">
                       {expense.childName ? (
-                        <div className="flex items-center gap-2 justify-end">
-                          <span className="text-sm font-medium">{expense.childName}</span>
+                        <div className="flex items-center gap-1 lg:gap-2 justify-end">
+                          <span className="text-xs lg:text-sm font-medium">{expense.childName}</span>
                           <User className="h-3 w-3 text-muted-foreground" />
                         </div>
                       ) : (
-                        <span className="text-muted-foreground text-sm">כללי</span>
+                        <span className="text-muted-foreground text-xs lg:text-sm">כללי</span>
                       )}
                     </TableCell>
                     
-                    <TableCell className="text-right">
+                    <TableCell className="text-right p-2 lg:p-4 hidden xl:table-cell">
                       <div className="space-y-1">
-                        <div className="flex items-center gap-2 justify-end">
-                          <span className="text-sm font-medium">{paidByName}</span>
+                        <div className="flex items-center gap-1 lg:gap-2 justify-end">
+                          <span className="text-xs lg:text-sm font-medium">{paidByName}</span>
                           <Users className="h-3 w-3 text-muted-foreground" />
                         </div>
                         {expense.splitEqually && (
@@ -387,44 +387,31 @@ export const ExpensesTable: React.FC<ExpensesTableProps> = ({
                       </div>
                     </TableCell>
                     
-                    <TableCell className="text-right">
+                    <TableCell className="text-right p-2 lg:p-4">
                       <div className="flex justify-end">
-                        <Select
-                          value={expense.status}
-                          onValueChange={(value) => handleStatusChange(expense.id, value as Expense['status'])}
-                        >
-                          <SelectTrigger className="w-32 h-8 text-xs">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="pending">ממתין</SelectItem>
-                            <SelectItem value="approved">מאושר</SelectItem>
-                            <SelectItem value="paid">שולם</SelectItem>
-                            <SelectItem value="rejected">נדחה</SelectItem>
-                          </SelectContent>
-                        </Select>
+                        <StatusBadge status={expense.status} />
                       </div>
                     </TableCell>
                     
-                    <TableCell className="text-right">
-                      <div className="flex gap-1 justify-end">
+                    <TableCell className="text-right p-2 lg:p-4">
+                      <div className="flex gap-0.5 lg:gap-1 justify-end">
                         {expense.status === 'pending' && (
                           <>
                             <Button
                               size="sm"
                               variant="ghost"
                               onClick={() => handleApprove(expense.id)}
-                              className="h-8 w-8 p-0 text-green-600 hover:text-green-700 hover:bg-green-50"
+                              className="h-6 w-6 lg:h-8 lg:w-8 p-0 text-green-600 hover:text-green-700 hover:bg-green-50"
                             >
-                              <Check className="h-4 w-4" />
+                              <Check className="h-3 w-3 lg:h-4 lg:w-4" />
                             </Button>
                             <Button
                               size="sm"
                               variant="ghost"
                               onClick={() => handleReject(expense.id)}
-                              className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+                              className="h-6 w-6 lg:h-8 lg:w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
                             >
-                              <X className="h-4 w-4" />
+                              <X className="h-3 w-3 lg:h-4 lg:w-4" />
                             </Button>
                           </>
                         )}
@@ -433,9 +420,10 @@ export const ExpensesTable: React.FC<ExpensesTableProps> = ({
                             size="sm"
                             variant="ghost"
                             onClick={() => handleMarkAsPaid(expense.id)}
-                            className="h-8 px-3 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                            className="h-6 lg:h-8 px-1 lg:px-3 text-xs lg:text-sm text-blue-600 hover:text-blue-700 hover:bg-blue-50"
                           >
-                            <span className="ml-1">סמן כשולם</span>
+                            <span className="hidden lg:inline ml-1">סמן כשולם</span>
+                            <span className="lg:hidden">שולם</span>
                           </Button>
                         )}
                       </div>

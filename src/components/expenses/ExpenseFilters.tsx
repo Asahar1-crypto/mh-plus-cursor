@@ -85,11 +85,11 @@ export const ExpenseFilters: React.FC<ExpenseFiltersProps> = ({
 
   return (
     <Card className="bg-gradient-to-br from-card/90 to-card/80 backdrop-blur-sm border border-border/50 shadow-lg animate-fade-in">
-      <CardHeader className="pb-4">
-        <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2 text-lg">
-            <div className="p-2 bg-gradient-to-br from-primary/20 to-primary/10 rounded-lg">
-              <Filter className="h-4 w-4 text-primary" />
+      <CardHeader className="pb-3 sm:pb-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-0">
+          <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+            <div className="p-1.5 sm:p-2 bg-gradient-to-br from-primary/20 to-primary/10 rounded-lg">
+              <Filter className="h-3 w-3 sm:h-4 sm:w-4 text-primary" />
             </div>
             סינון הוצאות
           </CardTitle>
@@ -98,7 +98,7 @@ export const ExpenseFilters: React.FC<ExpenseFiltersProps> = ({
               variant="ghost"
               size="sm"
               onClick={clearAllFilters}
-              className="text-muted-foreground hover:text-foreground"
+              className="text-muted-foreground hover:text-foreground self-start sm:self-auto"
             >
               נקה הכל
             </Button>
@@ -106,12 +106,12 @@ export const ExpenseFilters: React.FC<ExpenseFiltersProps> = ({
         </div>
       </CardHeader>
       
-      <CardContent className="space-y-6">
+      <CardContent className="space-y-4 sm:space-y-6">
         {/* Filter Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3 sm:gap-4">
           {/* Category Filter */}
-          <div className="space-y-2">
-            <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+          <div className="space-y-1.5 sm:space-y-2">
+            <div className="flex items-center gap-2 text-xs sm:text-sm font-medium text-muted-foreground">
               <Tag className="h-3 w-3" />
               קטגוריה
             </div>
@@ -129,8 +129,8 @@ export const ExpenseFilters: React.FC<ExpenseFiltersProps> = ({
           </div>
 
           {/* Child Filter */}
-          <div className="space-y-2">
-            <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+          <div className="space-y-1.5 sm:space-y-2">
+            <div className="flex items-center gap-2 text-xs sm:text-sm font-medium text-muted-foreground">
               <User className="h-3 w-3" />
               ילד
             </div>
@@ -148,8 +148,8 @@ export const ExpenseFilters: React.FC<ExpenseFiltersProps> = ({
           </div>
 
           {/* Status Filter */}
-          <div className="space-y-2">
-            <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+          <div className="space-y-1.5 sm:space-y-2">
+            <div className="flex items-center gap-2 text-xs sm:text-sm font-medium text-muted-foreground">
               <DollarSign className="h-3 w-3" />
               סטטוס
             </div>
@@ -168,8 +168,8 @@ export const ExpenseFilters: React.FC<ExpenseFiltersProps> = ({
           </div>
 
           {/* Month Filter */}
-          <div className="space-y-2">
-            <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+          <div className="space-y-1.5 sm:space-y-2">
+            <div className="flex items-center gap-2 text-xs sm:text-sm font-medium text-muted-foreground">
               <Calendar className="h-3 w-3" />
               חודש
             </div>
@@ -186,8 +186,8 @@ export const ExpenseFilters: React.FC<ExpenseFiltersProps> = ({
           </div>
 
           {/* Year Filter */}
-          <div className="space-y-2">
-            <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+          <div className="space-y-1.5 sm:space-y-2">
+            <div className="flex items-center gap-2 text-xs sm:text-sm font-medium text-muted-foreground">
               <Calendar className="h-3 w-3" />
               שנה
             </div>
@@ -204,8 +204,8 @@ export const ExpenseFilters: React.FC<ExpenseFiltersProps> = ({
           </div>
 
           {/* Payer Filter */}
-          <div className="space-y-2">
-            <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+          <div className="space-y-1.5 sm:space-y-2">
+            <div className="flex items-center gap-2 text-xs sm:text-sm font-medium text-muted-foreground">
               <Users className="h-3 w-3" />
               משלם
             </div>
@@ -228,8 +228,8 @@ export const ExpenseFilters: React.FC<ExpenseFiltersProps> = ({
 
         {/* Active Filters Display */}
         {hasActiveFilters && (
-          <div className="flex flex-wrap gap-2 pt-4 border-t border-border/50">
-            <span className="text-sm text-muted-foreground">פילטרים פעילים:</span>
+          <div className="flex flex-wrap gap-2 pt-3 sm:pt-4 border-t border-border/50">
+            <span className="text-xs sm:text-sm text-muted-foreground w-full sm:w-auto mb-1 sm:mb-0">פילטרים פעילים:</span>
             {selectedCategory && (
               <Badge variant="secondary" className="gap-2 bg-primary/10 text-primary border-primary/20">
                 קטגוריה: {selectedCategory}
