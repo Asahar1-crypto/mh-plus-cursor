@@ -160,6 +160,28 @@ serve(async (req) => {
       throw new Error('Failed to update verification status')
     }
 
+    // Update user profile with verified phone number for registration verifications
+    if (verificationType === 'registration' && verificationData.user_id) {
+      console.log('Updating profile with verified phone for user:', verificationData.user_id);
+      
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .update({ 
+          phone_number: normalizedPhone,
+          phone_e164: normalizedPhone,
+          phone_verified: true,
+          raw_phone_input: phoneNumber // Store original input format too
+        })
+        .eq('id', verificationData.user_id);
+
+      if (profileError) {
+        console.error('Error updating profile with phone:', profileError);
+        // Don't fail the verification if profile update fails
+      } else {
+        console.log('Profile updated with verified phone number');
+      }
+    }
+
     console.log('SMS verification successful for phone:', phoneNumber)
 
     // If this is a login verification, we need to create a Supabase session

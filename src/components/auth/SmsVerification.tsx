@@ -70,7 +70,8 @@ const SmsVerification: React.FC<SmsVerificationProps> = ({
       const { data, error } = await supabase.functions.invoke('verify-sms-code', {
         body: {
           phoneNumber,
-          code
+          code,
+          verificationType: 'registration'
         }
       });
 

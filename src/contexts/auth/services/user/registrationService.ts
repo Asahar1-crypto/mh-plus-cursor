@@ -47,27 +47,54 @@ export const registrationService = {
       if (data?.user) {
         console.log('User created successfully with Supabase auth');
         
-        // Update profile with phone number after successful registration
+        // Update SMS verification codes with user_id after registration
         if (phoneNumber) {
           try {
             // Wait a bit for the profile to be created by the trigger
             setTimeout(async () => {
-              const { error: profileError } = await supabase
-                .from('profiles')
-                .update({ 
-                  phone_number: phoneNumber,
-                  phone_verified: true 
-                })
-                .eq('id', data.user.id);
+              // First normalize the phone number to match what was stored in SMS codes
+              const { parsePhoneNumber } = await import('libphonenumber-js');
+              let normalizedPhone = phoneNumber;
+              
+              try {
+                let cleaned = phoneNumber.trim()
+                  .replace(/^\s*00/, '+')           
+                  .replace(/[^\d+]/g, '');         
 
-              if (profileError) {
-                console.error('Error updating profile with phone:', profileError);
+                if (cleaned.startsWith('0') && !cleaned.startsWith('00')) {
+                  cleaned = '+972' + cleaned.substring(1);
+                }
+                
+                if (cleaned.startsWith('972') && !cleaned.startsWith('+')) {
+                  cleaned = '+' + cleaned;
+                }
+
+                const phoneNumberObj = parsePhoneNumber(cleaned, 'IL');
+                if (phoneNumberObj && phoneNumberObj.isValid()) {
+                  normalizedPhone = phoneNumberObj.number;
+                }
+              } catch (normalizeError) {
+                console.error('Error normalizing phone for update:', normalizeError);
+              }
+              
+              // Update the SMS verification code with the new user_id
+              const { error: smsUpdateError } = await supabase
+                .from('sms_verification_codes')
+                .update({ user_id: data.user.id })
+                .eq('phone_number', normalizedPhone)
+                .eq('verification_type', 'registration')
+                .is('user_id', null)
+                .order('created_at', { ascending: false })
+                .limit(1);
+
+              if (smsUpdateError) {
+                console.error('Error updating SMS verification with user_id:', smsUpdateError);
               } else {
-                console.log('Profile updated with phone number');
+                console.log('SMS verification code updated with user_id');
               }
             }, 1000);
           } catch (updateError) {
-            console.error('Error in profile update:', updateError);
+            console.error('Error in SMS update:', updateError);
           }
         }
         
