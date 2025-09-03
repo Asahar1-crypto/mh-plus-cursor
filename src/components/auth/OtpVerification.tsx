@@ -127,8 +127,12 @@ const OtpVerification: React.FC<OtpVerificationProps> = ({
       
       const firstInput = document.getElementById('otp-0') as HTMLInputElement;
       firstInput?.focus();
+      
+      // Show success message
+      alert('קוד חדש נשלח למספר הטלפון שלך');
     } catch (error) {
       console.error('Failed to resend OTP:', error);
+      alert('שגיאה בשליחת קוד חדש');
     } finally {
       setIsResending(false);
     }
