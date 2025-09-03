@@ -15,14 +15,20 @@ interface PhoneLoginProps {
 const PhoneLogin: React.FC<PhoneLoginProps> = ({ onBack }) => {
   const { sendPhoneOtp, isLoading } = useAuth();
   const [phoneNumber, setPhoneNumber] = useState(() => {
-    return sessionStorage.getItem('phoneLogin_phoneNumber') || '';
+    const stored = sessionStorage.getItem('phoneLogin_phoneNumber') || '';
+    console.log('PhoneLogin: Loading phoneNumber from sessionStorage:', stored);
+    return stored;
   });
-  const [showOtpVerification, setShowOtpVerification] = useState(
-    () => sessionStorage.getItem('phoneLogin_showOtp') === 'true'
-  );
+  const [showOtpVerification, setShowOtpVerification] = useState(() => {
+    const stored = sessionStorage.getItem('phoneLogin_showOtp') === 'true';
+    console.log('PhoneLogin: Loading showOtpVerification from sessionStorage:', stored);
+    return stored;
+  });
   const [userInfo, setUserInfo] = useState<{ userId?: string; userName?: string }>(() => {
     const stored = sessionStorage.getItem('phoneLogin_userInfo');
-    return stored ? JSON.parse(stored) : {};
+    const parsed = stored ? JSON.parse(stored) : {};
+    console.log('PhoneLogin: Loading userInfo from sessionStorage:', parsed);
+    return parsed;
   });
   const [phoneError, setPhoneError] = useState('');
 
@@ -140,6 +146,12 @@ const PhoneLogin: React.FC<PhoneLoginProps> = ({ onBack }) => {
   };
 
   if (showOtpVerification) {
+    console.log('PhoneLogin: Rendering OTP verification with:', {
+      phoneNumber,
+      displayNumber: phoneNumber,
+      userInfo,
+      showOtpVerification
+    });
     return (
       <OtpVerification
         phoneNumber={normalizePhoneNumber(phoneNumber)}
@@ -153,6 +165,12 @@ const PhoneLogin: React.FC<PhoneLoginProps> = ({ onBack }) => {
       />
     );
   }
+
+  console.log('PhoneLogin: Rendering phone input form with:', {
+    phoneNumber,
+    showOtpVerification,
+    userInfo
+  });
 
   return (
     <Card className="border-border shadow-lg animate-fade-in glass">
