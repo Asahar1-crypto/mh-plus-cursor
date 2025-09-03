@@ -3,6 +3,7 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { CheckCircle } from 'lucide-react';
+import CharacterImage from '@/components/ui/CharacterImage';
 
 const Home = () => {
   const navigate = useNavigate();
@@ -12,6 +13,9 @@ const Home = () => {
       {/* Hero Section */}
       <section className="pt-16 pb-24 md:py-32 text-center">
         <div className="container mx-auto px-4">
+          <div className="flex justify-center mb-8">
+            <CharacterImage variant="excited" size="xl" className="animate-pulse" />
+          </div>
           <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold mb-4">
             נהל <span className="text-primary">הוצאות משותפות</span><br />בקלות וביעילות
           </h1>
@@ -95,6 +99,9 @@ const Home = () => {
       {/* CTA Section */}
       <section className="py-20 bg-gradient-to-b from-background to-muted/40">
         <div className="container mx-auto px-4 text-center">
+          <div className="flex justify-center mb-6">
+            <CharacterImage variant="celebrating" size="lg" />
+          </div>
           <h2 className="text-3xl font-bold mb-6">מוכנים להתחיל?</h2>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto mb-8">
             הצטרפו כבר היום למשפחות רבות שמנהלות את ההוצאות המשותפות שלהן בצורה חכמה ויעילה
