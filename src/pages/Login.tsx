@@ -79,24 +79,8 @@ const Login = () => {
       <div className="container mx-auto py-10 px-4 flex items-center justify-center min-h-[calc(100vh-4rem)]">
         <div className="w-full max-w-4xl">
           <div className="grid lg:grid-cols-2 gap-8 items-center">
-            {/* Hero Section with Wallet Character */}
-            <div className="hidden lg:flex flex-col items-center justify-center p-8 animate-fade-in">
-              <div className="relative">
-                <img 
-                  src="/lovable-uploads/3d7094a5-211e-416b-a8c4-8fd864c98499.png" 
-                  alt="Wallet Character" 
-                  className="w-64 h-64 object-contain animate-bounce [animation-duration:3s]"
-                />
-                <div className="absolute -bottom-4 left-1/2 transform -translate-x-1/2 w-32 h-8 bg-black/10 rounded-full blur-md animate-pulse"></div>
-              </div>
-              <div className="text-center mt-6 space-y-3">
-                <h2 className="text-2xl font-bold text-foreground">ניהול כלכלי חכם</h2>
-                <p className="text-muted-foreground max-w-sm">תעקוב אחר ההוצאות שלך ותנהל את הכספים המשפחתיים בקלות ובפשטות</p>
-              </div>
-            </div>
-
             {/* Login Card */}
-            <div className="w-full max-w-md mx-auto lg:mx-0">
+            <div className="w-full max-w-md mx-auto lg:mx-0 lg:order-2">
               <Card className="border-border shadow-lg animate-fade-in glass shadow-card">
                 <CardHeader className="text-center">
                   {/* Mobile wallet character */}
@@ -205,6 +189,22 @@ const Login = () => {
                   </p>
                 </CardFooter>
               </Card>
+            </div>
+
+            {/* Hero Section with Wallet Character */}
+            <div className="hidden lg:flex flex-col items-center justify-center p-8 animate-fade-in lg:order-1">
+              <div className="relative">
+                <img 
+                  src="/lovable-uploads/3d7094a5-211e-416b-a8c4-8fd864c98499.png" 
+                  alt="Wallet Character" 
+                  className="w-64 h-64 object-contain animate-bounce [animation-duration:3s]"
+                />
+                <div className="absolute -bottom-4 left-1/2 transform -translate-x-1/2 w-32 h-8 bg-black/10 rounded-full blur-md animate-pulse"></div>
+              </div>
+              <div className="text-center mt-6 space-y-3">
+                <h2 className="text-2xl font-bold text-foreground">ניהול כלכלי חכם</h2>
+                <p className="text-muted-foreground max-w-sm">תעקוב אחר ההוצאות שלך ותנהל את הכספים המשפחתיים בקלות ובפשטות</p>
+              </div>
             </div>
           </div>
         </div>
