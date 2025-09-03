@@ -163,12 +163,12 @@ const Register = () => {
                 <img 
                   src="/lovable-uploads/3a973532-2477-462a-9a84-0390b7045844.png" 
                   alt="Red Wallet Character" 
-                  className="w-16 h-16 object-contain animate-bounce [animation-duration:2s]"
+                  className="w-28 h-28 object-contain animate-bounce [animation-duration:2s]"
                 />
                 <img 
                   src="/lovable-uploads/3d7094a5-211e-416b-a8c4-8fd864c98499.png" 
                   alt="Green Wallet Character" 
-                  className="w-16 h-16 object-contain animate-bounce [animation-duration:2s] [animation-delay:0.3s]"
+                  className="w-28 h-28 object-contain animate-bounce [animation-duration:2s] [animation-delay:0.3s]"
                 />
               </div>
               <CardTitle className="text-3xl font-bold bg-gradient-to-r from-primary to-primary-glow bg-clip-text text-transparent">
