@@ -105,16 +105,20 @@ export const phoneAuthService = {
         throw new Error('Failed to create session');
       }
 
-      // Use the session URL to establish the session
-      // This will redirect to the callback URL and establish the session
-      console.log('Phone login completed successfully');
+      // Navigate to the session URL to establish the session
+      console.log('Session URL received:', result.sessionUrl);
       
-      // For now, we'll return placeholder data
-      // In a full implementation, you'd parse the session URL or handle the redirect
-      return {
-        userId: 'temp-user-id', // This would come from the session
-        email: 'temp@example.com' // This would come from the session
-      };
+      // Use the session URL to establish authentication
+      if (result.sessionUrl) {
+        window.location.href = result.sessionUrl;
+        // The user will be redirected and authenticated
+        return {
+          userId: 'authenticated', 
+          email: 'authenticated'
+        };
+      }
+      
+      throw new Error('No session URL provided');
       
     } catch (error: any) {
       console.error('Phone login failed:', error);
