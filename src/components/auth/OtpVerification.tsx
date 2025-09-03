@@ -55,17 +55,17 @@ const OtpVerification: React.FC<OtpVerificationProps> = ({
     newOtp[index] = value;
     setOtpCode(newOtp);
 
-    // Auto-focus next input (right to left for Hebrew)
-    if (value && index > 0) {
-      const nextInput = document.getElementById(`otp-${index - 1}`) as HTMLInputElement;
+    // Auto-focus next input (moving forward in array order)
+    if (value && index < 5) {
+      const nextInput = document.getElementById(`otp-${index + 1}`) as HTMLInputElement;
       nextInput?.focus();
     }
   };
 
   const handleKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Backspace' && !otpCode[index] && index < 5) {
-      const nextInput = document.getElementById(`otp-${index + 1}`) as HTMLInputElement;
-      nextInput?.focus();
+    if (e.key === 'Backspace' && !otpCode[index] && index > 0) {
+      const prevInput = document.getElementById(`otp-${index - 1}`) as HTMLInputElement;
+      prevInput?.focus();
     }
   };
 
@@ -78,8 +78,8 @@ const OtpVerification: React.FC<OtpVerificationProps> = ({
       setOtpCode(newOtp);
       setError('');
       
-      // Focus first input (rightmost in RTL)
-      const firstInput = document.getElementById('otp-0') as HTMLInputElement;
+      // Focus first input after paste
+      const firstInput = document.getElementById('otp-5') as HTMLInputElement;
       firstInput?.focus();
     }
   };
@@ -166,7 +166,7 @@ const OtpVerification: React.FC<OtpVerificationProps> = ({
         <CardContent className="space-y-6">
           {/* OTP Input Fields */}
           <div className="space-y-4">
-            <div className="flex justify-center gap-3 direction-rtl" onPaste={handlePaste} dir="rtl">
+            <div className="flex justify-center gap-3" onPaste={handlePaste}>
               {otpCode.map((digit, index) => (
                 <Input
                   key={index}
@@ -180,7 +180,6 @@ const OtpVerification: React.FC<OtpVerificationProps> = ({
                   className={`w-12 h-12 text-center text-xl font-bold border-2 transition-all duration-200 ${
                     digit ? 'border-primary shadow-glow' : 'border-muted'
                   } ${error ? 'border-destructive' : ''} focus:border-primary focus:shadow-glow`}
-                  dir="ltr"
                 />
               ))}
             </div>
