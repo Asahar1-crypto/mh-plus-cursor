@@ -175,7 +175,7 @@ export const ExpensesTable: React.FC<ExpensesTableProps> = ({
   return (
     <Card className="bg-gradient-to-br from-card/90 to-card/80 backdrop-blur-sm border border-border/50 shadow-lg animate-fade-in">
       <CardHeader>
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
           <div>
             <CardTitle className="flex items-center gap-2 text-xl">
               <div className="p-2 bg-gradient-to-br from-primary/20 to-primary/10 rounded-lg">
@@ -189,9 +189,9 @@ export const ExpensesTable: React.FC<ExpensesTableProps> = ({
           </div>
 
           {/* Bulk Actions */}
-          <div className="flex flex-col sm:flex-row flex-wrap gap-2">
+          <div className="flex flex-wrap gap-2">
             {pendingExpenses.length > 0 && (
-              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
+              <div className="flex items-center gap-2">
                 <Button
                   variant={allPendingSelected ? "default" : "outline"}
                   size="sm"
@@ -216,7 +216,7 @@ export const ExpensesTable: React.FC<ExpensesTableProps> = ({
             )}
 
             {approvedExpenses.length > 0 && (
-              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
+              <div className="flex items-center gap-2">
                 <Button
                   variant={allApprovedSelected ? "default" : "outline"}
                   size="sm"
@@ -243,7 +243,7 @@ export const ExpensesTable: React.FC<ExpensesTableProps> = ({
       </CardHeader>
 
       <CardContent className="p-0">
-        <div className="overflow-x-auto -mx-2 sm:mx-0">
+        <div className="overflow-x-auto">
           <Table dir="rtl">
             <TableHeader>
               <TableRow className="bg-muted/30 border-b border-border/50">

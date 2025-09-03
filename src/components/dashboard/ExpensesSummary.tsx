@@ -127,7 +127,7 @@ export const ExpensesSummary: React.FC<ExpensesSummaryProps> = ({
         <div className="absolute inset-0 bg-gradient-to-br from-green-500/10 to-emerald-500/15 opacity-60 group-hover:opacity-90 transition-opacity duration-300"></div>
         <div className="absolute -top-20 -right-20 w-40 h-40 bg-green-400/20 rounded-full blur-3xl group-hover:scale-150 transition-transform duration-700"></div>
         
-        <CardHeader className="pb-2 sm:pb-3 p-3 sm:p-4 md:p-6 relative z-10">
+        <CardHeader className="pb-3 p-4 sm:p-6 relative z-10">
           <div className="flex items-center justify-between">
             <CardDescription className="text-sm font-semibold text-green-700 dark:text-green-300 bg-green-100/50 dark:bg-green-900/30 px-3 py-1 rounded-full">
               הוצאות מאושרות
@@ -136,19 +136,19 @@ export const ExpensesSummary: React.FC<ExpensesSummaryProps> = ({
               <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400 animate-pulse group-hover:animate-bounce transition-all duration-300" />
             </div>
           </div>
-          <CardTitle className="text-2xl sm:text-3xl md:text-4xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent group-hover:scale-110 transition-transform duration-300 origin-left">
+          <CardTitle className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent group-hover:scale-110 transition-transform duration-300 origin-left">
             ₪{summaryData.approved.total.toFixed(0)}
           </CardTitle>
         </CardHeader>
-        <CardContent className="p-3 sm:p-4 md:p-6 pt-0 space-y-2 sm:space-y-3 relative z-10">
+        <CardContent className="p-4 sm:p-6 pt-0 space-y-3 relative z-10">
           <div className="flex items-center gap-3">
             <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse shadow-lg shadow-green-500/50"></div>
-            <span className="text-xs sm:text-sm font-medium text-muted-foreground">
+            <span className="text-sm font-medium text-muted-foreground">
               {summaryData.approved.count} הוצאות מאושרות לתשלום
             </span>
           </div>
           {summaryData.approved.breakdown.length > 0 && (
-            <div className="text-xs space-y-1 sm:space-y-2 mt-2 sm:mt-4 pt-2 sm:pt-4 border-t border-green-200/50 bg-background/30 backdrop-blur-sm rounded-lg p-2 sm:p-3">
+            <div className="text-xs space-y-2 mt-4 pt-4 border-t border-green-200/50 bg-background/30 backdrop-blur-sm rounded-lg p-3">
               {summaryData.approved.breakdown.map((user, index) => (
                 user.amount > 0 && (
                   <div key={index} className="flex justify-between items-center text-muted-foreground hover:text-foreground transition-colors duration-200">
@@ -167,7 +167,7 @@ export const ExpensesSummary: React.FC<ExpensesSummaryProps> = ({
         <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 to-cyan-500/15 opacity-60 group-hover:opacity-90 transition-opacity duration-300"></div>
         <div className="absolute -top-20 -right-20 w-40 h-40 bg-blue-400/20 rounded-full blur-3xl group-hover:scale-150 transition-transform duration-700"></div>
         
-        <CardHeader className="pb-2 sm:pb-3 p-3 sm:p-4 md:p-6 relative z-10">
+        <CardHeader className="pb-3 p-4 sm:p-6 relative z-10">
           <div className="flex items-center justify-between">
             <CardDescription className="text-sm font-semibold text-blue-700 dark:text-blue-300 bg-blue-100/50 dark:bg-blue-900/30 px-3 py-1 rounded-full">
               הוצאות ששולמו החודש
@@ -176,7 +176,7 @@ export const ExpensesSummary: React.FC<ExpensesSummaryProps> = ({
               <CreditCard className="h-5 w-5 text-blue-600 dark:text-blue-400 animate-pulse group-hover:animate-ping transition-all duration-300" />
             </div>
           </div>
-          <CardTitle className="text-2xl sm:text-3xl md:text-4xl font-bold bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent group-hover:scale-110 transition-transform duration-300 origin-left">
+          <CardTitle className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent group-hover:scale-110 transition-transform duration-300 origin-left">
             ₪{summaryData.paid.total.toFixed(0)}
           </CardTitle>
         </CardHeader>

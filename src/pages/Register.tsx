@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -139,163 +140,102 @@ const Register = () => {
     <>
       <AnimatedBackground />
       <div className="container mx-auto py-10 px-4 flex items-center justify-center min-h-[calc(100vh-4rem)] relative z-10">
-        <div className="w-full max-w-6xl">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
-            
-            {/* Characters Section */}
-            <div className="hidden lg:flex flex-col items-center justify-center space-y-6 animate-fade-in">
-              <div className="text-center space-y-4">
-                <h2 className="text-3xl font-bold bg-gradient-to-r from-primary to-primary-glow bg-clip-text text-transparent">
-                  הצטרפו אלינו!
-                </h2>
-                <p className="text-muted-foreground text-lg">
-                  הדמויות שלנו מזמינות אתכם לחוויה מדהימה
-                </p>
-              </div>
-              
-              {/* Characters Grid with Welcome Animation */}
-              <div className="grid grid-cols-2 gap-6">
-                <div className="transform hover:scale-110 transition-transform duration-300 animate-float">
-                  <img 
-                    src="/lovable-uploads/d057c03d-4b71-4bd3-ba3f-3147d8264aad.png" 
-                    alt="דמות ארנק כחולה מברכת" 
-                    className="w-28 h-28 object-contain drop-shadow-lg"
-                  />
-                </div>
-                <div className="transform hover:scale-110 transition-transform duration-300 animate-float [animation-delay:0.5s]">
-                  <img 
-                    src="/lovable-uploads/e113ea52-afd4-427a-9ec3-43f37b2bd9bd.png" 
-                    alt="דמות ארנק כתומה מברכת" 
-                    className="w-28 h-28 object-contain drop-shadow-lg"
-                  />
-                </div>
-                <div className="transform hover:scale-110 transition-transform duration-300 animate-float [animation-delay:1s]">
-                  <img 
-                    src="/lovable-uploads/5edd5073-e61d-4828-9c97-f98cc38da82a.png" 
-                    alt="דמות ארנק ירוקה מברכת" 
-                    className="w-28 h-28 object-contain drop-shadow-lg"
-                  />
-                </div>
-                <div className="transform hover:scale-110 transition-transform duration-300 animate-float [animation-delay:1.5s]">
-                  <img 
-                    src="/lovable-uploads/85acae0d-85a4-4a69-aef0-af3cb3af2efb.png" 
-                    alt="דמות ארנק אדומה מברכת" 
-                    className="w-28 h-28 object-contain drop-shadow-lg"
-                  />
-                </div>
-              </div>
-              
-              <div className="text-center text-sm text-muted-foreground max-w-xs">
-                הצוות שלנו כאן כדי לעזור לכם לנהל את התקציב המשפחתי בקלות
-              </div>
-            </div>
-
-            {/* Registration Form */}
-            <div className="w-full max-w-md mx-auto">
-              <Card className="glass border-glass-border shadow-card animate-fade-in backdrop-blur-lg">
-                <CardHeader className="text-center space-y-4">
-                  <div className="flex items-center justify-center gap-2 mb-4 lg:hidden">
-                    <img 
-                      src="/lovable-uploads/e113ea52-afd4-427a-9ec3-43f37b2bd9bd.png" 
-                      alt="דמות ארנק מברכת" 
-                      className="w-12 h-12 object-contain animate-bounce"
-                    />
-                  </div>
-                  <CardTitle className="text-3xl font-bold bg-gradient-to-r from-primary to-primary-glow bg-clip-text text-transparent">
-                    הרשמה למערכת
-                  </CardTitle>
-                  <CardDescription className="text-base">
-                    צור חשבון חדש במערכת מחציות פלוס
-                    {emailFromInvitation && (
-                      <div className="mt-3 p-3 bg-gradient-to-r from-blue-50 to-blue-100 rounded-xl border border-blue-200">
-                        <div className="text-sm text-blue-800 font-medium">
-                          הרשמה עם האימייל: {emailFromInvitation}
-                        </div>
-                        {invitationId && (
-                          <div className="mt-2 text-xs text-green-700 bg-green-50 p-2 rounded-lg">
-                            תחובר אוטומטית לחשבון המשותף אחרי אימות האימייל ומספר הטלפון
-                          </div>
-                        )}
+        <div className="w-full max-w-md">
+          <Card className="glass border-glass-border shadow-card animate-fade-in backdrop-blur-lg">
+            <CardHeader className="text-center space-y-4">
+              <CardTitle className="text-3xl font-bold bg-gradient-to-r from-primary to-primary-glow bg-clip-text text-transparent">
+                הרשמה למערכת
+              </CardTitle>
+              <CardDescription className="text-base">
+                צור חשבון חדש במערכת מחציות פלוס
+                {emailFromInvitation && (
+                  <div className="mt-3 p-3 bg-gradient-to-r from-blue-50 to-blue-100 rounded-xl border border-blue-200">
+                    <div className="text-sm text-blue-800 font-medium">
+                      הרשמה עם האימייל: {emailFromInvitation}
+                    </div>
+                    {invitationId && (
+                      <div className="mt-2 text-xs text-green-700 bg-green-50 p-2 rounded-lg">
+                        תחובר אוטומטית לחשבון המשותף אחרי אימות האימייל ומספר הטלפון
                       </div>
                     )}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                    <ModernInput
-                      label="שם מלא"
-                      icon="user"
-                      placeholder="ישראל ישראלי"
-                      value={form.watch('name')}
-                      onChange={(e) => form.setValue('name', e.target.value)}
-                      validation={form.formState.errors.name ? 'invalid' : form.watch('name') && form.watch('name').length >= 2 ? 'valid' : 'none'}
-                      validationMessage={form.formState.errors.name?.message}
-                    />
-                    
-                    <ModernInput
-                      label="כתובת אימייל"
-                      icon="email"
-                      type="email"
-                      placeholder="your@email.com"
-                      value={form.watch('email')}
-                      onChange={(e) => form.setValue('email', e.target.value)}
-                      disabled={!!emailFromInvitation}
-                      validation={form.formState.errors.email ? 'invalid' : form.watch('email') && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.watch('email')) ? 'valid' : 'none'}
-                      validationMessage={form.formState.errors.email?.message}
-                    />
-                    
-                    <SmartPhoneInput
-                      label="מספר טלפון"
-                      value={form.watch('phoneNumber')}
-                      onChange={(value) => form.setValue('phoneNumber', value)}
-                      validation={form.formState.errors.phoneNumber ? 'invalid' : form.watch('phoneNumber') && form.watch('phoneNumber').length >= 10 ? 'valid' : 'none'}
-                      validationMessage={form.formState.errors.phoneNumber?.message}
-                    />
-                    
-                    <ModernInput
-                      label="סיסמה"
-                      icon="password"
-                      type="password"
-                      placeholder="******"
-                      value={form.watch('password')}
-                      onChange={(e) => form.setValue('password', e.target.value)}
-                      validation={form.formState.errors.password ? 'invalid' : form.watch('password') && form.watch('password').length >= 6 ? 'valid' : 'none'}
-                      validationMessage={form.formState.errors.password?.message}
-                    />
-                    
-                    <ModernInput
-                      label="אימות סיסמה"
-                      icon="password"
-                      type="password"
-                      placeholder="******"
-                      value={form.watch('confirmPassword')}
-                      onChange={(e) => form.setValue('confirmPassword', e.target.value)}
-                      validation={form.formState.errors.confirmPassword ? 'invalid' : form.watch('confirmPassword') && form.watch('password') === form.watch('confirmPassword') ? 'valid' : 'none'}
-                      validationMessage={form.formState.errors.confirmPassword?.message}
-                    />
-                    
-                    <ModernButton 
-                      type="submit" 
-                      className="w-full mt-8" 
-                      size="lg"
-                      loading={isLoading}
-                      variant="gradient"
-                    >
-                      {isLoading ? 'מתקדם לאימות SMS...' : 'המשך לאימות SMS'}
-                    </ModernButton>
-                  </form>
-                </CardContent>
-                <CardFooter className="flex justify-center pt-6">
-                  <p className="text-sm text-muted-foreground">
-                    כבר יש לך חשבון?{' '}
-                    <Link to="/login" className="text-primary hover:text-primary-glow transition-colors duration-300 font-medium">
-                      התחבר כאן
-                    </Link>
-                  </p>
-                </CardFooter>
-              </Card>
-            </div>
-          </div>
+                  </div>
+                )}
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                <ModernInput
+                  label="שם מלא"
+                  icon="user"
+                  placeholder="ישראל ישראלי"
+                  value={form.watch('name')}
+                  onChange={(e) => form.setValue('name', e.target.value)}
+                  validation={form.formState.errors.name ? 'invalid' : form.watch('name') && form.watch('name').length >= 2 ? 'valid' : 'none'}
+                  validationMessage={form.formState.errors.name?.message}
+                />
+                
+                <ModernInput
+                  label="כתובת אימייל"
+                  icon="email"
+                  type="email"
+                  placeholder="your@email.com"
+                  value={form.watch('email')}
+                  onChange={(e) => form.setValue('email', e.target.value)}
+                  disabled={!!emailFromInvitation}
+                  validation={form.formState.errors.email ? 'invalid' : form.watch('email') && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.watch('email')) ? 'valid' : 'none'}
+                  validationMessage={form.formState.errors.email?.message}
+                />
+                
+                <SmartPhoneInput
+                  label="מספר טלפון"
+                  value={form.watch('phoneNumber')}
+                  onChange={(value) => form.setValue('phoneNumber', value)}
+                  validation={form.formState.errors.phoneNumber ? 'invalid' : form.watch('phoneNumber') && form.watch('phoneNumber').length >= 10 ? 'valid' : 'none'}
+                  validationMessage={form.formState.errors.phoneNumber?.message}
+                />
+                
+                <ModernInput
+                  label="סיסמה"
+                  icon="password"
+                  type="password"
+                  placeholder="******"
+                  value={form.watch('password')}
+                  onChange={(e) => form.setValue('password', e.target.value)}
+                  validation={form.formState.errors.password ? 'invalid' : form.watch('password') && form.watch('password').length >= 6 ? 'valid' : 'none'}
+                  validationMessage={form.formState.errors.password?.message}
+                />
+                
+                <ModernInput
+                  label="אימות סיסמה"
+                  icon="password"
+                  type="password"
+                  placeholder="******"
+                  value={form.watch('confirmPassword')}
+                  onChange={(e) => form.setValue('confirmPassword', e.target.value)}
+                  validation={form.formState.errors.confirmPassword ? 'invalid' : form.watch('confirmPassword') && form.watch('password') === form.watch('confirmPassword') ? 'valid' : 'none'}
+                  validationMessage={form.formState.errors.confirmPassword?.message}
+                />
+                
+                <ModernButton 
+                  type="submit" 
+                  className="w-full mt-8" 
+                  size="lg"
+                  loading={isLoading}
+                  variant="gradient"
+                >
+                  {isLoading ? 'מתקדם לאימות SMS...' : 'המשך לאימות SMS'}
+                </ModernButton>
+              </form>
+            </CardContent>
+            <CardFooter className="flex justify-center pt-6">
+              <p className="text-sm text-muted-foreground">
+                כבר יש לך חשבון?{' '}
+                <Link to="/login" className="text-primary hover:text-primary-glow transition-colors duration-300 font-medium">
+                  התחבר כאן
+                </Link>
+              </p>
+            </CardFooter>
+          </Card>
         </div>
       </div>
     </>

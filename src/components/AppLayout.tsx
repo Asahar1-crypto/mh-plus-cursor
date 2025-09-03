@@ -57,7 +57,7 @@ const AppLayout = () => {
           onMenuClick={() => setIsMobileSidebarOpen(!isMobileSidebarOpen)}
           isMobile={isMobile}
         />
-        <main className="flex-1 p-2 sm:p-4 md:p-6 lg:p-8 overflow-x-hidden bg-gradient-to-br from-background to-accent/20">
+        <main className="flex-1 p-4 md:p-6 lg:p-8 overflow-x-hidden bg-gradient-to-br from-background to-accent/20">
           <TrialStatusBanner />
           <Outlet />
         </main>

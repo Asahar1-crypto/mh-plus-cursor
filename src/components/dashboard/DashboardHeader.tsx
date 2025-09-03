@@ -50,10 +50,10 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({ userName }) =>
                 })}
               </div>
             </div>
-            <div className="w-full sm:w-auto">
+            <div className="flex-1 sm:flex-none">
               <Button 
                 onClick={handleAddExpense}
-                className="w-full sm:w-auto bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 group"
+                className="bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 group"
                 size="lg"
               >
                 <Plus className="mr-2 h-5 w-5 group-hover:rotate-90 transition-transform duration-300" />
