@@ -14,7 +14,9 @@ interface PhoneLoginProps {
 
 const PhoneLogin: React.FC<PhoneLoginProps> = ({ onBack }) => {
   const { sendPhoneOtp, isLoading } = useAuth();
-  const [phoneNumber, setPhoneNumber] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState(() => {
+    return sessionStorage.getItem('phoneLogin_phoneNumber') || '';
+  });
   const [showOtpVerification, setShowOtpVerification] = useState(
     () => sessionStorage.getItem('phoneLogin_showOtp') === 'true'
   );
@@ -34,6 +36,10 @@ const PhoneLogin: React.FC<PhoneLoginProps> = ({ onBack }) => {
     sessionStorage.setItem('phoneLogin_userInfo', JSON.stringify(userInfo));
     console.log('PhoneLogin userInfo changed:', userInfo);
   }, [userInfo]);
+
+  React.useEffect(() => {
+    sessionStorage.setItem('phoneLogin_phoneNumber', phoneNumber);
+  }, [phoneNumber]);
 
   const normalizePhoneNumber = (phone: string): string => {
     // Remove all non-digit characters
@@ -126,6 +132,11 @@ const PhoneLogin: React.FC<PhoneLoginProps> = ({ onBack }) => {
   const handleBackToPhoneInput = () => {
     setShowOtpVerification(false);
     setUserInfo({});
+    setPhoneNumber('');
+    // Clear sessionStorage
+    sessionStorage.removeItem('phoneLogin_showOtp');
+    sessionStorage.removeItem('phoneLogin_userInfo');
+    sessionStorage.removeItem('phoneLogin_phoneNumber');
   };
 
   if (showOtpVerification) {
