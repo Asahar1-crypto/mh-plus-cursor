@@ -95,12 +95,17 @@ const Login = () => {
             <div className="w-full max-w-md mx-auto lg:mx-0" dir="rtl">
               <Card className="border-border shadow-lg animate-fade-in glass shadow-card">
                 <CardHeader className="text-center">
-                  {/* Mobile wallet character */}
-                  <div className="lg:hidden flex justify-center mb-4">
+                  {/* Mobile wallet characters */}
+                  <div className="lg:hidden flex justify-center gap-4 mb-4">
                     <img 
                       src="/lovable-uploads/3d7094a5-211e-416b-a8c4-8fd864c98499.png" 
-                      alt="Wallet Character" 
+                      alt="Green Wallet Character" 
                       className="w-20 h-20 object-contain animate-bounce [animation-duration:2s]"
+                    />
+                    <img 
+                      src="/lovable-uploads/3a973532-2477-462a-9a84-0390b7045844.png" 
+                      alt="Red Wallet Character" 
+                      className="w-20 h-20 object-contain animate-bounce [animation-duration:2s] [animation-delay:0.3s]"
                     />
                   </div>
                   <div className="flex items-center justify-center gap-2 mb-2">
