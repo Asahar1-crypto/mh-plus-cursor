@@ -1,6 +1,6 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
-import logoImage from '@/assets/Logo.png';
+// import logoImage from '@/assets/Logo.png';
 
 interface LogoProps {
   className?: string;
@@ -31,7 +31,7 @@ export const Logo: React.FC<LogoProps> = ({
     <div className={cn("flex items-center gap-3", className)}>
       <div className="relative">
         <img 
-          src={logoImage} 
+          src="/lovable-uploads/dc4b6d32-5c74-44a1-8d9c-b07947f361d7.png" 
           alt="Family Budget Logo" 
           className={cn(
             sizeClasses[size],
