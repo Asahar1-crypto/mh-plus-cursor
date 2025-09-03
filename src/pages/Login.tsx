@@ -89,10 +89,6 @@ const Login = () => {
                 />
                 <div className="absolute -bottom-4 left-1/2 transform -translate-x-1/2 w-32 h-8 bg-black/10 rounded-full blur-md animate-pulse"></div>
               </div>
-              <div className="text-center mt-6 space-y-3">
-                <h2 className="text-2xl font-bold text-foreground">ניהול כלכלי חכם</h2>
-                <p className="text-muted-foreground max-w-sm">תעקוב אחר ההוצאות שלך ותנהל את הכספים המשפחתיים בקלות ובפשטות</p>
-              </div>
             </div>
 
             {/* Login Card - Right Side */}
