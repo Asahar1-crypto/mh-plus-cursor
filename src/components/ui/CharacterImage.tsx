@@ -35,6 +35,8 @@ const CharacterImage: React.FC<CharacterImageProps> = ({
       src={characterImages[variant]}
       alt={alt}
       className={`${sizeClasses[size]} object-contain animate-bounce-subtle ${className}`}
+      style={{ imageRendering: 'crisp-edges' }}
+      loading="lazy"
     />
   );
 };
