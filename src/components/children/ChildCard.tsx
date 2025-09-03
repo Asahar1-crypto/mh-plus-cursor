@@ -44,12 +44,12 @@ const ChildCard: React.FC<ChildCardProps> = ({ child }) => {
   }
   
   return (
-    <Card className="overflow-hidden">
-      <CardHeader className="pb-2">
+    <Card className="overflow-hidden h-full">
+      <CardHeader className="pb-2 p-3 sm:p-4">
         <div className="flex items-start justify-between">
-          <div>
-            <CardTitle>{child.name}</CardTitle>
-            <CardDescription>
+          <div className="flex-1 min-w-0">
+            <CardTitle className="text-base sm:text-lg truncate">{child.name}</CardTitle>
+            <CardDescription className="text-xs sm:text-sm">
               {format(new Date(child.birthDate), 'dd/MM/yyyy')} ({age} שנים)
             </CardDescription>
           </div>
@@ -67,7 +67,7 @@ const ChildCard: React.FC<ChildCardProps> = ({ child }) => {
           </Dialog>
         </div>
       </CardHeader>
-      <CardContent className="pb-2">
+      <CardContent className="pb-2 p-3 sm:p-4">
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <span className="text-sm text-muted-foreground">הוצאות החודש:</span>
@@ -79,7 +79,7 @@ const ChildCard: React.FC<ChildCardProps> = ({ child }) => {
           </div>
         </div>
       </CardContent>
-      <CardFooter className="pt-2">
+      <CardFooter className="pt-2 p-3 sm:p-4">
         {showInvite ? (
           <div className="w-full space-y-2">
             <div className="flex gap-2">

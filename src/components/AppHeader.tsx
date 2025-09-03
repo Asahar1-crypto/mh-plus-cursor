@@ -24,9 +24,9 @@ const AppHeader: React.FC<AppHeaderProps> = ({ onMenuClick, isMobile }) => {
   };
 
   return (
-    <header className="bg-card/95 backdrop-blur-xl border-b border-border shadow-sm px-4 py-3 sticky top-0 z-30">
+    <header className="bg-card/95 backdrop-blur-xl border-b border-border shadow-sm px-2 sm:px-4 py-2 sm:py-3 sticky top-0 z-30">
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3">
           {isMobile && (
             <Button
               variant="ghost"
@@ -38,7 +38,7 @@ const AppHeader: React.FC<AppHeaderProps> = ({ onMenuClick, isMobile }) => {
             </Button>
           )}
           <Link to="/" className="flex items-center hover:opacity-80 transition-opacity">
-            <Logo size="md" showText={!isMobile} />
+            <Logo size={isMobile ? "sm" : "md"} showText={!isMobile} />
           </Link>
         </div>
         

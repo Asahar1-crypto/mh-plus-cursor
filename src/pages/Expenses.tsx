@@ -161,14 +161,14 @@ const ExpensesPage = () => {
         {/* Quick Stats Cards */}
         <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-8 animate-fade-in [animation-delay:200ms]">
           <Card className="bg-gradient-to-br from-card/80 to-card/60 backdrop-blur-sm border border-border/50 hover:border-primary/30 transition-all duration-300 group">
-            <CardContent className="p-4">
+            <CardContent className="p-3 sm:p-4">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-blue-500/10 rounded-lg group-hover:bg-blue-500/20 transition-colors duration-300">
                   <TrendingUp className="h-4 w-4 text-blue-600" />
                 </div>
                 <div>
-                  <p className="text-xs text-muted-foreground">סה"כ הוצאות</p>
-                  <p className="text-lg font-bold">{stats.total}</p>
+                  <p className="text-xs sm:text-sm text-muted-foreground">סה"כ הוצאות</p>
+                  <p className="text-base sm:text-lg font-bold">{stats.total}</p>
                 </div>
               </div>
             </CardContent>
@@ -216,7 +216,7 @@ const ExpensesPage = () => {
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-card/80 to-card/60 backdrop-blur-sm border border-border/50 hover:border-primary/30 transition-all duration-300 group col-span-2 lg:col-span-1">
+          <Card className="bg-gradient-to-br from-card/80 to-card/60 backdrop-blur-sm border border-border/50 hover:border-primary/30 transition-all duration-300 group sm:col-span-2 lg:col-span-1">
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-purple-500/10 rounded-lg group-hover:bg-purple-500/20 transition-colors duration-300">
@@ -233,7 +233,7 @@ const ExpensesPage = () => {
 
         {/* Main Content with Tabs */}
         <Card className="bg-gradient-to-br from-card/90 to-card/80 backdrop-blur-lg border border-border/50 shadow-2xl animate-fade-in [animation-delay:400ms]">
-          <CardContent className="p-6">
+          <CardContent className="p-3 sm:p-4 md:p-6">
             <Tabs defaultValue="regular" className="space-y-6">
               <TabsList className="grid w-full grid-cols-2 bg-muted/50 backdrop-blur-sm">
                 <TabsTrigger 

@@ -39,12 +39,12 @@ const Children = () => {
   }
 
   return (
-    <div className="w-full max-w-7xl mx-auto animate-fade-in py-3 sm:py-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 sm:mb-6 gap-3 sm:gap-0">
-        <h1 className="text-2xl sm:text-3xl font-bold">ילדים - {account.name}</h1>
+    <div className="w-full max-w-7xl mx-auto animate-fade-in py-2 sm:py-4 md:py-6 px-2 sm:px-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-3 sm:mb-4 md:mb-6 gap-2 sm:gap-3">
+        <h1 className="text-xl sm:text-2xl md:text-3xl font-bold">ילדים - {account.name}</h1>
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
-            <Button className="w-full sm:w-auto text-sm">
+            <Button className="w-full sm:w-auto text-sm" size="sm">
               <Plus className="mr-2 h-3 w-3 sm:h-4 sm:w-4" />
               הוסף ילד/ה
             </Button>
@@ -53,7 +53,7 @@ const Children = () => {
         </Dialog>
       </div>
       
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 md:gap-6">
         {childrenList && childrenList.length > 0 ? (
           childrenList.map((child) => (
             <ChildCard key={child.id} child={child} />

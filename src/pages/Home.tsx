@@ -10,19 +10,19 @@ const Home = () => {
   return (
     <div className="min-h-screen bg-background">
       {/* Hero Section */}
-      <section className="pt-16 pb-24 md:py-32 text-center">
-        <div className="container mx-auto px-4">
-          <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold mb-4">
+      <section className="pt-8 sm:pt-12 md:pt-16 pb-12 sm:pb-16 md:pb-24 lg:py-32 text-center">
+        <div className="container mx-auto px-3 sm:px-4">
+          <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold mb-3 sm:mb-4">
             נהל <span className="text-primary">הוצאות משותפות</span><br />בקלות וביעילות
           </h1>
-          <p className="text-xl md:text-2xl text-muted-foreground max-w-3xl mx-auto mb-8">
+          <p className="text-lg sm:text-xl md:text-2xl text-muted-foreground max-w-3xl mx-auto mb-6 sm:mb-8">
             מערכת "מחציות פלוס" מאפשרת להורים לנהל הוצאות משותפות עבור ילדיהם בצורה פשוטה ושקופה
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button size="lg" onClick={() => navigate('/register')} className="text-lg">
+          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center max-w-md sm:max-w-none mx-auto">
+            <Button size="lg" onClick={() => navigate('/register')} className="text-base sm:text-lg w-full sm:w-auto">
               התחל להשתמש - חינם
             </Button>
-            <Button size="lg" variant="outline" onClick={() => navigate('/login')} className="text-lg">
+            <Button size="lg" variant="outline" onClick={() => navigate('/login')} className="text-base sm:text-lg w-full sm:w-auto">
               כניסה למשתמשים קיימים
             </Button>
           </div>
@@ -30,11 +30,11 @@ const Home = () => {
       </section>
       
       {/* Features Section */}
-      <section className="py-16 bg-muted/30">
-        <div className="container mx-auto px-4">
-          <h2 className="text-3xl font-bold text-center mb-12">למה להשתמש במחציות פלוס?</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            <div className="bg-card p-6 rounded-lg shadow-sm border border-border">
+      <section className="py-8 sm:py-12 md:py-16 bg-muted/30">
+        <div className="container mx-auto px-3 sm:px-4">
+          <h2 className="text-2xl sm:text-3xl font-bold text-center mb-6 sm:mb-8 md:mb-12">למה להשתמש במחציות פלוס?</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 md:gap-8">
+            <div className="bg-card p-4 sm:p-6 rounded-lg shadow-sm border border-border">
               <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center mb-4">
                 <CheckCircle className="h-6 w-6 text-primary" />
               </div>
