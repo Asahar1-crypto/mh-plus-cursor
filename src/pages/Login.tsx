@@ -77,110 +77,138 @@ const Login = () => {
     <>
       <AnimatedBackground />
       <div className="container mx-auto py-10 px-4 flex items-center justify-center min-h-[calc(100vh-4rem)]">
-      <div className="w-full max-w-md">
-        <Card className="border-border shadow-lg animate-fade-in glass shadow-card">
-          <CardHeader className="text-center">
-            <div className="flex items-center justify-center gap-2 mb-2">
-              <Sparkles className="w-6 h-6 text-primary animate-pulse" />
-              <CardTitle className="text-2xl font-bold bg-gradient-to-r from-primary to-primary-glow bg-clip-text text-transparent">
-                ברוכים הבאים
-              </CardTitle>
+        <div className="w-full max-w-4xl">
+          <div className="grid lg:grid-cols-2 gap-8 items-center">
+            {/* Hero Section with Wallet Character */}
+            <div className="hidden lg:flex flex-col items-center justify-center p-8 animate-fade-in">
+              <div className="relative">
+                <img 
+                  src="/lovable-uploads/3d7094a5-211e-416b-a8c4-8fd864c98499.png" 
+                  alt="Wallet Character" 
+                  className="w-64 h-64 object-contain animate-bounce [animation-duration:3s]"
+                />
+                <div className="absolute -bottom-4 left-1/2 transform -translate-x-1/2 w-32 h-8 bg-black/10 rounded-full blur-md animate-pulse"></div>
+              </div>
+              <div className="text-center mt-6 space-y-3">
+                <h2 className="text-2xl font-bold text-foreground">ניהול כלכלי חכם</h2>
+                <p className="text-muted-foreground max-w-sm">תעקוב אחר ההוצאות שלך ותנהל את הכספים המשפחתיים בקלות ובפשטות</p>
+              </div>
             </div>
-            <CardDescription>
-              בחר את שיטת ההתחברות המועדפת עליך
-            </CardDescription>
-          </CardHeader>
-          
-          <CardContent className="space-y-6">
-            {/* Auth Method Toggle */}
-            <AuthMethodToggle 
-              method={authMethod} 
-              onChange={handleAuthMethodChange}
-              disabled={isLoading}
-            />
 
-            {/* Email Login Form */}
-            <div className="space-y-4">
-              <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                  <FormField
-                    control={form.control}
-                    name="email"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-sm font-medium">כתובת אימייל</FormLabel>
-                        <FormControl>
-                          <div className="relative">
-                            <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
-                              <Mail className="w-4 h-4 text-muted-foreground" />
-                            </div>
-                            <Input 
-                              placeholder="your@email.com" 
-                              {...field} 
-                              className="pl-10 transition-all duration-200 focus:shadow-glow"
-                            />
-                          </div>
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={form.control}
-                    name="password"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-sm font-medium">סיסמה</FormLabel>
-                        <FormControl>
-                          <div className="relative">
-                            <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
-                              <Lock className="w-4 h-4 text-muted-foreground" />
-                            </div>
-                            <Input 
-                              type="password" 
-                              placeholder="******" 
-                              {...field} 
-                              className="pl-10 transition-all duration-200 focus:shadow-glow"
-                            />
-                          </div>
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <div className="text-right">
-                    <Link to="/forgot-password" className="text-sm text-primary hover:text-primary-glow transition-colors duration-200 hover:underline">
-                      שכחת סיסמה?
-                    </Link>
+            {/* Login Card */}
+            <div className="w-full max-w-md mx-auto lg:mx-0">
+              <Card className="border-border shadow-lg animate-fade-in glass shadow-card">
+                <CardHeader className="text-center">
+                  {/* Mobile wallet character */}
+                  <div className="lg:hidden flex justify-center mb-4">
+                    <img 
+                      src="/lovable-uploads/3d7094a5-211e-416b-a8c4-8fd864c98499.png" 
+                      alt="Wallet Character" 
+                      className="w-20 h-20 object-contain animate-bounce [animation-duration:2s]"
+                    />
                   </div>
-                  
-                  <ModernButton 
-                    type="submit" 
-                    className="w-full mt-2" 
-                    size="lg"
-                    loading={isLoading}
-                    variant="gradient"
-                  >
-                    {isLoading ? 'מתחבר...' : 'התחבר'}
-                  </ModernButton>
-                </form>
-              </Form>
+                  <div className="flex items-center justify-center gap-2 mb-2">
+                    <Sparkles className="w-6 h-6 text-primary animate-pulse" />
+                    <CardTitle className="text-2xl font-bold bg-gradient-to-r from-primary to-primary-glow bg-clip-text text-transparent">
+                      ברוכים הבאים
+                    </CardTitle>
+                  </div>
+                  <CardDescription>
+                    בחר את שיטת ההתחברות המועדפת עליך
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  {/* Auth Method Toggle */}
+                  <AuthMethodToggle 
+                    method={authMethod} 
+                    onChange={handleAuthMethodChange}
+                    disabled={isLoading}
+                  />
+
+                  {/* Email Login Form */}
+                  <div className="space-y-4">
+                    <Form {...form}>
+                      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                        <FormField
+                          control={form.control}
+                          name="email"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="text-sm font-medium">כתובת אימייל</FormLabel>
+                              <FormControl>
+                                <div className="relative">
+                                  <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
+                                    <Mail className="w-4 h-4 text-muted-foreground" />
+                                  </div>
+                                  <Input 
+                                    placeholder="your@email.com" 
+                                    {...field} 
+                                    className="pl-10 transition-all duration-200 focus:shadow-glow"
+                                  />
+                                </div>
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        
+                        <FormField
+                          control={form.control}
+                          name="password"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="text-sm font-medium">סיסמה</FormLabel>
+                              <FormControl>
+                                <div className="relative">
+                                  <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
+                                    <Lock className="w-4 h-4 text-muted-foreground" />
+                                  </div>
+                                  <Input 
+                                    type="password" 
+                                    placeholder="******" 
+                                    {...field} 
+                                    className="pl-10 transition-all duration-200 focus:shadow-glow"
+                                  />
+                                </div>
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        
+                        <div className="text-right">
+                          <Link to="/forgot-password" className="text-sm text-primary hover:text-primary-glow transition-colors duration-200 hover:underline">
+                            שכחת סיסמה?
+                          </Link>
+                        </div>
+                        
+                        <ModernButton 
+                          type="submit" 
+                          className="w-full mt-2" 
+                          size="lg"
+                          loading={isLoading}
+                          variant="gradient"
+                        >
+                          {isLoading ? 'מתחבר...' : 'התחבר'}
+                        </ModernButton>
+                      </form>
+                    </Form>
+                  </div>
+                </CardContent>
+                
+                <CardFooter className="flex justify-center">
+                  <p className="text-sm text-muted-foreground">
+                    עדיין אין לך חשבון?{' '}
+                    <Link to="/register" className="text-primary hover:text-primary-glow transition-colors duration-200 hover:underline font-medium">
+                      הירשם כאן
+                    </Link>
+                  </p>
+                </CardFooter>
+              </Card>
             </div>
-          </CardContent>
-          
-          <CardFooter className="flex justify-center">
-            <p className="text-sm text-muted-foreground">
-              עדיין אין לך חשבון?{' '}
-              <Link to="/register" className="text-primary hover:text-primary-glow transition-colors duration-200 hover:underline font-medium">
-                הירשם כאן
-              </Link>
-            </p>
-          </CardFooter>
-        </Card>
+          </div>
+        </div>
       </div>
-    </div>
     </>
   );
 };
