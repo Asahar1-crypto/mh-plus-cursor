@@ -86,6 +86,7 @@ const OtpVerification: React.FC<OtpVerificationProps> = ({
 
   const handleVerifyOtp = async () => {
     const code = otpCode.join(''); // Keep original order for verification
+    console.log('OTP verification - phoneNumber:', phoneNumber, 'code:', code, 'otpCode array:', otpCode);
     
     if (code.length !== 6) {
       setError('אנא הזן קוד בן 6 ספרות');
