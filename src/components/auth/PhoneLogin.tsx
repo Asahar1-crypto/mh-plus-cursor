@@ -119,12 +119,18 @@ const PhoneLogin: React.FC<PhoneLoginProps> = ({ onBack }) => {
       console.log('OTP sent successfully, result:', result);
       
       if (result && result.userId) {
-        setUserInfo({
+        const newUserInfo = {
           userId: result.userId,
           userName: result.userName
-        });
+        };
         
+        // Save immediately to sessionStorage BEFORE setting state
+        sessionStorage.setItem('phoneLogin_userInfo', JSON.stringify(newUserInfo));
+        sessionStorage.setItem('phoneLogin_showOtp', 'true');
+        
+        setUserInfo(newUserInfo);
         setShowOtpVerification(true);
+        
         console.log('Moving to OTP verification screen');
       } else {
         setPhoneError('שגיאה בשליחת קוד האימות');
