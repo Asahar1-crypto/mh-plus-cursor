@@ -55,17 +55,17 @@ const OtpVerification: React.FC<OtpVerificationProps> = ({
     newOtp[index] = value;
     setOtpCode(newOtp);
 
-    // Auto-focus next input
-    if (value && index < 5) {
-      const nextInput = document.getElementById(`otp-${index + 1}`) as HTMLInputElement;
+    // Auto-focus next input (right to left for Hebrew)
+    if (value && index > 0) {
+      const nextInput = document.getElementById(`otp-${index - 1}`) as HTMLInputElement;
       nextInput?.focus();
     }
   };
 
   const handleKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Backspace' && !otpCode[index] && index > 0) {
-      const prevInput = document.getElementById(`otp-${index - 1}`) as HTMLInputElement;
-      prevInput?.focus();
+    if (e.key === 'Backspace' && !otpCode[index] && index < 5) {
+      const nextInput = document.getElementById(`otp-${index + 1}`) as HTMLInputElement;
+      nextInput?.focus();
     }
   };
 
@@ -74,18 +74,18 @@ const OtpVerification: React.FC<OtpVerificationProps> = ({
     const pastedData = e.clipboardData.getData('text').replace(/\D/g, '');
     
     if (pastedData.length === 6) {
-      const newOtp = pastedData.split('').slice(0, 6);
+      const newOtp = pastedData.split('').slice(0, 6).reverse(); // Reverse for RTL
       setOtpCode(newOtp);
       setError('');
       
-      // Focus last input
-      const lastInput = document.getElementById('otp-5') as HTMLInputElement;
-      lastInput?.focus();
+      // Focus first input (rightmost)
+      const firstInput = document.getElementById('otp-0') as HTMLInputElement;
+      firstInput?.focus();
     }
   };
 
   const handleVerifyOtp = async () => {
-    const code = otpCode.join('');
+    const code = otpCode.reverse().join(''); // Reverse for RTL reading
     
     if (code.length !== 6) {
       setError('אנא הזן קוד בן 6 ספרות');
@@ -161,7 +161,7 @@ const OtpVerification: React.FC<OtpVerificationProps> = ({
         <CardContent className="space-y-6">
           {/* OTP Input Fields */}
           <div className="space-y-4">
-            <div className="flex justify-center gap-3" onPaste={handlePaste}>
+            <div className="flex justify-center gap-3 direction-rtl" onPaste={handlePaste} dir="rtl">
               {otpCode.map((digit, index) => (
                 <Input
                   key={index}
@@ -175,6 +175,7 @@ const OtpVerification: React.FC<OtpVerificationProps> = ({
                   className={`w-12 h-12 text-center text-xl font-bold border-2 transition-all duration-200 ${
                     digit ? 'border-primary shadow-glow' : 'border-muted'
                   } ${error ? 'border-destructive' : ''} focus:border-primary focus:shadow-glow`}
+                  dir="ltr"
                 />
               ))}
             </div>
