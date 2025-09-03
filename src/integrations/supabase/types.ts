@@ -442,8 +442,12 @@ export type Database = {
           is_super_admin: boolean | null
           last_login: string | null
           name: string
+          phone_e164: string | null
+          phone_extension: string | null
           phone_number: string | null
+          phone_type: string | null
           phone_verified: boolean | null
+          raw_phone_input: string | null
           selected_account_id: string | null
           two_factor_enabled: boolean | null
           updated_at: string
@@ -454,8 +458,12 @@ export type Database = {
           is_super_admin?: boolean | null
           last_login?: string | null
           name: string
+          phone_e164?: string | null
+          phone_extension?: string | null
           phone_number?: string | null
+          phone_type?: string | null
           phone_verified?: boolean | null
+          raw_phone_input?: string | null
           selected_account_id?: string | null
           two_factor_enabled?: boolean | null
           updated_at?: string
@@ -466,8 +474,12 @@ export type Database = {
           is_super_admin?: boolean | null
           last_login?: string | null
           name?: string
+          phone_e164?: string | null
+          phone_extension?: string | null
           phone_number?: string | null
+          phone_type?: string | null
           phone_verified?: boolean | null
+          raw_phone_input?: string | null
           selected_account_id?: string | null
           two_factor_enabled?: boolean | null
           updated_at?: string

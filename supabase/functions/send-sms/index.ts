@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { parsePhoneNumber } from 'https://esm.sh/libphonenumber-js@1.10.51'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -22,17 +23,37 @@ serve(async (req) => {
       throw new Error('Phone number is required')
     }
     
-    // Normalize phone number for Israel
-    let normalizedPhone = phoneNumber.replace(/[\s-]/g, '') // Remove spaces and dashes
-    console.log('Phone after removing spaces/dashes:', normalizedPhone)
-    
-    // Add country code if not present
-    if (normalizedPhone.startsWith('0')) {
-      normalizedPhone = '+972' + normalizedPhone.substring(1)
-    } else if (normalizedPhone.startsWith('972')) {
-      normalizedPhone = '+' + normalizedPhone
-    } else if (!normalizedPhone.startsWith('+')) {
-      normalizedPhone = '+972' + normalizedPhone
+    // Normalize phone number using libphonenumber-js
+    let normalizedPhone;
+    try {
+      // Pre-clean: handle common patterns
+      let cleaned = phoneNumber.trim()
+        .replace(/^\s*00/, '+')           // 00972 -> +972
+        .replace(/[^\d+]/g, '');         // Remove all non-digits except +
+
+      console.log('Phone after initial cleaning:', cleaned)
+
+      // Handle Israeli local format (starting with 0)
+      if (cleaned.startsWith('0') && !cleaned.startsWith('00')) {
+        cleaned = '+972' + cleaned.substring(1);
+      }
+      
+      // Handle Israeli international without + (starting with 972)
+      if (cleaned.startsWith('972') && !cleaned.startsWith('+')) {
+        cleaned = '+' + cleaned;
+      }
+
+      // Parse with libphonenumber-js
+      const phoneNumberObj = parsePhoneNumber(cleaned, 'IL');
+      
+      if (!phoneNumberObj || !phoneNumberObj.isValid()) {
+        throw new Error('Invalid phone number format');
+      }
+
+      normalizedPhone = phoneNumberObj.number; // Returns E.164 format
+    } catch (error) {
+      console.error('Phone normalization error:', error);
+      throw new Error('Invalid phone number format');
     }
     
     console.log('Normalized phone number:', normalizedPhone)

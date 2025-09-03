@@ -1,6 +1,7 @@
-import React, { useState, forwardRef } from 'react';
+import React, { useState, forwardRef, useEffect } from 'react';
 import { Phone, Check, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { normalizeILPhoneNumber, formatPhoneForDisplay } from '@/utils/phoneUtils';
 
 interface SmartPhoneInputProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'onChange'> {
   label: string;
@@ -19,32 +20,52 @@ const SmartPhoneInput = forwardRef<HTMLInputElement, SmartPhoneInputProps>(
     value = '',
     ...props 
   }, ref) => {
-    const [isFocused, setIsFocused] = useState(false);
+  const [isFocused, setIsFocused] = useState(false);
     const [formattedValue, setFormattedValue] = useState(value as string);
+    const [internalValidation, setInternalValidation] = useState<'none' | 'valid' | 'invalid'>('none');
+    const [validationMsg, setValidationMsg] = useState('');
 
-    const formatPhoneNumber = (input: string): string => {
-      // Remove all non-digits
-      const digitsOnly = input.replace(/\D/g, '');
-      
-      // Format as XXX-XXX-XXXX
-      if (digitsOnly.length <= 3) {
-        return digitsOnly;
-      } else if (digitsOnly.length <= 6) {
-        return `${digitsOnly.slice(0, 3)}-${digitsOnly.slice(3)}`;
-      } else {
-        return `${digitsOnly.slice(0, 3)}-${digitsOnly.slice(3, 6)}-${digitsOnly.slice(6, 10)}`;
-      }
-    };
+    useEffect(() => {
+      setFormattedValue(value as string);
+    }, [value]);
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
       const input = e.target.value;
-      const formatted = formatPhoneNumber(input);
-      setFormattedValue(formatted);
-      onChange(formatted);
+      
+      if (!input.trim()) {
+        setFormattedValue('');
+        setInternalValidation('none');
+        setValidationMsg('');
+        onChange('');
+        return;
+      }
+
+      // Validate and normalize using the new utility
+      const result = normalizeILPhoneNumber(input);
+      
+      if (result.success && result.data) {
+        // Format for display using Israeli format
+        const displayFormatted = formatPhoneForDisplay(result.data.e164, 'IL');
+        setFormattedValue(displayFormatted);
+        setInternalValidation('valid');
+        setValidationMsg('מספר טלפון תקין');
+        
+        // Send normalized E.164 format to parent
+        onChange(result.data.e164);
+      } else {
+        // Keep user input for continued typing
+        setFormattedValue(input);
+        setInternalValidation('invalid');
+        setValidationMsg(result.error || 'מספר טלפון לא תקין');
+        
+        // Send raw input to parent
+        onChange(input);
+      }
     };
 
     const getValidationIcon = () => {
-      switch (validation) {
+      const currentValidation = validation !== 'none' ? validation : internalValidation;
+      switch (currentValidation) {
         case 'valid': 
           return <Check className="w-5 h-5 text-green-500" />;
         case 'invalid': 
@@ -74,8 +95,8 @@ const SmartPhoneInput = forwardRef<HTMLInputElement, SmartPhoneInputProps>(
             "relative flex items-center transition-all duration-300",
             "glass rounded-xl hover:shadow-glow group-hover:scale-[1.02]",
             isFocused && "ring-2 ring-primary/50 ring-offset-2",
-            validation === 'valid' && "ring-2 ring-green-500/50",
-            validation === 'invalid' && "ring-2 ring-red-500/50"
+            (validation === 'valid' || internalValidation === 'valid') && "ring-2 ring-green-500/50",
+            (validation === 'invalid' || internalValidation === 'invalid') && "ring-2 ring-red-500/50"
           )}>
             {/* Country Prefix */}
             <div className="flex items-center pr-3 border-l border-border/30 h-14">
@@ -106,7 +127,7 @@ const SmartPhoneInput = forwardRef<HTMLInputElement, SmartPhoneInputProps>(
             />
 
             {/* Validation Icon */}
-            {validation !== 'none' && (
+            {(validation !== 'none' || internalValidation !== 'none') && (
               <div className="absolute left-4 top-1/2 transform -translate-y-1/2">
                 {getValidationIcon()}
               </div>
@@ -122,13 +143,13 @@ const SmartPhoneInput = forwardRef<HTMLInputElement, SmartPhoneInputProps>(
         </div>
 
         {/* Validation Message */}
-        {validationMessage && (
+        {(validationMessage || validationMsg) && (
           <div className={cn(
             "text-xs px-2 transition-all duration-300",
-            validation === 'valid' && "text-green-600",
-            validation === 'invalid' && "text-red-600"
+            (validation === 'valid' || internalValidation === 'valid') && "text-green-600",
+            (validation === 'invalid' || internalValidation === 'invalid') && "text-red-600"
           )}>
-            {validationMessage}
+            {validationMessage || validationMsg}
           </div>
         )}
       </div>

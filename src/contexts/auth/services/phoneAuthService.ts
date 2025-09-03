@@ -1,5 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from 'sonner';
+import { normalizeILPhoneNumber } from '@/utils/phoneUtils';
 
 /**
  * Service for phone-based authentication
@@ -12,8 +13,14 @@ export const phoneAuthService = {
     try {
       console.log(`Sending login OTP to: ${phoneNumber}`);
       
+      // Normalize phone number before sending
+      const normalizationResult = normalizeILPhoneNumber(phoneNumber);
+      if (!normalizationResult.success) {
+        throw new Error(normalizationResult.error || 'Invalid phone number format');
+      }
+      
       const { data, error } = await supabase.functions.invoke('phone-login', {
-        body: { phoneNumber }
+        body: { phoneNumber: normalizationResult.data!.e164 }
       });
 
       if (error) {
@@ -54,9 +61,15 @@ export const phoneAuthService = {
     try {
       console.log(`Verifying login OTP for: ${phoneNumber}`);
       
+      // Normalize phone number before verifying
+      const normalizationResult = normalizeILPhoneNumber(phoneNumber);
+      if (!normalizationResult.success) {
+        throw new Error(normalizationResult.error || 'Invalid phone number format');
+      }
+      
       const { data, error } = await supabase.functions.invoke('verify-sms-code', {
         body: { 
-          phoneNumber, 
+          phoneNumber: normalizationResult.data!.e164, 
           code,
           verificationType: 'login'
         }

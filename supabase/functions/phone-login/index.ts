@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.4';
+import { parsePhoneNumber } from 'https://esm.sh/libphonenumber-js@1.10.51';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -28,12 +29,41 @@ serve(async (req) => {
       );
     }
 
-    // Normalize phone number (Israeli format)
-    let normalizedPhone = phoneNumber.replace(/[\s\-]/g, '');
-    if (normalizedPhone.startsWith('0')) {
-      normalizedPhone = '+972' + normalizedPhone.substring(1);
-    } else if (!normalizedPhone.startsWith('+')) {
-      normalizedPhone = '+972' + normalizedPhone;
+    // Normalize phone number using libphonenumber-js
+    let normalizedPhone;
+    try {
+      // Pre-clean: handle common patterns
+      let cleaned = phoneNumber.trim()
+        .replace(/^\s*00/, '+')           // 00972 -> +972
+        .replace(/[^\d+]/g, '');         // Remove all non-digits except +
+
+      // Handle Israeli local format (starting with 0)
+      if (cleaned.startsWith('0') && !cleaned.startsWith('00')) {
+        cleaned = '+972' + cleaned.substring(1);
+      }
+      
+      // Handle Israeli international without + (starting with 972)
+      if (cleaned.startsWith('972') && !cleaned.startsWith('+')) {
+        cleaned = '+' + cleaned;
+      }
+
+      // Parse with libphonenumber-js
+      const phoneNumberObj = parsePhoneNumber(cleaned, 'IL');
+      
+      if (!phoneNumberObj || !phoneNumberObj.isValid()) {
+        throw new Error('Invalid phone number format');
+      }
+
+      normalizedPhone = phoneNumberObj.number; // Returns E.164 format
+    } catch (error) {
+      console.error('Phone normalization error:', error);
+      return new Response(
+        JSON.stringify({ error: 'Invalid phone number format' }),
+        { 
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
     }
     
     console.log('Normalized phone number:', normalizedPhone);
@@ -44,42 +74,12 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    // Check if phone number exists in profiles - try multiple formats
-    let profile = null;
-    let profileError = null;
-    
-    // Try exact match first
-    const { data: exactProfile, error: exactError } = await supabase
+    // Check if phone number exists in profiles using normalized phone_e164 field
+    const { data: profile, error: profileError } = await supabase
       .from('profiles')
-      .select('id, name, phone_number')
-      .eq('phone_number', normalizedPhone)
+      .select('id, name, phone_e164')
+      .eq('phone_e164', normalizedPhone)
       .maybeSingle();
-    
-    if (exactProfile) {
-      profile = exactProfile;
-    } else {
-      // Try formatted versions (with dashes)
-      const formattedVersions = [
-        normalizedPhone.replace('+972', '0').replace(/(\d{3})(\d{3})(\d{4})/, '$1-$2-$3'),
-        normalizedPhone.replace('+972', '054-970-7777'), // specific for this number
-        normalizedPhone.replace('+972', '0').replace(/(\d{3})(\d{7})/, '$1-$2')
-      ];
-      
-      for (const version of formattedVersions) {
-        const { data: formattedProfile, error: formattedError } = await supabase
-          .from('profiles')
-          .select('id, name, phone_number')
-          .eq('phone_number', version)
-          .maybeSingle();
-        
-        if (formattedProfile) {
-          profile = formattedProfile;
-          break;
-        }
-      }
-      
-      profileError = exactError;
-    }
 
     if (profileError) {
       console.error('Error checking profile:', profileError);
