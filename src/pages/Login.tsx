@@ -22,11 +22,14 @@ const loginSchema = z.object({
 const Login = () => {
   const { login, isLoading } = useAuth();
   const navigate = useNavigate();
-  const [authMethod, setAuthMethod] = useState<'email' | 'phone'>('email');
+  const [authMethod, setAuthMethod] = useState<'email' | 'phone'>(() => {
+    return (sessionStorage.getItem('login_authMethod') as 'email' | 'phone') || 'email';
+  });
   
   // Add logging to track auth method changes
   const handleAuthMethodChange = (method: 'email' | 'phone') => {
     console.log('Auth method changing from', authMethod, 'to', method);
+    sessionStorage.setItem('login_authMethod', method);
     setAuthMethod(method);
   };
   
@@ -49,6 +52,11 @@ const Login = () => {
 
   const handleBackToEmailLogin = () => {
     console.log('Back to email login called');
+    sessionStorage.setItem('login_authMethod', 'email');
+    // Clear phone login state when going back
+    sessionStorage.removeItem('phoneLogin_showOtp');
+    sessionStorage.removeItem('phoneLogin_userInfo');
+    sessionStorage.removeItem('phoneLogin_phoneNumber');
     setAuthMethod('email');
   };
 
