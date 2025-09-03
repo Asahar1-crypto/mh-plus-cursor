@@ -74,18 +74,18 @@ const OtpVerification: React.FC<OtpVerificationProps> = ({
     const pastedData = e.clipboardData.getData('text').replace(/\D/g, '');
     
     if (pastedData.length === 6) {
-      const newOtp = pastedData.split('').slice(0, 6).reverse(); // Reverse for RTL
+      const newOtp = pastedData.split('').slice(0, 6); // Keep original order
       setOtpCode(newOtp);
       setError('');
       
-      // Focus first input (rightmost)
+      // Focus first input (rightmost in RTL)
       const firstInput = document.getElementById('otp-0') as HTMLInputElement;
       firstInput?.focus();
     }
   };
 
   const handleVerifyOtp = async () => {
-    const code = otpCode.reverse().join(''); // Reverse for RTL reading
+    const code = otpCode.join(''); // Keep original order for verification
     
     if (code.length !== 6) {
       setError('אנא הזן קוד בן 6 ספרות');
