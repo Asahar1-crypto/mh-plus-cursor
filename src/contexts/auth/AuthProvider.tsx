@@ -5,6 +5,7 @@ import { useAuthState } from './hooks/useAuthState';
 import { useAuthActions } from './hooks/useAuthActions';
 import { useAuthSubscriptions } from './hooks/useAuthSubscriptions';
 import { phoneAuthService } from './services/phoneAuthService';
+import { supabase } from '@/integrations/supabase/client';
 
 interface AuthProviderProps {
   children: ReactNode;
@@ -61,6 +62,23 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     const performInitialCheck = async () => {
       console.log('AuthProvider: Performing initial auth check');
       try {
+        // First check if there's a session in the URL (from magic link)
+        const urlParams = new URLSearchParams(window.location.search);
+        const accessToken = urlParams.get('access_token');
+        const refreshToken = urlParams.get('refresh_token');
+        
+        if (accessToken && refreshToken) {
+          console.log('AuthProvider: Found tokens in URL, setting session');
+          // Set the session from URL parameters
+          await supabase.auth.setSession({
+            access_token: accessToken,
+            refresh_token: refreshToken
+          });
+          
+          // Clean the URL
+          window.history.replaceState({}, document.title, window.location.pathname);
+        }
+        
         await checkAndSetUserData();
         console.log('AuthProvider: Initial auth check completed');
       } catch (err) {

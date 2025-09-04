@@ -57,7 +57,7 @@ export const phoneAuthService = {
   /**
    * Verify OTP for phone login
    */
-  verifyPhoneLoginOtp: async (phoneNumber: string, code: string): Promise<{ success: boolean; sessionUrl?: string }> => {
+  verifyPhoneLoginOtp: async (phoneNumber: string, code: string): Promise<{ success: boolean; sessionUrl?: string; session?: any }> => {
     try {
       console.log(`Verifying login OTP for: ${phoneNumber}`);
       
@@ -87,7 +87,8 @@ export const phoneAuthService = {
       console.log('Login OTP verified successfully');
       return {
         success: true,
-        sessionUrl: data.session?.sessionUrl
+        sessionUrl: data.session?.sessionUrl,
+        session: data.session
       };
     } catch (error: any) {
       console.error('Verify phone login OTP failed:', error);
@@ -123,13 +124,13 @@ export const phoneAuthService = {
       
       // Use the session URL to establish authentication
       if (result.sessionUrl) {
-        // Store a flag that login is in progress to handle the redirect properly
-        sessionStorage.setItem('phoneLoginInProgress', 'true');
+        console.log('Redirecting to session URL:', result.sessionUrl);
+        // Instead of direct redirect, open in same window but handle it properly
         window.location.href = result.sessionUrl;
-        // The user will be redirected and authenticated
+        // Return a success state while redirecting
         return {
-          userId: 'authenticated', 
-          email: 'authenticated'
+          userId: result.session?.userId || 'authenticated', 
+          email: result.session?.email || 'authenticated'
         };
       }
       

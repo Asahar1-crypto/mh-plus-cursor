@@ -207,13 +207,16 @@ serve(async (req) => {
         );
       }
 
+      // Get the current origin from request headers or use a default
+      const origin = req.headers.get('origin') || 'https://e01ecbfb-5c0d-44e9-b818-1374636e60ff.sandbox.lovable.dev';
+      
       // Generate session tokens for the user
       const { data: sessionResult, error: sessionError } = await supabase.auth.admin
         .generateLink({
           type: 'magiclink',
           email: authUser.user.email!,
           options: {
-            redirectTo: `${Deno.env.get('SUPABASE_URL')}/auth/v1/callback?redirect_to=/dashboard`
+            redirectTo: `${origin}/dashboard`
           }
         });
 

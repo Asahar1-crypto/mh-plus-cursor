@@ -21,11 +21,13 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({ requiresAuth = false }) => {
 
   // If auth is required but user is not authenticated, redirect to login
   if (requiresAuth && !isAuthenticated) {
+    console.log('AuthLayout: Redirecting to login - requiresAuth:', requiresAuth, 'isAuthenticated:', isAuthenticated);
     return <Navigate to="/login" />;
   }
 
   // If auth is NOT required and user is authenticated, redirect to dashboard
   if (!requiresAuth && isAuthenticated) {
+    console.log('AuthLayout: Redirecting to dashboard - requiresAuth:', requiresAuth, 'isAuthenticated:', isAuthenticated);
     return <Navigate to="/dashboard" />;
   }
 
