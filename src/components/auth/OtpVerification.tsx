@@ -167,18 +167,18 @@ const OtpVerification: React.FC<OtpVerificationProps> = ({
           {/* OTP Input Fields */}
           <div className="space-y-4">
             <div className="flex justify-center gap-3" onPaste={handlePaste}>
-              {otpCode.map((digit, index) => (
+              {[0, 1, 2, 3, 4, 5].map((index) => (
                 <Input
                   key={index}
                   id={`otp-${index}`}
                   type="text"
                   inputMode="numeric"
                   maxLength={1}
-                  value={digit}
+                  value={otpCode[index]}
                   onChange={(e) => handleOtpChange(index, e.target.value.replace(/\D/g, ''))}
                   onKeyDown={(e) => handleKeyDown(index, e)}
                   className={`w-12 h-12 text-center text-xl font-bold border-2 transition-all duration-200 ${
-                    digit ? 'border-primary shadow-glow' : 'border-muted'
+                    otpCode[index] ? 'border-primary shadow-glow' : 'border-muted'
                   } ${error ? 'border-destructive' : ''} focus:border-primary focus:shadow-glow`}
                 />
               ))}
