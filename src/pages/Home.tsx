@@ -18,16 +18,6 @@ const Home = () => {
           <p className="text-xl md:text-2xl text-muted-foreground max-w-3xl mx-auto mb-8">
             מערכת "מחציות פלוס" מאפשרת להורים לנהל הוצאות משותפות עבור ילדיהם בצורה פשוטה ושקופה
           </p>
-          
-          {/* Single central character */}
-          <div className="flex justify-center mb-8">
-            <img 
-              src="/lovable-uploads/b7cd8e98-a68b-4c5a-8bb4-452071ab5020.png" 
-              alt="משפחת הארנקים" 
-              className="w-32 md:w-40 lg:w-48 h-auto hover-scale drop-shadow-lg"
-            />
-          </div>
-          
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button size="lg" onClick={() => navigate('/register')} className="text-lg">
               התחל להשתמש - חינם

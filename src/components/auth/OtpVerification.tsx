@@ -55,17 +55,17 @@ const OtpVerification: React.FC<OtpVerificationProps> = ({
     newOtp[index] = value;
     setOtpCode(newOtp);
 
-    // Auto-focus next input (left to right)
-    if (value && index < 5) {
-      const nextInput = document.getElementById(`otp-${index + 1}`) as HTMLInputElement;
+    // Auto-focus next input (right to left for RTL)
+    if (value && index > 0) {
+      const nextInput = document.getElementById(`otp-${index - 1}`) as HTMLInputElement;
       nextInput?.focus();
     }
   };
 
   const handleKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Backspace' && !otpCode[index] && index > 0) {
-      const prevInput = document.getElementById(`otp-${index - 1}`) as HTMLInputElement;
-      prevInput?.focus();
+    if (e.key === 'Backspace' && !otpCode[index] && index < 5) {
+      const nextInput = document.getElementById(`otp-${index + 1}`) as HTMLInputElement;
+      nextInput?.focus();
     }
   };
 
@@ -74,12 +74,12 @@ const OtpVerification: React.FC<OtpVerificationProps> = ({
     const pastedData = e.clipboardData.getData('text').replace(/\D/g, '');
     
     if (pastedData.length === 6) {
-      const newOtp = pastedData.split('').slice(0, 6);
+      const newOtp = pastedData.split('').slice(0, 6); // Keep original order
       setOtpCode(newOtp);
       setError('');
       
-      // Focus first input after paste
-      const firstInput = document.getElementById('otp-0') as HTMLInputElement;
+      // Focus first input after paste (rightmost in RTL)
+      const firstInput = document.getElementById('otp-5') as HTMLInputElement;
       firstInput?.focus();
     }
   };
@@ -103,20 +103,13 @@ const OtpVerification: React.FC<OtpVerificationProps> = ({
       fireConfetti();
       setShowCelebration(true);
       
-      // Auto-close celebration and navigate after 1 second
-      setTimeout(() => {
-        setShowCelebration(false);
-        onSuccess();
-        navigate('/dashboard');
-      }, 1000);
-      
     } catch (error: any) {
       console.error('OTP verification failed:', error);
       setError('קוד שגוי או פג תוקף');
       
       // Clear OTP inputs on error
       setOtpCode(['', '', '', '', '', '']);
-      const firstInput = document.getElementById('otp-0') as HTMLInputElement;
+      const firstInput = document.getElementById('otp-5') as HTMLInputElement;
       firstInput?.focus();
     } finally {
       setIsVerifying(false);
@@ -132,7 +125,7 @@ const OtpVerification: React.FC<OtpVerificationProps> = ({
       setCountdown(120); // Reset countdown
       setOtpCode(['', '', '', '', '', '']); // Clear current OTP
       
-      const firstInput = document.getElementById('otp-0') as HTMLInputElement;
+      const firstInput = document.getElementById('otp-5') as HTMLInputElement;
       firstInput?.focus();
       
       // Show success message
@@ -173,19 +166,19 @@ const OtpVerification: React.FC<OtpVerificationProps> = ({
         <CardContent className="space-y-6">
           {/* OTP Input Fields */}
           <div className="space-y-4">
-            <div className="flex justify-center gap-3" onPaste={handlePaste} dir="ltr">
-              {[0, 1, 2, 3, 4, 5].map((index) => (
+            <div className="flex justify-center gap-3 flex-row-reverse" onPaste={handlePaste} dir="rtl">
+              {otpCode.map((digit, index) => (
                 <Input
                   key={index}
                   id={`otp-${index}`}
                   type="text"
                   inputMode="numeric"
                   maxLength={1}
-                  value={otpCode[index]}
+                  value={digit}
                   onChange={(e) => handleOtpChange(index, e.target.value.replace(/\D/g, ''))}
                   onKeyDown={(e) => handleKeyDown(index, e)}
                   className={`w-12 h-12 text-center text-xl font-bold border-2 transition-all duration-200 ${
-                    otpCode[index] ? 'border-primary shadow-glow' : 'border-muted'
+                    digit ? 'border-primary shadow-glow' : 'border-muted'
                   } ${error ? 'border-destructive' : ''} focus:border-primary focus:shadow-glow`}
                   dir="ltr"
                 />

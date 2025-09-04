@@ -74,11 +74,11 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    // Check if phone number exists in profiles using phone_number field
+    // Check if phone number exists in profiles using normalized phone_e164 field
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
-      .select('id, name, phone_number')
-      .eq('phone_number', normalizedPhone)
+      .select('id, name, phone_e164')
+      .eq('phone_e164', normalizedPhone)
       .maybeSingle();
 
     if (profileError) {
@@ -92,133 +92,18 @@ serve(async (req) => {
       );
     }
 
-    let userProfile = profile;
-    
     if (!profile) {
-      console.log('Phone number not found in profiles - checking auth.users');
-      
-      // First check if user exists in auth.users with this phone number
-      const { data: existingUser, error: userCheckError } = await supabase.auth.admin.listUsers();
-      
-      let authUser = null;
-      if (existingUser?.users) {
-        authUser = existingUser.users.find(user => user.phone === normalizedPhone);
-      }
-      
-      if (authUser) {
-        console.log('User exists in auth.users but not in profiles, creating profile');
-        userProfile = {
-          id: authUser.id,
-          name: `משתמש ${normalizedPhone.slice(-4)}`,
-          phone_number: normalizedPhone
-        };
-        
-        // Create missing profile
-        const { data: newProfile, error: profileCreateError } = await supabase
-          .from('profiles')
-          .insert({
-            id: authUser.id,
-            phone_number: normalizedPhone,
-            name: `משתמש ${normalizedPhone.slice(-4)}`
-          })
-          .select('id, name, phone_number')
-          .single();
-
-        if (profileCreateError) {
-          console.error('Error creating missing profile:', profileCreateError);
-          // Continue anyway with the user data we have
-        } else {
-          userProfile = newProfile;
+      console.log('Phone number not found in profiles');
+      return new Response(
+        JSON.stringify({ error: 'Phone number not registered' }),
+        { 
+          status: 404,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         }
-      } else {
-        console.log('Creating completely new user');
-        
-        // Create a new user in auth.users with phone number
-        const { data: newAuthUser, error: authError } = await supabase.auth.admin.createUser({
-          phone: normalizedPhone,
-          phone_confirmed: false,
-          email_confirmed: false,
-          email: `phone_${normalizedPhone.replace(/[^0-9]/g, '')}@temp-phone.local` // Unique temp email
-        });
-
-        if (authError || !newAuthUser.user) {
-          console.error('Error creating auth user:', authError?.message || 'Unknown error');
-          console.log('Full error details:', authError);
-          return new Response(
-            JSON.stringify({ error: 'Failed to create user account: ' + (authError?.message || 'Database error creating new user') }),
-            { 
-              status: 500,
-              headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-            }
-          );
-        }
-
-        console.log('Auth user created successfully:', newAuthUser.user.id);
-
-        // Check if profile was created automatically by trigger
-        await new Promise(resolve => setTimeout(resolve, 100)); // Small delay for trigger to complete
-        
-        const { data: existingProfile } = await supabase
-          .from('profiles')
-          .select('id, name, phone_number')
-          .eq('id', newAuthUser.user.id)
-          .maybeSingle();
-
-        if (existingProfile) {
-          console.log('Profile already exists from trigger:', existingProfile);
-          
-          // Update the phone number if needed
-          const { data: updatedProfile, error: updateError } = await supabase
-            .from('profiles')
-            .update({ 
-              phone_number: normalizedPhone,
-              name: existingProfile.name || `משתמש ${normalizedPhone.slice(-4)}`
-            })
-            .eq('id', newAuthUser.user.id)
-            .select('id, name, phone_number')
-            .single();
-
-          if (updateError) {
-            console.error('Error updating profile:', updateError);
-            return new Response(
-              JSON.stringify({ error: 'Failed to update user profile' }),
-              { 
-                status: 500,
-                headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-              }
-            );
-          }
-          
-          userProfile = updatedProfile;
-        } else {
-          // Create profile manually if trigger didn't work
-          const { data: newProfile, error: profileCreateError } = await supabase
-            .from('profiles')
-            .insert({
-              id: newAuthUser.user.id,
-              phone_number: normalizedPhone,
-              name: `משתמש ${normalizedPhone.slice(-4)}`
-            })
-            .select('id, name, phone_number')
-            .single();
-
-          if (profileCreateError) {
-            console.error('Error creating profile:', profileCreateError);
-            return new Response(
-              JSON.stringify({ error: 'Failed to create user profile: ' + profileCreateError.message }),
-              { 
-                status: 500,
-                headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-              }
-            );
-          }
-
-          userProfile = newProfile;
-        }
-      }
+      );
     }
 
-    console.log('Profile found for phone:', userProfile);
+    console.log('Profile found for phone:', profile);
 
     // Temporarily disable rate limiting for testing
     console.log('Rate limiting temporarily disabled for testing');
@@ -227,18 +112,6 @@ serve(async (req) => {
     const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
     console.log('Generated OTP code:', otpCode);
 
-    // Clear any existing unverified codes for this phone and verification type
-    const { error: clearError } = await supabase
-      .from('sms_verification_codes')
-      .delete()
-      .eq('phone_number', normalizedPhone)
-      .eq('verification_type', 'login')
-      .eq('verified', false);
-
-    if (clearError) {
-      console.warn('Error clearing old codes (non-fatal):', clearError);
-    }
-
     // Store OTP in database
     const { error: storeError } = await supabase
       .from('sms_verification_codes')
@@ -246,7 +119,7 @@ serve(async (req) => {
         phone_number: normalizedPhone,
         code: otpCode,
         verification_type: 'login',
-        user_id: userProfile.id,
+        user_id: profile.id,
         verified: false,
         attempts: 0,
         expires_at: new Date(Date.now() + 10 * 60 * 1000).toISOString() // 10 minutes
@@ -319,8 +192,8 @@ serve(async (req) => {
       JSON.stringify({ 
         success: true,
         message: 'OTP sent successfully',
-        userId: userProfile.id,
-        userName: userProfile.name
+        userId: profile.id,
+        userName: profile.name
       }),
       {
         status: 200,

@@ -42,10 +42,10 @@ export const phoneAuthService = {
       console.error('Send phone login OTP failed:', error);
       
       // Handle specific error messages
-      if (error.message?.includes('Too many attempts')) {
+      if (error.message?.includes('Phone number not registered')) {
+        toast.error('מספר הטלפון לא רשום במערכת');
+      } else if (error.message?.includes('Too many attempts')) {
         toast.error('יותר מדי נסיונות. נסה שוב מאוחר יותר');
-      } else if (error.message?.includes('Invalid phone number')) {
-        toast.error('מספר טלפון לא תקין');
       } else {
         toast.error('שגיאה בשליחת קוד האימות');
       }
@@ -114,31 +114,24 @@ export const phoneAuthService = {
       
       const result = await phoneAuthService.verifyPhoneLoginOtp(phoneNumber, otp);
       
-      if (!result.success) {
-        throw new Error('Failed to verify OTP');
+      if (!result.success || !result.sessionUrl) {
+        throw new Error('Failed to create session');
       }
 
-      console.log('OTP verification successful, checking session...');
+      // Navigate to the session URL to establish the session
+      console.log('Session URL received:', result.sessionUrl);
       
+      // Use the session URL to establish authentication
       if (result.sessionUrl) {
-        console.log('Session URL received:', result.sessionUrl);
-        
-        // Use the session URL to establish authentication
         window.location.href = result.sessionUrl;
-        
-        // Return dummy data since we're redirecting
+        // The user will be redirected and authenticated
         return {
           userId: 'authenticated', 
           email: 'authenticated'
         };
-      } else {
-        console.log('No session URL received, login without redirect');
-        // Even without session URL, the verification was successful
-        return {
-          userId: 'verified',
-          email: 'verified'
-        };
       }
+      
+      throw new Error('No session URL provided');
       
     } catch (error: any) {
       console.error('Phone login failed:', error);

@@ -93,7 +93,13 @@ serve(async (req) => {
     if (type === 'verification') {
       console.log('Generating verification code for phone:', normalizedPhone)
       
-      // Get current user (if authenticated) - needed for both test and regular flows
+      // Generate 6-digit verification code
+      verificationCode = Math.floor(100000 + Math.random() * 900000).toString()
+      smsMessage = `קוד האימות שלך במחציות פלוס: ${verificationCode}`
+
+      console.log('Generated verification code:', verificationCode)
+
+      // Get current user (if authenticated)
       const authHeader = req.headers.get('Authorization')
       let userId = null
       
@@ -111,55 +117,6 @@ serve(async (req) => {
       } else {
         console.log('No auth header - registration flow')
       }
-      
-      // Test phone number configuration
-      const TEST_PHONE_NUMBER = '+972501234567'; // מספר קבוע לבדיקות
-      const TEST_VERIFICATION_CODE = '123456';
-      
-      // בדיקה אם זה מספר הבדיקה
-      if (normalizedPhone === TEST_PHONE_NUMBER) {
-        verificationCode = TEST_VERIFICATION_CODE;
-        smsMessage = `קוד האימות שלך במחציות פלוס: ${verificationCode} (בדיקה)`;
-        console.log('Using test verification code for test phone number');
-        
-        // שמירה בבסיס הנתונים (אבל בלי שליחת SMS אמיתי)
-        const { error: dbError } = await supabase
-          .from('sms_verification_codes')
-          .insert({
-            user_id: userId,
-            phone_number: normalizedPhone,
-            code: verificationCode,
-            expires_at: new Date(Date.now() + 10 * 60 * 1000).toISOString() // 10 minutes
-          });
-
-        if (dbError) {
-          console.error('Error storing test verification code:', dbError);
-          throw new Error('Failed to store verification code');
-        }
-        
-        console.log('Test verification code stored successfully');
-        
-        // החזרת תגובה מוצלחת בלי שליחת SMS
-        return new Response(
-          JSON.stringify({ 
-            success: true, 
-            messageSid: 'test-message-sid',
-            phoneNumber: normalizedPhone,
-            verificationCode: verificationCode,
-            isTestMode: true
-          }),
-          {
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-            status: 200,
-          }
-        );
-      }
-      
-      // עבור מספרים רגילים - יצירת קוד רנדומלי
-      verificationCode = Math.floor(100000 + Math.random() * 900000).toString()
-      smsMessage = `קוד האימות שלך במחציות פלוס: ${verificationCode}`
-
-      console.log('Generated verification code:', verificationCode)
 
       console.log('Storing verification code in database...')
       

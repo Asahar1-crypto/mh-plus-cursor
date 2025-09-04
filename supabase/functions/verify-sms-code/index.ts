@@ -207,49 +207,25 @@ serve(async (req) => {
         );
       }
 
-      // For phone-only users, we need to create a session differently
-      if (!authUser.user.email) {
-        // Create a session token for phone-only users
-        const { data: sessionResult, error: sessionError } = await supabase.auth.admin
-          .generateLink({
-            type: 'signup',
-            phone: authUser.user.phone!,
-            options: {
-              redirectTo: `${Deno.env.get('SUPABASE_URL')}/auth/v1/callback`
-            }
-          });
+      // Generate session tokens for the user
+      const { data: sessionResult, error: sessionError } = await supabase.auth.admin
+        .generateLink({
+          type: 'magiclink',
+          email: authUser.user.email!,
+          options: {
+            redirectTo: `${Deno.env.get('SUPABASE_URL')}/auth/v1/callback`
+          }
+        });
 
-        if (sessionError) {
-          console.error('Error generating phone session:', sessionError);
-        } else {
-          sessionData = {
-            userId: authUser.user.id,
-            phone: authUser.user.phone,
-            sessionUrl: sessionResult.properties?.action_link
-          };
-          console.log('Phone session created successfully for user:', authUser.user.id);
-        }
+      if (sessionError) {
+        console.error('Error generating session:', sessionError);
       } else {
-        // Generate session tokens for email users
-        const { data: sessionResult, error: sessionError } = await supabase.auth.admin
-          .generateLink({
-            type: 'magiclink',
-            email: authUser.user.email,
-            options: {
-              redirectTo: `${Deno.env.get('SUPABASE_URL')}/auth/v1/callback`
-            }
-          });
-
-        if (sessionError) {
-          console.error('Error generating session:', sessionError);
-        } else {
-          sessionData = {
-            userId: authUser.user.id,
-            email: authUser.user.email,
-            sessionUrl: sessionResult.properties?.action_link
-          };
-          console.log('Session created successfully for user:', authUser.user.id);
-        }
+        sessionData = {
+          userId: authUser.user.id,
+          email: authUser.user.email,
+          sessionUrl: sessionResult.properties?.action_link
+        };
+        console.log('Session created successfully for user:', authUser.user.id);
       }
     }
 

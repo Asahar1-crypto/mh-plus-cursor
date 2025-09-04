@@ -1,6 +1,5 @@
 
 import React, { ReactNode, useEffect, useState } from 'react';
-import { toast } from 'sonner';
 import { AuthContext } from './AuthContext';
 import { useAuthState } from './hooks/useAuthState';
 import { useAuthActions } from './hooks/useAuthActions';
@@ -90,18 +89,10 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const loginWithPhone = async (phoneNumber: string, otp: string) => {
     setIsLoading(true);
     try {
-      console.log('Starting phone login...');
       const result = await phoneAuthService.phoneLogin(phoneNumber, otp);
-      console.log('Phone login completed, result:', result);
-      
       // After successful phone login, check and set user data
-      console.log('Checking and setting user data after phone login...');
       await checkAndSetUserData();
-      console.log('User data updated successfully after phone login');
-      
-      toast.success('התחברת בהצלחה עם הטלפון!');
     } catch (error) {
-      console.error('Phone login failed:', error);
       throw error;
     } finally {
       setIsLoading(false);
