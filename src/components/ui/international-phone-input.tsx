@@ -108,15 +108,17 @@ const InternationalPhoneInput = forwardRef<HTMLInputElement, InternationalPhoneI
         </label>
 
         {/* Input Container */}
-        <div className="flex gap-2">
-          {/* Country Selector */}
-          <CountrySelector
-            value={selectedCountry}
-            onChange={handleCountryChange}
-            disabled={props.disabled}
-          />
+        <div className="flex gap-3">
+          {/* Country Selector - wider */}
+          <div className="w-32">
+            <CountrySelector
+              value={selectedCountry}
+              onChange={handleCountryChange}
+              disabled={props.disabled}
+            />
+          </div>
 
-          {/* Phone Input */}
+          {/* Phone Input - takes remaining space */}
           <div className={cn(
             "relative flex items-center flex-1 transition-all duration-300",
             "glass rounded-xl hover:shadow-glow group-hover:scale-[1.02]",
@@ -134,8 +136,8 @@ const InternationalPhoneInput = forwardRef<HTMLInputElement, InternationalPhoneI
               type="tel"
               className={cn(
                 "w-full bg-transparent border-none outline-none transition-all duration-300",
-                "h-14 text-sm placeholder-transparent",
-                "pl-12 pr-4",
+                "h-14 text-base placeholder-transparent font-medium",
+                "pl-12 pr-12",
                 className
               )}
               ref={ref}

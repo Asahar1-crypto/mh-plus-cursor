@@ -38,23 +38,23 @@ export function CountrySelector({ value, onChange, disabled }: CountrySelectorPr
           role="combobox"
           aria-expanded={open}
           className={cn(
-            "justify-between h-14 px-3 rounded-xl border-border/30",
+            "w-full justify-between h-14 px-3 rounded-xl border-border/30",
             "glass hover:shadow-glow transition-all duration-300",
             "focus:ring-2 focus:ring-primary/50 focus:ring-offset-2",
             disabled && "opacity-50 cursor-not-allowed"
           )}
           disabled={disabled}
         >
-          <div className="flex items-center gap-2">
-            <span className="text-lg">{selectedCountry?.flag}</span>
-            <span className="text-sm font-medium">
+          <div className="flex items-center gap-2 min-w-0">
+            <span className="text-xl flex-shrink-0">{selectedCountry?.flag}</span>
+            <span className="text-sm font-medium truncate">
               {selectedCountry?.callingCode}
             </span>
           </div>
           <ChevronDown className="h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-[280px] p-0" align="start">
+      <PopoverContent className="w-[320px] p-0" align="start">
         <Command>
           <CommandInput 
             placeholder="חפש מדינה..." 
@@ -72,20 +72,20 @@ export function CountrySelector({ value, onChange, disabled }: CountrySelectorPr
                   }}
                   className="flex items-center justify-between"
                 >
-                  <div className="flex items-center gap-3">
-                    <span className="text-lg">{country.flag}</span>
-                    <div className="flex flex-col">
-                      <span className="text-sm font-medium">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <span className="text-xl flex-shrink-0">{country.flag}</span>
+                    <div className="flex flex-col min-w-0 flex-1">
+                      <span className="text-sm font-medium truncate">
                         {country.nameHe || country.name}
                       </span>
-                      <span className="text-xs text-muted-foreground">
+                      <span className="text-xs text-muted-foreground truncate">
                         {country.name} ({country.callingCode})
                       </span>
                     </div>
                   </div>
                   <Check
                     className={cn(
-                      "mr-2 h-4 w-4",
+                      "ml-2 h-4 w-4 flex-shrink-0",
                       value === country.code ? "opacity-100" : "opacity-0"
                     )}
                   />
