@@ -6,7 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { ModernInput } from '@/components/ui/modern-input';
 import { ModernButton } from '@/components/ui/modern-button';
-import { SmartPhoneInput } from '@/components/ui/smart-phone-input';
+import { InternationalPhoneInput } from '@/components/ui/international-phone-input';
 import AnimatedBackground from '@/components/ui/animated-background';
 import { useAuth } from '@/contexts/auth';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
@@ -18,7 +18,10 @@ import { CelebrationModal } from '@/components/ui/celebration-modal';
 const registerSchema = z.object({
   name: z.string().min(2, { message: 'שם חייב להיות לפחות 2 תווים' }),
   email: z.string().email({ message: 'אימייל לא תקין' }),
-  phoneNumber: z.string().min(10, { message: 'מספר טלפון חייב להיות לפחות 10 ספרות' }),
+  phoneNumber: z.string().min(8, { message: 'מספר טלפון חייב להיות תקין' }).refine((phone) => {
+    // Allow international phone numbers in E.164 format
+    return phone.startsWith('+') && phone.length >= 10 && phone.length <= 15;
+  }, { message: 'מספר טלפון חייב להיות בפורמט בינלאומי תקין' }),
   password: z.string().min(6, { message: 'סיסמה חייבת להיות לפחות 6 תווים' }),
   confirmPassword: z.string().min(6, { message: 'סיסמה חייבת להיות לפחות 6 תווים' }),
 }).refine((data) => data.password === data.confirmPassword, {
@@ -216,11 +219,11 @@ const Register = () => {
                   validationMessage={form.formState.errors.email?.message}
                 />
                 
-                <SmartPhoneInput
+                <InternationalPhoneInput
                   label="מספר טלפון"
                   value={form.watch('phoneNumber')}
                   onChange={(value) => form.setValue('phoneNumber', value)}
-                  validation={form.formState.errors.phoneNumber ? 'invalid' : form.watch('phoneNumber') && form.watch('phoneNumber').length >= 10 ? 'valid' : 'none'}
+                  validation={form.formState.errors.phoneNumber ? 'invalid' : form.watch('phoneNumber') && form.watch('phoneNumber').startsWith('+') && form.watch('phoneNumber').length >= 10 ? 'valid' : 'none'}
                   validationMessage={form.formState.errors.phoneNumber?.message}
                 />
                 
