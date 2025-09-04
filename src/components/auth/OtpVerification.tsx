@@ -103,6 +103,13 @@ const OtpVerification: React.FC<OtpVerificationProps> = ({
       fireConfetti();
       setShowCelebration(true);
       
+      // Auto-close celebration and navigate after 3 seconds
+      setTimeout(() => {
+        setShowCelebration(false);
+        onSuccess();
+        navigate('/dashboard');
+      }, 3000);
+      
     } catch (error: any) {
       console.error('OTP verification failed:', error);
       setError('קוד שגוי או פג תוקף');
