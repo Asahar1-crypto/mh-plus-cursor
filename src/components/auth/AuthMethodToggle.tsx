@@ -13,48 +13,76 @@ const AuthMethodToggle: React.FC<AuthMethodToggleProps> = ({
   disabled = false 
 }) => {
   return (
-    <div className="relative w-full bg-muted/50 rounded-xl p-1 backdrop-blur-sm">
-      <div className="relative flex">
-        {/* Background Slider */}
-        <div 
-          className={`absolute top-1 bottom-1 w-1/2 bg-gradient-to-r from-primary to-primary-glow rounded-lg shadow-lg transition-all duration-300 ease-out ${
-            method === 'phone' ? 'translate-x-0' : 'translate-x-full'
-          }`}
-        />
+    <div className="grid grid-cols-2 gap-3 w-full">
+      {/* Email Option */}
+      <button
+        type="button"
+        onClick={() => !disabled && onChange('email')}
+        disabled={disabled}
+        className={`relative group flex flex-col items-center justify-center py-4 px-6 rounded-2xl border-2 transition-all duration-300 ease-out ${
+          method === 'email' 
+            ? 'border-primary bg-gradient-to-br from-primary/5 to-primary-glow/5 shadow-lg shadow-primary/20' 
+            : 'border-border bg-card hover:border-primary/30 hover:bg-gradient-to-br hover:from-primary/5 hover:to-primary-glow/5'
+        } ${disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer hover-scale'}`}
+      >
+        <div className={`p-3 rounded-full mb-3 transition-all duration-300 ${
+          method === 'email' 
+            ? 'bg-gradient-to-br from-primary to-primary-glow text-white shadow-lg shadow-primary/30' 
+            : 'bg-muted text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary'
+        }`}>
+          <Mail className={`w-5 h-5 ${method === 'email' ? 'animate-pulse' : ''}`} />
+        </div>
+        <span className={`text-sm font-semibold transition-colors duration-300 ${
+          method === 'email' ? 'text-primary' : 'text-foreground group-hover:text-primary'
+        }`}>
+          אימייל וסיסמה
+        </span>
+        <span className={`text-xs mt-1 transition-colors duration-300 ${
+          method === 'email' ? 'text-primary/70' : 'text-muted-foreground'
+        }`}>
+          התחברות מסורתית
+        </span>
         
-        {/* Email Option */}
-        <button
-          type="button"
-          onClick={() => !disabled && onChange('email')}
-          disabled={disabled}
-          className={`relative z-10 flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-lg transition-all duration-200 ${
-            method === 'email' 
-              ? 'text-white font-semibold shadow-lg' 
-              : 'text-muted-foreground hover:text-foreground'
-          } ${disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`}
-        >
-          <Mail className={`w-4 h-4 ${method === 'email' ? 'animate-pulse' : ''}`} />
-          <span className="text-sm font-medium">אימייל וסיסמה</span>
-        </button>
-        
-        {/* Phone Option */}
-        <button
-          type="button"
-          onClick={() => !disabled && onChange('phone')}
-          disabled={disabled}
-          className={`relative z-10 flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-lg transition-all duration-200 ${
-            method === 'phone' 
-              ? 'text-white font-semibold shadow-lg' 
-              : 'text-muted-foreground hover:text-foreground'
-          } ${disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`}
-        >
-          <Smartphone className={`w-4 h-4 ${method === 'phone' ? 'animate-pulse' : ''}`} />
-          <span className="text-sm font-medium">מספר טלפון</span>
-        </button>
-      </div>
+        {/* Selected indicator */}
+        {method === 'email' && (
+          <div className="absolute -top-1 -right-1 w-3 h-3 bg-gradient-to-br from-primary to-primary-glow rounded-full shadow-lg animate-scale-in" />
+        )}
+      </button>
       
-      {/* Subtle glow effect */}
-      <div className="absolute inset-0 bg-gradient-to-r from-primary/10 to-primary-glow/10 rounded-xl opacity-50 blur-xl" />
+      {/* Phone Option */}
+      <button
+        type="button"
+        onClick={() => !disabled && onChange('phone')}
+        disabled={disabled}
+        className={`relative group flex flex-col items-center justify-center py-4 px-6 rounded-2xl border-2 transition-all duration-300 ease-out ${
+          method === 'phone' 
+            ? 'border-primary bg-gradient-to-br from-primary/5 to-primary-glow/5 shadow-lg shadow-primary/20' 
+            : 'border-border bg-card hover:border-primary/30 hover:bg-gradient-to-br hover:from-primary/5 hover:to-primary-glow/5'
+        } ${disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer hover-scale'}`}
+      >
+        <div className={`p-3 rounded-full mb-3 transition-all duration-300 ${
+          method === 'phone' 
+            ? 'bg-gradient-to-br from-primary to-primary-glow text-white shadow-lg shadow-primary/30' 
+            : 'bg-muted text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary'
+        }`}>
+          <Smartphone className={`w-5 h-5 ${method === 'phone' ? 'animate-pulse' : ''}`} />
+        </div>
+        <span className={`text-sm font-semibold transition-colors duration-300 ${
+          method === 'phone' ? 'text-primary' : 'text-foreground group-hover:text-primary'
+        }`}>
+          מספר טלפון
+        </span>
+        <span className={`text-xs mt-1 transition-colors duration-300 ${
+          method === 'phone' ? 'text-primary/70' : 'text-muted-foreground'
+        }`}>
+          התחברות מהירה
+        </span>
+        
+        {/* Selected indicator */}
+        {method === 'phone' && (
+          <div className="absolute -top-1 -right-1 w-3 h-3 bg-gradient-to-br from-primary to-primary-glow rounded-full shadow-lg animate-scale-in" />
+        )}
+      </button>
     </div>
   );
 };
