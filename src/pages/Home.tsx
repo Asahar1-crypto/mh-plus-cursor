@@ -22,8 +22,8 @@ const Home = () => {
           {/* Single central character */}
           <div className="flex justify-center mb-8">
             <img 
-              src="/lovable-uploads/e9bf6f60-cc06-4718-96eb-f82128689408.png" 
-              alt="דמות ארנק חברותית" 
+              src="/lovable-uploads/b7cd8e98-a68b-4c5a-8bb4-452071ab5020.png" 
+              alt="משפחת הארנקים" 
               className="w-32 md:w-40 lg:w-48 h-auto hover-scale drop-shadow-lg"
             />
           </div>
