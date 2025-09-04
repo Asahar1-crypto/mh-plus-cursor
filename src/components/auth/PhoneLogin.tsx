@@ -189,19 +189,32 @@ const PhoneLogin: React.FC<PhoneLoginProps> = ({ onBack }) => {
   });
 
   return (
-    <Card className="border-border shadow-lg animate-fade-in glass">
+    <Card className="border-border shadow-lg animate-fade-in glass shadow-card">
       <CardHeader className="text-center">
+        {/* Mobile wallet characters */}
+        <div className="lg:hidden flex justify-center gap-4 mb-4">
+          <img 
+            src="/lovable-uploads/3a973532-2477-462a-9a84-0390b7045844.png" 
+            alt="Red Wallet Character" 
+            className="w-28 h-28 object-contain animate-bounce [animation-duration:2s]"
+          />
+          <img 
+            src="/lovable-uploads/3d7094a5-211e-416b-a8c4-8fd864c98499.png" 
+            alt="Green Wallet Character" 
+            className="w-28 h-28 object-contain animate-bounce [animation-duration:2s] [animation-delay:0.3s]"
+          />
+        </div>
         <div className="flex items-center justify-center gap-2 mb-2">
-          <Smartphone className="w-6 h-6 text-primary" />
+          <Smartphone className="w-6 h-6 text-primary animate-pulse" />
           <CardTitle className="text-2xl font-bold bg-gradient-to-r from-primary to-primary-glow bg-clip-text text-transparent">
             התחברות עם טלפון
           </CardTitle>
         </div>
         <CardDescription>
-          הזן את מספר הטלפון הרשום כבר במערכת לקבלת קוד אימות
+          הזן את מספר הטלפון הרשום כבר במערכת
           <br />
           <span className="text-sm text-muted-foreground">
-            אם עדיין לא נרשמת, <Link to="/register" className="text-primary hover:underline">לחץ כאן להירשם</Link>
+            אם עדיין לא נרשמת, <Link to="/register" className="text-primary hover:text-primary-glow hover:underline">לחץ כאן להירשם</Link>
           </span>
         </CardDescription>
       </CardHeader>
