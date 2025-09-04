@@ -101,14 +101,15 @@ serve(async (req) => {
       const { data: authUser, error: authError } = await supabase.auth.admin.createUser({
         phone: normalizedPhone,
         phone_confirmed: false,
-        email_confirmed: false
+        email_confirmed: false,
+        email: `temp_${Date.now()}@temp.com` // Temporary email for Supabase requirement
       });
 
       if (authError || !authUser.user) {
         console.error('Error creating auth user:', authError?.message || 'Unknown error');
         console.log('Full error details:', authError);
         return new Response(
-          JSON.stringify({ error: 'Failed to create user account: ' + (authError?.message || 'Unknown error') }),
+          JSON.stringify({ error: 'Failed to create user account: ' + (authError?.message || 'Database error creating new user') }),
           { 
             status: 500,
             headers: { ...corsHeaders, 'Content-Type': 'application/json' }
