@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { ArrowLeft, Search, Users, Calendar, DollarSign, MoreHorizontal, RefreshCw, Eye, Activity, Database, Trash2, UserMinus, UserPlus } from 'lucide-react';
+import { InvitationsSection } from '@/components/admin/InvitationsSection';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/auth';
@@ -895,6 +896,9 @@ const AdminTenants: React.FC = () => {
             </CardContent>
           </Card>
         )}
+
+        {/* Invitations Section */}
+        <InvitationsSection />
 
         {/* Delete Tenant Dialog */}
         <AlertDialog open={deleteDialog.open} onOpenChange={(open) => {
