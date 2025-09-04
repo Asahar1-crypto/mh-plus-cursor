@@ -166,7 +166,7 @@ const OtpVerification: React.FC<OtpVerificationProps> = ({
         <CardContent className="space-y-6">
           {/* OTP Input Fields */}
           <div className="space-y-4">
-            <div className="flex justify-center gap-3" onPaste={handlePaste}>
+            <div className="flex justify-center gap-3" onPaste={handlePaste} dir="ltr">
               {[0, 1, 2, 3, 4, 5].map((index) => (
                 <Input
                   key={index}
@@ -180,6 +180,7 @@ const OtpVerification: React.FC<OtpVerificationProps> = ({
                   className={`w-12 h-12 text-center text-xl font-bold border-2 transition-all duration-200 ${
                     otpCode[index] ? 'border-primary shadow-glow' : 'border-muted'
                   } ${error ? 'border-destructive' : ''} focus:border-primary focus:shadow-glow`}
+                  dir="ltr"
                 />
               ))}
             </div>
