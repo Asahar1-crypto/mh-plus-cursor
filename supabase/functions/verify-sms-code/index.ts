@@ -184,7 +184,7 @@ serve(async (req) => {
 
     console.log('SMS verification successful for phone:', phoneNumber)
 
-    // If this is a login verification, we need to create a Supabase session
+    // If this is a login verification, we need to create access tokens
     let sessionData = null;
     if (verificationType === 'login' && verificationData.user_id) {
       console.log('Creating session for login verification...');
@@ -207,29 +207,31 @@ serve(async (req) => {
         );
       }
 
-      // Get the correct origin - always use the sandbox URL for now
-      const dashboardUrl = 'https://e01ecbfb-5c0d-44e9-b818-1374636e60ff.sandbox.lovable.dev/dashboard';
-      console.log('Using dashboard URL:', dashboardUrl);
-      
-      // Generate session tokens for the user
+      // Create a session directly
       const { data: sessionResult, error: sessionError } = await supabase.auth.admin
         .generateLink({
           type: 'magiclink',
-          email: authUser.user.email!,
-          options: {
-            redirectTo: dashboardUrl
-          }
+          email: authUser.user.email!
         });
 
       if (sessionError) {
         console.error('Error generating session:', sessionError);
       } else {
-        sessionData = {
-          userId: authUser.user.id,
-          email: authUser.user.email,
-          sessionUrl: sessionResult.properties?.action_link
-        };
-        console.log('Session created successfully for user:', authUser.user.id);
+        // Extract the tokens from the magic link
+        const url = new URL(sessionResult.properties?.action_link || '');
+        const accessToken = url.searchParams.get('access_token');
+        const refreshToken = url.searchParams.get('refresh_token');
+        
+        if (accessToken && refreshToken) {
+          sessionData = {
+            access_token: accessToken,
+            refresh_token: refreshToken,
+            expires_in: 3600,
+            token_type: 'bearer',
+            user: authUser.user
+          };
+          console.log('Session tokens created successfully for user:', authUser.user.id);
+        }
       }
     }
 

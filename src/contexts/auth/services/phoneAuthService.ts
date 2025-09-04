@@ -57,7 +57,7 @@ export const phoneAuthService = {
   /**
    * Verify OTP for phone login
    */
-  verifyPhoneLoginOtp: async (phoneNumber: string, code: string): Promise<{ success: boolean; sessionUrl?: string; session?: any }> => {
+  verifyPhoneLoginOtp: async (phoneNumber: string, code: string): Promise<{ success: boolean; session?: any }> => {
     try {
       console.log(`Verifying login OTP for: ${phoneNumber}`);
       
@@ -87,7 +87,6 @@ export const phoneAuthService = {
       console.log('Login OTP verified successfully');
       return {
         success: true,
-        sessionUrl: data.session?.sessionUrl,
         session: data.session
       };
     } catch (error: any) {
@@ -106,42 +105,43 @@ export const phoneAuthService = {
     }
   },
 
-  /**
-   * Complete phone login process
-   */
   phoneLogin: async (phoneNumber: string, otp: string): Promise<{ userId: string; email: string }> => {
     try {
       console.log(`Completing phone login for: ${phoneNumber}`);
       
       const result = await phoneAuthService.verifyPhoneLoginOtp(phoneNumber, otp);
       
-      if (!result.success || !result.sessionUrl) {
-        throw new Error('Failed to create session');
+      if (!result.success) {
+        throw new Error('Failed to verify OTP');
       }
 
-      // Navigate to the session URL to establish the session
-      console.log('Session URL received:', result.sessionUrl);
-      
-      // Use the session URL to establish authentication
-      if (result.sessionUrl) {
-        console.log('Phone login successful! Redirecting to session URL:', result.sessionUrl);
-        console.log('Session data received:', result.session);
+      // If we got session tokens, use them directly
+      if (result.session && result.session.access_token) {
+        console.log('Setting session from tokens');
         
-        // Store session info for debugging
-        sessionStorage.setItem('phoneLoginSuccess', 'true');
-        sessionStorage.setItem('sessionUrl', result.sessionUrl);
+        // Import supabase here to avoid circular dependencies
+        const { supabase } = await import('@/integrations/supabase/client');
         
-        // Redirect to the magic link
-        window.location.href = result.sessionUrl;
+        // Set the session using the tokens
+        const { data: sessionData, error: sessionError } = await supabase.auth.setSession({
+          access_token: result.session.access_token,
+          refresh_token: result.session.refresh_token
+        });
         
-        // Return a success state while redirecting
+        if (sessionError) {
+          console.error('Error setting session:', sessionError);
+          throw new Error('Failed to create session');
+        }
+        
+        console.log('Session set successfully:', sessionData.session?.user?.id);
+        
         return {
-          userId: result.session?.userId || 'authenticated', 
-          email: result.session?.email || 'authenticated'
+          userId: sessionData.session?.user?.id || 'authenticated',
+          email: sessionData.session?.user?.email || 'authenticated'
         };
       }
       
-      throw new Error('No session URL provided');
+      throw new Error('No session tokens received');
       
     } catch (error: any) {
       console.error('Phone login failed:', error);
