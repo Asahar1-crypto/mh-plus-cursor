@@ -95,71 +95,29 @@ serve(async (req) => {
     let userProfile = profile;
     
     if (!profile) {
-      console.log('Phone number not found in profiles - creating new user');
+      console.log('Phone number not found in profiles - checking auth.users');
       
-      // Create a new user in auth.users with phone number
-      const { data: authUser, error: authError } = await supabase.auth.admin.createUser({
-        phone: normalizedPhone,
-        phone_confirmed: false,
-        email_confirmed: false,
-        email: `temp_${Date.now()}@temp.com` // Temporary email for Supabase requirement
-      });
-
-      if (authError || !authUser.user) {
-        console.error('Error creating auth user:', authError?.message || 'Unknown error');
-        console.log('Full error details:', authError);
-        return new Response(
-          JSON.stringify({ error: 'Failed to create user account: ' + (authError?.message || 'Database error creating new user') }),
-          { 
-            status: 500,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-          }
-        );
+      // First check if user exists in auth.users with this phone number
+      const { data: existingUser, error: userCheckError } = await supabase.auth.admin.listUsers();
+      
+      let authUser = null;
+      if (existingUser?.users) {
+        authUser = existingUser.users.find(user => user.phone === normalizedPhone);
       }
-
-      console.log('Auth user created successfully:', authUser.user.id);
-
-      // Check if profile was created automatically by trigger
-      await new Promise(resolve => setTimeout(resolve, 100)); // Small delay for trigger to complete
       
-      const { data: existingProfile } = await supabase
-        .from('profiles')
-        .select('id, name, phone_number')
-        .eq('id', authUser.user.id)
-        .maybeSingle();
-
-      if (existingProfile) {
-        console.log('Profile already exists from trigger:', existingProfile);
+      if (authUser) {
+        console.log('User exists in auth.users but not in profiles, creating profile');
+        userProfile = {
+          id: authUser.id,
+          name: `משתמש ${normalizedPhone.slice(-4)}`,
+          phone_number: normalizedPhone
+        };
         
-        // Update the phone number if needed
-        const { data: updatedProfile, error: updateError } = await supabase
-          .from('profiles')
-          .update({ 
-            phone_number: normalizedPhone,
-            name: existingProfile.name || `משתמש ${normalizedPhone.slice(-4)}`
-          })
-          .eq('id', authUser.user.id)
-          .select('id, name, phone_number')
-          .single();
-
-        if (updateError) {
-          console.error('Error updating profile:', updateError);
-          return new Response(
-            JSON.stringify({ error: 'Failed to update user profile' }),
-            { 
-              status: 500,
-              headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-            }
-          );
-        }
-        
-        userProfile = updatedProfile;
-      } else {
-        // Create profile manually if trigger didn't work
+        // Create missing profile
         const { data: newProfile, error: profileCreateError } = await supabase
           .from('profiles')
           .insert({
-            id: authUser.user.id,
+            id: authUser.id,
             phone_number: normalizedPhone,
             name: `משתמש ${normalizedPhone.slice(-4)}`
           })
@@ -167,9 +125,27 @@ serve(async (req) => {
           .single();
 
         if (profileCreateError) {
-          console.error('Error creating profile:', profileCreateError);
+          console.error('Error creating missing profile:', profileCreateError);
+          // Continue anyway with the user data we have
+        } else {
+          userProfile = newProfile;
+        }
+      } else {
+        console.log('Creating completely new user');
+        
+        // Create a new user in auth.users with phone number
+        const { data: newAuthUser, error: authError } = await supabase.auth.admin.createUser({
+          phone: normalizedPhone,
+          phone_confirmed: false,
+          email_confirmed: false,
+          email: `phone_${normalizedPhone.replace(/[^0-9]/g, '')}@temp-phone.local` // Unique temp email
+        });
+
+        if (authError || !newAuthUser.user) {
+          console.error('Error creating auth user:', authError?.message || 'Unknown error');
+          console.log('Full error details:', authError);
           return new Response(
-            JSON.stringify({ error: 'Failed to create user profile: ' + profileCreateError.message }),
+            JSON.stringify({ error: 'Failed to create user account: ' + (authError?.message || 'Database error creating new user') }),
             { 
               status: 500,
               headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -177,7 +153,68 @@ serve(async (req) => {
           );
         }
 
-        userProfile = newProfile;
+        console.log('Auth user created successfully:', newAuthUser.user.id);
+
+        // Check if profile was created automatically by trigger
+        await new Promise(resolve => setTimeout(resolve, 100)); // Small delay for trigger to complete
+        
+        const { data: existingProfile } = await supabase
+          .from('profiles')
+          .select('id, name, phone_number')
+          .eq('id', newAuthUser.user.id)
+          .maybeSingle();
+
+        if (existingProfile) {
+          console.log('Profile already exists from trigger:', existingProfile);
+          
+          // Update the phone number if needed
+          const { data: updatedProfile, error: updateError } = await supabase
+            .from('profiles')
+            .update({ 
+              phone_number: normalizedPhone,
+              name: existingProfile.name || `משתמש ${normalizedPhone.slice(-4)}`
+            })
+            .eq('id', newAuthUser.user.id)
+            .select('id, name, phone_number')
+            .single();
+
+          if (updateError) {
+            console.error('Error updating profile:', updateError);
+            return new Response(
+              JSON.stringify({ error: 'Failed to update user profile' }),
+              { 
+                status: 500,
+                headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+              }
+            );
+          }
+          
+          userProfile = updatedProfile;
+        } else {
+          // Create profile manually if trigger didn't work
+          const { data: newProfile, error: profileCreateError } = await supabase
+            .from('profiles')
+            .insert({
+              id: newAuthUser.user.id,
+              phone_number: normalizedPhone,
+              name: `משתמש ${normalizedPhone.slice(-4)}`
+            })
+            .select('id, name, phone_number')
+            .single();
+
+          if (profileCreateError) {
+            console.error('Error creating profile:', profileCreateError);
+            return new Response(
+              JSON.stringify({ error: 'Failed to create user profile: ' + profileCreateError.message }),
+              { 
+                status: 500,
+                headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+              }
+            );
+          }
+
+          userProfile = newProfile;
+        }
       }
     }
 
