@@ -192,16 +192,6 @@ const PhoneLogin: React.FC<PhoneLoginProps> = ({ onBack, hideHeader = false }) =
   if (hideHeader) {
     return (
       <div className="space-y-6">
-        <div className="text-center mb-4">
-          <p className="text-sm text-muted-foreground">
-            הזן את מספר הטלפון הרשום כבר במערכת
-            <br />
-            <span className="text-xs text-muted-foreground">
-              אם עדיין לא נרשמת, <Link to="/register" className="text-primary hover:text-primary-glow hover:underline">לחץ כאן להירשם</Link>
-            </span>
-          </p>
-        </div>
-        
         <div className="space-y-2">
           <Label htmlFor="phoneNumber" className="text-sm font-medium">
             מספר טלפון
