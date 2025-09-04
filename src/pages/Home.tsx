@@ -10,22 +10,8 @@ const Home = () => {
   return (
     <div className="min-h-screen bg-background">
       {/* Hero Section */}
-      <section className="pt-16 pb-24 md:py-32 text-center relative overflow-hidden">
-        <div className="container mx-auto px-4 relative z-10">
-          {/* Characters decorating the hero - positioned better */}
-          <div className="hidden xl:block">
-            <img 
-              src="/lovable-uploads/e9bf6f60-cc06-4718-96eb-f82128689408.png" 
-              alt="דמות כחולה" 
-              className="absolute top-32 left-10 w-32 h-32 animate-float opacity-80"
-            />
-            <img 
-              src="/lovable-uploads/16c3e8be-95e7-4147-9c81-dc24247fa58c.png" 
-              alt="דמות כתומה" 
-              className="absolute top-40 right-10 w-28 h-28 animate-pulse-slow opacity-80"
-            />
-          </div>
-          
+      <section className="pt-16 pb-24 md:py-32 text-center">
+        <div className="container mx-auto px-4">
           <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold mb-4">
             נהל <span className="text-primary">הוצאות משותפות</span><br />בקלות וביעילות
           </h1>
@@ -33,25 +19,12 @@ const Home = () => {
             מערכת "מחציות פלוס" מאפשרת להורים לנהל הוצאות משותפות עבור ילדיהם בצורה פשוטה ושקופה
           </p>
           
-          {/* Central character group - better sized */}
-          <div className="flex justify-center mb-8 relative">
+          {/* Single central character */}
+          <div className="flex justify-center mb-8">
             <img 
-              src="/lovable-uploads/74997e51-710c-4192-a927-7698afbc6d49.png" 
-              alt="משפחת הארנקים" 
-              className="w-72 md:w-80 lg:w-96 h-auto hover-scale drop-shadow-lg"
-            />
-            {/* Small floating characters around the main group */}
-            <img 
-              src="/lovable-uploads/2ce97581-2c68-491a-9df0-47c4edbaddc4.png" 
-              alt="דמות ירוקה" 
-              className="absolute -bottom-4 -left-8 w-20 h-20 animate-float opacity-90" 
-              style={{ animationDelay: '1s' }}
-            />
-            <img 
-              src="/lovable-uploads/d2d49bed-0cde-460a-8acc-c1f45e11f633.png" 
-              alt="דמות אדומה" 
-              className="absolute -bottom-4 -right-8 w-18 h-18 animate-pulse-slow opacity-90" 
-              style={{ animationDelay: '0.5s' }}
+              src="/lovable-uploads/e9bf6f60-cc06-4718-96eb-f82128689408.png" 
+              alt="דמות ארנק חברותית" 
+              className="w-32 md:w-40 lg:w-48 h-auto hover-scale drop-shadow-lg"
             />
           </div>
           
@@ -71,7 +44,7 @@ const Home = () => {
         <div className="container mx-auto px-4">
           <h2 className="text-3xl font-bold text-center mb-12">למה להשתמש במחציות פלוס?</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            <div className="bg-card p-6 rounded-lg shadow-sm border border-border relative group hover:shadow-md transition-shadow">
+            <div className="bg-card p-6 rounded-lg shadow-sm border border-border">
               <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center mb-4">
                 <CheckCircle className="h-6 w-6 text-primary" />
               </div>
@@ -79,14 +52,8 @@ const Home = () => {
               <p className="text-muted-foreground">
                 הזנה מהירה של הוצאות, שיוך לילדים ספציפיים וסיווג לפי קטגוריות
               </p>
-              {/* Small character positioned better */}
-              <img 
-                src="/lovable-uploads/e9bf6f60-cc06-4718-96eb-f82128689408.png" 
-                alt="דמות כחולה" 
-                className="absolute -top-2 -right-2 w-12 h-12 opacity-60 group-hover:opacity-100 group-hover:animate-bounce transition-all"
-              />
             </div>
-            <div className="bg-card p-6 rounded-lg shadow-sm border border-border relative group hover:shadow-md transition-shadow">
+            <div className="bg-card p-6 rounded-lg shadow-sm border border-border">
               <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center mb-4">
                 <CheckCircle className="h-6 w-6 text-primary" />
               </div>
@@ -94,13 +61,8 @@ const Home = () => {
               <p className="text-muted-foreground">
                 שיתוף מלא בין ההורים, תיעוד כל פעולה, ושקיפות מלאה בכל ההוצאות
               </p>
-              <img 
-                src="/lovable-uploads/16c3e8be-95e7-4147-9c81-dc24247fa58c.png" 
-                alt="דמות כתומה" 
-                className="absolute -top-2 -right-2 w-12 h-12 opacity-60 group-hover:opacity-100 group-hover:animate-bounce transition-all"
-              />
             </div>
-            <div className="bg-card p-6 rounded-lg shadow-sm border border-border relative group hover:shadow-md transition-shadow">
+            <div className="bg-card p-6 rounded-lg shadow-sm border border-border">
               <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center mb-4">
                 <CheckCircle className="h-6 w-6 text-primary" />
               </div>
@@ -108,11 +70,6 @@ const Home = () => {
               <p className="text-muted-foreground">
                 מעקב אחר תשלומים, חישוב חלוקת הוצאות הוגנת, דוחות התחשבנות חודשיים
               </p>
-              <img 
-                src="/lovable-uploads/2ce97581-2c68-491a-9df0-47c4edbaddc4.png" 
-                alt="דמות ירוקה" 
-                className="absolute -top-2 -right-2 w-12 h-12 opacity-60 group-hover:opacity-100 group-hover:animate-bounce transition-all"
-              />
             </div>
             <div className="bg-card p-6 rounded-lg shadow-sm border border-border">
               <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center mb-4">
@@ -132,7 +89,7 @@ const Home = () => {
                 תהליך אישור הוצאות מובנה, מאפשר לכל הורה לאשר או לדחות הוצאות לפני התשלום
               </p>
             </div>
-            <div className="bg-card p-6 rounded-lg shadow-sm border border-border relative group hover:shadow-md transition-shadow">
+            <div className="bg-card p-6 rounded-lg shadow-sm border border-border">
               <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center mb-4">
                 <CheckCircle className="h-6 w-6 text-primary" />
               </div>
@@ -140,11 +97,6 @@ const Home = () => {
               <p className="text-muted-foreground">
                 גרפים ודוחות מפורטים, ניתוח מגמות הוצאות, והתראות על חריגות
               </p>
-              <img 
-                src="/lovable-uploads/d2d49bed-0cde-460a-8acc-c1f45e11f633.png" 
-                alt="דמות אדומה" 
-                className="absolute -top-2 -right-2 w-12 h-12 opacity-60 group-hover:opacity-100 group-hover:animate-bounce transition-all"
-              />
             </div>
           </div>
         </div>
