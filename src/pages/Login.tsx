@@ -80,8 +80,8 @@ const Login = () => {
   return (
     <>
       <AnimatedBackground />
-      <div className="container mx-auto py-10 px-4 flex items-center justify-center min-h-[calc(100vh-4rem)]">
-        <div className="w-full max-w-6xl">
+      <div className="container mx-auto py-8 px-4 flex items-center justify-center min-h-[calc(100vh-4rem)]">
+        <div className="w-full max-w-7xl">{/* Increased from max-w-6xl */}
           <div className="grid lg:grid-cols-3 gap-8 items-center" dir="ltr">
             {/* Left Wallet Character - Green */}
             <div className="hidden lg:flex flex-col items-center justify-center p-8 animate-fade-in">
@@ -96,9 +96,9 @@ const Login = () => {
             </div>
 
             {/* Login Card - Center */}
-            <div className="w-full max-w-md mx-auto lg:mx-0" dir="rtl">
-              <Card className="border-border shadow-lg animate-fade-in glass shadow-card">
-                <CardHeader className="text-center">
+            <div className="w-full max-w-lg mx-auto lg:mx-0" dir="rtl">{/* Increased from max-w-md */}
+              <Card className="border-border shadow-xl animate-fade-in glass shadow-card p-2">{/* Added p-2 for internal padding and shadow-xl for larger shadow */}
+                <CardHeader className="text-center pb-8 pt-8">{/* Increased padding */}
                   {/* Mobile wallet characters */}
                   <div className="lg:hidden flex justify-center gap-4 mb-4">
                     <img 
@@ -122,7 +122,7 @@ const Login = () => {
                     בחר את שיטת ההתחברות המועדפת עליך
                   </CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-6">
+                <CardContent className="space-y-8 px-8 pb-8">{/* Increased spacing and padding */}
                   {/* Auth Method Toggle */}
                   <AuthMethodToggle 
                     method={authMethod} 
@@ -132,15 +132,15 @@ const Login = () => {
 
                   {/* Dynamic Content Based on Auth Method */}
                   {authMethod === 'email' ? (
-                    <div className="space-y-4">
+                    <div className="space-y-6">{/* Increased from space-y-4 */}
                       <Form {...form}>
-                        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">{/* Increased from space-y-4 */}
                           <FormField
                             control={form.control}
                             name="email"
                             render={({ field }) => (
-                              <FormItem>
-                                <FormLabel className="text-sm font-medium">כתובת אימייל</FormLabel>
+                              <FormItem className="space-y-3">
+                                <FormLabel className="text-base font-medium">כתובת אימייל</FormLabel>
                                 <FormControl>
                                   <div className="relative">
                                     <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
@@ -149,8 +149,8 @@ const Login = () => {
                                     <Input 
                                       placeholder="your@email.com" 
                                       {...field} 
-                                      className="pl-10 transition-all duration-200 focus:shadow-glow"
-                                    />
+                                      className="pl-10 h-12 text-base transition-all duration-200 focus:shadow-glow"
+                                    />{/* Increased height to h-12 and font size */}
                                   </div>
                                 </FormControl>
                                 <FormMessage />
@@ -162,8 +162,8 @@ const Login = () => {
                             control={form.control}
                             name="password"
                             render={({ field }) => (
-                              <FormItem>
-                                <FormLabel className="text-sm font-medium">סיסמה</FormLabel>
+                              <FormItem className="space-y-3">
+                                <FormLabel className="text-base font-medium">סיסמה</FormLabel>
                                 <FormControl>
                                   <div className="relative">
                                     <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
@@ -173,8 +173,8 @@ const Login = () => {
                                       type="password" 
                                       placeholder="******" 
                                       {...field} 
-                                      className="pl-10 transition-all duration-200 focus:shadow-glow"
-                                    />
+                                      className="pl-10 h-12 text-base transition-all duration-200 focus:shadow-glow"
+                                    />{/* Increased height to h-12 and font size */}
                                   </div>
                                 </FormControl>
                                 <FormMessage />
@@ -182,33 +182,33 @@ const Login = () => {
                             )}
                           />
                           
-                          <div className="text-right">
-                            <Link to="/forgot-password" className="text-sm text-primary hover:text-primary-glow transition-colors duration-200 hover:underline">
+                          <div className="text-right pt-2">
+                            <Link to="/forgot-password" className="text-base text-primary hover:text-primary-glow transition-colors duration-200 hover:underline">
                               שכחת סיסמה?
                             </Link>
                           </div>
                           
                           <ModernButton 
                             type="submit" 
-                            className="w-full mt-2" 
+                            className="w-full mt-4 h-12" 
                             size="lg"
                             loading={isLoading}
                             variant="gradient"
                           >
                             {isLoading ? 'מתחבר...' : 'התחבר'}
-                          </ModernButton>
+                          </ModernButton>{/* Added h-12 for taller button */}
                         </form>
                       </Form>
                     </div>
                   ) : (
-                    <div className="space-y-4">
+                    <div className="space-y-6">{/* Increased from space-y-4 */}
                       <PhoneLogin onBack={handleBackToEmailLogin} hideHeader={true} />
                     </div>
                   )}
                 </CardContent>
                 
-                <CardFooter className="flex justify-center">
-                  <p className="text-sm text-muted-foreground">
+                <CardFooter className="flex justify-center pt-8 pb-8 px-8">{/* Increased padding */}
+                  <p className="text-base text-muted-foreground">{/* Increased font size */}
                     עדיין אין לך חשבון?{' '}
                     <Link to="/register" className="text-primary hover:text-primary-glow transition-colors duration-200 hover:underline font-medium">
                       הירשם כאן
