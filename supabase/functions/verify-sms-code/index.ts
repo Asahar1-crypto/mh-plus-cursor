@@ -184,8 +184,7 @@ serve(async (req) => {
 
     console.log('SMS verification successful for phone:', phoneNumber)
 
-    // If this is a login verification, we need to create access tokens
-    let sessionData = null;
+    // If this is a login verification, create a proper session
     if (verificationType === 'login' && verificationData.user_id) {
       console.log('Creating session for login verification...');
       
@@ -207,7 +206,7 @@ serve(async (req) => {
         );
       }
 
-      // Create a session directly
+      // Use Supabase's secure session creation
       const { data: sessionResult, error: sessionError } = await supabase.auth.admin
         .generateLink({
           type: 'magiclink',
@@ -216,34 +215,42 @@ serve(async (req) => {
 
       if (sessionError) {
         console.error('Error generating session:', sessionError);
-      } else {
-        // Extract the tokens from the magic link
-        const url = new URL(sessionResult.properties?.action_link || '');
-        const accessToken = url.searchParams.get('access_token');
-        const refreshToken = url.searchParams.get('refresh_token');
-        
-        if (accessToken && refreshToken) {
-          sessionData = {
-            access_token: accessToken,
-            refresh_token: refreshToken,
-            expires_in: 3600,
-            token_type: 'bearer',
-            user: authUser.user
-          };
-          console.log('Session tokens created successfully for user:', authUser.user.id);
-        }
+        return new Response(
+          JSON.stringify({ 
+            verified: false,
+            error: 'Failed to create session'
+          }),
+          {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            status: 500,
+          },
+        );
       }
+
+      // Return the magic link for secure authentication
+      console.log('Session created successfully for user:', authUser.user.id);
+      
+      return new Response(
+        JSON.stringify({ 
+          verified: true,
+          message: 'Phone number verified successfully',
+          verificationType,
+          magicLink: sessionResult.properties?.action_link
+        }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 200,
+        },
+      );
     }
 
-    const response = { 
-      verified: true,
-      message: 'Phone number verified successfully',
-      verificationType,
-      ...(sessionData && { session: sessionData })
-    };
-
+    // For non-login verifications, return standard response
     return new Response(
-      JSON.stringify(response),
+      JSON.stringify({
+        verified: true,
+        message: 'Phone number verified successfully',
+        verificationType
+      }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 200,

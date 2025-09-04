@@ -57,7 +57,7 @@ export const phoneAuthService = {
   /**
    * Verify OTP for phone login
    */
-  verifyPhoneLoginOtp: async (phoneNumber: string, code: string): Promise<{ success: boolean; session?: any }> => {
+  verifyPhoneLoginOtp: async (phoneNumber: string, code: string): Promise<{ success: boolean; magicLink?: string }> => {
     try {
       console.log(`Verifying login OTP for: ${phoneNumber}`);
       
@@ -87,7 +87,7 @@ export const phoneAuthService = {
       console.log('Login OTP verified successfully');
       return {
         success: true,
-        session: data.session
+        magicLink: data.magicLink
       };
     } catch (error: any) {
       console.error('Verify phone login OTP failed:', error);
@@ -115,33 +115,20 @@ export const phoneAuthService = {
         throw new Error('Failed to verify OTP');
       }
 
-      // If we got session tokens, use them directly
-      if (result.session && result.session.access_token) {
-        console.log('Setting session from tokens');
+      // If we got a magic link, navigate to it securely
+      if (result.magicLink) {
+        console.log('Navigating to secure magic link');
         
-        // Import supabase here to avoid circular dependencies
-        const { supabase } = await import('@/integrations/supabase/client');
-        
-        // Set the session using the tokens
-        const { data: sessionData, error: sessionError } = await supabase.auth.setSession({
-          access_token: result.session.access_token,
-          refresh_token: result.session.refresh_token
-        });
-        
-        if (sessionError) {
-          console.error('Error setting session:', sessionError);
-          throw new Error('Failed to create session');
-        }
-        
-        console.log('Session set successfully:', sessionData.session?.user?.id);
+        // Navigate to the magic link which will establish the session securely
+        window.location.href = result.magicLink;
         
         return {
-          userId: sessionData.session?.user?.id || 'authenticated',
-          email: sessionData.session?.user?.email || 'authenticated'
+          userId: 'authenticated',
+          email: 'authenticated'
         };
       }
       
-      throw new Error('No session tokens received');
+      throw new Error('No authentication method received');
       
     } catch (error: any) {
       console.error('Phone login failed:', error);
