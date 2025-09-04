@@ -38,7 +38,7 @@ const SentInvitationsCard: React.FC<SentInvitationsCardProps> = ({ account }) =>
         .select('role')
         .eq('account_id', account.id)
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
 
       if (error) {
         console.error('Error checking user role:', error);
