@@ -67,13 +67,6 @@ const NoAccountScreen = () => {
           </p>
         </div>
 
-        {/* Alert explanation */}
-        <Alert className="border-l-4 border-l-blue-500 bg-blue-50">
-          <AlertDescription className="text-blue-800">
-            <strong>מה קרה?</strong> ייתכן שהוסרת ממשפחה או שהמשפחה נמחקה. 
-            אל תדאג - אתה יכול ליצור משפחה חדשה או לבקש להצטרף למשפחה קיימת.
-          </AlertDescription>
-        </Alert>
 
         {/* Options */}
         <div className="grid gap-6 md:grid-cols-2">
