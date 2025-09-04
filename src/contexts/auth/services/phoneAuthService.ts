@@ -42,10 +42,10 @@ export const phoneAuthService = {
       console.error('Send phone login OTP failed:', error);
       
       // Handle specific error messages
-      if (error.message?.includes('Phone number not registered')) {
-        toast.error('מספר הטלפון לא רשום במערכת');
-      } else if (error.message?.includes('Too many attempts')) {
+      if (error.message?.includes('Too many attempts')) {
         toast.error('יותר מדי נסיונות. נסה שוב מאוחר יותר');
+      } else if (error.message?.includes('Invalid phone number')) {
+        toast.error('מספר טלפון לא תקין');
       } else {
         toast.error('שגיאה בשליחת קוד האימות');
       }

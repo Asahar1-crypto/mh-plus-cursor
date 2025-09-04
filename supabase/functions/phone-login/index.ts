@@ -92,18 +92,60 @@ serve(async (req) => {
       );
     }
 
+    let userProfile = profile;
+    
     if (!profile) {
-      console.log('Phone number not found in profiles');
-      return new Response(
-        JSON.stringify({ error: 'Phone number not registered' }),
-        { 
-          status: 404,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      console.log('Phone number not found in profiles - creating new user');
+      
+      // Create a new user in auth.users first
+      const { data: authUser, error: authError } = await supabase.auth.admin.createUser({
+        phone: normalizedPhone,
+        phone_confirmed: false,
+        user_metadata: {
+          phone_number: normalizedPhone
         }
-      );
+      });
+
+      if (authError || !authUser.user) {
+        console.error('Error creating auth user:', authError);
+        return new Response(
+          JSON.stringify({ error: 'Failed to create user account' }),
+          { 
+            status: 500,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          }
+        );
+      }
+
+      console.log('Auth user created:', authUser.user.id);
+
+      // Create profile for the new user
+      const { data: newProfile, error: profileCreateError } = await supabase
+        .from('profiles')
+        .insert({
+          id: authUser.user.id,
+          phone_number: normalizedPhone,
+          name: `משתמש ${normalizedPhone.slice(-4)}` // Default name using last 4 digits
+        })
+        .select('id, name, phone_number')
+        .single();
+
+      if (profileCreateError || !newProfile) {
+        console.error('Error creating profile:', profileCreateError);
+        return new Response(
+          JSON.stringify({ error: 'Failed to create user profile' }),
+          { 
+            status: 500,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          }
+        );
+      }
+
+      console.log('New profile created:', newProfile);
+      userProfile = newProfile;
     }
 
-    console.log('Profile found for phone:', profile);
+    console.log('Profile found for phone:', userProfile);
 
     // Temporarily disable rate limiting for testing
     console.log('Rate limiting temporarily disabled for testing');
@@ -131,7 +173,7 @@ serve(async (req) => {
         phone_number: normalizedPhone,
         code: otpCode,
         verification_type: 'login',
-        user_id: profile.id,
+        user_id: userProfile.id,
         verified: false,
         attempts: 0,
         expires_at: new Date(Date.now() + 10 * 60 * 1000).toISOString() // 10 minutes
@@ -204,8 +246,8 @@ serve(async (req) => {
       JSON.stringify({ 
         success: true,
         message: 'OTP sent successfully',
-        userId: profile.id,
-        userName: profile.name
+        userId: userProfile.id,
+        userName: userProfile.name
       }),
       {
         status: 200,

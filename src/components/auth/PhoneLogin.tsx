@@ -188,10 +188,10 @@ const PhoneLogin: React.FC<PhoneLoginProps> = ({ onBack }) => {
           </CardTitle>
         </div>
         <CardDescription>
-          הזן את מספר הטלפון הרשום כבר במערכת לקבלת קוד אימות
+          הזן את מספר הטלפון שלך לקבלת קוד אימות
           <br />
           <span className="text-sm text-muted-foreground">
-            אם עדיין לא נרשמת, <Link to="/register" className="text-primary hover:underline">לחץ כאן להירשם</Link>
+            המערכת תיצור חשבון חדש אוטומטית אם עוד לא נרשמת
           </span>
         </CardDescription>
       </CardHeader>
