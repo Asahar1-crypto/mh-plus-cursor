@@ -119,30 +119,66 @@ serve(async (req) => {
 
       console.log('Auth user created successfully:', authUser.user.id);
 
-      // Create profile for the new user
-      const { data: newProfile, error: profileCreateError } = await supabase
+      // Check if profile was created automatically by trigger
+      await new Promise(resolve => setTimeout(resolve, 100)); // Small delay for trigger to complete
+      
+      const { data: existingProfile } = await supabase
         .from('profiles')
-        .insert({
-          id: authUser.user.id,
-          phone_number: normalizedPhone,
-          name: `משתמש ${normalizedPhone.slice(-4)}` // Default name using last 4 digits
-        })
         .select('id, name, phone_number')
-        .single();
+        .eq('id', authUser.user.id)
+        .maybeSingle();
 
-      if (profileCreateError || !newProfile) {
-        console.error('Error creating profile:', profileCreateError);
-        return new Response(
-          JSON.stringify({ error: 'Failed to create user profile' }),
-          { 
-            status: 500,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-          }
-        );
+      if (existingProfile) {
+        console.log('Profile already exists from trigger:', existingProfile);
+        
+        // Update the phone number if needed
+        const { data: updatedProfile, error: updateError } = await supabase
+          .from('profiles')
+          .update({ 
+            phone_number: normalizedPhone,
+            name: existingProfile.name || `משתמש ${normalizedPhone.slice(-4)}`
+          })
+          .eq('id', authUser.user.id)
+          .select('id, name, phone_number')
+          .single();
+
+        if (updateError) {
+          console.error('Error updating profile:', updateError);
+          return new Response(
+            JSON.stringify({ error: 'Failed to update user profile' }),
+            { 
+              status: 500,
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+            }
+          );
+        }
+        
+        userProfile = updatedProfile;
+      } else {
+        // Create profile manually if trigger didn't work
+        const { data: newProfile, error: profileCreateError } = await supabase
+          .from('profiles')
+          .insert({
+            id: authUser.user.id,
+            phone_number: normalizedPhone,
+            name: `משתמש ${normalizedPhone.slice(-4)}`
+          })
+          .select('id, name, phone_number')
+          .single();
+
+        if (profileCreateError) {
+          console.error('Error creating profile:', profileCreateError);
+          return new Response(
+            JSON.stringify({ error: 'Failed to create user profile: ' + profileCreateError.message }),
+            { 
+              status: 500,
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+            }
+          );
+        }
+
+        userProfile = newProfile;
       }
-
-      console.log('New profile created:', newProfile);
-      userProfile = newProfile;
     }
 
     console.log('Profile found for phone:', userProfile);
