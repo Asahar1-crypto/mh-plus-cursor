@@ -74,11 +74,11 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    // Check if phone number exists in profiles using normalized phone_e164 field
+    // Check if phone number exists in profiles using phone_number field
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
-      .select('id, name, phone_e164')
-      .eq('phone_e164', normalizedPhone)
+      .select('id, name, phone_number')
+      .eq('phone_number', normalizedPhone)
       .maybeSingle();
 
     if (profileError) {
