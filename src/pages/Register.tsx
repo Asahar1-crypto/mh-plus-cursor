@@ -139,9 +139,9 @@ const Register = () => {
   return (
     <>
       <AnimatedBackground />
-      <div className="container mx-auto py-10 px-4 flex items-center justify-center min-h-[calc(100vh-4rem)] relative z-10">
-        <div className="w-full max-w-6xl">
-          <div className="grid lg:grid-cols-3 gap-8 items-center" dir="ltr">
+      <div className="container mx-auto py-8 px-4 flex items-center justify-center min-h-[calc(100vh-4rem)] relative z-10">
+        <div className="w-full max-w-7xl">
+          <div className="grid lg:grid-cols-5 gap-8 items-center" dir="ltr">
             {/* Left Wallet Character - Green */}
             <div className="hidden lg:flex flex-col items-center justify-center p-8 animate-fade-in">
               <div className="relative">
@@ -154,10 +154,10 @@ const Register = () => {
               </div>
             </div>
 
-            {/* Registration Card - Center */}
-            <div className="w-full max-w-md mx-auto lg:mx-0" dir="rtl">
-          <Card className="glass border-glass-border shadow-card animate-fade-in backdrop-blur-lg">
-            <CardHeader className="text-center space-y-4">
+            {/* Registration Card - Center (3 columns) */}
+            <div className="w-full max-w-xl mx-auto lg:mx-0 lg:col-span-3" dir="rtl">
+          <Card className="border-border shadow-xl animate-fade-in glass shadow-card p-2">
+            <CardHeader className="text-center pb-8 pt-8">
               {/* Mobile wallet characters */}
               <div className="lg:hidden flex justify-center gap-4 mb-4">
                 <img 
@@ -171,9 +171,11 @@ const Register = () => {
                   className="w-28 h-28 object-contain animate-bounce [animation-duration:2s] [animation-delay:0.3s]"
                 />
               </div>
-              <CardTitle className="text-3xl font-bold bg-gradient-to-r from-primary to-primary-glow bg-clip-text text-transparent">
-                הרשמה למערכת
-              </CardTitle>
+              <div className="flex items-center justify-center gap-2 mb-2">
+                <CardTitle className="text-2xl font-bold bg-gradient-to-r from-primary to-primary-glow bg-clip-text text-transparent">
+                  הרשמה למערכת
+                </CardTitle>
+              </div>
               <CardDescription className="text-base">
                 צור חשבון חדש במערכת מחציות פלוס
                 {emailFromInvitation && (
@@ -190,7 +192,7 @@ const Register = () => {
                 )}
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-6">
+            <CardContent className="space-y-8 px-8 pb-8">
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                 <ModernInput
                   label="שם מלא"
@@ -255,7 +257,7 @@ const Register = () => {
                 </ModernButton>
               </form>
             </CardContent>
-            <CardFooter className="flex justify-center pt-6">
+            <CardFooter className="flex justify-center pt-8 pb-8 px-8">
               <p className="text-sm text-muted-foreground">
                 כבר יש לך חשבון?{' '}
                 <Link to="/login" className="text-primary hover:text-primary-glow transition-colors duration-300 font-medium">
