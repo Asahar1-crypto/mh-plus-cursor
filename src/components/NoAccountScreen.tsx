@@ -61,7 +61,7 @@ const NoAccountScreen = () => {
               <Users className="h-12 w-12 text-primary" />
             </div>
           </div>
-          <h1 className="text-3xl font-bold">ברוך הבא חזרה, {user?.name}!</h1>
+          <h1 className="text-3xl font-bold">ברוך הבא, {user?.name}!</h1>
           <p className="text-muted-foreground text-lg">
             נראה שאתה לא משויך כרגע לאף משפחה במערכת
           </p>
