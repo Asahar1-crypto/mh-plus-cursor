@@ -55,17 +55,17 @@ const OtpVerification: React.FC<OtpVerificationProps> = ({
     newOtp[index] = value;
     setOtpCode(newOtp);
 
-    // Auto-focus next input (right to left for RTL)
-    if (value && index > 0) {
-      const nextInput = document.getElementById(`otp-${index - 1}`) as HTMLInputElement;
+    // Auto-focus next input (left to right for numbers)
+    if (value && index < 5) {
+      const nextInput = document.getElementById(`otp-${index + 1}`) as HTMLInputElement;
       nextInput?.focus();
     }
   };
 
   const handleKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Backspace' && !otpCode[index] && index < 5) {
-      const nextInput = document.getElementById(`otp-${index + 1}`) as HTMLInputElement;
-      nextInput?.focus();
+    if (e.key === 'Backspace' && !otpCode[index] && index > 0) {
+      const prevInput = document.getElementById(`otp-${index - 1}`) as HTMLInputElement;
+      prevInput?.focus();
     }
   };
 
@@ -74,18 +74,18 @@ const OtpVerification: React.FC<OtpVerificationProps> = ({
     const pastedData = e.clipboardData.getData('text').replace(/\D/g, '');
     
     if (pastedData.length === 6) {
-      const newOtp = pastedData.split('').slice(0, 6); // Keep original order
+      const newOtp = pastedData.split('').slice(0, 6);
       setOtpCode(newOtp);
       setError('');
       
-      // Focus first input after paste (rightmost in RTL)
-      const firstInput = document.getElementById('otp-5') as HTMLInputElement;
-      firstInput?.focus();
+      // Focus last input after paste
+      const lastInput = document.getElementById('otp-5') as HTMLInputElement;
+      lastInput?.focus();
     }
   };
 
   const handleVerifyOtp = async () => {
-    const code = otpCode.join(''); // Keep original order for verification
+    const code = otpCode.join('');
     console.log('OTP verification - phoneNumber:', phoneNumber, 'code:', code, 'otpCode array:', otpCode);
     
     if (code.length !== 6) {
@@ -109,7 +109,7 @@ const OtpVerification: React.FC<OtpVerificationProps> = ({
       
       // Clear OTP inputs on error
       setOtpCode(['', '', '', '', '', '']);
-      const firstInput = document.getElementById('otp-5') as HTMLInputElement;
+      const firstInput = document.getElementById('otp-0') as HTMLInputElement;
       firstInput?.focus();
     } finally {
       setIsVerifying(false);
@@ -125,7 +125,7 @@ const OtpVerification: React.FC<OtpVerificationProps> = ({
       setCountdown(120); // Reset countdown
       setOtpCode(['', '', '', '', '', '']); // Clear current OTP
       
-      const firstInput = document.getElementById('otp-5') as HTMLInputElement;
+      const firstInput = document.getElementById('otp-0') as HTMLInputElement;
       firstInput?.focus();
       
       // Show success message
@@ -166,7 +166,7 @@ const OtpVerification: React.FC<OtpVerificationProps> = ({
         <CardContent className="space-y-6">
           {/* OTP Input Fields */}
           <div className="space-y-4">
-            <div className="flex justify-center gap-3 flex-row-reverse" onPaste={handlePaste} dir="rtl">
+            <div className="flex justify-center gap-3" onPaste={handlePaste} dir="ltr">
               {otpCode.map((digit, index) => (
                 <Input
                   key={index}
