@@ -17,7 +17,7 @@ const AuthMethodToggle: React.FC<AuthMethodToggleProps> = ({
       <div className="relative flex">
         {/* Background Slider */}
         <div 
-          className={`absolute top-1 bottom-1 w-1/2 bg-gradient-to-r from-primary to-primary-glow rounded-lg shadow-lg transition-all duration-300 ease-out transform ${
+          className={`absolute top-1 bottom-1 w-1/2 bg-gradient-to-r from-primary to-primary-glow rounded-lg shadow-lg transition-all duration-300 ease-out ${
             method === 'phone' ? 'translate-x-full' : 'translate-x-0'
           }`}
         />
