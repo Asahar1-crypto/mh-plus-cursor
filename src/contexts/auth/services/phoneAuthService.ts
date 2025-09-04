@@ -124,9 +124,16 @@ export const phoneAuthService = {
       
       // Use the session URL to establish authentication
       if (result.sessionUrl) {
-        console.log('Redirecting to session URL:', result.sessionUrl);
-        // Instead of direct redirect, open in same window but handle it properly
+        console.log('Phone login successful! Redirecting to session URL:', result.sessionUrl);
+        console.log('Session data received:', result.session);
+        
+        // Store session info for debugging
+        sessionStorage.setItem('phoneLoginSuccess', 'true');
+        sessionStorage.setItem('sessionUrl', result.sessionUrl);
+        
+        // Redirect to the magic link
         window.location.href = result.sessionUrl;
+        
         // Return a success state while redirecting
         return {
           userId: result.session?.userId || 'authenticated', 

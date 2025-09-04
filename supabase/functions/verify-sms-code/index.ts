@@ -207,8 +207,9 @@ serve(async (req) => {
         );
       }
 
-      // Get the current origin from request headers or use a default
-      const origin = req.headers.get('origin') || 'https://e01ecbfb-5c0d-44e9-b818-1374636e60ff.sandbox.lovable.dev';
+      // Get the correct origin - always use the sandbox URL for now
+      const dashboardUrl = 'https://e01ecbfb-5c0d-44e9-b818-1374636e60ff.sandbox.lovable.dev/dashboard';
+      console.log('Using dashboard URL:', dashboardUrl);
       
       // Generate session tokens for the user
       const { data: sessionResult, error: sessionError } = await supabase.auth.admin
@@ -216,7 +217,7 @@ serve(async (req) => {
           type: 'magiclink',
           email: authUser.user.email!,
           options: {
-            redirectTo: `${origin}/dashboard`
+            redirectTo: dashboardUrl
           }
         });
 

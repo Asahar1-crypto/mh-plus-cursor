@@ -61,23 +61,27 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   useEffect(() => {
     const performInitialCheck = async () => {
       console.log('AuthProvider: Performing initial auth check');
+      console.log('Current URL:', window.location.href);
+      console.log('URL search params:', window.location.search);
+      
       try {
-        // First check if there's a session in the URL (from magic link)
-        const urlParams = new URLSearchParams(window.location.search);
-        const accessToken = urlParams.get('access_token');
-        const refreshToken = urlParams.get('refresh_token');
+        // Check if we just completed phone login
+        const phoneLoginSuccess = sessionStorage.getItem('phoneLoginSuccess');
+        console.log('Phone login success flag:', phoneLoginSuccess);
         
-        if (accessToken && refreshToken) {
-          console.log('AuthProvider: Found tokens in URL, setting session');
-          // Set the session from URL parameters
-          await supabase.auth.setSession({
-            access_token: accessToken,
-            refresh_token: refreshToken
-          });
-          
-          // Clean the URL
-          window.history.replaceState({}, document.title, window.location.pathname);
+        if (phoneLoginSuccess) {
+          console.log('Detected phone login completion, clearing flags');
+          sessionStorage.removeItem('phoneLoginSuccess');
+          sessionStorage.removeItem('sessionUrl');
+          sessionStorage.removeItem('phoneLogin_showOtp');
+          sessionStorage.removeItem('phoneLogin_userInfo');
+          sessionStorage.removeItem('phoneLogin_phoneNumber');
         }
+        
+        // First check if there's already a session
+        console.log('Checking for existing session...');
+        const { data: { session: existingSession } } = await supabase.auth.getSession();
+        console.log('Existing session:', existingSession ? 'Found' : 'Not found');
         
         await checkAndSetUserData();
         console.log('AuthProvider: Initial auth check completed');
