@@ -771,6 +771,10 @@ export type Database = {
         Args: { user_uuid: string }
         Returns: boolean
       }
+      normalize_il_phone: {
+        Args: { phone_text: string }
+        Returns: string
+      }
       remove_account_member: {
         Args: { account_uuid: string; user_uuid: string }
         Returns: boolean
