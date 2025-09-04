@@ -112,6 +112,18 @@ serve(async (req) => {
     const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
     console.log('Generated OTP code:', otpCode);
 
+    // Clear any existing unverified codes for this phone and verification type
+    const { error: clearError } = await supabase
+      .from('sms_verification_codes')
+      .delete()
+      .eq('phone_number', normalizedPhone)
+      .eq('verification_type', 'login')
+      .eq('verified', false);
+
+    if (clearError) {
+      console.warn('Error clearing old codes (non-fatal):', clearError);
+    }
+
     // Store OTP in database
     const { error: storeError } = await supabase
       .from('sms_verification_codes')
