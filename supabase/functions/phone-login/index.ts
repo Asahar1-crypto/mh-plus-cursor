@@ -97,19 +97,18 @@ serve(async (req) => {
     if (!profile) {
       console.log('Phone number not found in profiles - creating new user');
       
-      // Create a new user in auth.users first
+      // Create a new user in auth.users with phone number
       const { data: authUser, error: authError } = await supabase.auth.admin.createUser({
         phone: normalizedPhone,
         phone_confirmed: false,
-        user_metadata: {
-          phone_number: normalizedPhone
-        }
+        email_confirmed: false
       });
 
       if (authError || !authUser.user) {
-        console.error('Error creating auth user:', authError);
+        console.error('Error creating auth user:', authError?.message || 'Unknown error');
+        console.log('Full error details:', authError);
         return new Response(
-          JSON.stringify({ error: 'Failed to create user account' }),
+          JSON.stringify({ error: 'Failed to create user account: ' + (authError?.message || 'Unknown error') }),
           { 
             status: 500,
             headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -117,7 +116,7 @@ serve(async (req) => {
         );
       }
 
-      console.log('Auth user created:', authUser.user.id);
+      console.log('Auth user created successfully:', authUser.user.id);
 
       // Create profile for the new user
       const { data: newProfile, error: profileCreateError } = await supabase
