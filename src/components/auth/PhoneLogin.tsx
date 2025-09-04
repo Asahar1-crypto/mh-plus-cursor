@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Smartphone, Mail, ArrowLeft } from 'lucide-react';
+import { Smartphone, ArrowLeft } from 'lucide-react';
 import { useAuth } from '@/contexts/auth';
 import { Link } from 'react-router-dom';
+import { CountryCode } from 'libphonenumber-js';
+import { InternationalPhoneInput } from '@/components/ui/international-phone-input';
+import { normalizePhoneNumber } from '@/utils/phoneUtils';
 import OtpVerification from './OtpVerification';
 
 interface PhoneLoginProps {
@@ -18,6 +19,10 @@ const PhoneLogin: React.FC<PhoneLoginProps> = ({ onBack, hideHeader = false }) =
   const [phoneNumber, setPhoneNumber] = useState(() => {
     const stored = sessionStorage.getItem('phoneLogin_phoneNumber') || '';
     console.log('PhoneLogin: Loading phoneNumber from sessionStorage:', stored);
+    return stored;
+  });
+  const [selectedCountry, setSelectedCountry] = useState<CountryCode>(() => {
+    const stored = sessionStorage.getItem('phoneLogin_country') as CountryCode || 'IL';
     return stored;
   });
   const [showOtpVerification, setShowOtpVerification] = useState(() => {
@@ -48,51 +53,18 @@ const PhoneLogin: React.FC<PhoneLoginProps> = ({ onBack, hideHeader = false }) =
     sessionStorage.setItem('phoneLogin_phoneNumber', phoneNumber);
   }, [phoneNumber]);
 
-  const normalizePhoneNumber = (phone: string): string => {
-    // Remove all non-digit characters
-    const digitsOnly = phone.replace(/\D/g, '');
-    
-    // Format Israeli phone number
-    if (digitsOnly.startsWith('972')) {
-      return `+${digitsOnly}`;
-    } else if (digitsOnly.startsWith('0')) {
-      return `+972${digitsOnly.substring(1)}`;
-    } else if (digitsOnly.length === 9) {
-      return `+972${digitsOnly}`;
-    }
-    
-    return `+972${digitsOnly}`;
-  };
-
-  const formatDisplayNumber = (phone: string): string => {
-    const digitsOnly = phone.replace(/\D/g, '');
-    
-    if (digitsOnly.length >= 10) {
-      // Format as: 0XX-XXX-XXXX
-      const formatted = digitsOnly.replace(/^972/, '0').replace(/(\d{3})(\d{3})(\d{4})/, '$1-$2-$3');
-      return formatted;
-    }
-    
-    return phone;
-  };
+  React.useEffect(() => {
+    sessionStorage.setItem('phoneLogin_country', selectedCountry);
+  }, [selectedCountry]);
 
   const handlePhoneChange = (value: string) => {
     setPhoneError('');
-    const formatted = formatDisplayNumber(value);
-    setPhoneNumber(formatted);
+    setPhoneNumber(value);
   };
 
-  const validatePhoneNumber = (phone: string): boolean => {
-    const digitsOnly = phone.replace(/\D/g, '');
-    
-    // Israeli phone number validation
-    if (digitsOnly.startsWith('972')) {
-      return digitsOnly.length === 12; // +972XXXXXXXXX
-    } else if (digitsOnly.startsWith('0')) {
-      return digitsOnly.length === 10; // 0XXXXXXXXX
-    } else {
-      return digitsOnly.length === 9; // XXXXXXXXX
-    }
+  const handleCountryChange = (country: CountryCode) => {
+    setSelectedCountry(country);
+    setPhoneError('');
   };
 
   const handleSendOtp = async (e?: React.FormEvent) => {
@@ -107,13 +79,15 @@ const PhoneLogin: React.FC<PhoneLoginProps> = ({ onBack, hideHeader = false }) =
       return;
     }
 
-    if (!validatePhoneNumber(phoneNumber)) {
-      setPhoneError('מספר טלפון לא תקין');
+    // Validate using the international phone utils
+    const validationResult = normalizePhoneNumber(phoneNumber, selectedCountry);
+    if (!validationResult.success) {
+      setPhoneError(validationResult.error || 'מספר טלפון לא תקין');
       return;
     }
 
     try {
-      const normalizedPhone = normalizePhoneNumber(phoneNumber);
+      const normalizedPhone = validationResult.data!.e164;
       console.log('Sending OTP to:', normalizedPhone);
       
       const result = await sendPhoneOtp(normalizedPhone);
@@ -154,11 +128,13 @@ const PhoneLogin: React.FC<PhoneLoginProps> = ({ onBack, hideHeader = false }) =
     setShowOtpVerification(false);
     setUserInfo({});
     setPhoneNumber('');
+    setSelectedCountry('IL');
     setPhoneError('');
     // Clear all phone login related sessionStorage
     sessionStorage.removeItem('phoneLogin_showOtp');
     sessionStorage.removeItem('phoneLogin_userInfo');
     sessionStorage.removeItem('phoneLogin_phoneNumber');
+    sessionStorage.removeItem('phoneLogin_country');
     sessionStorage.removeItem('phoneLoginInProgress');
   };
 
@@ -169,9 +145,12 @@ const PhoneLogin: React.FC<PhoneLoginProps> = ({ onBack, hideHeader = false }) =
       userInfo,
       showOtpVerification
     });
+    const validationResult = normalizePhoneNumber(phoneNumber, selectedCountry);
+    const normalizedPhone = validationResult.success ? validationResult.data!.e164 : phoneNumber;
+    
     return (
       <OtpVerification
-        phoneNumber={normalizePhoneNumber(phoneNumber)}
+        phoneNumber={normalizedPhone}
         displayNumber={phoneNumber}
         userInfo={userInfo}
         onBack={handleBackToPhoneInput}
@@ -192,47 +171,33 @@ const PhoneLogin: React.FC<PhoneLoginProps> = ({ onBack, hideHeader = false }) =
   if (hideHeader) {
     return (
       <div className="space-y-6">
-        <div className="space-y-2">
-          <Label htmlFor="phoneNumber" className="text-sm font-medium">
-            מספר טלפון
-          </Label>
-          <div className="relative">
-            <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
-              <span className="text-muted-foreground text-sm">🇮🇱 +972</span>
-            </div>
-            <Input
-              id="phoneNumber"
-              type="tel"
-              placeholder="050-123-4567"
-              value={phoneNumber}
-              onChange={(e) => handlePhoneChange(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  e.preventDefault();
-                  handleSendOtp(e);
-                }
-              }}
-              className={`pl-20 text-lg ${phoneError ? 'border-destructive' : ''} transition-all duration-200 focus:shadow-glow`}
-              maxLength={12}
-            />
+        <InternationalPhoneInput
+          label="מספר טלפון"
+          value={phoneNumber}
+          onChange={handlePhoneChange}
+          onCountryChange={handleCountryChange}
+          defaultCountry={selectedCountry}
+          validation={phoneError ? 'invalid' : 'none'}
+          validationMessage={phoneError}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              e.preventDefault();
+              handleSendOtp(e);
+            }
+          }}
+        />
+        
+        {phoneError && phoneError.includes('לא רשום במערכת') && (
+          <div className="text-center">
+            <Link 
+              to="/register" 
+              className="text-sm text-primary hover:text-primary-glow hover:underline font-medium inline-flex items-center gap-1"
+            >
+              לחץ כאן להרשמה 
+              <span className="text-xs">←</span>
+            </Link>
           </div>
-          {phoneError && (
-            <div className="space-y-2">
-              <p className="text-sm text-destructive animate-fade-in">{phoneError}</p>
-              {phoneError.includes('לא רשום במערכת') && (
-                <div className="text-center">
-                  <Link 
-                    to="/register" 
-                    className="text-sm text-primary hover:text-primary-glow hover:underline font-medium inline-flex items-center gap-1"
-                  >
-                    לחץ כאן להרשמה 
-                    <span className="text-xs">←</span>
-                  </Link>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
+        )}
 
         <div className="space-y-3">
           <Button 
@@ -304,47 +269,33 @@ const PhoneLogin: React.FC<PhoneLoginProps> = ({ onBack, hideHeader = false }) =
       </CardHeader>
       
       <CardContent className="space-y-6">
-        <div className="space-y-2">
-          <Label htmlFor="phoneNumber" className="text-sm font-medium">
-            מספר טלפון
-          </Label>
-          <div className="relative">
-            <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
-              <span className="text-muted-foreground text-sm">🇮🇱 +972</span>
-            </div>
-            <Input
-              id="phoneNumber"
-              type="tel"
-              placeholder="050-123-4567"
-              value={phoneNumber}
-              onChange={(e) => handlePhoneChange(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  e.preventDefault();
-                  handleSendOtp(e);
-                }
-              }}
-              className={`pl-20 text-lg ${phoneError ? 'border-destructive' : ''} transition-all duration-200 focus:shadow-glow`}
-              maxLength={12}
-            />
+        <InternationalPhoneInput
+          label="מספר טלפון"
+          value={phoneNumber}
+          onChange={handlePhoneChange}
+          onCountryChange={handleCountryChange}
+          defaultCountry={selectedCountry}
+          validation={phoneError ? 'invalid' : 'none'}
+          validationMessage={phoneError}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              e.preventDefault();
+              handleSendOtp(e);
+            }
+          }}
+        />
+        
+        {phoneError && phoneError.includes('לא רשום במערכת') && (
+          <div className="text-center">
+            <Link 
+              to="/register" 
+              className="text-sm text-primary hover:text-primary-glow hover:underline font-medium inline-flex items-center gap-1"
+            >
+              לחץ כאן להרשמה 
+              <span className="text-xs">←</span>
+            </Link>
           </div>
-          {phoneError && (
-            <div className="space-y-2">
-              <p className="text-sm text-destructive animate-fade-in">{phoneError}</p>
-              {phoneError.includes('לא רשום במערכת') && (
-                <div className="text-center">
-                  <Link 
-                    to="/register" 
-                    className="text-sm text-primary hover:text-primary-glow hover:underline font-medium inline-flex items-center gap-1"
-                  >
-                    לחץ כאן להרשמה 
-                    <span className="text-xs">←</span>
-                  </Link>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
+        )}
 
         <div className="space-y-3">
           <Button 

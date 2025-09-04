@@ -44,8 +44,8 @@ const SmartPhoneInput = forwardRef<HTMLInputElement, SmartPhoneInputProps>(
       const result = normalizeILPhoneNumber(input);
       
       if (result.success && result.data) {
-        // Format for display using Israeli format
-        const displayFormatted = formatPhoneForDisplay(result.data.e164, 'IL');
+        // Format for display using local format
+        const displayFormatted = formatPhoneForDisplay(result.data.e164, 'local', 'IL');
         setFormattedValue(displayFormatted);
         setInternalValidation('valid');
         setValidationMsg('מספר טלפון תקין');
