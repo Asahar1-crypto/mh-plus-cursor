@@ -17,39 +17,39 @@ const AuthMethodToggle: React.FC<AuthMethodToggleProps> = ({
       <div className="relative flex">
         {/* Background Slider */}
         <div 
-          className={`absolute top-1 bottom-1 w-1/2 bg-gradient-to-r from-primary to-primary-glow rounded-lg shadow-lg transition-transform duration-300 ease-out ${
-            method === 'phone' ? 'translate-x-0' : 'translate-x-full'
+          className={`absolute top-1 bottom-1 w-1/2 bg-gradient-to-r from-primary to-primary-glow rounded-lg shadow-lg transition-all duration-300 ease-out ${
+            method === 'email' ? 'translate-x-0' : 'translate-x-full'
           }`}
         />
         
-        {/* Phone Option - Left Side */}
-        <button
-          type="button"
-          onClick={() => !disabled && onChange('phone')}
-          disabled={disabled}
-          className={`relative z-10 flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-lg transition-all duration-200 ${
-            method === 'phone' 
-              ? 'text-white font-semibold' 
-              : 'text-muted-foreground hover:text-foreground'
-          } ${disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`}
-        >
-          <Smartphone className={`w-4 h-4 ${method === 'phone' ? 'animate-pulse' : ''}`} />
-          <span className="text-sm font-medium">מספר טלפון</span>
-        </button>
-        
-        {/* Email Option - Right Side */}
+        {/* Email Option */}
         <button
           type="button"
           onClick={() => !disabled && onChange('email')}
           disabled={disabled}
           className={`relative z-10 flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-lg transition-all duration-200 ${
             method === 'email' 
-              ? 'text-white font-semibold' 
+              ? 'text-white font-semibold shadow-lg' 
               : 'text-muted-foreground hover:text-foreground'
           } ${disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`}
         >
           <Mail className={`w-4 h-4 ${method === 'email' ? 'animate-pulse' : ''}`} />
           <span className="text-sm font-medium">אימייל וסיסמה</span>
+        </button>
+        
+        {/* Phone Option */}
+        <button
+          type="button"
+          onClick={() => !disabled && onChange('phone')}
+          disabled={disabled}
+          className={`relative z-10 flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-lg transition-all duration-200 ${
+            method === 'phone' 
+              ? 'text-white font-semibold shadow-lg' 
+              : 'text-muted-foreground hover:text-foreground'
+          } ${disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`}
+        >
+          <Smartphone className={`w-4 h-4 ${method === 'phone' ? 'animate-pulse' : ''}`} />
+          <span className="text-sm font-medium">מספר טלפון</span>
         </button>
       </div>
       
