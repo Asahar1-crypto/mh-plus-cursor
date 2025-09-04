@@ -96,7 +96,7 @@ const Login = () => {
             </div>
 
             {/* Login Card - Center (3 columns) */}
-            <div className="w-full max-w-2xl mx-auto lg:mx-0 lg:col-span-3" dir="rtl">
+            <div className="w-full max-w-xl mx-auto lg:mx-0 lg:col-span-3" dir="rtl">
               <Card className="border-border shadow-xl animate-fade-in glass shadow-card p-2">{/* Added p-2 for internal padding and shadow-xl for larger shadow */}
                 <CardHeader className="text-center pb-8 pt-8">{/* Increased padding */}
                   {/* Mobile wallet characters */}
