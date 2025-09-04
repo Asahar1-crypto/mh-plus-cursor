@@ -193,7 +193,8 @@ const PhoneLogin: React.FC<PhoneLoginProps> = ({ onBack, hideHeader = false }) =
     return (
       <div className="space-y-6">
         <div className="space-y-2">
-          <Label htmlFor="phoneNumber" className="text-sm font-medium">
+          <Label htmlFor="phoneNumber" className="text-sm font-medium flex items-center gap-2">
+            <span className="w-2 h-2 bg-primary rounded-full"></span>
             מספר טלפון
           </Label>
           <div className="relative">
