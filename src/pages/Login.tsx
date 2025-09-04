@@ -81,8 +81,8 @@ const Login = () => {
     <>
       <AnimatedBackground />
       <div className="container mx-auto py-8 px-4 flex items-center justify-center min-h-[calc(100vh-4rem)]">
-        <div className="w-full max-w-7xl">{/* Increased from max-w-6xl */}
-          <div className="grid lg:grid-cols-3 gap-8 items-center" dir="ltr">
+        <div className="w-full max-w-7xl">
+          <div className="grid lg:grid-cols-5 gap-8 items-center" dir="ltr">
             {/* Left Wallet Character - Green */}
             <div className="hidden lg:flex flex-col items-center justify-center p-8 animate-fade-in">
               <div className="relative">
@@ -95,8 +95,8 @@ const Login = () => {
               </div>
             </div>
 
-            {/* Login Card - Center */}
-            <div className="w-full max-w-lg mx-auto lg:mx-0" dir="rtl">{/* Increased from max-w-md */}
+            {/* Login Card - Center (3 columns) */}
+            <div className="w-full max-w-2xl mx-auto lg:mx-0 lg:col-span-3" dir="rtl">
               <Card className="border-border shadow-xl animate-fade-in glass shadow-card p-2">{/* Added p-2 for internal padding and shadow-xl for larger shadow */}
                 <CardHeader className="text-center pb-8 pt-8">{/* Increased padding */}
                   {/* Mobile wallet characters */}
