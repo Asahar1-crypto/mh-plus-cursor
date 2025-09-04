@@ -24,6 +24,32 @@ const SentInvitationsCard: React.FC<SentInvitationsCardProps> = ({ account }) =>
   const [sentInvitations, setSentInvitations] = useState<SentInvitation[]>([]);
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState<string | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  const checkUserRole = async () => {
+    if (!account?.id) return;
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user?.id) return;
+
+      const { data, error } = await supabase
+        .from('account_members')
+        .select('role')
+        .eq('account_id', account.id)
+        .eq('user_id', user.id)
+        .single();
+
+      if (error) {
+        console.error('Error checking user role:', error);
+        return;
+      }
+
+      setIsAdmin(data?.role === 'admin');
+    } catch (error) {
+      console.error('Failed to check user role:', error);
+    }
+  };
 
   const loadSentInvitations = async () => {
     if (!account?.id) return;
@@ -86,6 +112,7 @@ const SentInvitationsCard: React.FC<SentInvitationsCardProps> = ({ account }) =>
   };
 
   useEffect(() => {
+    checkUserRole();
     loadSentInvitations();
   }, [account?.id]);
 
@@ -113,7 +140,7 @@ const SentInvitationsCard: React.FC<SentInvitationsCardProps> = ({ account }) =>
     return { text: 'ממתינה', color: 'text-yellow-600', icon: '⏳' };
   };
 
-  if (!account || account.userRole !== 'admin') {
+  if (!account || !isAdmin) {
     return null;
   }
 
