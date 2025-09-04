@@ -23,6 +23,21 @@ const Login = () => {
   const { login, isLoading } = useAuth();
   const navigate = useNavigate();
   const [authMethod, setAuthMethod] = useState<'email' | 'phone'>(() => {
+    // Check if returning from phone login redirect
+    const phoneLoginInProgress = sessionStorage.getItem('phoneLoginInProgress');
+    if (phoneLoginInProgress) {
+      // Clean up and redirect to dashboard
+      sessionStorage.removeItem('phoneLoginInProgress');
+      sessionStorage.removeItem('phoneLogin_showOtp');
+      sessionStorage.removeItem('phoneLogin_userInfo');
+      sessionStorage.removeItem('phoneLogin_phoneNumber');
+      sessionStorage.removeItem('login_authMethod');
+      setTimeout(() => {
+        navigate('/dashboard');
+      }, 100);
+      return 'email'; // Default while redirecting
+    }
+    
     return (sessionStorage.getItem('login_authMethod') as 'email' | 'phone') || 'email';
   });
   
@@ -53,10 +68,11 @@ const Login = () => {
   const handleBackToEmailLogin = () => {
     console.log('Back to email login called');
     sessionStorage.setItem('login_authMethod', 'email');
-    // Clear phone login state when going back
+    // Clear all phone login state when going back
     sessionStorage.removeItem('phoneLogin_showOtp');
     sessionStorage.removeItem('phoneLogin_userInfo');
     sessionStorage.removeItem('phoneLogin_phoneNumber');
+    sessionStorage.removeItem('phoneLoginInProgress');
     setAuthMethod('email');
   };
 

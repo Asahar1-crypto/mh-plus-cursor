@@ -135,9 +135,17 @@ const PhoneLogin: React.FC<PhoneLoginProps> = ({ onBack }) => {
       } else {
         setPhoneError('שגיאה בשליחת קוד האימות');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to send OTP:', error);
-      setPhoneError('שגיאה בשליחת קוד האימות');
+      
+      // Handle specific errors from the backend
+      if (error.message?.includes('Phone number not registered')) {
+        setPhoneError('מספר הטלפון לא רשום במערכת. אנא הירשם תחילה.');
+      } else if (error.message?.includes('Too many attempts')) {
+        setPhoneError('יותר מדי נסיונות. נסה שוב מאוחר יותר');
+      } else {
+        setPhoneError('שגיאה בשליחת קוד האימות');
+      }
     }
   };
 
@@ -145,10 +153,12 @@ const PhoneLogin: React.FC<PhoneLoginProps> = ({ onBack }) => {
     setShowOtpVerification(false);
     setUserInfo({});
     setPhoneNumber('');
-    // Clear sessionStorage
+    setPhoneError('');
+    // Clear all phone login related sessionStorage
     sessionStorage.removeItem('phoneLogin_showOtp');
     sessionStorage.removeItem('phoneLogin_userInfo');
     sessionStorage.removeItem('phoneLogin_phoneNumber');
+    sessionStorage.removeItem('phoneLoginInProgress');
   };
 
   if (showOtpVerification) {
@@ -222,7 +232,20 @@ const PhoneLogin: React.FC<PhoneLoginProps> = ({ onBack }) => {
             />
           </div>
           {phoneError && (
-            <p className="text-sm text-destructive animate-fade-in">{phoneError}</p>
+            <div className="space-y-2">
+              <p className="text-sm text-destructive animate-fade-in">{phoneError}</p>
+              {phoneError.includes('לא רשום במערכת') && (
+                <div className="text-center">
+                  <Link 
+                    to="/register" 
+                    className="text-sm text-primary hover:text-primary-glow hover:underline font-medium inline-flex items-center gap-1"
+                  >
+                    לחץ כאן להרשמה 
+                    <span className="text-xs">←</span>
+                  </Link>
+                </div>
+              )}
+            </div>
           )}
         </div>
 

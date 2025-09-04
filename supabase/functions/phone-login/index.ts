@@ -74,11 +74,13 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    // Check if phone number exists in profiles using normalized phone_e164 field
+    // Check if phone number exists in profiles - search both phone_e164 and phone_number fields
+    console.log('Searching for profile with phone:', normalizedPhone);
+    
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
-      .select('id, name, phone_e164')
-      .eq('phone_e164', normalizedPhone)
+      .select('id, name, phone_e164, phone_number')
+      .or(`phone_e164.eq.${normalizedPhone},phone_number.eq.${normalizedPhone}`)
       .maybeSingle();
 
     if (profileError) {
@@ -93,9 +95,13 @@ serve(async (req) => {
     }
 
     if (!profile) {
-      console.log('Phone number not found in profiles');
+      console.log('Phone number not found in profiles. Searched for:', normalizedPhone);
       return new Response(
-        JSON.stringify({ error: 'Phone number not registered' }),
+        JSON.stringify({ 
+          error: 'Phone number not registered',
+          message: 'מספר הטלפון לא רשום במערכת. אנא הירשם תחילה או בדוק את המספר.',
+          suggestion: 'register'
+        }),
         { 
           status: 404,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }

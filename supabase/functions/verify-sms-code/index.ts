@@ -213,7 +213,7 @@ serve(async (req) => {
           type: 'magiclink',
           email: authUser.user.email!,
           options: {
-            redirectTo: `${Deno.env.get('SUPABASE_URL')}/auth/v1/callback`
+            redirectTo: `${Deno.env.get('SUPABASE_URL')}/auth/v1/callback?redirect_to=/dashboard`
           }
         });
 

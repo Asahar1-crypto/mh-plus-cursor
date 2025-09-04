@@ -92,6 +92,14 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       const result = await phoneAuthService.phoneLogin(phoneNumber, otp);
       // After successful phone login, check and set user data
       await checkAndSetUserData();
+      
+      // Clear all phone login related sessionStorage after successful login
+      sessionStorage.removeItem('phoneLogin_showOtp');
+      sessionStorage.removeItem('phoneLogin_userInfo');
+      sessionStorage.removeItem('phoneLogin_phoneNumber');
+      sessionStorage.removeItem('phoneLoginInProgress');
+      sessionStorage.removeItem('login_authMethod');
+      
     } catch (error) {
       throw error;
     } finally {

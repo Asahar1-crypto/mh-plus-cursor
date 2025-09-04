@@ -43,7 +43,7 @@ export const phoneAuthService = {
       
       // Handle specific error messages
       if (error.message?.includes('Phone number not registered')) {
-        toast.error('מספר הטלפון לא רשום במערכת');
+        toast.error('מספר הטלפון לא רשום במערכת. אנא הירשם תחילה.');
       } else if (error.message?.includes('Too many attempts')) {
         toast.error('יותר מדי נסיונות. נסה שוב מאוחר יותר');
       } else {
@@ -123,6 +123,8 @@ export const phoneAuthService = {
       
       // Use the session URL to establish authentication
       if (result.sessionUrl) {
+        // Store a flag that login is in progress to handle the redirect properly
+        sessionStorage.setItem('phoneLoginInProgress', 'true');
         window.location.href = result.sessionUrl;
         // The user will be redirected and authenticated
         return {
