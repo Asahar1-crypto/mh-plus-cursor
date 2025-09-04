@@ -10,9 +10,10 @@ import OtpVerification from './OtpVerification';
 
 interface PhoneLoginProps {
   onBack: () => void;
+  hideHeader?: boolean;
 }
 
-const PhoneLogin: React.FC<PhoneLoginProps> = ({ onBack }) => {
+const PhoneLogin: React.FC<PhoneLoginProps> = ({ onBack, hideHeader = false }) => {
   const { sendPhoneOtp, isLoading } = useAuth();
   const [phoneNumber, setPhoneNumber] = useState(() => {
     const stored = sessionStorage.getItem('phoneLogin_phoneNumber') || '';
@@ -187,6 +188,99 @@ const PhoneLogin: React.FC<PhoneLoginProps> = ({ onBack }) => {
     showOtpVerification,
     userInfo
   });
+
+  if (hideHeader) {
+    return (
+      <div className="space-y-6">
+        <div className="text-center mb-4">
+          <p className="text-sm text-muted-foreground">
+            הזן את מספר הטלפון הרשום כבר במערכת
+            <br />
+            <span className="text-xs text-muted-foreground">
+              אם עדיין לא נרשמת, <Link to="/register" className="text-primary hover:text-primary-glow hover:underline">לחץ כאן להירשם</Link>
+            </span>
+          </p>
+        </div>
+        
+        <div className="space-y-2">
+          <Label htmlFor="phoneNumber" className="text-sm font-medium">
+            מספר טלפון
+          </Label>
+          <div className="relative">
+            <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
+              <span className="text-muted-foreground text-sm">🇮🇱 +972</span>
+            </div>
+            <Input
+              id="phoneNumber"
+              type="tel"
+              placeholder="050-123-4567"
+              value={phoneNumber}
+              onChange={(e) => handlePhoneChange(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  handleSendOtp(e);
+                }
+              }}
+              className={`pl-20 text-lg ${phoneError ? 'border-destructive' : ''} transition-all duration-200 focus:shadow-glow`}
+              maxLength={12}
+            />
+          </div>
+          {phoneError && (
+            <div className="space-y-2">
+              <p className="text-sm text-destructive animate-fade-in">{phoneError}</p>
+              {phoneError.includes('לא רשום במערכת') && (
+                <div className="text-center">
+                  <Link 
+                    to="/register" 
+                    className="text-sm text-primary hover:text-primary-glow hover:underline font-medium inline-flex items-center gap-1"
+                  >
+                    לחץ כאן להרשמה 
+                    <span className="text-xs">←</span>
+                  </Link>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        <div className="space-y-3">
+          <Button 
+            type="button"
+            onClick={handleSendOtp}
+            disabled={isLoading || !phoneNumber.trim()}
+            className="w-full bg-gradient-to-r from-primary to-primary-glow hover:from-primary-glow hover:to-primary text-white font-semibold py-3 text-lg shadow-lg transform transition-all duration-200 hover:scale-105 disabled:transform-none"
+          >
+            {isLoading ? (
+              <span className="flex items-center gap-2">
+                <span className="h-5 w-5 animate-spin rounded-full border-2 border-current border-r-transparent" />
+                שולח קוד...
+              </span>
+            ) : (
+              <span className="flex items-center gap-2">
+                <Smartphone className="w-5 h-5" />
+                שלח קוד אימות
+              </span>
+            )}
+          </Button>
+
+          <Button
+            variant="ghost"
+            onClick={onBack}
+            className="w-full flex items-center gap-2 hover:bg-muted/50 transition-colors"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            חזור לאימייל וסיסמה
+          </Button>
+        </div>
+
+        <div className="text-center text-xs text-muted-foreground">
+          <p>קוד האימות יישלח בהודעת SMS למספר שלך</p>
+          <p>הקוד תקף למשך 10 דקות בלבד</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <Card className="border-border shadow-lg animate-fade-in glass shadow-card">

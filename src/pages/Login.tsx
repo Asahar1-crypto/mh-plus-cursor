@@ -76,47 +76,6 @@ const Login = () => {
     setAuthMethod('email');
   };
 
-  if (authMethod === 'phone') {
-    return (
-      <>
-        <AnimatedBackground />
-        <div className="container mx-auto py-10 px-4 flex items-center justify-center min-h-[calc(100vh-4rem)]">
-          <div className="w-full max-w-6xl">
-            <div className="grid lg:grid-cols-3 gap-8 items-center" dir="ltr">
-              {/* Left Wallet Character - Green */}
-              <div className="hidden lg:flex flex-col items-center justify-center p-8 animate-fade-in">
-                <div className="relative">
-                  <img 
-                    src="/lovable-uploads/3d7094a5-211e-416b-a8c4-8fd864c98499.png" 
-                    alt="Green Wallet Character" 
-                    className="w-64 h-64 object-contain animate-bounce [animation-duration:3s]"
-                  />
-                  <div className="absolute -bottom-4 left-1/2 transform -translate-x-1/2 w-32 h-8 bg-black/10 rounded-full blur-md animate-pulse"></div>
-                </div>
-              </div>
-
-              {/* Phone Login Card - Center */}
-              <div className="w-full max-w-md mx-auto lg:mx-0" dir="rtl">
-                <PhoneLogin onBack={handleBackToEmailLogin} />
-              </div>
-
-              {/* Right Wallet Character - Red */}
-              <div className="hidden lg:flex flex-col items-center justify-center p-8 animate-fade-in">
-                <div className="relative">
-                  <img 
-                    src="/lovable-uploads/3a973532-2477-462a-9a84-0390b7045844.png" 
-                    alt="Red Wallet Character" 
-                    className="w-64 h-64 object-contain animate-bounce [animation-duration:3s] [animation-delay:0.5s]"
-                  />
-                  <div className="absolute -bottom-4 left-1/2 transform -translate-x-1/2 w-32 h-8 bg-black/10 rounded-full blur-md animate-pulse [animation-delay:0.5s]"></div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </>
-    );
-  }
   
   return (
     <>
@@ -171,75 +130,81 @@ const Login = () => {
                     disabled={isLoading}
                   />
 
-                  {/* Email Login Form */}
-                  <div className="space-y-4">
-                    <Form {...form}>
-                      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                        <FormField
-                          control={form.control}
-                          name="email"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel className="text-sm font-medium">כתובת אימייל</FormLabel>
-                              <FormControl>
-                                <div className="relative">
-                                  <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
-                                    <Mail className="w-4 h-4 text-muted-foreground" />
+                  {/* Dynamic Content Based on Auth Method */}
+                  {authMethod === 'email' ? (
+                    <div className="space-y-4">
+                      <Form {...form}>
+                        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                          <FormField
+                            control={form.control}
+                            name="email"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel className="text-sm font-medium">כתובת אימייל</FormLabel>
+                                <FormControl>
+                                  <div className="relative">
+                                    <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
+                                      <Mail className="w-4 h-4 text-muted-foreground" />
+                                    </div>
+                                    <Input 
+                                      placeholder="your@email.com" 
+                                      {...field} 
+                                      className="pl-10 transition-all duration-200 focus:shadow-glow"
+                                    />
                                   </div>
-                                  <Input 
-                                    placeholder="your@email.com" 
-                                    {...field} 
-                                    className="pl-10 transition-all duration-200 focus:shadow-glow"
-                                  />
-                                </div>
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        
-                        <FormField
-                          control={form.control}
-                          name="password"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel className="text-sm font-medium">סיסמה</FormLabel>
-                              <FormControl>
-                                <div className="relative">
-                                  <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
-                                    <Lock className="w-4 h-4 text-muted-foreground" />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          
+                          <FormField
+                            control={form.control}
+                            name="password"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel className="text-sm font-medium">סיסמה</FormLabel>
+                                <FormControl>
+                                  <div className="relative">
+                                    <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
+                                      <Lock className="w-4 h-4 text-muted-foreground" />
+                                    </div>
+                                    <Input 
+                                      type="password" 
+                                      placeholder="******" 
+                                      {...field} 
+                                      className="pl-10 transition-all duration-200 focus:shadow-glow"
+                                    />
                                   </div>
-                                  <Input 
-                                    type="password" 
-                                    placeholder="******" 
-                                    {...field} 
-                                    className="pl-10 transition-all duration-200 focus:shadow-glow"
-                                  />
-                                </div>
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        
-                        <div className="text-right">
-                          <Link to="/forgot-password" className="text-sm text-primary hover:text-primary-glow transition-colors duration-200 hover:underline">
-                            שכחת סיסמה?
-                          </Link>
-                        </div>
-                        
-                        <ModernButton 
-                          type="submit" 
-                          className="w-full mt-2" 
-                          size="lg"
-                          loading={isLoading}
-                          variant="gradient"
-                        >
-                          {isLoading ? 'מתחבר...' : 'התחבר'}
-                        </ModernButton>
-                      </form>
-                    </Form>
-                  </div>
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          
+                          <div className="text-right">
+                            <Link to="/forgot-password" className="text-sm text-primary hover:text-primary-glow transition-colors duration-200 hover:underline">
+                              שכחת סיסמה?
+                            </Link>
+                          </div>
+                          
+                          <ModernButton 
+                            type="submit" 
+                            className="w-full mt-2" 
+                            size="lg"
+                            loading={isLoading}
+                            variant="gradient"
+                          >
+                            {isLoading ? 'מתחבר...' : 'התחבר'}
+                          </ModernButton>
+                        </form>
+                      </Form>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      <PhoneLogin onBack={handleBackToEmailLogin} hideHeader={true} />
+                    </div>
+                  )}
                 </CardContent>
                 
                 <CardFooter className="flex justify-center">
