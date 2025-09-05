@@ -125,7 +125,7 @@ serve(async (req) => {
         'Content-Type': 'application/x-www-form-urlencoded',
       },
       body: new URLSearchParams({
-        To: phoneNumber,
+        To: normalizedPhone,
         From: twilioPhoneNumber,
         Body: smsMessage,
       }),
@@ -134,7 +134,7 @@ serve(async (req) => {
     const twilioResult = await twilioResponse.json();
     
     if (twilioResponse.ok) {
-      console.log(`SMS sent successfully. SID: ${twilioResult.sid}`);
+      console.log(`SMS sent successfully via Twilio. SID: ${twilioResult.sid}`);
       
       return new Response(
         JSON.stringify({ 
@@ -149,10 +149,12 @@ serve(async (req) => {
       );
     } else {
       console.error('Twilio error:', twilioResult);
+      console.error('Twilio response status:', twilioResponse.status);
       return new Response(
         JSON.stringify({ 
           error: 'Failed to send SMS', 
-          details: twilioResult.message 
+          details: twilioResult.message || `HTTP ${twilioResponse.status}`,
+          twilioError: twilioResult
         }),
         { 
           status: 400, 
