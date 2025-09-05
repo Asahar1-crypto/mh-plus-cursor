@@ -51,7 +51,6 @@ const AppSidebar: React.FC<AppSidebarProps> = ({ isMobile, isOpen, onClose }) =>
     { icon: CreditCard, label: 'הוצאות', path: '/expenses' },
     { icon: Users, label: 'ילדים', path: '/children' },
     { icon: BarChart3, label: 'דוחות', path: '/reports' },
-    { icon: UserCog, label: 'ניהול חשבון', path: '/account-management' },
     { icon: Settings, label: 'הגדרות', path: '/account-settings' },
   ];
 
