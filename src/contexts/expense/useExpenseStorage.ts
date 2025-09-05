@@ -24,27 +24,42 @@ export const useExpenseStorage = (user: User | null, account: Account | null): E
     if (!user || !account) {
       setExpenses([]);
       setChildrenList([]);
+      setIsLoading(false);
       return;
     }
     
     setIsLoading(true);
+    console.log(`🔄 Starting data refresh for account: ${account.name} (${account.id})`);
+    
+    // Add timeout to prevent infinite loading
+    const timeoutId = setTimeout(() => {
+      console.error('Data loading timeout after 10 seconds');
+      setIsLoading(false);
+    }, 10000);
+    
     try {
       // Load expenses from Supabase for the current account
+      console.log('📊 Loading expenses...');
       const fetchedExpenses = await expenseService.getExpenses(user, account);
+      console.log(`✅ Loaded ${fetchedExpenses.length} expenses`);
       setExpenses(fetchedExpenses);
       
       // Load children from Supabase for the current account
+      console.log('👶 Loading children...');
       const fetchedChildren = await expenseService.getChildren(user, account);
+      console.log(`✅ Loaded ${fetchedChildren.length} children`);
       setChildrenList(fetchedChildren);
       
       // Update the current account reference
       currentAccountRef.current = account.id;
+      console.log('✅ Data refresh completed successfully');
     } catch (error) {
-      console.error('Failed to load data:', error);
+      console.error('❌ Failed to load data:', error);
       // Clear data on error
       setExpenses([]);
       setChildrenList([]);
     } finally {
+      clearTimeout(timeoutId);
       setIsLoading(false);
     }
   };
