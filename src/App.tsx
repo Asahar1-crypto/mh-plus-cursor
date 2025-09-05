@@ -58,6 +58,7 @@ const App = () => (
                 <Route path="/register" element={<Register />} />
                 <Route path="/verify-email" element={<VerifyEmail />} />
                 <Route path="/forgot-password" element={<ForgotPassword />} />
+                <Route path="/family-invitation" element={<FamilyInvitation />} />
               </Route>
               
               {/* Protected routes */}
@@ -82,7 +83,6 @@ const App = () => (
               {/* Special routes */}
               <Route path="/invitation/:invitationId" element={<AcceptInvitation />} />
               <Route path="/accept-invitation" element={<AcceptInvitation />} />
-              <Route path="/family-invitation" element={<FamilyInvitation />} />
               
               {/* Catch all */}
               <Route path="*" element={<NotFound />} />
