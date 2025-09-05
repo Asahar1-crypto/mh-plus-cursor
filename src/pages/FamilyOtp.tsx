@@ -111,75 +111,48 @@ const FamilyOtp = () => {
 
       setIsLoading(true);
       
-      // 1. Create user account with Supabase Auth (with phone verification)
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email,
-        password: generateRandomPassword(), // Generate a temporary password
-        options: {
-          data: { 
-            name, 
-            phone_number: phone 
-          },
-          emailRedirectTo: `${window.location.origin}/dashboard`
+      // Call edge function to complete family registration
+      const { data, error } = await supabase.functions.invoke('complete-family-registration', {
+        body: {
+          name,
+          email,
+          phone,
+          invitationId
         }
       });
 
-      if (authError) {
-        console.error('Auth registration error:', authError);
-        toast.error(`שגיאה ברישום: ${authError.message}`);
+      if (error) {
+        console.error('Family registration error:', error);
+        toast.error(`שגיאה בהשלמת הרישום: ${error.message}`);
         return;
       }
 
-      if (!authData.user) {
-        toast.error('שגיאה ביצירת המשתמש');
+      if (!data?.success) {
+        console.error('Family registration failed:', data);
+        toast.error(data?.error || 'שגיאה בהשלמת הרישום');
         return;
       }
 
-      console.log('User created successfully:', authData.user.id);
-
-      // 2. Update SMS verification codes with user_id
-      if (phone) {
-        const { error: smsUpdateError } = await supabase
-          .from('sms_verification_codes')
-          .update({ user_id: authData.user.id })
-          .eq('phone_number', phone)
-          .eq('verified', true)
-          .is('user_id', null);
-
-        if (smsUpdateError) {
-          console.error('Error updating SMS verification with user_id:', smsUpdateError);
-        } else {
-          console.log('SMS verification code updated with user_id');
-        }
-      }
-
-      // 3. Accept the invitation and join the family account
-      if (invitationId) {
-        const { error: invitationError } = await supabase.rpc('accept_invitation_and_add_member', {
-          invitation_uuid: invitationId,
-          user_uuid: authData.user.id
-        });
-
-        if (invitationError) {
-          console.error('Error accepting invitation:', invitationError);
-          toast.error(`שגיאה בקבלת ההזמנה: ${invitationError.message}`);
-          return;
-        }
-
-        console.log('Invitation accepted successfully');
-      }
-
-      toast.success('הרישום הושלם בהצלחה! אנא בדוק את המייל לאישור החשבון');
+      console.log('Family registration completed successfully:', data);
       
-      // Redirect to login with email filled
-      setTimeout(() => {
-        navigate('/login', { 
-          state: { 
-            email,
-            message: 'הרישום הושלם בהצלחה! אנא בדוק את המייל לאישור החשבון ולאחר מכן התחבר'
-          }
-        });
-      }, 2000);
+      toast.success('הרישום הושלם בהצלחה! אתה כעת חבר בחשבון המשפחתי');
+      
+      // If we got a magic link, redirect to it for auto-login
+      if (data.magicLink) {
+        setTimeout(() => {
+          window.location.href = data.magicLink;
+        }, 2000);
+      } else {
+        // Fallback to login page
+        setTimeout(() => {
+          navigate('/login', { 
+            state: { 
+              email,
+              message: 'הרישום הושלם בהצלחה! המייל שלך אומת אוטומטית. אנא התחבר'
+            }
+          });
+        }, 2000);
+      }
 
     } catch (error: any) {
       console.error('Registration completion error:', error);
@@ -187,16 +160,6 @@ const FamilyOtp = () => {
     } finally {
       setIsLoading(false);
     }
-  };
-
-  // Helper function to generate a random password
-  const generateRandomPassword = () => {
-    const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*';
-    let password = '';
-    for (let i = 0; i < 12; i++) {
-      password += chars.charAt(Math.floor(Math.random() * chars.length));
-    }
-    return password;
   };
 
   const handleBack = () => {
