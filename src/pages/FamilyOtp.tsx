@@ -109,22 +109,94 @@ const FamilyOtp = () => {
         name, email, phone, invitationId
       });
 
-      // TODO: Implement complete family registration
-      // This should:
-      // 1. Create user account with Supabase Auth
-      // 2. Create user profile
+      setIsLoading(true);
+      
+      // 1. Create user account with Supabase Auth (with phone verification)
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email,
+        password: generateRandomPassword(), // Generate a temporary password
+        options: {
+          data: { 
+            name, 
+            phone_number: phone 
+          },
+          emailRedirectTo: `${window.location.origin}/dashboard`
+        }
+      });
+
+      if (authError) {
+        console.error('Auth registration error:', authError);
+        toast.error(`שגיאה ברישום: ${authError.message}`);
+        return;
+      }
+
+      if (!authData.user) {
+        toast.error('שגיאה ביצירת המשתמש');
+        return;
+      }
+
+      console.log('User created successfully:', authData.user.id);
+
+      // 2. Update SMS verification codes with user_id
+      if (phone) {
+        const { error: smsUpdateError } = await supabase
+          .from('sms_verification_codes')
+          .update({ user_id: authData.user.id })
+          .eq('phone_number', phone)
+          .eq('verified', true)
+          .is('user_id', null);
+
+        if (smsUpdateError) {
+          console.error('Error updating SMS verification with user_id:', smsUpdateError);
+        } else {
+          console.log('SMS verification code updated with user_id');
+        }
+      }
+
       // 3. Accept the invitation and join the family account
-      // 4. Automatically log the user in
+      if (invitationId) {
+        const { error: invitationError } = await supabase.rpc('accept_invitation_and_add_member', {
+          invitation_uuid: invitationId,
+          user_uuid: authData.user.id
+        });
+
+        if (invitationError) {
+          console.error('Error accepting invitation:', invitationError);
+          toast.error(`שגיאה בקבלת ההזמנה: ${invitationError.message}`);
+          return;
+        }
+
+        console.log('Invitation accepted successfully');
+      }
+
+      toast.success('הרישום הושלם בהצלחה! אנא בדוק את המייל לאישור החשבון');
       
-      toast.success('הרישום הושלם בהצלחה! מתחבר...');
-      
-      // For now, navigate to success page (to be implemented)
-      navigate(`/family-success?invitationId=${invitationId}`);
-      
+      // Redirect to login with email filled
+      setTimeout(() => {
+        navigate('/login', { 
+          state: { 
+            email,
+            message: 'הרישום הושלם בהצלחה! אנא בדוק את המייל לאישור החשבון ולאחר מכן התחבר'
+          }
+        });
+      }, 2000);
+
     } catch (error: any) {
       console.error('Registration completion error:', error);
       toast.error('שגיאה בהשלמת הרישום: ' + error.message);
+    } finally {
+      setIsLoading(false);
     }
+  };
+
+  // Helper function to generate a random password
+  const generateRandomPassword = () => {
+    const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*';
+    let password = '';
+    for (let i = 0; i < 12; i++) {
+      password += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return password;
   };
 
   const handleBack = () => {
