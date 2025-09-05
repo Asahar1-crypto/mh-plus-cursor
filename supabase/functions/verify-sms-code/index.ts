@@ -32,7 +32,7 @@ serve(async (req) => {
       )
     }
 
-    if (!['registration', 'login'].includes(verificationType)) {
+    if (!['registration', 'login', 'family_registration'].includes(verificationType)) {
       console.error('Invalid verification type:', verificationType)
       return new Response(
         JSON.stringify({ 
