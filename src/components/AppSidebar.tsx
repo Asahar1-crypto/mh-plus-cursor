@@ -58,6 +58,7 @@ const AppSidebar: React.FC<AppSidebarProps> = ({ isMobile, isOpen, onClose }) =>
   const adminItems = [
     { icon: Shield, label: 'ניהול מערכת', path: '/admin/dashboard' },
     { icon: UserCog, label: 'משתמשים לא מאומתים', path: '/admin/unverified-users' },
+    { icon: Users, label: 'יומני SMS', path: '/admin/sms-logs' },
   ];
 
   const sidebarItems = profile?.is_super_admin 
