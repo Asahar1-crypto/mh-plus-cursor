@@ -27,27 +27,26 @@ export function useInvitationDetails(invitationId: string | undefined) {
         setFetchAttempted(true);
         console.log(`Fetching invitation details for ID: ${invitationId}`);
         
-        // Get invitation data first
+        // Get invitation data by invitation_id (accessible by anyone if valid)
         const { data: invitationData, error: invitationError } = await supabase
           .from('invitations')
           .select('*')
           .eq('invitation_id', invitationId)
           .is('accepted_at', null)
-          .gt('expires_at', 'now()');
+          .gt('expires_at', 'now()')
+          .maybeSingle();
           
         if (invitationError) {
           console.error("Error fetching invitation from Supabase:", invitationError);
           throw new Error('אירעה שגיאה בעת חיפוש ההזמנה: ' + invitationError.message);
         }
         
-        const invitationArray = Array.isArray(invitationData) ? invitationData : [];
-        
-        if (!invitationArray || invitationArray.length === 0) {
+        if (!invitationData) {
           console.log("No active invitation found in database");
           throw new Error("הזמנה לא נמצאה או שפג תוקפה");
         }
         
-        const invitation = invitationArray[0];
+        const invitation = invitationData;
         console.log("Found invitation in database:", invitation);
         
         // Try to get account data
