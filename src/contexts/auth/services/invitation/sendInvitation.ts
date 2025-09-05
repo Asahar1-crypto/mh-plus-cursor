@@ -72,7 +72,7 @@ export async function sendInvitation(email: string, user: User, account: Account
         account_id: account.id, // Make sure we use the verified account ID
         email: email.toLowerCase(),
         invitation_id: invitationId,
-        expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString() // 7 days from now
+        expires_at: new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString() // 48 hours from now
       });
 
     if (invitationError) {
@@ -86,7 +86,7 @@ export async function sendInvitation(email: string, user: User, account: Account
 
     // Try to send email (this might fail if email service is not configured)
     try {
-      const invitationUrl = `${window.location.origin}/accept-invitation?invitationId=${invitationId}`;
+      const invitationUrl = `${window.location.origin}/family-invitation?invitationId=${invitationId}`;
       
       // Try to send email using the edge function
       const { data, error } = await supabase.functions.invoke('send-email', {
@@ -102,7 +102,7 @@ export async function sendInvitation(email: string, user: User, account: Account
               <a href="${invitationUrl}" style="background-color: #4CAF50; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block; margin: 10px 0;">קבל/י הזמנה</a>
               <p>אם הקישור לא עובד, העתק/י והדבק/י את הכתובת הבאה לדפדפן:</p>
               <p style="background-color: #f5f5f5; padding: 10px; border-radius: 3px; word-break: break-all;">${invitationUrl}</p>
-              <p>ההזמנה תפוג תוך 7 ימים.</p>
+              <p>ההזמנה תפוג תוך 48 שעות.</p>
               <p>בברכה,<br>צוות מחציות פלוס</p>
             </div>
           `

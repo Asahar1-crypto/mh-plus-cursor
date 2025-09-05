@@ -63,6 +63,7 @@ export function useInvitationDetails(invitationId: string | undefined) {
             ownerName: 'בעל החשבון',
             accountName: 'חשבון שותף (נתונים לא זמינים)',
             email: invitation.email || '',
+            expires_at: invitation.expires_at,
           });
           
           // Store minimal data for acceptance
@@ -102,6 +103,7 @@ export function useInvitationDetails(invitationId: string | undefined) {
           ownerName: ownerName,
           accountName: account.name || 'חשבון משותף',
           email: invitation.email || '',
+          expires_at: invitation.expires_at,
         });
         
         // Store data for acceptance

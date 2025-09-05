@@ -3,6 +3,7 @@ export interface InvitationDetails {
   ownerName: string;
   accountName: string;
   email: string;
+  expires_at: string;
 }
 
 export interface InvitationData {

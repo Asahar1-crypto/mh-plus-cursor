@@ -16,6 +16,7 @@ import Dashboard from "./pages/Dashboard";
 import AccountSettings from "./pages/AccountSettings";
 import AccountManagement from "./pages/AccountManagement";
 import AcceptInvitation from "./pages/AcceptInvitation";
+import FamilyInvitation from "./pages/FamilyInvitation";
 import NotFound from "./pages/NotFound";
 import AddExpense from "./pages/AddExpense";
 import Children from "./pages/Children";
@@ -81,6 +82,7 @@ const App = () => (
               {/* Special routes */}
               <Route path="/invitation/:invitationId" element={<AcceptInvitation />} />
               <Route path="/accept-invitation" element={<AcceptInvitation />} />
+              <Route path="/family-invitation" element={<FamilyInvitation />} />
               
               {/* Catch all */}
               <Route path="*" element={<NotFound />} />
