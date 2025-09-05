@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { SmartPhoneInput } from '@/components/ui/smart-phone-input';
+import { InternationalPhoneInput } from '@/components/ui/international-phone-input';
 import LoadingState from '@/components/invitation/LoadingState';
 import ErrorState from '@/components/invitation/ErrorState';
 import { Users, Eye, EyeOff } from 'lucide-react';
@@ -141,16 +141,13 @@ const FamilyRegister = () => {
             {/* Phone field */}
             <div className="space-y-2">
               <Label htmlFor="phoneNumber">מספר טלפון *</Label>
-              <SmartPhoneInput
+              <InternationalPhoneInput
                 label=""
                 value={watch('phoneNumber') || ''}
                 onChange={(value) => setValue('phoneNumber', value)}
-                placeholder="הזן מספר טלפון"
-                className={errors.phoneNumber ? 'border-destructive' : ''}
+                validation={errors.phoneNumber ? 'invalid' : watch('phoneNumber') && watch('phoneNumber').startsWith('+') && watch('phoneNumber').length >= 10 ? 'valid' : 'none'}
+                validationMessage={errors.phoneNumber?.message}
               />
-              {errors.phoneNumber && (
-                <p className="text-sm text-destructive">{errors.phoneNumber.message}</p>
-              )}
               <p className="text-xs text-muted-foreground">
                 נשלח קוד אימות למספר הטלפון לאימות
               </p>
