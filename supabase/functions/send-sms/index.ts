@@ -30,8 +30,8 @@ serve(async (req) => {
       );
     }
 
-    const { phoneNumber, code, message, type = 'verification' } = await req.json();
-    console.log(`SMS request received for: ${phoneNumber}, type: ${type}`);
+    const { phoneNumber, code, message, type = 'verification', verificationType = 'registration' } = await req.json();
+    console.log(`SMS request received for: ${phoneNumber}, type: ${type}, verificationType: ${verificationType}`);
 
     if (!phoneNumber) {
       return new Response(
@@ -73,7 +73,7 @@ serve(async (req) => {
           .insert({
             phone_number: phoneNumber,
             code: newCode,
-            verification_type: type,
+            verification_type: verificationType,
             expires_at: expiresAt.toISOString(),
             verified: false,
             attempts: 0

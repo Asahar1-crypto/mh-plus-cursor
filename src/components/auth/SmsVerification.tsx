@@ -11,12 +11,14 @@ interface SmsVerificationProps {
   phoneNumber: string;
   onVerificationComplete: (verified: boolean) => void;
   onBack: () => void;
+  verificationType?: 'registration' | 'family_registration' | 'login';
 }
 
 const SmsVerification: React.FC<SmsVerificationProps> = ({
   phoneNumber,
   onVerificationComplete,
-  onBack
+  onBack,
+  verificationType = 'registration'
 }) => {
   const [code, setCode] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -39,7 +41,8 @@ const SmsVerification: React.FC<SmsVerificationProps> = ({
       const { error } = await supabase.functions.invoke('send-sms', {
         body: {
           phoneNumber,
-          type: 'verification'
+          type: 'verification',
+          verificationType
         }
       });
 
@@ -71,7 +74,7 @@ const SmsVerification: React.FC<SmsVerificationProps> = ({
         body: {
           phoneNumber,
           code,
-          verificationType: 'registration'
+          verificationType
         }
       });
 
