@@ -24,3 +24,12 @@ verify_jwt = true
 
 [functions.delete-user]
 verify_jwt = true
+
+[functions.send-sms]
+verify_jwt = false
+
+[functions.verify-sms-code]
+verify_jwt = false
+
+[functions.complete-family-registration]
+verify_jwt = false
