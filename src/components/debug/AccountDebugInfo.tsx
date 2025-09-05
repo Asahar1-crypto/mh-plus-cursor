@@ -26,7 +26,7 @@ interface InvitationInfo {
 }
 
 const AccountDebugInfo: React.FC = () => {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const [accounts, setAccounts] = useState<AccountInfo[]>([]);
   const [invitations, setInvitations] = useState<InvitationInfo[]>([]);
   const [loading, setLoading] = useState(false);
@@ -115,6 +115,11 @@ const AccountDebugInfo: React.FC = () => {
   }, [isVisible, user]);
 
   if (!user) return null;
+
+  // מציג רק לסופר אדמין
+  if (!user || !profile?.is_super_admin) {
+    return null;
+  }
 
   return (
     <div className="p-4 border-t border-gray-200">
