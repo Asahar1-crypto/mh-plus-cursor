@@ -35,6 +35,7 @@ const FamilyOtp = () => {
   const sendVerificationCode = async () => {
     setIsResending(true);
     try {
+      console.log('FamilyOtp: Sending verification code to:', phone);
       const { error } = await supabase.functions.invoke('send-sms', {
         body: {
           phoneNumber: phone,
@@ -42,10 +43,13 @@ const FamilyOtp = () => {
         }
       });
 
+      console.log('FamilyOtp: SMS function result:', { error });
+
       if (error) {
         console.error('Error sending SMS:', error);
-        toast.error('שגיאה בשליחת קוד האימות');
+        toast.error('שגיאה בשליחת קוד האימות: ' + error.message);
       } else {
+        console.log('FamilyOtp: SMS sent successfully');
         toast.success('קוד האימות נשלח בהצלחה');
         setCountdown(60); // Start 60 second countdown
       }
