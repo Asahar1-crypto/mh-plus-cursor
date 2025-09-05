@@ -49,6 +49,7 @@ serve(async (req) => {
     // If no code provided, find the latest verification code for this phone number
     let verificationCode = code;
     if (!verificationCode && type === 'verification') {
+      // First try to find existing valid code
       const { data: codeData } = await supabase
         .from('sms_verification_codes')
         .select('code')
@@ -59,7 +60,33 @@ serve(async (req) => {
         .limit(1)
         .single();
       
-      verificationCode = codeData?.code;
+      if (codeData?.code) {
+        verificationCode = codeData.code;
+        console.log('Found existing verification code:', verificationCode);
+      } else {
+        // No valid code found, create a new one
+        const newCode = Math.floor(100000 + Math.random() * 900000).toString();
+        const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes from now
+        
+        const { error: insertError } = await supabase
+          .from('sms_verification_codes')
+          .insert({
+            phone_number: phoneNumber,
+            code: newCode,
+            verification_type: type,
+            expires_at: expiresAt.toISOString(),
+            verified: false,
+            attempts: 0
+          });
+        
+        if (insertError) {
+          console.error('Error creating verification code:', insertError);
+          throw new Error('Failed to create verification code');
+        }
+        
+        verificationCode = newCode;
+        console.log('Created new verification code:', verificationCode);
+      }
     }
 
     // Prepare SMS message
