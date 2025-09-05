@@ -18,6 +18,7 @@ import AccountManagement from "./pages/AccountManagement";
 import AcceptInvitation from "./pages/AcceptInvitation";
 import FamilyInvitation from "./pages/FamilyInvitation";
 import FamilyRegister from "./pages/FamilyRegister";
+import FamilyPhoneRegister from "./pages/FamilyPhoneRegister";
 import FamilyOtp from "./pages/FamilyOtp";
 import NotFound from "./pages/NotFound";
 import AddExpense from "./pages/AddExpense";
@@ -62,7 +63,7 @@ const App = () => (
                 <Route path="/verify-email" element={<VerifyEmail />} />
                 <Route path="/forgot-password" element={<ForgotPassword />} />
                 <Route path="/family-invitation" element={<FamilyInvitation />} />
-                <Route path="/family-register" element={<FamilyRegister />} />
+                <Route path="/family-register" element={<FamilyPhoneRegister />} />
                 <Route path="/family-otp" element={<FamilyOtp />} />
               </Route>
               

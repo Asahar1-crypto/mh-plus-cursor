@@ -66,8 +66,8 @@ const FamilyRegister = () => {
       
       toast.success('רישום התחיל בהצלחה! נשלח קוד אימות ל-' + data.phoneNumber);
       
-      // Navigate to OTP verification page (will be created next)
-      navigate(`/family-otp?invitationId=${invitationId}&phone=${encodeURIComponent(data.phoneNumber)}&name=${encodeURIComponent(data.name)}&email=${encodeURIComponent(email)}`);
+      // Navigate to new phone-based OTP verification page
+      navigate(`/family-register?invitationId=${invitationId}`);
       
     } catch (error: any) {
       console.error('Registration failed:', error);
