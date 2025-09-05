@@ -29,12 +29,12 @@ interface ScanResult {
 }
 
 const PAYMENT_TYPES = [
-  { value: 'i_paid_shared', label: 'שילמתי - הוצאה משותפת' },
-  { value: 'i_paid_theirs', label: 'שילמתי עבורם' },
-  { value: 'they_paid_shared', label: 'הם שילמו - הוצאה משותפת' },
-  { value: 'they_paid_mine', label: 'הם שילמו עבורי' },
-  { value: 'i_owe_them', label: 'אני חייב להם' },
-  { value: 'they_owe_me', label: 'הם חייבים לי' }
+  { value: 'i_paid_shared', label: 'אני שילמתי - הוצאה משותפת' },
+  { value: 'i_paid_theirs', label: 'אני שילמתי - הוצאה של השותף' },
+  { value: 'they_paid_shared', label: 'השותף שילם/ה - הוצאה משותפת' },
+  { value: 'they_paid_mine', label: 'השותף שילם/ה - הוצאה שלי' },
+  { value: 'i_owe_them', label: 'אני צריך לשלם לשותף' },
+  { value: 'they_owe_me', label: 'השותף צריך/צריכה לשלם לי' }
 ];
 
 interface ReceiptValidationProps {
