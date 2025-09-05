@@ -32,6 +32,7 @@ import AdminPricing from "./pages/admin/AdminPricing";
 import AdminTenants from "./pages/admin/AdminTenants";
 import AdminEmailSettings from "./pages/admin/AdminEmailSettings";
 import AdminUnverifiedUsers from "./pages/admin/AdminUnverifiedUsers";
+import AdminSmsLogs from "./pages/admin/AdminSmsLogs";
 
 import AuthLayout from "./components/AuthLayout";
 import AppLayout from "./components/AppLayout";
@@ -82,6 +83,7 @@ const App = () => (
                 <Route path="/admin/tenants" element={<AdminTenants />} />
                 <Route path="/admin/email-settings" element={<AdminEmailSettings />} />
                 <Route path="/admin/unverified-users" element={<AdminUnverifiedUsers />} />
+                <Route path="/admin/sms-logs" element={<AdminSmsLogs />} />
               </Route>
               
               {/* Special routes */}

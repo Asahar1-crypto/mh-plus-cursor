@@ -1,0 +1,220 @@
+import React, { useState, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { MessageSquare, Phone, CheckCircle, XCircle, Clock, AlertCircle } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/auth';
+import { Navigate } from 'react-router-dom';
+import { format } from 'date-fns';
+
+interface SmsLog {
+  id: string;
+  phone_number: string;
+  code: string;
+  verification_type: string;
+  verified: boolean;
+  verified_at: string | null;
+  created_at: string;
+  expires_at: string;
+  attempts: number;
+}
+
+const AdminSmsLogs: React.FC = () => {
+  const { user, profile } = useAuth();
+  const { toast } = useToast();
+  const [smsLogs, setSmsLogs] = useState<SmsLog[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // Check if user is super admin
+  if (!user || !profile?.is_super_admin) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  useEffect(() => {
+    fetchSmsLogs();
+  }, []);
+
+  const fetchSmsLogs = async () => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('sms_verification_codes')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(100);
+
+      if (error) throw error;
+      setSmsLogs(data || []);
+    } catch (error: any) {
+      console.error('Error fetching SMS logs:', error);
+      toast({
+        title: 'שגיאה',
+        description: 'לא ניתן לטעון את נתוני הSMS',
+        variant: 'destructive'
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getStatusBadge = (log: SmsLog) => {
+    if (log.verified) {
+      return <Badge variant="default" className="bg-green-500"><CheckCircle className="w-3 h-3 mr-1" />מאומת</Badge>;
+    }
+    if (new Date() > new Date(log.expires_at)) {
+      return <Badge variant="destructive"><XCircle className="w-3 h-3 mr-1" />פג תוקף</Badge>;
+    }
+    return <Badge variant="secondary"><Clock className="w-3 h-3 mr-1" />ממתין</Badge>;
+  };
+
+  const getVerificationTypeBadge = (type: string) => {
+    const typeLabels: { [key: string]: string } = {
+      registration: 'רישום',
+      login: 'התחברות',
+      family_registration: 'רישום משפחתי'
+    };
+    
+    return (
+      <Badge variant="outline">
+        {typeLabels[type] || type}
+      </Badge>
+    );
+  };
+
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center gap-2">
+          <MessageSquare className="w-6 h-6" />
+          <h1 className="text-3xl font-bold">יומני SMS</h1>
+        </div>
+        <Card>
+          <CardContent className="p-6">
+            <div className="text-center">טוען נתונים...</div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center gap-2">
+        <MessageSquare className="w-6 h-6" />
+        <h1 className="text-3xl font-bold">יומני SMS</h1>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">סה"כ הודעות</CardTitle>
+            <MessageSquare className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{smsLogs.length}</div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">מאומתים</CardTitle>
+            <CheckCircle className="h-4 w-4 text-green-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-green-600">
+              {smsLogs.filter(log => log.verified).length}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">ממתינים</CardTitle>
+            <Clock className="h-4 w-4 text-orange-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-orange-600">
+              {smsLogs.filter(log => !log.verified && new Date() <= new Date(log.expires_at)).length}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">פג תוקף</CardTitle>
+            <XCircle className="h-4 w-4 text-red-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-red-600">
+              {smsLogs.filter(log => !log.verified && new Date() > new Date(log.expires_at)).length}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>הודעות SMS אחרונות</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>מספר טלפון</TableHead>
+                <TableHead>קוד</TableHead>
+                <TableHead>סוג</TableHead>
+                <TableHead>סטטוס</TableHead>
+                <TableHead>נוצר</TableHead>
+                <TableHead>מאומת</TableHead>
+                <TableHead>ניסיונות</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {smsLogs.map((log) => (
+                <TableRow key={log.id}>
+                  <TableCell className="font-mono">
+                    <div className="flex items-center gap-2">
+                      <Phone className="w-4 h-4" />
+                      {log.phone_number}
+                    </div>
+                  </TableCell>
+                  <TableCell className="font-mono font-bold text-lg">
+                    {log.code}
+                  </TableCell>
+                  <TableCell>
+                    {getVerificationTypeBadge(log.verification_type)}
+                  </TableCell>
+                  <TableCell>
+                    {getStatusBadge(log)}
+                  </TableCell>
+                  <TableCell>
+                    {format(new Date(log.created_at), 'dd/MM/yyyy HH:mm')}
+                  </TableCell>
+                  <TableCell>
+                    {log.verified_at ? format(new Date(log.verified_at), 'dd/MM/yyyy HH:mm') : '-'}
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant={log.attempts > 3 ? "destructive" : "secondary"}>
+                      {log.attempts}
+                    </Badge>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+          
+          {smsLogs.length === 0 && (
+            <div className="text-center py-8 text-muted-foreground">
+              <AlertCircle className="w-12 h-12 mx-auto mb-4" />
+              <p>אין הודעות SMS במערכת</p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+};
+
+export default AdminSmsLogs;
