@@ -1,5 +1,6 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.4';
+import { parsePhoneNumber } from 'https://esm.sh/libphonenumber-js@1.10.51';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -43,6 +44,17 @@ serve(async (req) => {
       );
     }
 
+    // Normalize phone number using libphonenumber-js
+    let normalizedPhone;
+    try {
+      const parsed = parsePhoneNumber(phoneNumber, 'IL'); // Default to Israel
+      normalizedPhone = parsed ? parsed.format('E.164') : phoneNumber;
+      console.log('Phone normalization:', { original: phoneNumber, normalized: normalizedPhone });
+    } catch (error) {
+      console.log('Phone parsing failed, using original:', phoneNumber);
+      normalizedPhone = phoneNumber;
+    }
+
     // Initialize Supabase client
     const supabase = createClient(supabaseUrl, supabaseServiceRoleKey);
 
@@ -53,7 +65,8 @@ serve(async (req) => {
       const { data: codeData } = await supabase
         .from('sms_verification_codes')
         .select('code')
-        .eq('phone_number', phoneNumber)
+        .eq('phone_number', normalizedPhone)
+        .eq('verification_type', verificationType)
         .eq('verified', false)
         .gte('expires_at', new Date().toISOString())
         .order('created_at', { ascending: false })
@@ -71,7 +84,7 @@ serve(async (req) => {
         const { error: insertError } = await supabase
           .from('sms_verification_codes')
           .insert({
-            phone_number: phoneNumber,
+            phone_number: normalizedPhone,
             code: newCode,
             verification_type: verificationType,
             expires_at: expiresAt.toISOString(),
