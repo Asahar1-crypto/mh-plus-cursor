@@ -2,7 +2,7 @@ import React from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
-import SmsVerification from '@/components/auth/SmsVerification';
+import { OTPVerification } from '@/components/otp';
 
 const FamilyOtp: React.FC = () => {
   const location = useLocation();
@@ -11,7 +11,7 @@ const FamilyOtp: React.FC = () => {
   // Get data from navigation state
   const { name, email, phone, invitationId } = location.state || {};
 
-  const handleVerificationComplete = async (verified: boolean) => {
+  const handleVerificationComplete = async (verified: boolean, data?: any) => {
     if (!verified) {
       return;
     }
@@ -22,7 +22,7 @@ const FamilyOtp: React.FC = () => {
       });
 
       // Call edge function to complete family registration
-      const { data, error } = await supabase.functions.invoke('complete-family-registration', {
+      const { data: registrationData, error } = await supabase.functions.invoke('complete-family-registration', {
         body: {
           name,
           email,
@@ -37,20 +37,20 @@ const FamilyOtp: React.FC = () => {
         return;
       }
 
-      if (!data?.success) {
-        console.error('Family registration failed:', data);
-        toast.error(data?.error || 'שגיאה בהשלמת הרישום');
+      if (!registrationData?.success) {
+        console.error('Family registration failed:', registrationData);
+        toast.error(registrationData?.error || 'שגיאה בהשלמת הרישום');
         return;
       }
 
-      console.log('Family registration completed successfully:', data);
+      console.log('Family registration completed successfully:', registrationData);
       
       toast.success('הרישום הושלם בהצלחה! אתה כעת חבר בחשבון המשפחתי');
       
       // If we got a magic link, redirect to it for auto-login
-      if (data.magicLink) {
+      if (registrationData.magicLink) {
         setTimeout(() => {
-          window.location.href = data.magicLink;
+          window.location.href = registrationData.magicLink;
         }, 2000);
       } else {
         // Fallback to login page
@@ -93,11 +93,13 @@ const FamilyOtp: React.FC = () => {
   return (
     <div className="container mx-auto py-10 px-4 flex items-center justify-center min-h-[calc(100vh-4rem)]" dir="rtl">
       <div className="w-full max-w-md">
-        <SmsVerification
+        <OTPVerification
           phoneNumber={phone}
-          verificationType="family_registration"
+          type="family_registration"
           onVerificationComplete={handleVerificationComplete}
           onBack={handleBack}
+          title="הצטרפות לחשבון משפחתי"
+          description={`ברוכים הבאים ${name}!\nנשלח קוד אימות למספר ${phone}\nאנא הזן את הקוד בן 6 הספרות`}
         />
       </div>
     </div>
