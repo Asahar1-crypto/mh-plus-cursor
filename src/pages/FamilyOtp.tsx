@@ -1,5 +1,5 @@
 import React from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import SmsVerification from '@/components/auth/SmsVerification';
@@ -7,9 +7,13 @@ import SmsVerification from '@/components/auth/SmsVerification';
 const FamilyOtp: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   
-  // Get data from navigation state
-  const { name, email, phone, invitationId } = location.state || {};
+  // Get data from navigation state OR search params (for backwards compatibility)
+  const name = location.state?.name || searchParams.get('name');
+  const email = location.state?.email || searchParams.get('email');
+  const phone = location.state?.phone || searchParams.get('phone');
+  const invitationId = location.state?.invitationId || searchParams.get('invitationId');
 
   const handleVerificationComplete = async (verified: boolean, data?: any) => {
     if (!verified) {
