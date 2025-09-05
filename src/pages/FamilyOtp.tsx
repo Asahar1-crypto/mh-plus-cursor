@@ -2,7 +2,7 @@ import React from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
-import { OTPVerification } from '@/components/otp';
+import SmsVerification from '@/components/auth/SmsVerification';
 
 const FamilyOtp: React.FC = () => {
   const location = useLocation();
@@ -93,13 +93,11 @@ const FamilyOtp: React.FC = () => {
   return (
     <div className="container mx-auto py-10 px-4 flex items-center justify-center min-h-[calc(100vh-4rem)]" dir="rtl">
       <div className="w-full max-w-md">
-        <OTPVerification
+        <SmsVerification
           phoneNumber={phone}
-          type="family_registration"
+          verificationType="family_registration"
           onVerificationComplete={handleVerificationComplete}
           onBack={handleBack}
-          title="הצטרפות לחשבון משפחתי"
-          description={`ברוכים הבאים ${name}!\nנשלח קוד אימות למספר ${phone}\nאנא הזן את הקוד בן 6 הספרות`}
         />
       </div>
     </div>
