@@ -48,19 +48,14 @@ const AppHeader: React.FC<AppHeaderProps> = ({ onMenuClick, isMobile }) => {
               <div className="hidden sm:block">
                 <AccountSwitcher />
               </div>
-              <div className="flex items-center gap-1 sm:gap-2">
-                <span className="text-xs sm:text-sm text-muted-foreground hidden md:inline">
-                  שלום, {profile?.name || user?.name || user?.email}
-                </span>
-                <Link to="/account-settings">
-                  <Button variant="ghost" size="sm" className="p-2">
-                    <Settings className="h-4 w-4" />
+                <div className="flex items-center gap-1 sm:gap-2">
+                  <span className="text-xs sm:text-sm text-muted-foreground hidden md:inline">
+                    שלום, {profile?.name || user?.name || user?.email}
+                  </span>
+                  <Button variant="ghost" size="sm" onClick={handleLogout} className="p-2">
+                    <LogOut className="h-4 w-4" />
                   </Button>
-                </Link>
-                <Button variant="ghost" size="sm" onClick={handleLogout} className="p-2">
-                  <LogOut className="h-4 w-4" />
-                </Button>
-              </div>
+                </div>
             </>
           )}
           {!isAuthenticated && (
