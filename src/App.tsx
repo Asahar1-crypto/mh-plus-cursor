@@ -80,6 +80,7 @@ const App = () => (
               
               {/* Special routes */}
               <Route path="/invitation/:invitationId" element={<AcceptInvitation />} />
+              <Route path="/accept-invitation" element={<AcceptInvitation />} />
               
               {/* Catch all */}
               <Route path="*" element={<NotFound />} />

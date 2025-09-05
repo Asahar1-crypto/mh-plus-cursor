@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/auth';
 import { useInvitationDetails } from '@/hooks/useInvitationDetails';
 
@@ -11,7 +11,13 @@ import SuccessState from '@/components/invitation/SuccessState';
 import DebugButtons from '@/components/invitation/DebugButtons';
 
 const AcceptInvitation = () => {
-  const { invitationId } = useParams();
+  const { invitationId: urlInvitationId } = useParams();
+  const [searchParams] = useSearchParams();
+  const queryInvitationId = searchParams.get('invitationId');
+  
+  // Support both URL formats: /invitation/:id and /accept-invitation?invitationId=...
+  const invitationId = urlInvitationId || queryInvitationId;
+  
   const { user, isAuthenticated, acceptInvitation } = useAuth();
   const { status, invitationDetails, errorMessage } = useInvitationDetails(invitationId);
   
