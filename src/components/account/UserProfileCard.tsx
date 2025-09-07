@@ -154,7 +154,13 @@ const UserProfileCard: React.FC = () => {
   };
 
   const handleEmailChange = async () => {
+    console.log('handleEmailChange נקרא - מתחיל בדיקות');
+    console.log('newEmail:', newEmail);
+    console.log('user.email:', user?.email);
+    console.log('user:', user);
+    
     if (!newEmail.trim() || newEmail === user?.email || !user) {
+      console.log('בדיקות נכשלו - כתובת מייל לא תקינה או זהה לנוכחית');
       toast({
         title: "שגיאה",
         description: "אנא הזן כתובת מייל תקינה ושונה מהנוכחית",
@@ -166,6 +172,7 @@ const UserProfileCard: React.FC = () => {
     // בדיקת תקינות מייל
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(newEmail)) {
+      console.log('בדיקת regex נכשלה');
       toast({
         title: "שגיאה",
         description: "כתובת המייל אינה תקינה",
@@ -174,14 +181,19 @@ const UserProfileCard: React.FC = () => {
       return;
     }
 
+    console.log('כל הבדיקות עברו בהצלחה - מתחיל תהליך שינוי מייל');
     setIsLoading(true);
+    
     try {
       console.log('מתחיל תהליך שינוי מייל מ:', user.email, 'ל:', newEmail);
       
       // שליחת בקשה לעדכון מייל דרך Supabase Auth
-      const { error } = await supabase.auth.updateUser({ 
+      console.log('קורא ל supabase.auth.updateUser');
+      const { data, error } = await supabase.auth.updateUser({ 
         email: newEmail 
       });
+
+      console.log('תוצאת updateUser:', { data, error });
 
       if (error) {
         console.error('שגיאה בשינוי מייל:', error);
