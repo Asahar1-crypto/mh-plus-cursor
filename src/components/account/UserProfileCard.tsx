@@ -204,10 +204,12 @@ const UserProfileCard: React.FC = () => {
         console.warn('שגיאה ברישום שינוי מייל:', logError);
       }
       
-      // שליחת בקשה לעדכון מייל דרך Supabase Auth
+      // שליחת בקשה לעדכון מייל דרך Supabase Auth עם redirect מותאם אישית
       console.log('קורא ל supabase.auth.updateUser');
       const { data, error } = await supabase.auth.updateUser({ 
         email: newEmail 
+      }, {
+        emailRedirectTo: `${window.location.origin}/api/auth/callback?type=email_change&next=${encodeURIComponent(window.location.origin + '/dashboard')}`
       });
 
       console.log('תוצאת updateUser:', { data, error });
