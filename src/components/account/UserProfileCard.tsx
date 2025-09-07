@@ -234,8 +234,8 @@ const UserProfileCard: React.FC = () => {
       // הצגת הודעת שגיאה מותאמת לגורם השגיאה
       let errorMessage = "אירעה שגיאה בלתי צפויה";
       
-      if (error.message?.includes('Email rate limit exceeded')) {
-        errorMessage = "חובר יותר מדי בקשות לשינוי מייל. אנא נסה שוב מאוחר יותר";
+      if (error.message?.includes('Email rate limit exceeded') || error.message?.includes('rate limit')) {
+        errorMessage = "חרגת מהמגבלה היומית לשינוי מייל. אנא נסה שוב מחר או צור קשר עם התמיכה";
       } else if (error.message?.includes('Invalid email')) {
         errorMessage = "כתובת המייל אינה תקינה";
       } else if (error.message?.includes('User already registered')) {
