@@ -119,7 +119,7 @@ const Home = () => {
               <p className="text-sm text-muted-foreground mt-1">© 2025 כל הזכויות שמורות</p>
             </div>
             <div className="flex gap-6">
-              <a href="#" className="text-sm text-muted-foreground hover:text-foreground">תנאי שימוש</a>
+              <a href="/terms" className="text-sm text-muted-foreground hover:text-foreground">תנאי שימוש</a>
               <a href="/privacy" className="text-sm text-muted-foreground hover:text-foreground">פרטיות</a>
               <a href="#" className="text-sm text-muted-foreground hover:text-foreground">צור קשר</a>
             </div>
