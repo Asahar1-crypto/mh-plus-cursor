@@ -153,6 +153,75 @@ const UserProfileCard: React.FC = () => {
     setIsLoading(false);
   };
 
+  const handleEmailChange = async () => {
+    if (!newEmail.trim() || newEmail === user?.email || !user) {
+      toast({
+        title: "שגיאה",
+        description: "אנא הזן כתובת מייל תקינה ושונה מהנוכחית",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // בדיקת תקינות מייל
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(newEmail)) {
+      toast({
+        title: "שגיאה",
+        description: "כתובת המייל אינה תקינה",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      console.log('מתחיל תהליך שינוי מייל מ:', user.email, 'ל:', newEmail);
+      
+      // שליחת בקשה לעדכון מייל דרך Supabase Auth
+      const { error } = await supabase.auth.updateUser({ 
+        email: newEmail 
+      });
+
+      if (error) {
+        console.error('שגיאה בשינוי מייל:', error);
+        throw error;
+      }
+
+      setIsEmailDialogOpen(false);
+      setNewEmail('');
+      
+      toast({
+        title: "בקשה נשלחה בהצלחה",
+        description: `נשלח מייל אישור לכתובת ${newEmail}. אנא לחץ על הקישור במייל כדי לאשר את השינוי.`,
+      });
+      
+    } catch (error: any) {
+      console.error('שגיאה בתהליך שינוי המייל:', error);
+      
+      // הצגת הודעת שגיאה מותאמת לגורם השגיאה
+      let errorMessage = "אירעה שגיאה בלתי צפויה";
+      
+      if (error.message?.includes('Email rate limit exceeded')) {
+        errorMessage = "חובר יותר מדי בקשות לשינוי מייל. אנא נסה שוב מאוחר יותר";
+      } else if (error.message?.includes('Invalid email')) {
+        errorMessage = "כתובת המייל אינה תקינה";
+      } else if (error.message?.includes('User already registered')) {
+        errorMessage = "כתובת המייל כבר רשומה במערכת";
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      toast({
+        title: "שגיאה בשינוי מייל",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   if (!user) return null;
 
   return (
@@ -221,13 +290,17 @@ const UserProfileCard: React.FC = () => {
                     ביטול
                   </Button>
                   <Button 
-                    onClick={() => {
-                      console.log('שינוי מייל ל:', newEmail);
-                      // כאן נוסיף את הלוגיקה בשלב הבא
-                    }}
-                    disabled={!newEmail.trim() || newEmail === user.email}
+                    onClick={handleEmailChange}
+                    disabled={!newEmail.trim() || newEmail === user.email || isLoading}
                   >
-                    שלח אישור
+                    {isLoading ? (
+                      <span className="flex items-center gap-2">
+                        <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-r-transparent" />
+                        שולח...
+                      </span>
+                    ) : (
+                      'שלח אישור'
+                    )}
                   </Button>
                 </DialogFooter>
               </DialogContent>
