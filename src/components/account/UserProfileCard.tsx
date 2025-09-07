@@ -193,8 +193,10 @@ const UserProfileCard: React.FC = () => {
       
       toast({
         title: "בקשה נשלחה בהצלחה",
-        description: `נשלח מייל אישור לכתובת ${newEmail}. אנא לחץ על הקישור במייל כדי לאשר את השינוי.`,
+        description: `נשלח מייל אישור לכתובת ${newEmail}. אנא לחץ על הקישור במייל כדי לאשר את השינוי. עד לאישור, תוכל להמשיך להתחבר עם הכתובת הנוכחית.`,
       });
+      
+      console.log('מייל אישור נשלח בהצלחה ל:', newEmail);
       
     } catch (error: any) {
       console.error('שגיאה בתהליך שינוי המייל:', error);
@@ -253,8 +255,12 @@ const UserProfileCard: React.FC = () => {
               <DialogContent>
                 <DialogHeader>
                   <DialogTitle>שנה כתובת מייל</DialogTitle>
-                  <DialogDescription>
-                    הזן כתובת מייל חדשה. תקבל אימייל אישור בשתי הכתובות.
+                  <DialogDescription className="space-y-2">
+                    <p>הזן כתובת מייל חדשה. תקבל אימייל אישור בכתובת החדשה.</p>
+                    <div className="bg-blue-50 border border-blue-200 rounded-md p-3 text-sm text-blue-800">
+                      <strong>חשוב:</strong> לאחר שליחת הבקשה, תקבל מייל אישור בכתובת החדשה. 
+                      לחץ על הקישור במייל כדי להשלים את השינוי. עד אז, כתובת המייל הנוכחית תישאר פעילה.
+                    </div>
                   </DialogDescription>
                 </DialogHeader>
                 <div className="space-y-4">
@@ -307,7 +313,9 @@ const UserProfileCard: React.FC = () => {
             </Dialog>
           </div>
           <p className="text-xs text-muted-foreground">
-            כתובת המייל ניתנת לשינוי אחרי אישור באימייל
+            כתובת המייל משמשת להתחברות למערכת. שינוי המייל דורש אישור בכתובת החדשה.
+            <br />
+            <strong>שימו לב:</strong> עד לאישור, כתובת המייל הנוכחית תישאר פעילה.
           </p>
         </div>
 

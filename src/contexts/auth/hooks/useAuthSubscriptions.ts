@@ -15,7 +15,7 @@ export const useAuthSubscriptions = (
     // First set up the auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
-        console.log('Auth state changed:', event);
+        console.log('Auth state changed:', event, session?.user?.email);
         
         // Handle auth state changes
         if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
@@ -24,6 +24,14 @@ export const useAuthSubscriptions = (
           setTimeout(() => {
             checkAndSetUserData(true).catch(err => {
               console.error('Error checking auth state after event:', err);
+            });
+          }, 0);
+        } else if (event === 'USER_UPDATED') {
+          console.log('User updated - this could be email change, refreshing profile data');
+          // כשמשתמש משנה מייל, Supabase שולח אירוע USER_UPDATED
+          setTimeout(() => {
+            checkAndSetUserData(true).catch(err => {
+              console.error('Error checking auth state after user update:', err);
             });
           }, 0);
         }
