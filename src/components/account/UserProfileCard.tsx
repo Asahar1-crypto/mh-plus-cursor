@@ -154,8 +154,6 @@ const UserProfileCard: React.FC = () => {
   };
 
   const handleEmailChange = async () => {
-    console.log('handleEmailChange נקרא - מתחיל בדיקות');
-    
     if (!newEmail.trim() || newEmail === user?.email || !user) {
       toast({
         title: "שגיאה",
@@ -177,42 +175,37 @@ const UserProfileCard: React.FC = () => {
     }
 
     setIsLoading(true);
-    
     try {
-      console.log('מתחיל תהליך שינוי מייל דרך Edge Function');
+      console.log('מתחיל תהליך שינוי מייל מ:', user.email, 'ל:', newEmail);
       
-      // שינוי מייל דרך Edge Function
-      const { data, error } = await supabase.functions.invoke('change-email', {
-        body: {
-          oldEmail: user.email,
-          newEmail: newEmail,
-          userId: user.id
-        }
+      // שליחת בקשה לעדכון מייל דרך Supabase Auth
+      const { error } = await supabase.auth.updateUser({ 
+        email: newEmail 
       });
 
       if (error) {
-        console.error('שגיאה בקריאה ל-Edge Function:', error);
+        console.error('שגיאה בשינוי מייל:', error);
         throw error;
       }
-
-      console.log('תוצאת Edge Function:', data);
 
       setIsEmailDialogOpen(false);
       setNewEmail('');
       
       toast({
         title: "בקשה נשלחה בהצלחה",
-        description: `נשלח מייל אישור לכתובת ${newEmail}. לחץ על הקישור במייל כדי להשלים את שינוי המייל.`,
-        variant: "default"
+        description: `נשלח מייל אישור לכתובת ${newEmail}. אנא לחץ על הקישור במייל כדי לאשר את השינוי. עד לאישור, תוכל להמשיך להתחבר עם הכתובת הנוכחית.`,
       });
+      
+      console.log('מייל אישור נשלח בהצלחה ל:', newEmail);
       
     } catch (error: any) {
       console.error('שגיאה בתהליך שינוי המייל:', error);
       
+      // הצגת הודעת שגיאה מותאמת לגורם השגיאה
       let errorMessage = "אירעה שגיאה בלתי צפויה";
       
-      if (error.message?.includes('Email rate limit exceeded') || error.message?.includes('rate limit')) {
-        errorMessage = "חרגת מהמגבלה היומית לשינוי מייל. אנא נסה שוב מחר או צור קשר עם התמיכה";
+      if (error.message?.includes('Email rate limit exceeded')) {
+        errorMessage = "חובר יותר מדי בקשות לשינוי מייל. אנא נסה שוב מאוחר יותר";
       } else if (error.message?.includes('Invalid email')) {
         errorMessage = "כתובת המייל אינה תקינה";
       } else if (error.message?.includes('User already registered')) {
