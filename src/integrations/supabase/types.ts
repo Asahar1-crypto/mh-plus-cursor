@@ -269,6 +269,39 @@ export type Database = {
           },
         ]
       }
+      email_change_logs: {
+        Row: {
+          confirmed_at: string | null
+          created_at: string | null
+          id: string
+          new_email: string | null
+          old_email: string | null
+          requested_at: string | null
+          status: string | null
+          user_id: string | null
+        }
+        Insert: {
+          confirmed_at?: string | null
+          created_at?: string | null
+          id?: string
+          new_email?: string | null
+          old_email?: string | null
+          requested_at?: string | null
+          status?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          confirmed_at?: string | null
+          created_at?: string | null
+          id?: string
+          new_email?: string | null
+          old_email?: string | null
+          requested_at?: string | null
+          status?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       expense_children: {
         Row: {
           child_id: string
@@ -770,6 +803,14 @@ export type Database = {
       is_super_admin: {
         Args: { user_uuid: string }
         Returns: boolean
+      }
+      is_valid_email_confirmation_url: {
+        Args: { url: string }
+        Returns: boolean
+      }
+      log_email_change_request: {
+        Args: { p_new_email: string; p_old_email: string; p_user_id: string }
+        Returns: string
       }
       normalize_il_phone: {
         Args: { phone_text: string }
