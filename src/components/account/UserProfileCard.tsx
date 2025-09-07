@@ -155,12 +155,8 @@ const UserProfileCard: React.FC = () => {
 
   const handleEmailChange = async () => {
     console.log('handleEmailChange נקרא - מתחיל בדיקות');
-    console.log('newEmail:', newEmail);
-    console.log('user.email:', user?.email);
-    console.log('user:', user);
     
     if (!newEmail.trim() || newEmail === user?.email || !user) {
-      console.log('בדיקות נכשלו - כתובת מייל לא תקינה או זהה לנוכחית');
       toast({
         title: "שגיאה",
         description: "אנא הזן כתובת מייל תקינה ושונה מהנוכחית",
@@ -172,7 +168,6 @@ const UserProfileCard: React.FC = () => {
     // בדיקת תקינות מייל
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(newEmail)) {
-      console.log('בדיקת regex נכשלה');
       toast({
         title: "שגיאה",
         description: "כתובת המייל אינה תקינה",
@@ -181,41 +176,26 @@ const UserProfileCard: React.FC = () => {
       return;
     }
 
-    console.log('כל הבדיקות עברו בהצלחה - מתחיל תהליך שינוי מייל');
     setIsLoading(true);
     
     try {
-      console.log('מתחיל תהליך שינוי מייל מ:', user.email, 'ל:', newEmail);
+      console.log('מתחיל תהליך שינוי מייל דרך Edge Function');
       
-      // רישום הבקשה לשינוי מייל במערכת
-      try {
-        const { data: logResult, error: logError } = await supabase.rpc('log_email_change_request', {
-          p_user_id: user.id,
-          p_old_email: user.email,
-          p_new_email: newEmail
-        });
-        
-        if (logError) {
-          console.warn('שגיאה ברישום שינוי מייל:', logError);
-        } else {
-          console.log('שינוי מייל נרשם בהצלחה:', logResult);
+      // שינוי מייל דרך Edge Function
+      const { data, error } = await supabase.functions.invoke('change-email', {
+        body: {
+          oldEmail: user.email,
+          newEmail: newEmail,
+          userId: user.id
         }
-      } catch (logError) {
-        console.warn('שגיאה ברישום שינוי מייל:', logError);
-      }
-      
-      // שליחת בקשה לעדכון מייל דרך Supabase Auth עם redirect נכון
-      console.log('קורא ל supabase.auth.updateUser');
-      const { data, error } = await supabase.auth.updateUser({ 
-        email: newEmail 
       });
 
-      console.log('תוצאת updateUser:', { data, error });
-
       if (error) {
-        console.error('שגיאה בשינוי מייל:', error);
+        console.error('שגיאה בקריאה ל-Edge Function:', error);
         throw error;
       }
+
+      console.log('תוצאת Edge Function:', data);
 
       setIsEmailDialogOpen(false);
       setNewEmail('');
@@ -226,12 +206,9 @@ const UserProfileCard: React.FC = () => {
         variant: "default"
       });
       
-      console.log('מייל אישור נשלח בהצלחה ל:', newEmail);
-      
     } catch (error: any) {
       console.error('שגיאה בתהליך שינוי המייל:', error);
       
-      // הצגת הודעת שגיאה מותאמת לגורם השגיאה
       let errorMessage = "אירעה שגיאה בלתי צפויה";
       
       if (error.message?.includes('Email rate limit exceeded') || error.message?.includes('rate limit')) {
