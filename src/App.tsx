@@ -26,6 +26,7 @@ import Children from "./pages/Children";
 import Expenses from "./pages/Expenses";
 import Reports from "./pages/Reports";
 import IndexPage from "./pages/Index";
+import Privacy from "./pages/Privacy";
 
 // Admin pages
 import AdminDashboard from "./pages/admin/AdminDashboard";
@@ -65,6 +66,7 @@ const App = () => (
                 <Route path="/family-invitation" element={<FamilyInvitation />} />
                 <Route path="/family-register" element={<FamilyPhoneRegister />} />
                 <Route path="/family-otp" element={<FamilyOtp />} />
+                <Route path="/privacy" element={<Privacy />} />
               </Route>
               
               {/* Protected routes */}
