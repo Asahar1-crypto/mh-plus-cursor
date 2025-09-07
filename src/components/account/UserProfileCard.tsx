@@ -187,6 +187,23 @@ const UserProfileCard: React.FC = () => {
     try {
       console.log('מתחיל תהליך שינוי מייל מ:', user.email, 'ל:', newEmail);
       
+      // רישום הבקשה לשינוי מייל במערכת
+      try {
+        const { data: logResult, error: logError } = await supabase.rpc('log_email_change_request', {
+          p_user_id: user.id,
+          p_old_email: user.email,
+          p_new_email: newEmail
+        });
+        
+        if (logError) {
+          console.warn('שגיאה ברישום שינוי מייל:', logError);
+        } else {
+          console.log('שינוי מייל נרשם בהצלחה:', logResult);
+        }
+      } catch (logError) {
+        console.warn('שגיאה ברישום שינוי מייל:', logError);
+      }
+      
       // שליחת בקשה לעדכון מייל דרך Supabase Auth
       console.log('קורא ל supabase.auth.updateUser');
       const { data, error } = await supabase.auth.updateUser({ 
@@ -205,7 +222,10 @@ const UserProfileCard: React.FC = () => {
       
       toast({
         title: "בקשה נשלחה בהצלחה",
-        description: `נשלח מייל אישור לכתובת ${newEmail}. אנא לחץ על הקישור במייל כדי לאשר את השינוי. עד לאישור, תוכל להמשיך להתחבר עם הכתובת הנוכחית.`,
+        description: `נשלח מייל אישור לכתובת ${newEmail}. אנא לחץ על הקישור במייל כדי לאשר את השינוי. 
+        
+        ⚠️ זהירות: וודא שהלינק מתחיל ב-hchmfsilgfrzhenafbzi.supabase.co. אל תלחץ על לינקים חשודים!`,
+        variant: "default"
       });
       
       console.log('מייל אישור נשלח בהצלחה ל:', newEmail);
