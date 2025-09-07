@@ -29,10 +29,17 @@ export const useAuthSubscriptions = (
         } else if (event === 'USER_UPDATED') {
           console.log('User updated - this could be email change, refreshing profile data');
           // כשמשתמש משנה מייל, Supabase שולח אירוע USER_UPDATED
-          setTimeout(() => {
-            checkAndSetUserData(true).catch(err => {
+          setTimeout(async () => {
+            try {
+              await checkAndSetUserData(true);
+              // Show success message for email change
+              if (session?.user?.email) {
+                const { toast } = await import('sonner');
+                toast.success('המייל שונה בהצלחה!');
+              }
+            } catch (err) {
               console.error('Error checking auth state after user update:', err);
-            });
+            }
           }, 0);
         }
       }
