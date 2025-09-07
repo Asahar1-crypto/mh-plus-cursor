@@ -222,9 +222,13 @@ const UserProfileCard: React.FC = () => {
       
       toast({
         title: "בקשה נשלחה בהצלחה",
-        description: `נשלח מייל אישור לכתובת ${newEmail}. אנא לחץ על הקישור במייל כדי לאשר את השינוי. 
+        description: `נשלח מייל אישור לכתובת ${newEmail}. 
         
-        ⚠️ זהירות: וודא שהלינק מתחיל ב-hchmfsilgfrzhenafbzi.supabase.co. אל תלחץ על לינקים חשודים!`,
+        ❗ חשוב: הלינק תקף רק למספר דקות! לחץ עליו מיד כשתקבל את המייל.
+        
+        ⚠️ זהירות: וודא שהלינק מתחיל ב-hchmfsilgfrzhenafbzi.supabase.co. אל תלחץ על לינקים חשודים!
+        
+        💡 אם הלינק לא עובד, נסה לבקש שינוי מייל שוב.`,
         variant: "default"
       });
       

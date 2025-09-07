@@ -302,6 +302,42 @@ export type Database = {
         }
         Relationships: []
       }
+      email_change_requests: {
+        Row: {
+          confirmed_at: string | null
+          created_at: string | null
+          expires_at: string | null
+          id: string
+          new_email: string
+          old_email: string
+          status: string | null
+          token: string | null
+          user_id: string
+        }
+        Insert: {
+          confirmed_at?: string | null
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          new_email: string
+          old_email: string
+          status?: string | null
+          token?: string | null
+          user_id: string
+        }
+        Update: {
+          confirmed_at?: string | null
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          new_email?: string
+          old_email?: string
+          status?: string | null
+          token?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       expense_children: {
         Row: {
           child_id: string
@@ -745,6 +781,17 @@ export type Database = {
       get_current_user_email: {
         Args: Record<PropertyKey, never>
         Returns: string
+      }
+      get_email_change_status: {
+        Args: { p_user_id: string }
+        Returns: {
+          confirmed_at: string
+          created_at: string
+          id: string
+          new_email: string
+          old_email: string
+          status: string
+        }[]
       }
       get_invitation_by_id_secure: {
         Args: { invitation_uuid: string }
