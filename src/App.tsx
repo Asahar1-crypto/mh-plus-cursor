@@ -12,6 +12,7 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import VerifyEmail from "./pages/VerifyEmail";
 import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
 import Dashboard from "./pages/Dashboard";
 import AccountSettings from "./pages/AccountSettings";
 import AccountManagement from "./pages/AccountManagement";
@@ -64,6 +65,7 @@ const App = () => (
                 <Route path="/register" element={<Register />} />
                 <Route path="/verify-email" element={<VerifyEmail />} />
                 <Route path="/forgot-password" element={<ForgotPassword />} />
+                <Route path="/reset-password" element={<ResetPassword />} />
                 <Route path="/family-invitation" element={<FamilyInvitation />} />
                 <Route path="/family-register" element={<FamilyPhoneRegister />} />
                 <Route path="/family-otp" element={<FamilyOtp />} />

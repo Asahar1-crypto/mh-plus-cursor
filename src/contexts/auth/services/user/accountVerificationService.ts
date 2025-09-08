@@ -38,10 +38,40 @@ export const accountVerificationService = {
     }
   },
 
-  // Reset password function
+  // Reset password function with rate limiting
   resetPassword: async (email: string): Promise<void> => {
     try {
       console.log(`Attempting password reset for ${email}`);
+      
+      // Check reset attempt limit
+      const { data: canReset, error: limitError } = await supabase.rpc('check_reset_attempt_limit', {
+        user_email: email
+      });
+      
+      if (limitError) {
+        console.error("Error checking reset limit:", limitError);
+        throw new Error('שגיאה במערכת. אנא נסה שוב מאוחר יותר.');
+      }
+      
+      if (!canReset) {
+        throw new Error('חרגת ממספר הנסיונות המותר (3 נסיונות ב-30 דקות). אנא נסה שוב מאוחר יותר.');
+      }
+      
+      // Get client IP and user agent for logging
+      const clientIp = null; // Will be handled by Edge Function if needed
+      const userAgent = navigator.userAgent;
+      
+      // Log the attempt
+      const { error: logError } = await supabase.rpc('log_reset_attempt', {
+        user_email: email,
+        client_ip: clientIp,
+        client_user_agent: userAgent
+      });
+      
+      if (logError) {
+        console.error("Error logging reset attempt:", logError);
+        // Continue anyway - logging shouldn't block the process
+      }
       
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: `${window.location.origin}/reset-password`
@@ -54,9 +84,15 @@ export const accountVerificationService = {
       
       console.log("Password reset email sent");
       toast.success(PASSWORD_RESET_SUCCESS_MESSAGE);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to reset password:', error);
-      toast.error(PASSWORD_RESET_ERROR_MESSAGE);
+      
+      // Show specific error message if it's a rate limit error
+      if (error.message && error.message.includes('חרגת ממספר הנסיונות')) {
+        toast.error(error.message);
+      } else {
+        toast.error(PASSWORD_RESET_ERROR_MESSAGE);
+      }
       throw error;
     }
   }
