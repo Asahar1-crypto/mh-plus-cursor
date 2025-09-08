@@ -39,3 +39,6 @@ verify_jwt = false
 
 [functions.complete-family-registration]
 verify_jwt = false
+
+[functions.change-user-email]
+verify_jwt = true

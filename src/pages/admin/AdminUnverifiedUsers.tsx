@@ -4,7 +4,8 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { AlertTriangle, Mail, Trash2, Clock, UserX, RefreshCw, Users, ShieldAlert } from 'lucide-react';
+import { AlertTriangle, Mail, Trash2, Clock, UserX, RefreshCw, Users, ShieldAlert, UserCog, Edit3 } from 'lucide-react';
+import EmailChangeHistory from '@/components/admin/EmailChangeHistory';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/auth';
@@ -58,6 +59,11 @@ const AdminUnverifiedUsers: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [timeFilter, setTimeFilter] = useState<'all' | 'day' | 'week' | 'month'>('all');
   const [activeTab, setActiveTab] = useState('unverified');
+  
+  // States for email change functionality
+  const [emailChangeUser, setEmailChangeUser] = useState({ id: '', currentEmail: '', newEmail: '', confirmEmail: '' });
+  const [emailChangeLoading, setEmailChangeLoading] = useState(false);
+  const [allUsers, setAllUsers] = useState<any[]>([]);
 
   // בדיקת הרשאות Super Admin
   if (!profile?.is_super_admin) {
@@ -67,6 +73,7 @@ const AdminUnverifiedUsers: React.FC = () => {
   useEffect(() => {
     loadUnverifiedUsers();
     loadOrphanedUsers();
+    loadAllUsers();
   }, []);
 
   useEffect(() => {
@@ -180,6 +187,48 @@ const AdminUnverifiedUsers: React.FC = () => {
       toast({
         title: 'שגיאה',
         description: 'שגיאה בטעינת משתמשים מאומתים ללא חשבון',
+        variant: 'destructive'
+      });
+    }
+  };
+
+  const loadAllUsers = async () => {
+    try {
+      // טוען משתמשים מאומתים עם פרופילים
+      const { data: verifiedUsers, error: verifiedError } = await supabase
+        .from('profiles')
+        .select(`
+          id,
+          name,
+          created_at,
+          updated_at,
+          phone_number,
+          is_super_admin
+        `);
+
+      if (verifiedError) throw verifiedError;
+
+      // מוסיף אימיילים מטבלת auth.users (דרך edge function)
+      const { data: usersEmails, error: emailError } = await supabase.functions.invoke('get-user-emails');
+      
+      if (emailError) {
+        console.error('Could not fetch user emails:', emailError);
+        // ממשיכים בלי האימיילים אם יש שגיאה
+      }
+
+      const userEmailMap = usersEmails?.userEmails || {};
+      
+      const allUsersWithEmails = verifiedUsers?.map(user => ({
+        ...user,
+        email: userEmailMap[user.id] || 'לא נמצא'
+      })) || [];
+
+      setAllUsers(allUsersWithEmails);
+    } catch (error) {
+      console.error('Error loading all users:', error);
+      toast({
+        title: 'שגיאה',
+        description: 'שגיאה בטעינת רשימת המשתמשים',
         variant: 'destructive'
       });
     }
@@ -306,6 +355,74 @@ const AdminUnverifiedUsers: React.FC = () => {
     return `לפני ${diffInDays} ימים`;
   };
 
+  const changeUserEmail = async () => {
+    if (!emailChangeUser.newEmail || !emailChangeUser.confirmEmail) {
+      toast({
+        title: 'שגיאה',
+        description: 'יש למלא את כל השדות',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    if (emailChangeUser.newEmail !== emailChangeUser.confirmEmail) {
+      toast({
+        title: 'שגיאה',
+        description: 'האימיילים החדשים אינם תואמים',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    if (emailChangeUser.newEmail === emailChangeUser.currentEmail) {
+      toast({
+        title: 'שגיאה',
+        description: 'האימייל החדש זהה לקיים',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    if (!confirm(`האם אתה בטוח שברצונך לשנות את האימייל מ-${emailChangeUser.currentEmail} ל-${emailChangeUser.newEmail}?`)) {
+      return;
+    }
+
+    setEmailChangeLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('change-user-email', {
+        body: {
+          userId: emailChangeUser.id,
+          newEmail: emailChangeUser.newEmail,
+          oldEmail: emailChangeUser.currentEmail
+        }
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: 'הצלחה',
+        description: `האימייל שונה בהצלחה ל-${emailChangeUser.newEmail}`,
+      });
+
+      // איפוס הטופס
+      setEmailChangeUser({ id: '', currentEmail: '', newEmail: '', confirmEmail: '' });
+      
+      // רענון הנתונים
+      await loadAllUsers();
+      await loadUnverifiedUsers();
+      await loadOrphanedUsers();
+    } catch (error) {
+      console.error('Error changing email:', error);
+      toast({
+        title: 'שגיאה',
+        description: `שגיאה בשינוי האימייל: ${error instanceof Error ? error.message : 'שגיאה לא ידועה'}`,
+        variant: 'destructive'
+      });
+    } finally {
+      setEmailChangeLoading(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -342,7 +459,7 @@ const AdminUnverifiedUsers: React.FC = () => {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="unverified" className="flex items-center gap-2">
               <UserX className="h-4 w-4" />
               לא מאומתים ({stats.total})
@@ -350,6 +467,10 @@ const AdminUnverifiedUsers: React.FC = () => {
             <TabsTrigger value="orphaned" className="flex items-center gap-2">
               <ShieldAlert className="h-4 w-4" />
               מאומתים ללא חשבון ({orphanedStats.total})
+            </TabsTrigger>
+            <TabsTrigger value="email-change" className="flex items-center gap-2">
+              <UserCog className="h-4 w-4" />
+              שינוי מייל לקוח
             </TabsTrigger>
           </TabsList>
 
@@ -717,6 +838,165 @@ const AdminUnverifiedUsers: React.FC = () => {
                 )}
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="email-change" className="space-y-6">
+            {/* Email Change Card */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <UserCog className="h-5 w-5" />
+                  שינוי כתובת מייל לקוח
+                </CardTitle>
+                <p className="text-sm text-muted-foreground">
+                  אפשרות לשנות כתובת מייל של לקוח תוך שמירה על כל הנתונים וההעדפות
+                </p>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {/* Select User */}
+                <div className="space-y-4">
+                  <h3 className="text-lg font-medium">בחירת משתמש</h3>
+                  <div className="grid gap-4">
+                    <div>
+                      <label className="text-sm font-medium">בחר משתמש מהרשימה:</label>
+                      <select
+                        className="w-full mt-1 px-3 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                        value={emailChangeUser.id}
+                        onChange={(e) => {
+                          const selectedUser = allUsers.find(u => u.id === e.target.value);
+                          if (selectedUser) {
+                            setEmailChangeUser({
+                              id: selectedUser.id,
+                              currentEmail: selectedUser.email,
+                              newEmail: '',
+                              confirmEmail: ''
+                            });
+                          } else {
+                            setEmailChangeUser({ id: '', currentEmail: '', newEmail: '', confirmEmail: '' });
+                          }
+                        }}
+                      >
+                        <option value="">בחר משתמש...</option>
+                        {allUsers
+                          .filter(user => !user.is_super_admin) // מסנן סופר אדמינים
+                          .map(user => (
+                            <option key={user.id} value={user.id}>
+                              {user.name} ({user.email})
+                            </option>
+                          ))
+                        }
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Email Change Form */}
+                {emailChangeUser.id && (
+                  <div className="space-y-4 p-4 border border-border rounded-lg bg-muted/30">
+                    <h3 className="text-lg font-medium">פרטי שינוי המייל</h3>
+                    
+                    <div className="grid gap-4 md:grid-cols-2">
+                      <div>
+                        <label className="text-sm font-medium text-muted-foreground">מייל נוכחי:</label>
+                        <input
+                          type="email"
+                          value={emailChangeUser.currentEmail}
+                          disabled
+                          className="w-full mt-1 px-3 py-2 border border-border rounded-md bg-muted text-muted-foreground"
+                        />
+                      </div>
+                      
+                      <div>
+                        <label className="text-sm font-medium">מייל חדש: <span className="text-red-500">*</span></label>
+                        <input
+                          type="email"
+                          value={emailChangeUser.newEmail}
+                          onChange={(e) => setEmailChangeUser(prev => ({ ...prev, newEmail: e.target.value }))}
+                          placeholder="הכנס מייל חדש..."
+                          className="w-full mt-1 px-3 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                        />
+                      </div>
+                      
+                      <div>
+                        <label className="text-sm font-medium">אישור מייל חדש: <span className="text-red-500">*</span></label>
+                        <input
+                          type="email"
+                          value={emailChangeUser.confirmEmail}
+                          onChange={(e) => setEmailChangeUser(prev => ({ ...prev, confirmEmail: e.target.value }))}
+                          placeholder="הכנס שוב את המייל החדש..."
+                          className="w-full mt-1 px-3 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Warnings */}
+                    <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
+                      <div className="flex items-start gap-2">
+                        <AlertTriangle className="h-5 w-5 text-orange-500 mt-0.5" />
+                        <div className="space-y-2">
+                          <h4 className="font-medium text-orange-800">אזהרות חשובות:</h4>
+                          <ul className="text-sm text-orange-700 space-y-1">
+                            <li>• השינוי יתבצע מיידית ולא ניתן לביטול</li>
+                            <li>• כל הנתונים, הגדרות וחברויות יישמרו</li>
+                            <li>• המשתמש יקבל הודעה למייל החדש על השינוי</li>
+                            <li>• וודא שהמייל החדש נכון ונגיש למשתמש</li>
+                          </ul>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Action Buttons */}
+                    <div className="flex gap-2 pt-4">
+                      <Button
+                        onClick={changeUserEmail}
+                        disabled={emailChangeLoading || !emailChangeUser.newEmail || !emailChangeUser.confirmEmail}
+                        className="gap-2"
+                      >
+                        {emailChangeLoading ? (
+                          <>
+                            <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                            מעדכן מייל...
+                          </>
+                        ) : (
+                          <>
+                            <Edit3 className="h-4 w-4" />
+                            שנה מייל
+                          </>
+                        )}
+                      </Button>
+                      
+                      <Button
+                        variant="outline"
+                        onClick={() => setEmailChangeUser({ id: '', currentEmail: '', newEmail: '', confirmEmail: '' })}
+                        disabled={emailChangeLoading}
+                      >
+                        ביטול
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Instructions */}
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <div className="flex items-start gap-2">
+                    <Users className="h-5 w-5 text-blue-500 mt-0.5" />
+                    <div className="space-y-2">
+                      <h4 className="font-medium text-blue-800">הוראות שימוש:</h4>
+                      <ol className="text-sm text-blue-700 space-y-1">
+                        <li>1. בחר משתמש מהרשימה (סופר אדמינים מוסתרים)</li>
+                        <li>2. הכנס את כתובת המייל החדשה</li>
+                        <li>3. אשר את כתובת המייל החדשה</li>
+                        <li>4. לחץ על "שנה מייל" ואשר את הפעולה</li>
+                        <li>5. המערכת תעדכן את המייל ותשלח הודעה אוטומטית</li>
+                      </ol>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Email Change History */}
+            <EmailChangeHistory />
           </TabsContent>
         </Tabs>
 
