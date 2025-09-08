@@ -76,9 +76,20 @@ serve(async (req) => {
       );
     }
 
+    // Check if new email already exists using listUsers instead
+    const { data: existingUsers, error: listUsersError } = await supabaseAdmin.auth.admin.listUsers();
+    
+    if (listUsersError) {
+      console.error('Error checking existing users:', listUsersError);
+      return new Response(
+        JSON.stringify({ error: 'שגיאה בבדיקת משתמשים קיימים' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    
     // Check if new email already exists
-    const { data: existingUser, error: existingUserError } = await supabaseAdmin.auth.admin.getUserByEmail(newEmail);
-    if (existingUser && existingUser.user) {
+    const emailExists = existingUsers.users.some(user => user.email === newEmail);
+    if (emailExists) {
       return new Response(
         JSON.stringify({ error: 'המייל החדש כבר קיים במערכת' }),
         { status: 409, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
