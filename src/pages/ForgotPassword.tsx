@@ -19,6 +19,8 @@ const ForgotPassword = () => {
   const navigate = useNavigate();
   
   console.log('🔧 ForgotPassword component rendered. resetPassword:', !!resetPassword, 'isLoading:', isLoading);
+  console.log('🔧 Current URL path:', window.location.pathname);
+  console.log('🔧 Browser location:', window.location.href);
   
   const form = useForm<z.infer<typeof forgotPasswordSchema>>({
     resolver: zodResolver(forgotPasswordSchema),
