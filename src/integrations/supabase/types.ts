@@ -504,6 +504,33 @@ export type Database = {
           },
         ]
       }
+      password_reset_attempts: {
+        Row: {
+          attempted_at: string
+          created_at: string
+          email: string
+          id: string
+          ip_address: unknown | null
+          user_agent: string | null
+        }
+        Insert: {
+          attempted_at?: string
+          created_at?: string
+          email: string
+          id?: string
+          ip_address?: unknown | null
+          user_agent?: string | null
+        }
+        Update: {
+          attempted_at?: string
+          created_at?: string
+          email?: string
+          id?: string
+          ip_address?: unknown | null
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
@@ -739,6 +766,14 @@ export type Database = {
         }
         Returns: boolean
       }
+      check_reset_attempt_limit: {
+        Args: { user_email: string }
+        Returns: boolean
+      }
+      cleanup_old_reset_attempts: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       create_account_if_not_exists: {
         Args: { account_name: string; user_id: string }
         Returns: {
@@ -858,6 +893,14 @@ export type Database = {
       log_email_change_request: {
         Args: { p_new_email: string; p_old_email: string; p_user_id: string }
         Returns: string
+      }
+      log_reset_attempt: {
+        Args: {
+          client_ip?: unknown
+          client_user_agent?: string
+          user_email: string
+        }
+        Returns: undefined
       }
       normalize_il_phone: {
         Args: { phone_text: string }
