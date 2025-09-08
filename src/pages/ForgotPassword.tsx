@@ -26,6 +26,7 @@ const ForgotPassword = () => {
   });
   
   const onSubmit = async (data: z.infer<typeof forgotPasswordSchema>) => {
+    console.log('🎯 ForgotPassword form submitted with data:', data);
     try {
       await resetPassword(data.email);
       // Navigate to a confirmation page or show a success message
