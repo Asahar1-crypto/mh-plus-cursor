@@ -183,7 +183,11 @@ const Login = () => {
                           />
                           
                           <div className="text-right pt-2">
-                            <Link to="/forgot-password" className="text-base text-primary hover:text-primary-glow transition-colors duration-200 hover:underline">
+                            <Link 
+                              to="/forgot-password" 
+                              className="text-base text-primary hover:text-primary-glow transition-colors duration-200 hover:underline"
+                              onClick={() => console.log('🔗 Forgot password link clicked - navigating to /forgot-password')}
+                            >
                               שכחת סיסמה?
                             </Link>
                           </div>
