@@ -26,9 +26,17 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({ requiresAuth = false }) => {
   }
 
   // If auth is NOT required and user is authenticated, redirect to dashboard
+  // EXCEPT for reset-password page which needs special handling
   if (!requiresAuth && isAuthenticated) {
-    console.log('AuthLayout: Redirecting to dashboard - requiresAuth:', requiresAuth, 'isAuthenticated:', isAuthenticated);
-    return <Navigate to="/dashboard" />;
+    const currentPath = window.location.pathname;
+    if (currentPath === '/reset-password') {
+      // Allow access to reset password page even if authenticated
+      // This handles the case where user comes with auth tokens in URL
+      console.log('AuthLayout: Allowing access to reset-password page');
+    } else {
+      console.log('AuthLayout: Redirecting to dashboard - requiresAuth:', requiresAuth, 'isAuthenticated:', isAuthenticated);
+      return <Navigate to="/dashboard" />;
+    }
   }
 
   return (
