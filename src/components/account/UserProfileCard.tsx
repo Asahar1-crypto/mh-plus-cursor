@@ -153,77 +153,6 @@ const UserProfileCard: React.FC = () => {
     setIsLoading(false);
   };
 
-  const handleEmailChange = async () => {
-    if (!newEmail.trim() || newEmail === user?.email || !user) {
-      toast({
-        title: "שגיאה",
-        description: "אנא הזן כתובת מייל תקינה ושונה מהנוכחית",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    // בדיקת תקינות מייל
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(newEmail)) {
-      toast({
-        title: "שגיאה",
-        description: "כתובת המייל אינה תקינה",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setIsLoading(true);
-    try {
-      console.log('מתחיל תהליך שינוי מייל מ:', user.email, 'ל:', newEmail);
-      
-      // שליחת בקשה לעדכון מייל דרך Supabase Auth
-      const { error } = await supabase.auth.updateUser({ 
-        email: newEmail 
-      });
-
-      if (error) {
-        console.error('שגיאה בשינוי מייל:', error);
-        throw error;
-      }
-
-      setIsEmailDialogOpen(false);
-      setNewEmail('');
-      
-      toast({
-        title: "בקשה נשלחה בהצלחה",
-        description: `נשלח מייל אישור לכתובת ${newEmail}. אנא לחץ על הקישור במייל כדי לאשר את השינוי. עד לאישור, תוכל להמשיך להתחבר עם הכתובת הנוכחית.`,
-      });
-      
-      console.log('מייל אישור נשלח בהצלחה ל:', newEmail);
-      
-    } catch (error: any) {
-      console.error('שגיאה בתהליך שינוי המייל:', error);
-      
-      // הצגת הודעת שגיאה מותאמת לגורם השגיאה
-      let errorMessage = "אירעה שגיאה בלתי צפויה";
-      
-      if (error.message?.includes('Email rate limit exceeded')) {
-        errorMessage = "חובר יותר מדי בקשות לשינוי מייל. אנא נסה שוב מאוחר יותר";
-      } else if (error.message?.includes('Invalid email')) {
-        errorMessage = "כתובת המייל אינה תקינה";
-      } else if (error.message?.includes('User already registered')) {
-        errorMessage = "כתובת המייל כבר רשומה במערכת";
-      } else if (error.message) {
-        errorMessage = error.message;
-      }
-      
-      toast({
-        title: "שגיאה בשינוי מייל",
-        description: errorMessage,
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   if (!user) return null;
 
   return (
@@ -255,12 +184,8 @@ const UserProfileCard: React.FC = () => {
               <DialogContent>
                 <DialogHeader>
                   <DialogTitle>שנה כתובת מייל</DialogTitle>
-                  <DialogDescription className="space-y-2">
-                    <p>הזן כתובת מייל חדשה. תקבל אימייל אישור בכתובת החדשה.</p>
-                    <div className="bg-blue-50 border border-blue-200 rounded-md p-3 text-sm text-blue-800">
-                      <strong>חשוב:</strong> לאחר שליחת הבקשה, תקבל מייל אישור בכתובת החדשה. 
-                      לחץ על הקישור במייל כדי להשלים את השינוי. עד אז, כתובת המייל הנוכחית תישאר פעילה.
-                    </div>
+                  <DialogDescription>
+                    הזן כתובת מייל חדשה. תקבל אימייל אישור בשתי הכתובות.
                   </DialogDescription>
                 </DialogHeader>
                 <div className="space-y-4">
@@ -296,26 +221,20 @@ const UserProfileCard: React.FC = () => {
                     ביטול
                   </Button>
                   <Button 
-                    onClick={handleEmailChange}
-                    disabled={!newEmail.trim() || newEmail === user.email || isLoading}
+                    onClick={() => {
+                      console.log('שינוי מייל ל:', newEmail);
+                      // כאן נוסיף את הלוגיקה בשלב הבא
+                    }}
+                    disabled={!newEmail.trim() || newEmail === user.email}
                   >
-                    {isLoading ? (
-                      <span className="flex items-center gap-2">
-                        <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-r-transparent" />
-                        שולח...
-                      </span>
-                    ) : (
-                      'שלח אישור'
-                    )}
+                    שלח אישור
                   </Button>
                 </DialogFooter>
               </DialogContent>
             </Dialog>
           </div>
           <p className="text-xs text-muted-foreground">
-            כתובת המייל משמשת להתחברות למערכת. שינוי המייל דורש אישור בכתובת החדשה.
-            <br />
-            <strong>שימו לב:</strong> עד לאישור, כתובת המייל הנוכחית תישאר פעילה.
+            כתובת המייל ניתנת לשינוי אחרי אישור באימייל
           </p>
         </div>
 
