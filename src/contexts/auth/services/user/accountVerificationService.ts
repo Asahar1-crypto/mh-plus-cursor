@@ -74,17 +74,16 @@ export const accountVerificationService = {
         // Continue anyway - logging shouldn't block the process
       }
       
-      // Use our custom edge function for password reset
-      const { data, error } = await supabase.functions.invoke('send-password-reset', {
-        body: { email }
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/reset-password`
       });
       
       if (error) {
-        console.error("Password reset error from edge function:", error);
+        console.error("Password reset error from Supabase:", error);
         throw error;
       }
       
-      console.log("Password reset email sent via edge function");
+      console.log("Password reset email sent");
       toast.success(PASSWORD_RESET_SUCCESS_MESSAGE);
     } catch (error: any) {
       console.error('Failed to reset password:', error);
