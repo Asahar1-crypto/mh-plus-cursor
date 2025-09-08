@@ -18,6 +18,8 @@ const ForgotPassword = () => {
   const { resetPassword, isLoading } = useAuth();
   const navigate = useNavigate();
   
+  console.log('🔧 ForgotPassword component rendered. resetPassword:', !!resetPassword, 'isLoading:', isLoading);
+  
   const form = useForm<z.infer<typeof forgotPasswordSchema>>({
     resolver: zodResolver(forgotPasswordSchema),
     defaultValues: {
@@ -27,8 +29,11 @@ const ForgotPassword = () => {
   
   const onSubmit = async (data: z.infer<typeof forgotPasswordSchema>) => {
     console.log('🎯 ForgotPassword form submitted with data:', data);
+    console.log('🎯 resetPassword function:', resetPassword);
     try {
+      console.log('🎯 About to call resetPassword...');
       await resetPassword(data.email);
+      console.log('🎯 resetPassword completed successfully');
       // Navigate to a confirmation page or show a success message
       navigate('/login');
     } catch (error) {
