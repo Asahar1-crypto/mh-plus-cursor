@@ -26,6 +26,7 @@ export const usePasswordActions = (
 
   const resetPassword = async (email: string): Promise<void> => {
     console.log('🔥 usePasswordActions resetPassword called with:', email);
+    console.log('🔥 authService.resetPassword function exists:', !!authService.resetPassword);
     setIsLoading(true);
     try {
       await authService.resetPassword(email);
