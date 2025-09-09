@@ -43,11 +43,12 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     // Generate password reset token using Supabase with proper redirect
+    const baseUrl = req.headers.get('origin') || 'https://e01ecbfb-5c0d-44e9-b818-1374636e60ff.sandbox.lovable.dev';
     const { data, error } = await supabaseAdmin.auth.admin.generateLink({
       type: 'recovery',
       email: email,
       options: {
-        redirectTo: `${req.headers.get('origin') || 'https://e01ecbfb-5c0d-44e9-b818-1374636e60ff.sandbox.lovable.dev'}/reset-password`
+        redirectTo: `${baseUrl}/reset-password`
       }
     });
 
