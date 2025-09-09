@@ -40,6 +40,7 @@ export const accountVerificationService = {
 
   resetPassword: async (email: string): Promise<void> => {
     console.log('🚀 accountVerificationService.resetPassword called with:', email);
+    console.log('🚀 Stack trace:', new Error().stack);
     try {
       console.log(`Attempting password reset for ${email}`);
       
