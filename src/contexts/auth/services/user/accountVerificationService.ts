@@ -75,16 +75,20 @@ export const accountVerificationService = {
       }
       
       // Use our custom edge function for password reset
+      console.log('🔧 Calling send-password-reset edge function...');
       const { data, error } = await supabase.functions.invoke('send-password-reset', {
         body: { email }
       });
       
+      console.log('🔧 Edge function response:', { data, error });
+      
       if (error) {
         console.error("Password reset error from edge function:", error);
+        console.error("Error details:", JSON.stringify(error, null, 2));
         throw error;
       }
       
-      console.log("Password reset email sent via edge function");
+      console.log("🎯 Password reset email sent via edge function");
       toast.success(PASSWORD_RESET_SUCCESS_MESSAGE);
     } catch (error: any) {
       console.error('Failed to reset password:', error);
