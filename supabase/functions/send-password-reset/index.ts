@@ -64,6 +64,13 @@ const handler = async (req: Request): Promise<Response> => {
     console.log('Generated reset link:', data.properties?.action_link);
 
     // Send email using the send-email function that uses SendGrid
+    // Replace the redirect URL in the action link to point to our reset-password page
+    const baseUrl = req.headers.get('origin') || 'https://e01ecbfb-5c0d-44e9-b818-1374636e60ff.sandbox.lovable.dev';
+    const correctResetLink = data.properties?.action_link?.replace(/redirect_to=[^&]+/, `redirect_to=${encodeURIComponent(baseUrl + '/reset-password')}`);
+    
+    console.log('🔗 Original link:', data.properties?.action_link);
+    console.log('🔗 Corrected link:', correctResetLink);
+    
     const emailResponse = await supabaseAdmin.functions.invoke('send-email', {
       body: {
         to: email,
@@ -75,7 +82,7 @@ const handler = async (req: Request): Promise<Response> => {
             <p>קיבלנו בקשה לאיפוס הסיסמה עבור החשבון שלך ב-MH Plus.</p>
             <p>לחץ על הקישור הבא כדי ליצור סיסמה חדשה:</p>
             <p>
-              <a href="${data.properties?.action_link}" 
+              <a href="${correctResetLink}" 
                  style="background-color: #4CAF50; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block;">
                 איפוס סיסמה
               </a>
