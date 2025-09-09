@@ -18,9 +18,14 @@ const ForgotPassword = () => {
   const { resetPassword, isLoading } = useAuth();
   const navigate = useNavigate();
   
-  console.log('🔧 ForgotPassword component rendered. resetPassword:', !!resetPassword, 'isLoading:', isLoading);
-  console.log('🔧 Current URL path:', window.location.pathname);
-  console.log('🔧 Browser location:', window.location.href);
+  console.log('🔧 ForgotPassword component rendered at:', new Date().toLocaleTimeString());
+  console.log('🔧 resetPassword function exists:', !!resetPassword);
+  console.log('🔧 isLoading state:', isLoading);
+  
+  React.useEffect(() => {
+    console.log('🔧 ForgotPassword component mounted');
+    return () => console.log('🔧 ForgotPassword component unmounted');
+  }, []);
   
   const form = useForm<z.infer<typeof forgotPasswordSchema>>({
     resolver: zodResolver(forgotPasswordSchema),

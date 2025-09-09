@@ -38,9 +38,8 @@ export const accountVerificationService = {
     }
   },
 
-  // Reset password function with rate limiting
   resetPassword: async (email: string): Promise<void> => {
-    console.log('🚀 Starting password reset for:', email);
+    console.log('🚀 accountVerificationService.resetPassword called with:', email);
     try {
       console.log(`Attempting password reset for ${email}`);
       
