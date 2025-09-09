@@ -1,8 +1,5 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { Resend } from "npm:resend@2.0.0";
-
-const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -58,29 +55,30 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log('Generated reset link:', data.properties?.action_link);
 
-    // Send email using Resend
-    const emailResponse = await resend.emails.send({
-      from: "MH Plus <no-reply@mhplus.online>",
-      to: [email],
-      subject: "איפוס סיסמה - MH Plus",
-      html: `
-        <div style="direction: rtl; text-align: right; font-family: Arial, sans-serif;">
-          <h1>איפוס סיסמה</h1>
-          <p>שלום,</p>
-          <p>קיבלנו בקשה לאיפוס הסיסמה עבור החשבון שלך ב-MH Plus.</p>
-          <p>לחץ על הקישור הבא כדי ליצור סיסמה חדשה:</p>
-          <p>
-            <a href="${data.properties?.action_link}" 
-               style="background-color: #4CAF50; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block;">
-              איפוס סיסמה
-            </a>
-          </p>
-          <p>הקישור תקף למשך 24 שעות.</p>
-          <p>אם לא ביקשת איפוס סיסמה, אנא התעלם מהמייל הזה.</p>
-          <br>
-          <p>בברכה,<br>צוות MH Plus</p>
-        </div>
-      `,
+    // Send email using the send-email function that uses SendGrid
+    const emailResponse = await supabaseAdmin.functions.invoke('send-email', {
+      body: {
+        to: email,
+        subject: "איפוס סיסמה - MH Plus",
+        html: `
+          <div style="direction: rtl; text-align: right; font-family: Arial, sans-serif;">
+            <h1>איפוס סיסמה</h1>
+            <p>שלום,</p>
+            <p>קיבלנו בקשה לאיפוס הסיסמה עבור החשבון שלך ב-MH Plus.</p>
+            <p>לחץ על הקישור הבא כדי ליצור סיסמה חדשה:</p>
+            <p>
+              <a href="${data.properties?.action_link}" 
+                 style="background-color: #4CAF50; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block;">
+                איפוס סיסמה
+              </a>
+            </p>
+            <p>הקישור תקף למשך 24 שעות.</p>
+            <p>אם לא ביקשת איפוס סיסמה, אנא התעלם מהמייל הזה.</p>
+            <br>
+            <p>בברכה,<br>צוות MH Plus</p>
+          </div>
+        `
+      }
     });
 
     console.log("Password reset email sent successfully:", emailResponse);
