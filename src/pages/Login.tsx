@@ -20,6 +20,7 @@ const loginSchema = z.object({
 });
 
 const Login = () => {
+  console.log('🏠 Login component rendered at:', new Date().toLocaleTimeString());
   const { login, isLoading } = useAuth();
   const navigate = useNavigate();
   const [authMethod, setAuthMethod] = useState<'email' | 'phone'>(() => {
@@ -186,7 +187,10 @@ const Login = () => {
                             <Link 
                               to="/forgot-password" 
                               className="text-base text-primary hover:text-primary-glow transition-colors duration-200 hover:underline"
-                              onClick={() => console.log('🔗 Forgot password link clicked - navigating to /forgot-password')}
+                              onClick={() => {
+                                console.log('🔗 Forgot password link clicked - navigating to /forgot-password');
+                                console.log('🔗 Current URL before navigation:', window.location.href);
+                              }}
                             >
                               שכחת סיסמה?
                             </Link>
