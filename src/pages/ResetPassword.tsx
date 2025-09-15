@@ -22,36 +22,73 @@ const ResetPassword: React.FC = () => {
   // Check token validity on component mount
   useEffect(() => {
     const checkToken = async () => {
+      // Check for new-style tokens (from Supabase built-in reset)
+      const token = searchParams.get('token');
+      const type = searchParams.get('type');
+      
+      // Check for old-style tokens (from custom edge function)
       const accessToken = searchParams.get('access_token');
       const refreshToken = searchParams.get('refresh_token');
       
-      if (!accessToken || !refreshToken) {
-        setIsValidToken(false);
-        setIsTokenChecking(false);
+      console.log('Reset password URL params:', { token, type, accessToken, refreshToken });
+      
+      // Handle new-style reset tokens (token + type=recovery)
+      if (token && type === 'recovery') {
+        try {
+          console.log('Using new-style recovery token');
+          const { data, error } = await supabase.auth.verifyOtp({
+            token_hash: token,
+            type: 'recovery'
+          });
+
+          if (error) {
+            console.error('Recovery token validation error:', error);
+            setIsValidToken(false);
+          } else if (data.session) {
+            console.log('Recovery token validated successfully');
+            setIsValidToken(true);
+          } else {
+            setIsValidToken(false);
+          }
+        } catch (err) {
+          console.error('Error checking recovery token:', err);
+          setIsValidToken(false);
+        } finally {
+          setIsTokenChecking(false);
+        }
         return;
       }
+      
+      // Handle old-style tokens (access_token + refresh_token)
+      if (accessToken && refreshToken) {
+        try {
+          console.log('Using old-style access/refresh tokens');
+          const { data, error } = await supabase.auth.setSession({
+            access_token: accessToken,
+            refresh_token: refreshToken
+          });
 
-      try {
-        // Set the session with the tokens from the URL
-        const { data, error } = await supabase.auth.setSession({
-          access_token: accessToken,
-          refresh_token: refreshToken
-        });
-
-        if (error) {
-          console.error('Token validation error:', error);
+          if (error) {
+            console.error('Token validation error:', error);
+            setIsValidToken(false);
+          } else if (data.session) {
+            setIsValidToken(true);
+          } else {
+            setIsValidToken(false);
+          }
+        } catch (err) {
+          console.error('Error checking token:', err);
           setIsValidToken(false);
-        } else if (data.session) {
-          setIsValidToken(true);
-        } else {
-          setIsValidToken(false);
+        } finally {
+          setIsTokenChecking(false);
         }
-      } catch (err) {
-        console.error('Error checking token:', err);
-        setIsValidToken(false);
-      } finally {
-        setIsTokenChecking(false);
+        return;
       }
+      
+      // No valid tokens found
+      console.log('No valid reset tokens found in URL');
+      setIsValidToken(false);
+      setIsTokenChecking(false);
     };
 
     checkToken();
