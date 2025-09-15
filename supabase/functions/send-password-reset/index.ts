@@ -65,7 +65,6 @@ const handler = async (req: Request): Promise<Response> => {
 
     // Send email using the send-email function that uses SendGrid
     // Replace the redirect URL in the action link to point to our reset-password page
-    const baseUrl = req.headers.get('origin') || 'https://e01ecbfb-5c0d-44e9-b818-1374636e60ff.sandbox.lovable.dev';
     const correctResetLink = data.properties?.action_link?.replace(/redirect_to=[^&]+/, `redirect_to=${encodeURIComponent(baseUrl + '/reset-password')}`);
     
     console.log('🔗 Original link:', data.properties?.action_link);
