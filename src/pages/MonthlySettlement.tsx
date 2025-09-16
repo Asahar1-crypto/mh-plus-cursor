@@ -90,9 +90,8 @@ const MonthlySettlement = () => {
         {/* Header */}
         <div className="mb-6 sm:mb-8 animate-fade-in">
           <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4 sm:gap-6">
-            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4 sm:gap-6">
-              <div className="space-y-1 sm:space-y-2">
-                <div className="flex items-center gap-2 sm:gap-3">
+            <div className="space-y-1 sm:space-y-2">
+              <div className="flex items-center gap-2 sm:gap-3">
                 <div className="p-2 sm:p-3 bg-gradient-to-br from-primary/20 to-primary/10 rounded-xl backdrop-blur-sm border border-primary/20">
                   <Calculator className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
                 </div>
@@ -101,12 +100,56 @@ const MonthlySettlement = () => {
                     סגירת חודש
                   </h1>
                   <p className="text-sm sm:text-base text-muted-foreground mt-1">
-                    ניהול והסדרת הוצאות החודש - {format(selectedDate, 'MMMM yyyy', { locale: he })}
+                    ניהול והסדרת הוצאות החודש
                   </p>
                 </div>
               </div>
             </div>
+            
+            {/* Refresh Button */}
+            <div className="flex gap-2 sm:gap-3">
+              <Button
+                variant="outline"
+                onClick={refreshData}
+                disabled={expensesLoading}
+                size="sm"
+                className="flex items-center gap-1 sm:gap-2"
+              >
+                <RefreshCw className={`h-4 w-4 ${expensesLoading ? 'animate-spin' : ''}`} />
+                <span className="hidden sm:inline">רענון</span>
+              </Button>
+            </div>
           </div>
+        </div>
+
+        {/* Month/Year Selector - moved to top */}
+        <div className="mb-6 flex justify-center">
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                size="lg"
+                className={cn(
+                  "justify-center text-center font-normal px-8 py-4 text-lg border-2 hover:border-primary/50",
+                  !selectedDate && "text-muted-foreground"
+                )}
+              >
+                <CalendarIcon className="ml-2 h-5 w-5" />
+                {selectedDate ? format(selectedDate, "MMMM yyyy", { locale: he }) : <span>בחר חודש</span>}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="center">
+              <Calendar
+                mode="single"
+                selected={selectedDate}
+                onSelect={(date) => date && setSelectedDate(date)}
+                initialFocus
+                className={cn("p-3 pointer-events-auto")}
+                defaultMonth={selectedDate}
+                showOutsideDays={false}
+              />
+            </PopoverContent>
+          </Popover>
         </div>
 
         {/* Stats Cards */}
@@ -208,48 +251,8 @@ const MonthlySettlement = () => {
             </CardContent>
           </Card>
         </div>
-                </div>
-              </div>
-              
-              {/* Action Buttons */}
-              <div className="flex gap-2 sm:gap-3">
-                <Button
-                  variant="outline"
-                  onClick={refreshData}
-                  disabled={expensesLoading}
-                  size="sm"
-                  className="flex items-center gap-1 sm:gap-2"
-                >
-                  <RefreshCw className={`h-4 w-4 ${expensesLoading ? 'animate-spin' : ''}`} />
-                  <span className="hidden sm:inline">רענון</span>
-                </Button>
-                
-                {/* Month/Year Selector */}
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className={cn(
-                        "justify-start text-left font-normal",
-                        !selectedDate && "text-muted-foreground"
-                      )}
-                    >
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {selectedDate ? format(selectedDate, "MM/yyyy", { locale: he }) : <span>בחר חודש</span>}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={selectedDate}
-                      onSelect={(date) => date && setSelectedDate(date)}
-                      initialFocus
-                      className={cn("p-3 pointer-events-auto")}
-                    />
-                  </PopoverContent>
-                </Popover>
-              </div>
-            </div>
+      </div>
+    </div>
   );
 };
 
