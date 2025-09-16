@@ -26,6 +26,7 @@ import AddExpense from "./pages/AddExpense";
 import Children from "./pages/Children";
 import Expenses from "./pages/Expenses";
 import Reports from "./pages/Reports";
+import MonthlySettlement from "./pages/MonthlySettlement";
 import IndexPage from "./pages/Index";
 import Privacy from "./pages/Privacy";
 import Terms from "./pages/Terms";
@@ -82,6 +83,7 @@ const App = () => (
                 <Route path="/children" element={<Children />} />
                 <Route path="/expenses" element={<Expenses />} />
                 <Route path="/reports" element={<Reports />} />
+                <Route path="/monthly-settlement" element={<MonthlySettlement />} />
                 <Route path="/test-email" element={<IndexPage />} />
                 
                 {/* Admin routes */}
