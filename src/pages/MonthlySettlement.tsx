@@ -6,12 +6,15 @@ import { useExpense } from '@/contexts/ExpenseContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import { Calendar as CalendarIcon, Calculator, CheckCircle, Clock, TrendingUp, RefreshCw } from 'lucide-react';
+import { Calendar as CalendarIcon, Calculator, CheckCircle, Clock, TrendingUp, RefreshCw, Check, DollarSign, Archive } from 'lucide-react';
 
 const MonthlySettlement = () => {
   const { user, account, isLoading } = useAuth();
-  const { expenses, isLoading: expensesLoading, refreshData } = useExpense();
+  const { expenses, isLoading: expensesLoading, refreshData, approveExpense, markAsPaid } = useExpense();
+  const { toast } = useToast();
   
   // State for selected month/year
   const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth());
@@ -64,6 +67,87 @@ const MonthlySettlement = () => {
       }
     };
   }, [expenses, selectedMonth, selectedYear]);
+
+  // Bulk action functions
+  const handleApproveAll = async () => {
+    try {
+      const promises = monthlyData.pending.expenses.map(expense => approveExpense(expense.id));
+      await Promise.all(promises);
+      
+      toast({
+        title: "הצלחה!",
+        description: `${monthlyData.pending.count} הוצאות אושרו בהצלחה`,
+      });
+      
+      await refreshData();
+    } catch (error) {
+      toast({
+        title: "שגיאה",
+        description: "אירעה שגיאה באישור ההוצאות",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleMarkAllAsPaid = async () => {
+    try {
+      const promises = monthlyData.approved.expenses.map(expense => markAsPaid(expense.id));
+      await Promise.all(promises);
+      
+      toast({
+        title: "הצלחה!",
+        description: `${monthlyData.approved.count} הוצאות סומנו כשולמו`,
+      });
+      
+      await refreshData();
+    } catch (error) {
+      toast({
+        title: "שגיאה",
+        description: "אירעה שגיאה בסימון ההוצאות כשולמו",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleCloseMonth = async () => {
+    try {
+      // First approve all pending
+      if (monthlyData.pending.count > 0) {
+        const approvePromises = monthlyData.pending.expenses.map(expense => approveExpense(expense.id));
+        await Promise.all(approvePromises);
+      }
+      
+      // Wait a bit for the data to update
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      await refreshData();
+      
+      // Then mark all approved as paid
+      const allApproved = expenses.filter(expense => {
+        const expenseDate = new Date(expense.date);
+        return expenseDate.getMonth() === selectedMonth && 
+               expenseDate.getFullYear() === selectedYear &&
+               expense.status === 'approved';
+      });
+      
+      if (allApproved.length > 0) {
+        const paidPromises = allApproved.map(expense => markAsPaid(expense.id));
+        await Promise.all(paidPromises);
+      }
+      
+      toast({
+        title: "חודש נסגר בהצלחה!",
+        description: `כל ההוצאות של ${months[selectedMonth]} ${selectedYear} סומנו כשולמו`,
+      });
+      
+      await refreshData();
+    } catch (error) {
+      toast({
+        title: "שגיאה",
+        description: "אירעה שגיאה בסגירת החודש",
+        variant: "destructive",
+      });
+    }
+  };
 
   if (isLoading || expensesLoading || !user) {
     return (
@@ -256,6 +340,114 @@ const MonthlySettlement = () => {
                       <div>הושלמו: <span className="font-bold text-green-600">{monthlyData.paid.count}</span></div>
                     </div>
                   </div>
+                  
+                  {/* Action Buttons */}
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    {/* Approve All Button */}
+                    {monthlyData.pending.count > 0 && (
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button className="w-full bg-yellow-600 hover:bg-yellow-700 text-white">
+                            <Check className="ml-2 h-4 w-4" />
+                            אשר הכל ({monthlyData.pending.count})
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>אישור כל ההוצאות הממתינות</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              האם אתה בטוח שברצונך לאשר את כל {monthlyData.pending.count} ההוצאות הממתינות?
+                              <br />
+                              סכום כולל: ₪{monthlyData.pending.amount.toFixed(0)}
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>ביטול</AlertDialogCancel>
+                            <AlertDialogAction onClick={handleApproveAll}>
+                              אשר הכל
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    )}
+
+                    {/* Mark All as Paid Button */}
+                    {monthlyData.approved.count > 0 && (
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button className="w-full bg-green-600 hover:bg-green-700 text-white">
+                            <DollarSign className="ml-2 h-4 w-4" />
+                            סמן הכל כשולם ({monthlyData.approved.count})
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>סימון כל ההוצאות כשולמו</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              האם אתה בטוח שברצונך לסמן את כל {monthlyData.approved.count} ההוצאות המאושרות כשולמו?
+                              <br />
+                              סכום כולל: ₪{monthlyData.approved.amount.toFixed(0)}
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>ביטול</AlertDialogCancel>
+                            <AlertDialogAction onClick={handleMarkAllAsPaid}>
+                              סמן הכל כשולם
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    )}
+
+                    {/* Close Month Button */}
+                    {(monthlyData.pending.count > 0 || monthlyData.approved.count > 0) && (
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button className="w-full bg-purple-600 hover:bg-purple-700 text-white">
+                            <Archive className="ml-2 h-4 w-4" />
+                            סגור חודש
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>סגירת חודש {months[selectedMonth]} {selectedYear}</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              פעולה זו תאשר את כל ההוצאות הממתינות ותסמן את כל ההוצאות כשולמו.
+                              <br />
+                              <br />
+                              <strong>סיכום:</strong>
+                              <br />
+                              • הוצאות ממתינות לאישור: {monthlyData.pending.count} (₪{monthlyData.pending.amount.toFixed(0)})
+                              <br />
+                              • הוצאות ממתינות לתשלום: {monthlyData.approved.count} (₪{monthlyData.approved.amount.toFixed(0)})
+                              <br />
+                              <br />
+                              <strong>סה"כ לטיפול: ₪{(monthlyData.pending.amount + monthlyData.approved.amount).toFixed(0)}</strong>
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>ביטול</AlertDialogCancel>
+                            <AlertDialogAction onClick={handleCloseMonth} className="bg-purple-600 hover:bg-purple-700">
+                              סגור חודש
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    )}
+                  </div>
+
+                  {/* Success Message */}
+                  {monthlyData.pending.count === 0 && monthlyData.approved.count === 0 && monthlyData.paid.count > 0 && (
+                    <div className="p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg text-center">
+                      <CheckCircle className="h-8 w-8 text-green-600 mx-auto mb-2" />
+                      <h4 className="text-lg font-semibold text-green-800 dark:text-green-200">
+                        חודש {months[selectedMonth]} {selectedYear} נסגר בהצלחה!
+                      </h4>
+                      <p className="text-sm text-green-600 dark:text-green-300 mt-1">
+                        כל ההוצאות שולמו והחודש הושלם
+                      </p>
+                    </div>
+                  )}
                 </div>
               )}
             </CardContent>
