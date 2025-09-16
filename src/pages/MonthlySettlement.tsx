@@ -5,8 +5,7 @@ import { useAuth } from '@/contexts/auth';
 import { useExpense } from '@/contexts/ExpenseContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Calendar } from '@/components/ui/calendar';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 import { Calendar as CalendarIcon, Calculator, CheckCircle, Clock, TrendingUp, RefreshCw } from 'lucide-react';
 
@@ -15,13 +14,20 @@ const MonthlySettlement = () => {
   const { expenses, isLoading: expensesLoading, refreshData } = useExpense();
   
   // State for selected month/year
-  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth());
+  const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
+  
+  // Generate arrays for selects
+  const months = [
+    'ינואר', 'פברואר', 'מרץ', 'אפריל', 'מאי', 'יוני',
+    'יולי', 'אוגוסט', 'ספטמבר', 'אוקטובר', 'נובמבר', 'דצמבר'
+  ];
+  
+  const currentYear = new Date().getFullYear();
+  const years = Array.from({ length: 10 }, (_, i) => currentYear - 5 + i);
   
   // Calculate expenses data for selected month
   const monthlyData = useMemo(() => {
-    const selectedMonth = selectedDate.getMonth();
-    const selectedYear = selectedDate.getFullYear();
-    
     const monthExpenses = expenses.filter(expense => {
       const expenseDate = new Date(expense.date);
       return expenseDate.getMonth() === selectedMonth && 
@@ -57,7 +63,7 @@ const MonthlySettlement = () => {
         expenses: rejected
       }
     };
-  }, [expenses, selectedDate]);
+  }, [expenses, selectedMonth, selectedYear]);
 
   if (isLoading || expensesLoading || !user) {
     return (
@@ -124,32 +130,36 @@ const MonthlySettlement = () => {
 
         {/* Month/Year Selector - moved to top */}
         <div className="mb-6 flex justify-center">
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button
-                variant="outline"
-                size="lg"
-                className={cn(
-                  "justify-center text-center font-normal px-8 py-4 text-lg border-2 hover:border-primary/50",
-                  !selectedDate && "text-muted-foreground"
-                )}
-              >
-                <CalendarIcon className="ml-2 h-5 w-5" />
-                {selectedDate ? format(selectedDate, "MMMM yyyy", { locale: he }) : <span>בחר חודש</span>}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="center">
-              <Calendar
-                mode="single"
-                selected={selectedDate}
-                onSelect={(date) => date && setSelectedDate(date)}
-                initialFocus
-                className={cn("p-3 pointer-events-auto")}
-                defaultMonth={selectedDate}
-                showOutsideDays={false}
-              />
-            </PopoverContent>
-          </Popover>
+          <div className="flex items-center gap-4 p-4 bg-card/80 backdrop-blur-sm rounded-lg border border-border/50 shadow-lg">
+            <CalendarIcon className="h-5 w-5 text-primary" />
+            <div className="flex items-center gap-2">
+              <Select value={selectedMonth.toString()} onValueChange={(value) => setSelectedMonth(parseInt(value))}>
+                <SelectTrigger className="w-32">
+                  <SelectValue placeholder="בחר חודש" />
+                </SelectTrigger>
+                <SelectContent>
+                  {months.map((month, index) => (
+                    <SelectItem key={index} value={index.toString()}>
+                      {month}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              
+              <Select value={selectedYear.toString()} onValueChange={(value) => setSelectedYear(parseInt(value))}>
+                <SelectTrigger className="w-24">
+                  <SelectValue placeholder="שנה" />
+                </SelectTrigger>
+                <SelectContent>
+                  {years.map((year) => (
+                    <SelectItem key={year} value={year.toString()}>
+                      {year}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
         </div>
 
         {/* Stats Cards */}
@@ -223,7 +233,7 @@ const MonthlySettlement = () => {
         <div className="space-y-6">
           <Card className="bg-gradient-to-br from-card/90 to-card/80 backdrop-blur-lg border border-border/50 shadow-2xl">
             <CardHeader className="text-center">
-              <CardTitle className="text-2xl">סיכום חודש {format(selectedDate, 'MMMM yyyy', { locale: he })}</CardTitle>
+              <CardTitle className="text-2xl">סיכום חודש {months[selectedMonth]} {selectedYear}</CardTitle>
               <CardDescription>
                 נתוני הוצאות מפורטים לחודש הנבחר
               </CardDescription>
