@@ -1,8 +1,8 @@
 import React from 'react';
 import { useAuth } from '@/contexts/auth';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { FoodBudgetChart as DashboardFoodBudgetChart } from '@/components/dashboard/FoodBudgetChart';
 import { CategoryExpensesChart } from '@/components/reports/CategoryExpensesChart';
+import { ChildrenExpensesChart } from '@/components/reports/ChildrenExpensesChart';
 
 const Reports = () => {
   const { user, account, isLoading } = useAuth();
@@ -36,6 +36,9 @@ const Reports = () => {
       <div className="space-y-6">
         {/* Category Expenses Chart */}
         <CategoryExpensesChart />
+        
+        {/* Children Expenses Chart */}
+        <ChildrenExpensesChart />
       </div>
     </div>
   );
