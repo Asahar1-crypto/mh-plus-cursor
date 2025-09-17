@@ -165,60 +165,25 @@ export const CategoryExpensesChart: React.FC = () => {
           </TabsList>
 
           <TabsContent value="pie" className="space-y-4">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Pie Chart */}
-              <div>
-                <ResponsiveContainer width="100%" height={400}>
-                  <PieChart>
-                    <Pie
-                      data={categoryData}
-                      cx="50%"
-                      cy="50%"
-                      labelLine={false}
-                      label={({ name, percent }) => `${name} ${(percent * 100).toFixed(1)}%`}
-                      outerRadius={120}
-                      fill="#8884d8"
-                      dataKey="value"
-                    >
-                      {categoryData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.color} />
-                      ))}
-                    </Pie>
-                    <Tooltip content={<CustomTooltip />} />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
-
-              {/* Category Summary */}
-              <div className="space-y-4">
-                <h4 className="font-semibold text-lg">פירוט לפי קטגוריה</h4>
-                <div className="space-y-3">
-                  {categoryData.map((category, index) => (
-                    <div 
-                      key={category.name} 
-                      className="flex items-center justify-between p-3 bg-muted/50 rounded-lg hover:bg-muted/70 transition-colors"
-                    >
-                      <div className="flex items-center gap-3">
-                        <div 
-                          className="w-4 h-4 rounded-full" 
-                          style={{ backgroundColor: category.color }}
-                        />
-                        <div>
-                          <span className="font-medium">{category.name}</span>
-                          <p className="text-sm text-muted-foreground">{category.count} הוצאות</p>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <div className="font-bold">₪{category.value.toLocaleString()}</div>
-                        <div className="text-sm text-muted-foreground">
-                          {((category.value / totalAmount) * 100).toFixed(1)}%
-                        </div>
-                      </div>
-                    </div>
+            <ResponsiveContainer width="100%" height={400}>
+              <PieChart>
+                <Pie
+                  data={categoryData}
+                  cx="50%"
+                  cy="50%"
+                  labelLine={false}
+                  label={({ name, percent }) => `${name} ${(percent * 100).toFixed(1)}%`}
+                  outerRadius={120}
+                  fill="#8884d8"
+                  dataKey="value"
+                >
+                  {categoryData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.color} />
                   ))}
-                </div>
-              </div>
-            </div>
+                </Pie>
+                <Tooltip content={<CustomTooltip />} />
+              </PieChart>
+            </ResponsiveContainer>
           </TabsContent>
 
           <TabsContent value="bar" className="space-y-4">
