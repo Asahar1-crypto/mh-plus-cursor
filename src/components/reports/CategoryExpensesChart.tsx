@@ -1,9 +1,12 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useExpense } from '@/contexts/ExpenseContext';
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { PieChart as PieChartIcon, BarChart3 } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { PieChart as PieChartIcon, BarChart3, Calendar } from 'lucide-react';
+import { format } from 'date-fns';
+import { he } from 'date-fns/locale';
 
 interface CategoryData {
   name: string;
@@ -23,10 +26,35 @@ const CATEGORY_COLORS = {
 
 export const CategoryExpensesChart: React.FC = () => {
   const { expenses } = useExpense();
+  const [selectedMonth, setSelectedMonth] = useState<string>('all');
+
+  // Generate month options for the last 12 months
+  const monthOptions = useMemo(() => {
+    const options = [{ value: 'all', label: 'כל החודשים' }];
+    const now = new Date();
+    
+    for (let i = 0; i < 12; i++) {
+      const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const value = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+      const label = format(date, 'MMMM yyyy', { locale: he });
+      options.push({ value, label });
+    }
+    
+    return options;
+  }, []);
 
   const categoryData = useMemo(() => {
     // Filter out rejected expenses and group by category
-    const validExpenses = expenses.filter(expense => expense.status !== 'rejected');
+    let validExpenses = expenses.filter(expense => expense.status !== 'rejected');
+    
+    // Filter by selected month if not "all"
+    if (selectedMonth !== 'all') {
+      const [year, month] = selectedMonth.split('-').map(Number);
+      validExpenses = validExpenses.filter(expense => {
+        const expenseDate = new Date(expense.date);
+        return expenseDate.getFullYear() === year && expenseDate.getMonth() + 1 === month;
+      });
+    }
     
     const categoryMap = new Map<string, { amount: number; count: number }>();
     
@@ -48,7 +76,7 @@ export const CategoryExpensesChart: React.FC = () => {
     })).sort((a, b) => b.value - a.value); // Sort by amount descending
 
     return data;
-  }, [expenses]);
+  }, [expenses, selectedMonth]);
 
   const totalAmount = categoryData.reduce((sum, item) => sum + item.value, 0);
   const totalCount = categoryData.reduce((sum, item) => sum + item.count, 0);
@@ -95,13 +123,33 @@ export const CategoryExpensesChart: React.FC = () => {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <PieChartIcon className="h-5 w-5" />
-          הוצאות לפי קטגוריה
-        </CardTitle>
-        <CardDescription>
-          חלוקת ההוצאות לפי קטגוריות שונות - סה"כ ₪{totalAmount.toLocaleString()} ({totalCount} הוצאות)
-        </CardDescription>
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle className="flex items-center gap-2">
+              <PieChartIcon className="h-5 w-5" />
+              הוצאות לפי קטגוריה
+            </CardTitle>
+            <CardDescription>
+              חלוקת ההוצאות לפי קטגוריות שונות - סה"כ ₪{totalAmount.toLocaleString()} ({totalCount} הוצאות)
+            </CardDescription>
+          </div>
+          
+          <div className="flex items-center gap-2">
+            <Calendar className="h-4 w-4 text-muted-foreground" />
+            <Select value={selectedMonth} onValueChange={setSelectedMonth}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="בחר חודש" />
+              </SelectTrigger>
+              <SelectContent>
+                {monthOptions.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
       </CardHeader>
       <CardContent>
         <Tabs defaultValue="pie" className="space-y-4">
