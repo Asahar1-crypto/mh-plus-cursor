@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { ExpensesTable } from '@/components/expenses/ExpensesTable';
 import FoodBudgetChart from '@/components/reports/FoodBudgetChart';
 import { FoodBudgetChart as DashboardFoodBudgetChart } from '@/components/dashboard/FoodBudgetChart';
+import { CategoryExpensesChart } from '@/components/reports/CategoryExpensesChart';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const Reports = () => {
@@ -68,6 +69,10 @@ const Reports = () => {
         </TabsList>
 
         <TabsContent value="charts" className="space-y-6">
+          {/* Category Expenses Chart */}
+          <CategoryExpensesChart />
+          
+          {/* Food Budget Chart */}
           <Card>
             <CardHeader>
               <CardTitle>תקציב מזונות חודשי</CardTitle>
