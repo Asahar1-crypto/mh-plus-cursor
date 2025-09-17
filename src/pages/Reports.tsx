@@ -36,19 +36,6 @@ const Reports = () => {
       <div className="space-y-6">
         {/* Category Expenses Chart */}
         <CategoryExpensesChart />
-        
-        {/* Food Budget Chart */}
-        <Card>
-          <CardHeader>
-            <CardTitle>תקציב מזונות חודשי</CardTitle>
-            <CardDescription>
-              מעקב אחר הוצאות המזונות לעומת התקציב החודשי
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <DashboardFoodBudgetChart />
-          </CardContent>
-        </Card>
       </div>
     </div>
   );
