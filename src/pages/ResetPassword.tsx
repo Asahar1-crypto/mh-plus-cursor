@@ -22,6 +22,11 @@ const ResetPassword: React.FC = () => {
   // Check token validity on component mount
   useEffect(() => {
     const checkToken = async () => {
+      console.log('🔍 ResetPassword component mounted');
+      console.log('🔍 Current URL:', window.location.href);
+      console.log('🔍 Search params string:', window.location.search);
+      console.log('🔍 Hash:', window.location.hash);
+      
       // Check for new-style tokens (from Supabase built-in reset)
       const token = searchParams.get('token');
       const type = searchParams.get('type');
@@ -30,7 +35,7 @@ const ResetPassword: React.FC = () => {
       const accessToken = searchParams.get('access_token');
       const refreshToken = searchParams.get('refresh_token');
       
-      console.log('Reset password URL params:', { token, type, accessToken, refreshToken });
+      console.log('🔍 Reset password URL params:', { token, type, accessToken, refreshToken });
       
       // Handle new-style reset tokens (token + type=recovery)
       if (token && type === 'recovery') {
