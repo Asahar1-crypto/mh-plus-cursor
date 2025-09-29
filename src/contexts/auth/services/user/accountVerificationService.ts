@@ -76,7 +76,10 @@ export const accountVerificationService = {
       
       // Use Supabase built-in password reset instead of custom edge function
       console.log('🔧 Using Supabase built-in password reset...');
-      const redirectUrl = `${window.location.origin}/reset-password`;
+      // Use the custom domain if available, otherwise fallback to origin
+      const redirectUrl = window.location.hostname === 'e01ecbfb-5c0d-44e9-b818-1374636e60ff.lovableproject.com' 
+        ? 'https://mhplus.online/reset-password'
+        : `${window.location.origin}/reset-password`;
       console.log('🔧 Redirect URL:', redirectUrl);
       
       const { error } = await supabase.auth.resetPasswordForEmail(email, {

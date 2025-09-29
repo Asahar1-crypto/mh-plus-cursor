@@ -41,28 +41,30 @@ const ResetPassword: React.FC = () => {
       
       // Handle new-style reset tokens (token + type=recovery)
       if (token && type === 'recovery') {
-        console.log('🔍 Found recovery token, checking session instead of verifying token...');
+        console.log('🔍 Found recovery token, verifying with Supabase...');
         try {
-          // Instead of verifying the token, just check if we have an active session
-          // The token was likely already consumed by the auth redirect
-          const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+          // Verify the recovery token properly
+          const { data, error } = await supabase.auth.verifyOtp({
+            token_hash: token,
+            type: 'recovery'
+          });
           
-          if (sessionError) {
-            console.error('Session check error:', sessionError);
-            toast.error(`שגיאה בבדיקת session: ${sessionError.message}`);
+          if (error) {
+            console.error('Recovery token verification error:', error);
+            toast.error(`שגיאה באימות הטוקן: ${error.message}`);
             setIsValidToken(false);
-          } else if (sessionData.session) {
-            console.log('Found active session, allowing password reset');
+          } else if (data.session) {
+            console.log('Recovery token verified successfully, session established');
             toast.success('מוכן לעדכון סיסמה');
             setIsValidToken(true);
           } else {
-            console.log('No active session found');
-            toast.error('לא נמצא session פעיל');
+            console.log('Token verified but no session created');
+            toast.error('הטוקן תקף אך לא נוצר session');
             setIsValidToken(false);
           }
         } catch (err) {
-          console.error('Error checking session:', err);
-          toast.error('שגיאה בבדיקת הסשן');
+          console.error('Error verifying recovery token:', err);
+          toast.error('שגיאה באימות הטוקן');
           setIsValidToken(false);
         } finally {
           setIsTokenChecking(false);
