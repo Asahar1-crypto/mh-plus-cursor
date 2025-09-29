@@ -40,11 +40,13 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({ requiresAuth = false }) => {
     // Allow access to pages that handle their own auth tokens
     const allowedPages = ['/reset-password', '/verify-email'];
     const hasAuthTokens = searchParams.has('token') || searchParams.has('access_token');
+    const isRecoveryFlow = searchParams.has('type') && searchParams.get('type') === 'recovery';
     
     console.log('🔍 Is allowed page:', allowedPages.includes(currentPath));
     console.log('🔍 Has auth tokens:', hasAuthTokens);
+    console.log('🔍 Is recovery flow:', isRecoveryFlow);
     
-    if (allowedPages.includes(currentPath) || hasAuthTokens) {
+    if (allowedPages.includes(currentPath) || hasAuthTokens || isRecoveryFlow) {
       // Allow access to these pages even if authenticated
       console.log('✅ AuthLayout: Allowing access to auth flow page:', currentPath);
     } else {
