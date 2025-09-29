@@ -31,15 +31,24 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({ requiresAuth = false }) => {
     const currentPath = window.location.pathname;
     const searchParams = new URLSearchParams(window.location.search);
     
+    console.log('🔍 AuthLayout: Checking authenticated user access');
+    console.log('🔍 Current path:', currentPath);
+    console.log('🔍 Search params:', searchParams.toString());
+    console.log('🔍 Has token param:', searchParams.has('token'));
+    console.log('🔍 Has access_token param:', searchParams.has('access_token'));
+    
     // Allow access to pages that handle their own auth tokens
     const allowedPages = ['/reset-password', '/verify-email'];
     const hasAuthTokens = searchParams.has('token') || searchParams.has('access_token');
     
+    console.log('🔍 Is allowed page:', allowedPages.includes(currentPath));
+    console.log('🔍 Has auth tokens:', hasAuthTokens);
+    
     if (allowedPages.includes(currentPath) || hasAuthTokens) {
       // Allow access to these pages even if authenticated
-      console.log('AuthLayout: Allowing access to auth flow page:', currentPath);
+      console.log('✅ AuthLayout: Allowing access to auth flow page:', currentPath);
     } else {
-      console.log('AuthLayout: Redirecting to dashboard - requiresAuth:', requiresAuth, 'isAuthenticated:', isAuthenticated);
+      console.log('❌ AuthLayout: Redirecting to dashboard - requiresAuth:', requiresAuth, 'isAuthenticated:', isAuthenticated);
       return <Navigate to="/dashboard" />;
     }
   }
