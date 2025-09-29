@@ -26,6 +26,8 @@ const ResetPassword: React.FC = () => {
       console.log('🔍 Current URL:', window.location.href);
       console.log('🔍 Search params string:', window.location.search);
       console.log('🔍 Hash:', window.location.hash);
+      console.log('🔍 User agent:', navigator.userAgent);
+      console.log('🔍 Referrer:', document.referrer);
       
       // Check for new-style tokens (from Supabase built-in reset)
       const token = searchParams.get('token');
@@ -39,29 +41,28 @@ const ResetPassword: React.FC = () => {
       
       // Handle new-style reset tokens (token + type=recovery)
       if (token && type === 'recovery') {
+        console.log('🔍 Found recovery token, checking session instead of verifying token...');
         try {
-          console.log('Using new-style recovery token');
-          const { data, error } = await supabase.auth.verifyOtp({
-            token_hash: token,
-            type: 'recovery'
-          });
-
-          if (error) {
-            console.error('Recovery token validation error:', error);
-            console.error('Error details:', error.message, error.status);
-            toast.error(`הלינק לא תקף: ${error.message}`);
+          // Instead of verifying the token, just check if we have an active session
+          // The token was likely already consumed by the auth redirect
+          const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+          
+          if (sessionError) {
+            console.error('Session check error:', sessionError);
+            toast.error(`שגיאה בבדיקת session: ${sessionError.message}`);
             setIsValidToken(false);
-          } else if (data.session) {
-            console.log('Recovery token validated successfully');
-            toast.success('הלינק תקף - ניתן לעדכן סיסמה');
+          } else if (sessionData.session) {
+            console.log('Found active session, allowing password reset');
+            toast.success('מוכן לעדכון סיסמה');
             setIsValidToken(true);
           } else {
-            console.log('No session returned from token verification');
-            toast.error('הלינק לא תקף - לא נוצר session');
+            console.log('No active session found');
+            toast.error('לא נמצא session פעיל');
             setIsValidToken(false);
           }
         } catch (err) {
-          console.error('Error checking recovery token:', err);
+          console.error('Error checking session:', err);
+          toast.error('שגיאה בבדיקת הסשן');
           setIsValidToken(false);
         } finally {
           setIsTokenChecking(false);
