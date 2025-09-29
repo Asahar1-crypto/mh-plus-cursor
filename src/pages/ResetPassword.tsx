@@ -48,11 +48,16 @@ const ResetPassword: React.FC = () => {
 
           if (error) {
             console.error('Recovery token validation error:', error);
+            console.error('Error details:', error.message, error.status);
+            toast.error(`הלינק לא תקף: ${error.message}`);
             setIsValidToken(false);
           } else if (data.session) {
             console.log('Recovery token validated successfully');
+            toast.success('הלינק תקף - ניתן לעדכן סיסמה');
             setIsValidToken(true);
           } else {
+            console.log('No session returned from token verification');
+            toast.error('הלינק לא תקף - לא נוצר session');
             setIsValidToken(false);
           }
         } catch (err) {
