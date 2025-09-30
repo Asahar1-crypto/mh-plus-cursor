@@ -276,6 +276,15 @@ const AdminDashboard: React.FC = () => {
               </Button>
 
               <Button
+                onClick={() => window.location.href = '/admin/email-management'}
+                variant="outline"
+                className="gap-2"
+              >
+                <Mail className="h-4 w-4" />
+                ניהול מיילים
+              </Button>
+
+              <Button
                 onClick={() => window.location.href = '/admin/sms-logs'}
                 variant="outline"
                 className="gap-2"
