@@ -30,15 +30,18 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({ requiresAuth = false }) => {
   if (!requiresAuth && isAuthenticated) {
     const currentPath = window.location.pathname;
     const searchParams = new URLSearchParams(window.location.search);
+    const hashParams = new URLSearchParams(window.location.hash.substring(1));
     
     console.log('🔍 AuthLayout: Checking authenticated user access');
     console.log('🔍 Current path:', currentPath);
     console.log('🔍 Search params:', searchParams.toString());
+    console.log('🔍 Hash params:', hashParams.toString());
     
     // SECURITY FIX: Do NOT redirect to dashboard during password reset flow
     // This prevents unauthorized access after clicking reset link
     const isPasswordResetFlow = currentPath === '/reset-password' && 
-      (searchParams.has('token') && searchParams.get('type') === 'recovery');
+      ((searchParams.has('token') || hashParams.has('token')) || 
+       (searchParams.get('type') === 'recovery' || hashParams.get('type') === 'recovery'));
     
     if (isPasswordResetFlow) {
       console.log('🔒 SECURITY: Password reset in progress - staying on reset page');

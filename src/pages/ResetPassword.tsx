@@ -26,16 +26,17 @@ const ResetPassword: React.FC = () => {
       console.log('🔍 Current URL:', window.location.href);
       console.log('🔍 Search params string:', window.location.search);
       console.log('🔍 Hash:', window.location.hash);
-      console.log('🔍 User agent:', navigator.userAgent);
-      console.log('🔍 Referrer:', document.referrer);
+      
+      // Parse hash parameters (Supabase sends tokens via hash)
+      const hashParams = new URLSearchParams(window.location.hash.substring(1));
       
       // Check for new-style tokens (from Supabase built-in reset)
-      const token = searchParams.get('token');
-      const type = searchParams.get('type');
+      const token = searchParams.get('token') || hashParams.get('token');
+      const type = searchParams.get('type') || hashParams.get('type');
       
       // Check for old-style tokens (from custom edge function)
-      const accessToken = searchParams.get('access_token');
-      const refreshToken = searchParams.get('refresh_token');
+      const accessToken = searchParams.get('access_token') || hashParams.get('access_token');
+      const refreshToken = searchParams.get('refresh_token') || hashParams.get('refresh_token');
       
       console.log('🔍 Reset password URL params:', { token, type, accessToken, refreshToken });
       
