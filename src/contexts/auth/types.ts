@@ -13,6 +13,7 @@ export interface Profile {
   selected_account_id: string | null;
   is_super_admin: boolean | null;
   last_login: string | null;
+  onboarding_completed?: boolean;
 }
 
 export interface Account {

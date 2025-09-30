@@ -61,6 +61,9 @@ export type Database = {
       }
       accounts: {
         Row: {
+          billing_cycle_end_day: number | null
+          billing_cycle_start_day: number | null
+          billing_cycle_type: string | null
           created_at: string
           id: string
           invitation_id: string | null
@@ -73,6 +76,9 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          billing_cycle_end_day?: number | null
+          billing_cycle_start_day?: number | null
+          billing_cycle_type?: string | null
           created_at?: string
           id?: string
           invitation_id?: string | null
@@ -85,6 +91,9 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          billing_cycle_end_day?: number | null
+          billing_cycle_start_day?: number | null
+          billing_cycle_type?: string | null
           created_at?: string
           id?: string
           invitation_id?: string | null
@@ -538,6 +547,7 @@ export type Database = {
           is_super_admin: boolean | null
           last_login: string | null
           name: string
+          onboarding_completed: boolean | null
           phone_e164: string | null
           phone_extension: string | null
           phone_number: string | null
@@ -554,6 +564,7 @@ export type Database = {
           is_super_admin?: boolean | null
           last_login?: string | null
           name: string
+          onboarding_completed?: boolean | null
           phone_e164?: string | null
           phone_extension?: string | null
           phone_number?: string | null
@@ -570,6 +581,7 @@ export type Database = {
           is_super_admin?: boolean | null
           last_login?: string | null
           name?: string
+          onboarding_completed?: boolean | null
           phone_e164?: string | null
           phone_extension?: string | null
           phone_number?: string | null

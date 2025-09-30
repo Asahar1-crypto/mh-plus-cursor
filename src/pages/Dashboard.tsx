@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from 'react';
 import { useAuth } from '@/contexts/auth';
 import { useExpense } from '@/contexts/ExpenseContext';
@@ -11,6 +10,7 @@ import AccountDebugInfo from '@/components/debug/AccountDebugInfo';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent } from '@/components/ui/card';
 import { CalendarIcon } from 'lucide-react';
+import { OnboardingModal } from '@/components/onboarding/OnboardingModal';
 
 const Dashboard = () => {
   const { user, account } = useAuth();
@@ -116,6 +116,7 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5 animate-fade-in">
+      <OnboardingModal />
       <div className="w-full max-w-7xl mx-auto p-4 sm:p-6 space-y-6 sm:space-y-8">
         <div className="animate-scale-in">
           <PendingInvitationAlert />
