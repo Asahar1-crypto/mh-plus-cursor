@@ -26,19 +26,45 @@ const ResetPassword: React.FC = () => {
       console.log('🔍 Current URL:', window.location.href);
       console.log('🔍 Search params string:', window.location.search);
       console.log('🔍 Hash:', window.location.hash);
+      console.log('🔍 Pathname:', window.location.pathname);
       
-      // Parse hash parameters (Supabase sends tokens via hash)
+      // Parse both search and hash parameters
+      const searchParams = new URLSearchParams(window.location.search);
       const hashParams = new URLSearchParams(window.location.hash.substring(1));
       
-      // Check for new-style tokens (from Supabase built-in reset)
+      console.log('🔍 Search params object:', Object.fromEntries(searchParams));
+      console.log('🔍 Hash params object:', Object.fromEntries(hashParams));
+      
+      // Check for tokens in both locations
       const token = searchParams.get('token') || hashParams.get('token');
       const type = searchParams.get('type') || hashParams.get('type');
-      
-      // Check for old-style tokens (from custom edge function)
       const accessToken = searchParams.get('access_token') || hashParams.get('access_token');
       const refreshToken = searchParams.get('refresh_token') || hashParams.get('refresh_token');
       
-      console.log('🔍 Reset password URL params:', { token, type, accessToken, refreshToken });
+      console.log('🔍 Found tokens:', { token, type, accessToken, refreshToken });
+      
+      // If no tokens found, maybe we're coming from the Supabase redirect URL
+      // and need to handle the current session differently
+      if (!token && !accessToken) {
+        console.log('🔍 No tokens found in URL, checking current session...');
+        
+        // Check if we have a current session (user might be redirected from Supabase auth)
+        const { data: session } = await supabase.auth.getSession();
+        console.log('🔍 Current session:', session);
+        
+        if (session?.session) {
+          console.log('🔍 Found existing session - checking if it\'s for password recovery');
+          // We have a session, assume it's valid for password reset
+          setIsValidToken(true);
+          setIsTokenChecking(false);
+          return;
+        } else {
+          console.log('❌ No session found and no tokens in URL');
+          setIsValidToken(false);
+          setIsTokenChecking(false);
+          return;
+        }
+      }
       
       // Handle new-style reset tokens (token + type=recovery)
       if (token && type === 'recovery') {
