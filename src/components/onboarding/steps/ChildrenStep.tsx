@@ -20,7 +20,7 @@ interface Child {
 }
 
 export const ChildrenStep: React.FC<OnboardingStepProps> = ({ onNext, onBack }) => {
-  const { account } = useAuth();
+  const { account, user } = useAuth();
   const [children, setChildren] = useState<Child[]>([{ name: '', birthDate: undefined }]);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -56,6 +56,20 @@ export const ChildrenStep: React.FC<OnboardingStepProps> = ({ onNext, onBack }) 
 
     setIsLoading(true);
     try {
+      // First, verify account membership
+      const { data: membershipData, error: membershipError } = await supabase
+        .from('account_members')
+        .select('role')
+        .eq('account_id', account.id)
+        .eq('user_id', user?.id)
+        .single();
+
+      if (membershipError || !membershipData) {
+        console.error('Membership check failed:', membershipError);
+        toast.error('אין לך הרשאות להוסיף ילדים לחשבון זה. יש לפנות לתמיכה.');
+        return;
+      }
+
       // Insert children to database
       const childrenToInsert = validChildren.map(c => ({
         account_id: account.id,
@@ -67,13 +81,23 @@ export const ChildrenStep: React.FC<OnboardingStepProps> = ({ onNext, onBack }) 
         .from('children')
         .insert(childrenToInsert);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Insert error:', error);
+        
+        // Handle specific RLS error
+        if (error.code === '42501') {
+          toast.error('אין הרשאות להוסיף ילדים. אנא פנה לתמיכה.');
+          return;
+        }
+        
+        throw error;
+      }
 
       toast.success(`נוספו ${validChildren.length} ילדים בהצלחה!`);
       onNext();
     } catch (error) {
       console.error('Error adding children:', error);
-      toast.error('שגיאה בהוספת ילדים');
+      toast.error('שגיאה בהוספת ילדים. אנא נסה שוב או פנה לתמיכה.');
     } finally {
       setIsLoading(false);
     }
@@ -184,6 +208,13 @@ export const ChildrenStep: React.FC<OnboardingStepProps> = ({ onNext, onBack }) 
           className="flex-1 transition-all duration-300 hover:scale-105"
         >
           חזור
+        </Button>
+        <Button
+          variant="outline"
+          onClick={() => onNext()}
+          className="flex-1 transition-all duration-300 hover:scale-105"
+        >
+          דלג לעכשיו
         </Button>
         <Button
           onClick={handleNext}
