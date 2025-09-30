@@ -41,9 +41,13 @@ const ResetPassword: React.FC = () => {
       
       // Handle new-style reset tokens (token + type=recovery)
       if (token && type === 'recovery') {
-        console.log('🔍 Found recovery token, verifying with Supabase...');
+        console.log('🔍 Found recovery token - validating without creating session...');
+        
+        // SECURITY FIX: Only verify the token is valid, don't create session yet
+        // The session will be created only when user actually updates password
         try {
-          // Verify the recovery token properly
+          // Check if token is valid by attempting to verify it
+          // But we'll immediately sign out to prevent unauthorized access
           const { data, error } = await supabase.auth.verifyOtp({
             token_hash: token,
             type: 'recovery'
@@ -54,12 +58,16 @@ const ResetPassword: React.FC = () => {
             toast.error(`שגיאה באימות הטוקן: ${error.message}`);
             setIsValidToken(false);
           } else if (data.session) {
-            console.log('Recovery token verified successfully, session established');
-            toast.success('מוכן לעדכון סיסמה');
+            console.log('🔒 SECURITY: Token valid but immediately signing out to prevent unauthorized access');
+            
+            // Sign out immediately to prevent unauthorized access
+            await supabase.auth.signOut();
+            
+            // Token is valid - allow password reset
+            console.log('Token verified - ready for password reset');
             setIsValidToken(true);
           } else {
             console.log('Token verified but no session created');
-            toast.error('הטוקן תקף אך לא נוצר session');
             setIsValidToken(false);
           }
         } catch (err) {
@@ -130,6 +138,26 @@ const ResetPassword: React.FC = () => {
     setIsLoading(true);
 
     try {
+      // First, verify we have a valid session to update the password
+      const { data: sessionData } = await supabase.auth.getSession();
+      
+      if (!sessionData.session) {
+        // If no session, we need to verify the token again to create a temporary session
+        const token = searchParams.get('token');
+        if (token) {
+          const { data, error: verifyError } = await supabase.auth.verifyOtp({
+            token_hash: token,
+            type: 'recovery'
+          });
+          
+          if (verifyError || !data.session) {
+            setError('הטוקן אינו תקף יותר. אנא בקש לינק חדש.');
+            return;
+          }
+        }
+      }
+      
+      // Update the password
       const { error } = await supabase.auth.updateUser({
         password: password
       });
@@ -138,11 +166,17 @@ const ResetPassword: React.FC = () => {
         console.error('Password update error:', error);
         setError('שגיאה בעדכון הסיסמה. אנא נסה שוב.');
       } else {
-        toast.success('הסיסמה עודכנה בהצלחה!');
-        // Wait a moment then redirect
+        console.log('🔒 SECURITY: Password updated successfully - signing out for security');
+        
+        // SECURITY: Sign out the user after password update
+        await supabase.auth.signOut();
+        
+        toast.success('הסיסמה עודכנה בהצלחה! אנא התחבר עם הסיסמה החדשה');
+        
+        // Redirect to login with success message
         setTimeout(() => {
-          navigate('/login');
-        }, 1500);
+          navigate('/login?message=password-updated');
+        }, 2000);
       }
     } catch (err) {
       console.error('Error updating password:', err);

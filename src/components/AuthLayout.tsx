@@ -34,19 +34,33 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({ requiresAuth = false }) => {
     console.log('🔍 AuthLayout: Checking authenticated user access');
     console.log('🔍 Current path:', currentPath);
     console.log('🔍 Search params:', searchParams.toString());
-    console.log('🔍 Has token param:', searchParams.has('token'));
-    console.log('🔍 Has access_token param:', searchParams.has('access_token'));
     
-    // Allow access to pages that handle their own auth tokens
-    const allowedPages = ['/reset-password', '/verify-email'];
-    const hasAuthTokens = searchParams.has('token') || searchParams.has('access_token');
-    const isRecoveryFlow = searchParams.has('type') && searchParams.get('type') === 'recovery';
+    // SECURITY FIX: Do NOT redirect to dashboard during password reset flow
+    // This prevents unauthorized access after clicking reset link
+    const isPasswordResetFlow = currentPath === '/reset-password' && 
+      (searchParams.has('token') && searchParams.get('type') === 'recovery');
+    
+    if (isPasswordResetFlow) {
+      console.log('🔒 SECURITY: Password reset in progress - staying on reset page');
+      // Allow user to stay on reset page to enter new password
+      return (
+        <div className="min-h-screen bg-background">
+          <AppHeader />
+          <div className="pt-16">
+            <Outlet />
+          </div>
+        </div>
+      );
+    }
+    
+    // Allow access to other auth pages that handle their own tokens
+    const allowedPages = ['/verify-email'];
+    const hasOtherAuthTokens = searchParams.has('access_token');
     
     console.log('🔍 Is allowed page:', allowedPages.includes(currentPath));
-    console.log('🔍 Has auth tokens:', hasAuthTokens);
-    console.log('🔍 Is recovery flow:', isRecoveryFlow);
+    console.log('🔍 Has other auth tokens:', hasOtherAuthTokens);
     
-    if (allowedPages.includes(currentPath) || hasAuthTokens || isRecoveryFlow) {
+    if (allowedPages.includes(currentPath) || hasOtherAuthTokens) {
       // Allow access to these pages even if authenticated
       console.log('✅ AuthLayout: Allowing access to auth flow page:', currentPath);
     } else {
