@@ -42,12 +42,13 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({ requiresAuth = false }) => {
     
     // SECURITY FIX: Do NOT redirect to dashboard during password reset flow
     // This prevents unauthorized access after clicking reset link
-    const isPasswordResetFlow = currentPath === '/reset-password' && 
-      ((searchParams.has('token') || hashParams.has('token')) || 
-       (searchParams.get('type') === 'recovery' || hashParams.get('type') === 'recovery'));
+    // Always allow access to the reset-password page regardless of tokens
+    const isPasswordResetFlow = currentPath === '/reset-password';
     
     if (isPasswordResetFlow) {
-      console.log('🔒 SECURITY: Password reset in progress - staying on reset page');
+      console.log('🔒 SECURITY: Password reset page accessed - staying on reset page');
+      console.log('🔍 Search params:', searchParams.toString());
+      console.log('🔍 Hash params:', hashParams.toString());
       // Allow user to stay on reset page to enter new password
       return (
         <div className="min-h-screen bg-background">
