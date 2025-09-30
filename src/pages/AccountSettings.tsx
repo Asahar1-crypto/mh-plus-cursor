@@ -10,6 +10,7 @@ import PendingInvitationsCard from '@/components/account/PendingInvitationsCard'
 import SentInvitationsCard from '@/components/account/SentInvitationsCard';
 import NotificationsCard from '@/components/account/NotificationsCard';
 import UserProfileCard from '@/components/account/UserProfileCard';
+import ChangePasswordCard from '@/components/account/ChangePasswordCard';
 
 const AccountSettings = () => {
   const { user, account, isLoading, sendInvitation, removeInvitation } = useAuth();
@@ -54,6 +55,7 @@ const AccountSettings = () => {
       <div className="grid gap-6 md:grid-cols-2">
         <div className="space-y-6">
           <UserProfileCard />
+          <ChangePasswordCard />
           <UserAccountsCard />
           <AccountDetailsCard account={account} />
           <PendingInvitationsCard />
