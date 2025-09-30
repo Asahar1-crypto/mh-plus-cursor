@@ -4,6 +4,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { KeyRound, Eye, EyeOff } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 const ChangePasswordCard: React.FC = () => {
   const [currentPassword, setCurrentPassword] = useState('');
@@ -12,6 +14,35 @@ const ChangePasswordCard: React.FC = () => {
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleChangePassword = async () => {
+    setIsLoading(true);
+    try {
+      console.log('🔐 Starting password change process...');
+      
+      // שינוי סיסמה דרך Supabase
+      const { error } = await supabase.auth.updateUser({
+        password: newPassword
+      });
+
+      if (error) throw error;
+
+      console.log('✅ Password changed successfully');
+      toast.success('הסיסמה שונתה בהצלחה!');
+      
+      // נקה את השדות
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+
+    } catch (error: any) {
+      console.error('❌ Password change failed:', error);
+      toast.error(`שגיאה בשינוי הסיסמה: ${error.message}`);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <Card>
@@ -128,7 +159,9 @@ const ChangePasswordCard: React.FC = () => {
         {/* כפתור עדכון */}
         <Button
           className="w-full"
+          onClick={handleChangePassword}
           disabled={
+            isLoading ||
             !currentPassword ||
             !newPassword ||
             !confirmPassword ||
@@ -136,7 +169,7 @@ const ChangePasswordCard: React.FC = () => {
             newPassword.length < 6
           }
         >
-          עדכן סיסמה
+          {isLoading ? 'משנה סיסמה...' : 'עדכן סיסמה'}
         </Button>
 
         <p className="text-xs text-muted-foreground">
