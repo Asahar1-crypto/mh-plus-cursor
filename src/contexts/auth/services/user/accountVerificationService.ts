@@ -79,8 +79,8 @@ export const accountVerificationService = {
       console.log('🔧 Current origin:', window.location.origin);
       console.log('🔧 Current hostname:', window.location.hostname);
       
-      // Always use the actual production domain for redirects
-      const redirectUrl = 'https://mhplus.online/reset-password';
+      // Use the current domain for redirects - this ensures it works on any domain
+      const redirectUrl = `${window.location.origin}/reset-password`;
       console.log('🔧 Redirect URL:', redirectUrl);
       
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
