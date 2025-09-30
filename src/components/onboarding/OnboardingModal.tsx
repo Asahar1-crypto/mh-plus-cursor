@@ -26,11 +26,21 @@ export const OnboardingModal: React.FC = () => {
   const { user, profile, refreshProfile } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
+  const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
-    // Check if onboarding is needed
-    if (profile && !profile.onboarding_completed) {
-      setIsOpen(true);
+    // Wait for profile to be fully loaded before checking
+    if (profile !== null && profile !== undefined) {
+      setIsReady(true);
+      
+      // Check if onboarding is needed
+      if (!profile.onboarding_completed) {
+        // Small delay to ensure everything is mounted
+        const timer = setTimeout(() => {
+          setIsOpen(true);
+        }, 500);
+        return () => clearTimeout(timer);
+      }
     }
   }, [profile]);
 
@@ -107,12 +117,19 @@ export const OnboardingModal: React.FC = () => {
     }
   };
 
+  // Don't render until profile is ready
+  if (!isReady || !profile) {
+    return null;
+  }
+
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+    <Dialog open={isOpen} onOpenChange={(open) => {
+      if (!open) {
+        handleClose();
+      }
+    }}>
       <DialogContent
         className="max-w-3xl max-h-[90vh] overflow-y-auto p-0"
-        onPointerDownOutside={(e) => e.preventDefault()}
-        onEscapeKeyDown={(e) => e.preventDefault()}
       >
         {/* Close Button */}
         {currentStep > 0 && (
