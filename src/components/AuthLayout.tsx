@@ -12,12 +12,15 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({ requiresAuth = false }) => {
   const { isAuthenticated, isLoading } = useAuth();
 
   if (isLoading) {
+    console.log('🔄 AuthLayout: Loading state');
     return (
       <div className="flex h-screen w-full items-center justify-center">
         <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-r-transparent"></div>
       </div>
     );
   }
+  
+  console.log('🔍 AuthLayout: Auth check completed', { requiresAuth, isAuthenticated, currentPath: window.location.pathname });
 
   // If auth is required but user is not authenticated, redirect to login
   if (requiresAuth && !isAuthenticated) {
