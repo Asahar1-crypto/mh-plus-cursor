@@ -21,6 +21,7 @@ const ResetPassword: React.FC = () => {
 
   // Check token validity on component mount
   useEffect(() => {
+    console.log('🚀 ResetPassword component starting...');
     const checkToken = async () => {
       console.log('🔍 ResetPassword component mounted');
       console.log('🔍 Current URL:', window.location.href);
