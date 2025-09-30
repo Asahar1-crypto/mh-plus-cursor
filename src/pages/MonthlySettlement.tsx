@@ -3,6 +3,7 @@ import { format } from 'date-fns';
 import { he } from 'date-fns/locale';
 import { useAuth } from '@/contexts/auth';
 import { useExpense } from '@/contexts/ExpenseContext';
+import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -19,6 +20,9 @@ const MonthlySettlement = () => {
   const { expenses, isLoading: expensesLoading, refreshData, approveExpense, markAsPaid } = useExpense();
   const { toast } = useToast();
   
+  // State for account members
+  const [accountMembers, setAccountMembers] = useState<{user_id: string, user_name: string}[]>([]);
+  
   // State for selected month/year
   const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth());
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
@@ -31,11 +35,39 @@ const MonthlySettlement = () => {
     rejected: false
   });
 
+
   const toggleSection = (section: string) => {
     setExpandedSections(prev => ({
       ...prev,
       [section]: !prev[section]
     }));
+  };
+
+  // Load account members
+  React.useEffect(() => {
+    const loadAccountMembers = async () => {
+      if (!account?.id) return;
+      
+      try {
+        const { data, error } = await supabase
+          .rpc('get_account_members_with_details', {
+            account_uuid: account.id
+          });
+        
+        if (error) throw error;
+        setAccountMembers(data || []);
+      } catch (error) {
+        console.error('Error loading account members:', error);
+      }
+    };
+    
+    loadAccountMembers();
+  }, [account?.id]);
+
+  // Helper to get user name from ID
+  const getUserName = (userId: string) => {
+    const member = accountMembers.find(m => m.user_id === userId);
+    return member?.user_name || 'לא ידוע';
   };
   
   // Generate arrays for selects
@@ -506,7 +538,7 @@ const MonthlySettlement = () => {
                                         {expense.childName}
                                       </div>
                                     )}
-                                    <span>נוצר ע"י {expense.creatorName}</span>
+                                    <span>נוצר ע"י {getUserName(expense.createdBy)}</span>
                                   </div>
                                 </div>
                                 <div className="text-left">
@@ -552,8 +584,8 @@ const MonthlySettlement = () => {
                                         {expense.childName}
                                       </div>
                                     )}
-                                    <span>נוצר ע"י {expense.creatorName}</span>
-                                    {expense.approvedBy && <span>אושר ע"י {expense.approvedBy}</span>}
+                                    <span>נוצר ע"י {getUserName(expense.createdBy)}</span>
+                                    {expense.approvedBy && <span>אושר ע"י {getUserName(expense.approvedBy)}</span>}
                                   </div>
                                 </div>
                                 <div className="text-left">
@@ -599,7 +631,7 @@ const MonthlySettlement = () => {
                                         {expense.childName}
                                       </div>
                                     )}
-                                    <span>נוצר ע"י {expense.creatorName}</span>
+                                    <span>נוצר ע"י {getUserName(expense.createdBy)}</span>
                                   </div>
                                 </div>
                                 <div className="text-left">
