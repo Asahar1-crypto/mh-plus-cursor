@@ -15,6 +15,7 @@ export interface Expense {
   approvedBy?: string;
   approvedAt?: string;
   receipt?: string;
+  receiptId?: string;
   isRecurring: boolean;
   frequency?: 'monthly' | 'weekly' | 'yearly';
   hasEndDate?: boolean;

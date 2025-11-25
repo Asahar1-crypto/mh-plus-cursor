@@ -14,6 +14,7 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { StatusBadge } from './StatusBadge';
+import { ReceiptPreviewDialog } from './ReceiptPreviewDialog';
 import { Expense } from '@/contexts/expense/types';
 import { useToast } from '@/hooks/use-toast';
 import { toast } from 'sonner';
@@ -27,7 +28,9 @@ import {
   CheckSquare,
   Square,
   Users,
-  Zap
+  Zap,
+  Eye,
+  Download
 } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/auth';
@@ -52,6 +55,7 @@ export const ExpensesTable: React.FC<ExpensesTableProps> = ({
   const [selectedPendingExpenses, setSelectedPendingExpenses] = useState<string[]>([]);
   const [selectedApprovedExpenses, setSelectedApprovedExpenses] = useState<string[]>([]);
   const [isPerformingBulkAction, setIsPerformingBulkAction] = useState(false);
+  const [previewReceiptId, setPreviewReceiptId] = useState<string | null>(null);
 
   // Get account members
   const { data: accountMembers } = useQuery({
@@ -173,6 +177,7 @@ export const ExpensesTable: React.FC<ExpensesTableProps> = ({
   }
 
   return (
+    <>
     <Card className="bg-gradient-to-br from-card/90 to-card/80 backdrop-blur-sm border border-border/50 shadow-lg animate-fade-in">
       <CardHeader>
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
@@ -289,6 +294,12 @@ export const ExpensesTable: React.FC<ExpensesTableProps> = ({
                     סטטוס
                   </div>
                 </TableHead>
+                <TableHead className="text-right font-semibold">
+                  <div className="flex items-center gap-2 justify-end">
+                    <FileText className="h-4 w-4" />
+                    חשבונית
+                  </div>
+                </TableHead>
                 <TableHead className="text-right font-semibold">פעולות</TableHead>
               </TableRow>
             </TableHeader>
@@ -392,6 +403,26 @@ export const ExpensesTable: React.FC<ExpensesTableProps> = ({
                         <StatusBadge status={expense.status} />
                       </div>
                     </TableCell>
+
+                    <TableCell className="text-right p-2 lg:p-4">
+                      <div className="flex gap-1 justify-end">
+                        {expense.receiptId ? (
+                          <>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => setPreviewReceiptId(expense.receiptId!)}
+                              className="h-6 w-6 lg:h-8 lg:w-8 p-0 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                              title="תצוגה מקדימה"
+                            >
+                              <Eye className="h-3 w-3 lg:h-4 lg:w-4" />
+                            </Button>
+                          </>
+                        ) : (
+                          <span className="text-xs text-muted-foreground">-</span>
+                        )}
+                      </div>
+                    </TableCell>
                     
                     <TableCell className="text-right p-2 lg:p-4">
                       <div className="flex gap-0.5 lg:gap-1 justify-end">
@@ -436,5 +467,12 @@ export const ExpensesTable: React.FC<ExpensesTableProps> = ({
         </div>
       </CardContent>
     </Card>
+
+    <ReceiptPreviewDialog
+      isOpen={!!previewReceiptId}
+      onClose={() => setPreviewReceiptId(null)}
+      receiptId={previewReceiptId || ''}
+    />
+    </>
   );
 };
