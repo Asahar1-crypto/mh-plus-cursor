@@ -9,14 +9,14 @@ import {
   TableRow 
 } from '@/components/ui/table';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { StatusBadge } from './StatusBadge';
 import { ReceiptPreviewDialog } from './ReceiptPreviewDialog';
+import { ExpenseCardMobile } from './ExpenseCardMobile';
 import { Expense } from '@/contexts/expense/types';
-import { useToast } from '@/hooks/use-toast';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { toast } from 'sonner';
 import { 
   Check, 
@@ -29,8 +29,7 @@ import {
   Square,
   Users,
   Zap,
-  Eye,
-  Download
+  Eye
 } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/auth';
@@ -52,6 +51,7 @@ export const ExpensesTable: React.FC<ExpensesTableProps> = ({
   updateExpenseStatus
 }) => {
   const { account } = useAuth();
+  const isMobile = useIsMobile();
   const [selectedPendingExpenses, setSelectedPendingExpenses] = useState<string[]>([]);
   const [selectedApprovedExpenses, setSelectedApprovedExpenses] = useState<string[]>([]);
   const [isPerformingBulkAction, setIsPerformingBulkAction] = useState(false);
@@ -149,26 +149,17 @@ export const ExpensesTable: React.FC<ExpensesTableProps> = ({
     }
   };
 
-  const handleStatusChange = async (expenseId: string, newStatus: Expense['status']) => {
-    try {
-      await updateExpenseStatus(expenseId, newStatus);
-      toast.success('הסטטוס עודכן בהצלחה');
-    } catch (error) {
-      toast.error('שגיאה בעדכון הסטטוס');
-    }
-  };
-
   if (expenses.length === 0) {
     return (
       <Card className="bg-gradient-to-br from-card/90 to-card/80 backdrop-blur-sm border border-border/50 shadow-lg animate-fade-in">
-        <CardContent className="p-12 text-center">
+        <CardContent className="p-8 sm:p-12 text-center">
           <div className="flex flex-col items-center gap-4">
             <div className="p-4 bg-muted/30 rounded-full">
               <FileText className="h-8 w-8 text-muted-foreground" />
             </div>
             <div>
-              <h3 className="text-lg font-semibold">אין הוצאות להצגה</h3>
-              <p className="text-muted-foreground">נסה לשנות את הפילטרים או להוסיף הוצאה חדשה</p>
+              <h3 className="text-base sm:text-lg font-semibold">אין הוצאות להצגה</h3>
+              <p className="text-sm sm:text-base text-muted-foreground">נסה לשנות את הפילטרים או להוסיף הוצאה חדשה</p>
             </div>
           </div>
         </CardContent>
@@ -179,41 +170,43 @@ export const ExpensesTable: React.FC<ExpensesTableProps> = ({
   return (
     <>
     <Card className="bg-gradient-to-br from-card/90 to-card/80 backdrop-blur-sm border border-border/50 shadow-lg animate-fade-in">
-      <CardHeader>
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+      <CardHeader className="p-4 sm:p-6">
+        <div className="flex flex-col gap-3 sm:gap-4">
           <div>
-            <CardTitle className="flex items-center gap-2 text-xl">
-              <div className="p-2 bg-gradient-to-br from-primary/20 to-primary/10 rounded-lg">
-                <FileText className="h-5 w-5 text-primary" />
+            <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
+              <div className="p-1.5 sm:p-2 bg-gradient-to-br from-primary/20 to-primary/10 rounded-lg">
+                <FileText className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
               </div>
-              הוצאות ({expenses.length})
+              <span className="text-base sm:text-xl">הוצאות ({expenses.length})</span>
             </CardTitle>
-            <CardDescription className="mt-1">
+            <CardDescription className="mt-1 text-xs sm:text-sm">
               ניהול ואישור הוצאות משותפות
             </CardDescription>
           </div>
 
           {/* Bulk Actions */}
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-col sm:flex-row gap-2">
             {pendingExpenses.length > 0 && (
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <Button
                   variant={allPendingSelected ? "default" : "outline"}
                   size="sm"
                   onClick={toggleAllPending}
-                  className="flex items-center gap-2"
+                  className="flex items-center gap-1.5 h-8 text-xs"
                 >
                   {allPendingSelected ? <CheckSquare className="h-3 w-3" /> : <Square className="h-3 w-3" />}
-                  כל הממתינות ({pendingExpenses.length})
+                  <span className="hidden xs:inline">כל הממתינות</span>
+                  <span className="xs:hidden">הכל</span>
+                  ({pendingExpenses.length})
                 </Button>
                 {selectedPendingExpenses.length > 0 && (
                   <Button
                     onClick={bulkApprove}
                     disabled={isPerformingBulkAction}
                     size="sm"
-                    className="bg-green-600 hover:bg-green-700 text-white"
+                    className="bg-green-600 hover:bg-green-700 text-white h-8 text-xs"
                   >
-                    <Check className="h-3 w-3 mr-1" />
+                    <Check className="h-3 w-3 ml-1" />
                     אשר ({selectedPendingExpenses.length})
                   </Button>
                 )}
@@ -221,24 +214,26 @@ export const ExpensesTable: React.FC<ExpensesTableProps> = ({
             )}
 
             {approvedExpenses.length > 0 && (
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <Button
                   variant={allApprovedSelected ? "default" : "outline"}
                   size="sm"
                   onClick={toggleAllApproved}
-                  className="flex items-center gap-2"
+                  className="flex items-center gap-1.5 h-8 text-xs"
                 >
                   {allApprovedSelected ? <CheckSquare className="h-3 w-3" /> : <Square className="h-3 w-3" />}
-                  כל המאושרות ({approvedExpenses.length})
+                  <span className="hidden xs:inline">כל המאושרות</span>
+                  <span className="xs:hidden">הכל</span>
+                  ({approvedExpenses.length})
                 </Button>
                 {selectedApprovedExpenses.length > 0 && (
                   <Button
                     onClick={bulkMarkAsPaid}
                     disabled={isPerformingBulkAction}
                     size="sm"
-                    className="bg-blue-600 hover:bg-blue-700 text-white"
+                    className="bg-blue-600 hover:bg-blue-700 text-white h-8 text-xs"
                   >
-                    <span className="ml-1">סמן כשולם ({selectedApprovedExpenses.length})</span>
+                    סמן כשולם ({selectedApprovedExpenses.length})
                   </Button>
                 )}
               </div>
@@ -248,223 +243,271 @@ export const ExpensesTable: React.FC<ExpensesTableProps> = ({
       </CardHeader>
 
       <CardContent className="p-0">
-        <div className="overflow-x-auto">
-          <Table dir="rtl">
-            <TableHeader>
-              <TableRow className="bg-muted/30 border-b border-border/50">
-                <TableHead className="text-right font-semibold">בחר</TableHead>
-                <TableHead className="text-right font-semibold">
-                  <div className="flex items-center gap-2 justify-end">
-                    <Calendar className="h-4 w-4" />
-                    תאריך
-                  </div>
-                </TableHead>
-                <TableHead className="text-right font-semibold">
-                  <div className="flex items-center gap-2 justify-end">
-                    <FileText className="h-4 w-4" />
-                    תיאור
-                  </div>
-                </TableHead>
-                <TableHead className="text-right font-semibold">
-                  <div className="flex items-center gap-2 justify-end">
-                    סכום
-                  </div>
-                </TableHead>
-                <TableHead className="text-right font-semibold">
-                  <div className="flex items-center gap-2 justify-end">
-                    <Tag className="h-4 w-4" />
-                    קטגוריה
-                  </div>
-                </TableHead>
-                <TableHead className="text-right font-semibold">
-                  <div className="flex items-center gap-2 justify-end">
-                    <User className="h-4 w-4" />
-                    ילד
-                  </div>
-                </TableHead>
-                <TableHead className="text-right font-semibold">
-                  <div className="flex items-center gap-2 justify-end">
-                    <Users className="h-4 w-4" />
-                    משלם
-                  </div>
-                </TableHead>
-                <TableHead className="text-right font-semibold">
-                  <div className="flex items-center gap-2 justify-end">
-                    <Zap className="h-4 w-4" />
-                    סטטוס
-                  </div>
-                </TableHead>
-                <TableHead className="text-right font-semibold">
-                  <div className="flex items-center gap-2 justify-end">
-                    <FileText className="h-4 w-4" />
-                    חשבונית
-                  </div>
-                </TableHead>
-                <TableHead className="text-right font-semibold">פעולות</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {expenses.map((expense, index) => {
-                const creatorName = accountMembers?.find(m => m.user_id === expense.createdBy)?.user_name || 'לא ידוע';
-                const paidByName = accountMembers?.find(m => m.user_id === expense.paidById)?.user_name || 'לא ידוע';
-                
-                return (
-                  <TableRow 
-                    key={expense.id} 
-                    className="border-b border-border/30 hover:bg-muted/20 transition-colors duration-200 group animate-fade-in"
-                    style={{ animationDelay: `${index * 50}ms` }}
-                  >
-                    <TableCell className="w-8 lg:w-12 p-2 lg:p-4">
-                      {expense.status === 'pending' && (
-                        <Checkbox
-                          checked={selectedPendingExpenses.includes(expense.id)}
-                          onCheckedChange={(checked) => {
-                            if (checked) {
-                              setSelectedPendingExpenses([...selectedPendingExpenses, expense.id]);
-                            } else {
-                              setSelectedPendingExpenses(selectedPendingExpenses.filter(id => id !== expense.id));
-                            }
-                          }}
-                          className="group-hover:scale-110 transition-transform duration-200"
-                        />
-                      )}
-                      {expense.status === 'approved' && (
-                        <Checkbox
-                          checked={selectedApprovedExpenses.includes(expense.id)}
-                          onCheckedChange={(checked) => {
-                            if (checked) {
-                              setSelectedApprovedExpenses([...selectedApprovedExpenses, expense.id]);
-                            } else {
-                              setSelectedApprovedExpenses(selectedApprovedExpenses.filter(id => id !== expense.id));
-                            }
-                          }}
-                          className="group-hover:scale-110 transition-transform duration-200"
-                        />
-                      )}
-                    </TableCell>
-                    
-                    <TableCell className="font-medium text-right p-2 lg:p-4">
-                      <div className="flex items-center gap-1 lg:gap-2 justify-end">
-                        <span className="text-xs lg:text-sm">{format(new Date(expense.date), 'dd/MM/yyyy')}</span>
-                        <Calendar className="h-3 w-3 text-muted-foreground" />
-                      </div>
-                    </TableCell>
-                    
-                    <TableCell className="text-right p-2 lg:p-4">
-                      <div className="max-w-[120px] lg:max-w-xs text-right">
-                        <p className="font-medium truncate text-xs lg:text-sm">{expense.description}</p>
-                        <p className="text-xs text-muted-foreground hidden lg:block">נוצר על ידי: {creatorName}</p>
-                      </div>
-                    </TableCell>
-                    
-                    <TableCell className="text-right p-2 lg:p-4">
-                      <div className="flex items-center gap-1 lg:gap-2 justify-end">
-                        <span className="font-bold text-sm lg:text-lg">₪{expense.amount}</span>
-                      </div>
-                    </TableCell>
-                    
-                    <TableCell className="text-right p-2 lg:p-4 hidden md:table-cell">
-                      <div className="flex justify-end">
-                        <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20 text-xs">
-                          {expense.category || 'לא צוין'}
-                        </Badge>
-                      </div>
-                    </TableCell>
-                    
-                    <TableCell className="text-right p-2 lg:p-4 hidden lg:table-cell">
-                      {expense.childName ? (
-                        <div className="flex items-center gap-1 lg:gap-2 justify-end">
-                          <span className="text-xs lg:text-sm font-medium">{expense.childName}</span>
-                          <User className="h-3 w-3 text-muted-foreground" />
-                        </div>
-                      ) : (
-                        <span className="text-muted-foreground text-xs lg:text-sm">כללי</span>
-                      )}
-                    </TableCell>
-                    
-                    <TableCell className="text-right p-2 lg:p-4 hidden xl:table-cell">
-                      <div className="space-y-1">
-                        <div className="flex items-center gap-1 lg:gap-2 justify-end">
-                          <span className="text-xs lg:text-sm font-medium">{paidByName}</span>
-                          <Users className="h-3 w-3 text-muted-foreground" />
-                        </div>
-                        {expense.splitEqually && (
-                          <div className="flex justify-end">
-                            <Badge variant="secondary" className="text-xs">
-                              חלוקה שווה
-                            </Badge>
-                          </div>
-                        )}
-                      </div>
-                    </TableCell>
-                    
-                    <TableCell className="text-right p-2 lg:p-4">
-                      <div className="flex justify-end">
-                        <StatusBadge status={expense.status} />
-                      </div>
-                    </TableCell>
+        {/* Mobile: Card Layout */}
+        {isMobile && (
+          <div className="p-3 space-y-3">
+            {expenses.map((expense, index) => {
+              const creatorName = accountMembers?.find(m => m.user_id === expense.createdBy)?.user_name || 'לא ידוע';
+              const paidByName = accountMembers?.find(m => m.user_id === expense.paidById)?.user_name || 'לא ידוע';
+              const isSelected = expense.status === 'pending' 
+                ? selectedPendingExpenses.includes(expense.id)
+                : expense.status === 'approved'
+                  ? selectedApprovedExpenses.includes(expense.id)
+                  : false;
+              
+              return (
+                <div
+                  key={expense.id}
+                  className="animate-fade-in"
+                  style={{ animationDelay: `${index * 50}ms` }}
+                >
+                  <ExpenseCardMobile
+                    expense={expense}
+                    creatorName={creatorName}
+                    paidByName={paidByName}
+                    isSelected={isSelected}
+                    onSelect={(checked) => {
+                      if (expense.status === 'pending') {
+                        if (checked) {
+                          setSelectedPendingExpenses([...selectedPendingExpenses, expense.id]);
+                        } else {
+                          setSelectedPendingExpenses(selectedPendingExpenses.filter(id => id !== expense.id));
+                        }
+                      } else if (expense.status === 'approved') {
+                        if (checked) {
+                          setSelectedApprovedExpenses([...selectedApprovedExpenses, expense.id]);
+                        } else {
+                          setSelectedApprovedExpenses(selectedApprovedExpenses.filter(id => id !== expense.id));
+                        }
+                      }
+                    }}
+                    onApprove={() => handleApprove(expense.id)}
+                    onReject={() => handleReject(expense.id)}
+                    onMarkAsPaid={() => handleMarkAsPaid(expense.id)}
+                    onPreviewReceipt={expense.receiptId ? () => setPreviewReceiptId(expense.receiptId!) : undefined}
+                    showCheckbox={expense.status === 'pending' || expense.status === 'approved'}
+                  />
+                </div>
+              );
+            })}
+          </div>
+        )}
 
-                    <TableCell className="text-right p-2 lg:p-4">
-                      <div className="flex gap-1 justify-end">
-                        {expense.receiptId ? (
-                          <>
+        {/* Desktop/Tablet: Table Layout */}
+        {!isMobile && (
+          <div className="overflow-x-auto">
+            <Table dir="rtl">
+              <TableHeader>
+                <TableRow className="bg-muted/30 border-b border-border/50">
+                  <TableHead className="text-right font-semibold w-12">בחר</TableHead>
+                  <TableHead className="text-right font-semibold">
+                    <div className="flex items-center gap-2 justify-end">
+                      <Calendar className="h-4 w-4" />
+                      תאריך
+                    </div>
+                  </TableHead>
+                  <TableHead className="text-right font-semibold">
+                    <div className="flex items-center gap-2 justify-end">
+                      <FileText className="h-4 w-4" />
+                      תיאור
+                    </div>
+                  </TableHead>
+                  <TableHead className="text-right font-semibold">סכום</TableHead>
+                  <TableHead className="text-right font-semibold hidden md:table-cell">
+                    <div className="flex items-center gap-2 justify-end">
+                      <Tag className="h-4 w-4" />
+                      קטגוריה
+                    </div>
+                  </TableHead>
+                  <TableHead className="text-right font-semibold hidden lg:table-cell">
+                    <div className="flex items-center gap-2 justify-end">
+                      <User className="h-4 w-4" />
+                      ילד
+                    </div>
+                  </TableHead>
+                  <TableHead className="text-right font-semibold hidden xl:table-cell">
+                    <div className="flex items-center gap-2 justify-end">
+                      <Users className="h-4 w-4" />
+                      משלם
+                    </div>
+                  </TableHead>
+                  <TableHead className="text-right font-semibold">
+                    <div className="flex items-center gap-2 justify-end">
+                      <Zap className="h-4 w-4" />
+                      סטטוס
+                    </div>
+                  </TableHead>
+                  <TableHead className="text-right font-semibold hidden lg:table-cell">
+                    <div className="flex items-center gap-2 justify-end">
+                      <FileText className="h-4 w-4" />
+                      חשבונית
+                    </div>
+                  </TableHead>
+                  <TableHead className="text-right font-semibold">פעולות</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {expenses.map((expense, index) => {
+                  const creatorName = accountMembers?.find(m => m.user_id === expense.createdBy)?.user_name || 'לא ידוע';
+                  const paidByName = accountMembers?.find(m => m.user_id === expense.paidById)?.user_name || 'לא ידוע';
+                  
+                  return (
+                    <TableRow 
+                      key={expense.id} 
+                      className="border-b border-border/30 hover:bg-muted/20 transition-colors duration-200 group animate-fade-in"
+                      style={{ animationDelay: `${index * 50}ms` }}
+                    >
+                      <TableCell className="w-12 p-4">
+                        {expense.status === 'pending' && (
+                          <Checkbox
+                            checked={selectedPendingExpenses.includes(expense.id)}
+                            onCheckedChange={(checked) => {
+                              if (checked) {
+                                setSelectedPendingExpenses([...selectedPendingExpenses, expense.id]);
+                              } else {
+                                setSelectedPendingExpenses(selectedPendingExpenses.filter(id => id !== expense.id));
+                              }
+                            }}
+                            className="group-hover:scale-110 transition-transform duration-200"
+                          />
+                        )}
+                        {expense.status === 'approved' && (
+                          <Checkbox
+                            checked={selectedApprovedExpenses.includes(expense.id)}
+                            onCheckedChange={(checked) => {
+                              if (checked) {
+                                setSelectedApprovedExpenses([...selectedApprovedExpenses, expense.id]);
+                              } else {
+                                setSelectedApprovedExpenses(selectedApprovedExpenses.filter(id => id !== expense.id));
+                              }
+                            }}
+                            className="group-hover:scale-110 transition-transform duration-200"
+                          />
+                        )}
+                      </TableCell>
+                      
+                      <TableCell className="font-medium text-right p-4">
+                        <div className="flex items-center gap-2 justify-end">
+                          <span className="text-sm">{format(new Date(expense.date), 'dd/MM/yyyy')}</span>
+                          <Calendar className="h-3 w-3 text-muted-foreground" />
+                        </div>
+                      </TableCell>
+                      
+                      <TableCell className="text-right p-4">
+                        <div className="max-w-[200px] lg:max-w-xs text-right">
+                          <p className="font-medium truncate text-sm">{expense.description}</p>
+                          <p className="text-xs text-muted-foreground">נוצר על ידי: {creatorName}</p>
+                        </div>
+                      </TableCell>
+                      
+                      <TableCell className="text-right p-4">
+                        <div className="flex items-center gap-2 justify-end">
+                          <span className="font-bold text-lg">₪{expense.amount}</span>
+                        </div>
+                      </TableCell>
+                      
+                      <TableCell className="text-right p-4 hidden md:table-cell">
+                        <div className="flex justify-end">
+                          <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20 text-xs">
+                            {expense.category || 'לא צוין'}
+                          </Badge>
+                        </div>
+                      </TableCell>
+                      
+                      <TableCell className="text-right p-4 hidden lg:table-cell">
+                        {expense.childName ? (
+                          <div className="flex items-center gap-2 justify-end">
+                            <span className="text-sm font-medium">{expense.childName}</span>
+                            <User className="h-3 w-3 text-muted-foreground" />
+                          </div>
+                        ) : (
+                          <span className="text-muted-foreground text-sm">כללי</span>
+                        )}
+                      </TableCell>
+                      
+                      <TableCell className="text-right p-4 hidden xl:table-cell">
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2 justify-end">
+                            <span className="text-sm font-medium">{paidByName}</span>
+                            <Users className="h-3 w-3 text-muted-foreground" />
+                          </div>
+                          {expense.splitEqually && (
+                            <div className="flex justify-end">
+                              <Badge variant="secondary" className="text-xs">
+                                חלוקה שווה
+                              </Badge>
+                            </div>
+                          )}
+                        </div>
+                      </TableCell>
+                      
+                      <TableCell className="text-right p-4">
+                        <div className="flex justify-end">
+                          <StatusBadge status={expense.status} />
+                        </div>
+                      </TableCell>
+
+                      <TableCell className="text-right p-4 hidden lg:table-cell">
+                        <div className="flex gap-1 justify-end">
+                          {expense.receiptId ? (
                             <Button
                               size="sm"
                               variant="ghost"
                               onClick={() => setPreviewReceiptId(expense.receiptId!)}
-                              className="h-6 w-6 lg:h-8 lg:w-8 p-0 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                              className="h-8 w-8 p-0 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
                               title="תצוגה מקדימה"
                             >
-                              <Eye className="h-3 w-3 lg:h-4 lg:w-4" />
+                              <Eye className="h-4 w-4" />
                             </Button>
-                          </>
-                        ) : (
-                          <span className="text-xs text-muted-foreground">-</span>
-                        )}
-                      </div>
-                    </TableCell>
-                    
-                    <TableCell className="text-right p-2 lg:p-4">
-                      <div className="flex gap-0.5 lg:gap-1 justify-end">
-                        {expense.status === 'pending' && (
-                          <>
+                          ) : (
+                            <span className="text-xs text-muted-foreground">-</span>
+                          )}
+                        </div>
+                      </TableCell>
+                      
+                      <TableCell className="text-right p-4">
+                        <div className="flex gap-1 justify-end">
+                          {expense.status === 'pending' && (
+                            <>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => handleApprove(expense.id)}
+                                className="h-8 w-8 p-0 text-green-600 hover:text-green-700 hover:bg-green-50"
+                                title="אשר"
+                              >
+                                <Check className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => handleReject(expense.id)}
+                                className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+                                title="דחה"
+                              >
+                                <X className="h-4 w-4" />
+                              </Button>
+                            </>
+                          )}
+                          {expense.status === 'approved' && (
                             <Button
                               size="sm"
                               variant="ghost"
-                              onClick={() => handleApprove(expense.id)}
-                              className="h-6 w-6 lg:h-8 lg:w-8 p-0 text-green-600 hover:text-green-700 hover:bg-green-50"
+                              onClick={() => handleMarkAsPaid(expense.id)}
+                              className="h-8 px-3 text-sm text-blue-600 hover:text-blue-700 hover:bg-blue-50"
                             >
-                              <Check className="h-3 w-3 lg:h-4 lg:w-4" />
+                              סמן כשולם
                             </Button>
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={() => handleReject(expense.id)}
-                              className="h-6 w-6 lg:h-8 lg:w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
-                            >
-                              <X className="h-3 w-3 lg:h-4 lg:w-4" />
-                            </Button>
-                          </>
-                        )}
-                        {expense.status === 'approved' && (
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => handleMarkAsPaid(expense.id)}
-                            className="h-6 lg:h-8 px-1 lg:px-3 text-xs lg:text-sm text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-                          >
-                            <span className="hidden lg:inline ml-1">סמן כשולם</span>
-                            <span className="lg:hidden">שולם</span>
-                          </Button>
-                        )}
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
-        </div>
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </div>
+        )}
       </CardContent>
     </Card>
 
