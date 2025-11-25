@@ -127,7 +127,7 @@ export type Database = {
           action: string
           created_at: string | null
           id: string
-          ip_address: unknown | null
+          ip_address: unknown
           new_data: Json | null
           old_data: Json | null
           record_id: string | null
@@ -139,7 +139,7 @@ export type Database = {
           action: string
           created_at?: string | null
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           new_data?: Json | null
           old_data?: Json | null
           record_id?: string | null
@@ -151,7 +151,7 @@ export type Database = {
           action?: string
           created_at?: string | null
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           new_data?: Json | null
           old_data?: Json | null
           record_id?: string | null
@@ -519,7 +519,7 @@ export type Database = {
           created_at: string
           email: string
           id: string
-          ip_address: unknown | null
+          ip_address: unknown
           user_agent: string | null
         }
         Insert: {
@@ -527,7 +527,7 @@ export type Database = {
           created_at?: string
           email: string
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           user_agent?: string | null
         }
         Update: {
@@ -535,7 +535,7 @@ export type Database = {
           created_at?: string
           email?: string
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           user_agent?: string | null
         }
         Relationships: []
@@ -782,10 +782,7 @@ export type Database = {
         Args: { user_email: string }
         Returns: boolean
       }
-      cleanup_old_reset_attempts: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
+      cleanup_old_reset_attempts: { Args: never; Returns: undefined }
       create_account_if_not_exists: {
         Args: { account_name: string; user_id: string }
         Returns: {
@@ -801,10 +798,7 @@ export type Database = {
           name: string
         }[]
       }
-      generate_recurring_expenses: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
+      generate_recurring_expenses: { Args: never; Returns: undefined }
       get_account_invitations: {
         Args: { account_uuid: string }
         Returns: {
@@ -825,10 +819,7 @@ export type Database = {
           user_name: string
         }[]
       }
-      get_current_user_email: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
+      get_current_user_email: { Args: never; Returns: string }
       get_email_change_status: {
         Args: { p_user_id: string }
         Returns: {
@@ -851,7 +842,7 @@ export type Database = {
         }[]
       }
       get_orphaned_verified_users: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           created_at: string
           email: string
@@ -863,12 +854,9 @@ export type Database = {
           raw_user_meta_data: Json
         }[]
       }
-      get_system_setting: {
-        Args: { key_name: string }
-        Returns: string
-      }
+      get_system_setting: { Args: { key_name: string }; Returns: string }
       get_unverified_users: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           created_at: string
           email: string
@@ -878,10 +866,7 @@ export type Database = {
           raw_user_meta_data: Json
         }[]
       }
-      get_user_account_ids: {
-        Args: { user_uuid: string }
-        Returns: string[]
-      }
+      get_user_account_ids: { Args: { user_uuid: string }; Returns: string[] }
       has_active_subscription: {
         Args: { account_uuid: string }
         Returns: boolean
@@ -894,10 +879,7 @@ export type Database = {
         Args: { account_uuid: string; user_uuid: string }
         Returns: boolean
       }
-      is_super_admin: {
-        Args: { user_uuid: string }
-        Returns: boolean
-      }
+      is_super_admin: { Args: { user_uuid: string }; Returns: boolean }
       is_valid_email_confirmation_url: {
         Args: { url: string }
         Returns: boolean
@@ -914,18 +896,12 @@ export type Database = {
         }
         Returns: undefined
       }
-      normalize_il_phone: {
-        Args: { phone_text: string }
-        Returns: string
-      }
+      normalize_il_phone: { Args: { phone_text: string }; Returns: string }
       remove_account_member: {
         Args: { account_uuid: string; user_uuid: string }
         Returns: boolean
       }
-      update_expired_trials: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
+      update_expired_trials: { Args: never; Returns: undefined }
       upsert_subscription_secure: {
         Args: {
           p_canceled_at?: string
