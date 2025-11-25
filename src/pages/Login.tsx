@@ -81,49 +81,40 @@ const Login = () => {
   return (
     <>
       <AnimatedBackground />
-      <div className="container mx-auto py-8 px-4 flex items-center justify-center min-h-[calc(100vh-4rem)]">
-        <div className="w-full max-w-7xl">
-          <div className="grid lg:grid-cols-5 gap-8 items-center" dir="ltr">
-            {/* Left Wallet Character - Green */}
-            <div className="hidden lg:flex flex-col items-center justify-center p-8 animate-fade-in">
-              <div className="relative">
-                <img 
-                  src="/lovable-uploads/3d7094a5-211e-416b-a8c4-8fd864c98499.png" 
-                  alt="Green Wallet Character" 
-                  className="w-64 h-64 object-contain animate-bounce [animation-duration:3s]"
-                />
-                <div className="absolute -bottom-4 left-1/2 transform -translate-x-1/2 w-32 h-8 bg-black/10 rounded-full blur-md animate-pulse"></div>
-              </div>
-            </div>
+      <div className="container mx-auto py-4 sm:py-8 px-3 sm:px-4 flex items-center justify-center min-h-[calc(100vh-4rem)]">
+        <div className="w-full max-w-6xl">
+          <div className="grid lg:grid-cols-3 gap-4 lg:gap-8 items-center" dir="ltr">
+            {/* Empty column for centering */}
+            <div className="hidden lg:block"></div>
 
-            {/* Login Card - Center (3 columns) */}
-            <div className="w-full max-w-xl mx-auto lg:mx-0 lg:col-span-3" dir="rtl">
-              <Card className="border-border shadow-xl animate-fade-in glass shadow-card p-2">{/* Added p-2 for internal padding and shadow-xl for larger shadow */}
-                <CardHeader className="text-center pb-8 pt-8">{/* Increased padding */}
+            {/* Login Card - Center */}
+            <div className="w-full" dir="rtl">
+              <Card className="border-border shadow-xl animate-fade-in glass shadow-card">
+                <CardHeader className="text-center p-4 sm:p-6 lg:p-8">
                   {/* Mobile wallet characters */}
-                  <div className="lg:hidden flex justify-center gap-4 mb-4">
+                  <div className="flex justify-center gap-3 sm:gap-4 mb-4 sm:mb-6">
                     <img 
                       src="/lovable-uploads/3a973532-2477-462a-9a84-0390b7045844.png" 
                       alt="Red Wallet Character" 
-                      className="w-28 h-28 object-contain animate-bounce [animation-duration:2s]"
+                      className="w-32 h-32 sm:w-40 sm:h-40 object-contain animate-bounce [animation-duration:2s]"
                     />
                     <img 
                       src="/lovable-uploads/3d7094a5-211e-416b-a8c4-8fd864c98499.png" 
                       alt="Green Wallet Character" 
-                      className="w-28 h-28 object-contain animate-bounce [animation-duration:2s] [animation-delay:0.3s]"
+                      className="w-32 h-32 sm:w-40 sm:h-40 object-contain animate-bounce [animation-duration:2s] [animation-delay:0.3s]"
                     />
                   </div>
                   <div className="flex items-center justify-center gap-2 mb-2">
-                    <Sparkles className="w-6 h-6 text-primary animate-pulse" />
-                    <CardTitle className="text-2xl font-bold bg-gradient-to-r from-primary to-primary-glow bg-clip-text text-transparent">
+                    <Sparkles className="w-5 h-5 sm:w-6 sm:h-6 text-primary animate-pulse" />
+                    <CardTitle className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-primary to-primary-glow bg-clip-text text-transparent">
                       ברוכים הבאים
                     </CardTitle>
                   </div>
-                  <CardDescription>
+                  <CardDescription className="text-sm sm:text-base">
                     בחר את שיטת ההתחברות המועדפת עליך
                   </CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-8 px-8 pb-8">{/* Increased spacing and padding */}
+                <CardContent className="space-y-6 sm:space-y-8 p-4 sm:p-6 lg:p-8">
                   {/* Auth Method Toggle */}
                   <AuthMethodToggle 
                     method={authMethod} 
@@ -133,15 +124,15 @@ const Login = () => {
 
                   {/* Dynamic Content Based on Auth Method */}
                   {authMethod === 'email' ? (
-                    <div className="space-y-6">{/* Increased from space-y-4 */}
+                    <div className="space-y-4 sm:space-y-6">
                       <Form {...form}>
-                        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">{/* Increased from space-y-4 */}
+                        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 sm:space-y-6">
                           <FormField
                             control={form.control}
                             name="email"
                             render={({ field }) => (
-                              <FormItem className="space-y-3">
-                                <FormLabel className="text-base font-medium">כתובת אימייל</FormLabel>
+                              <FormItem className="space-y-2 sm:space-y-3">
+                                <FormLabel className="text-sm sm:text-base font-medium">כתובת אימייל</FormLabel>
                                 <FormControl>
                                   <div className="relative">
                                     <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
@@ -150,11 +141,11 @@ const Login = () => {
                                     <Input 
                                       placeholder="your@email.com" 
                                       {...field} 
-                                      className="pl-10 h-12 text-base transition-all duration-200 focus:shadow-glow"
-                                    />{/* Increased height to h-12 and font size */}
+                                      className="pl-10 h-11 sm:h-12 text-sm sm:text-base transition-all duration-200 focus:shadow-glow"
+                                    />
                                   </div>
                                 </FormControl>
-                                <FormMessage />
+                                <FormMessage className="text-xs sm:text-sm" />
                               </FormItem>
                             )}
                           />
@@ -163,8 +154,8 @@ const Login = () => {
                             control={form.control}
                             name="password"
                             render={({ field }) => (
-                              <FormItem className="space-y-3">
-                                <FormLabel className="text-base font-medium">סיסמה</FormLabel>
+                              <FormItem className="space-y-2 sm:space-y-3">
+                                <FormLabel className="text-sm sm:text-base font-medium">סיסמה</FormLabel>
                                 <FormControl>
                                   <div className="relative">
                                     <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
@@ -174,23 +165,19 @@ const Login = () => {
                                       type="password" 
                                       placeholder="******" 
                                       {...field} 
-                                      className="pl-10 h-12 text-base transition-all duration-200 focus:shadow-glow"
-                                    />{/* Increased height to h-12 and font size */}
+                                      className="pl-10 h-11 sm:h-12 text-sm sm:text-base transition-all duration-200 focus:shadow-glow"
+                                    />
                                   </div>
                                 </FormControl>
-                                <FormMessage />
+                                <FormMessage className="text-xs sm:text-sm" />
                               </FormItem>
                             )}
                           />
                           
-                          <div className="text-right pt-2">
+                          <div className="text-right pt-1 sm:pt-2">
                             <Link 
                               to="/forgot-password" 
-                              className="text-base text-primary hover:text-primary-glow transition-colors duration-200 hover:underline"
-                              onClick={() => {
-                                console.log('🔗 Forgot password link clicked - navigating to /forgot-password');
-                                console.log('🔗 Current URL before navigation:', window.location.href);
-                              }}
+                              className="text-sm sm:text-base text-primary hover:text-primary-glow transition-colors duration-200 hover:underline"
                             >
                               שכחת סיסמה?
                             </Link>
@@ -198,25 +185,25 @@ const Login = () => {
                           
                           <ModernButton 
                             type="submit" 
-                            className="w-full mt-4 h-12" 
+                            className="w-full mt-4 h-11 sm:h-12" 
                             size="lg"
                             loading={isLoading}
                             variant="gradient"
                           >
                             {isLoading ? 'מתחבר...' : 'התחבר'}
-                          </ModernButton>{/* Added h-12 for taller button */}
+                          </ModernButton>
                         </form>
                       </Form>
                     </div>
                   ) : (
-                    <div className="space-y-6">{/* Increased from space-y-4 */}
+                    <div className="space-y-4 sm:space-y-6">
                       <PhoneLogin onBack={handleBackToEmailLogin} hideHeader={true} />
                     </div>
                   )}
                 </CardContent>
                 
-                <CardFooter className="flex justify-center pt-8 pb-8 px-8">{/* Increased padding */}
-                  <p className="text-base text-muted-foreground">{/* Increased font size */}
+                <CardFooter className="flex justify-center p-4 sm:p-6 lg:p-8">
+                  <p className="text-sm sm:text-base text-muted-foreground">
                     עדיין אין לך חשבון?{' '}
                     <Link to="/register" className="text-primary hover:text-primary-glow transition-colors duration-200 hover:underline font-medium">
                       הירשם כאן
@@ -226,17 +213,8 @@ const Login = () => {
               </Card>
             </div>
 
-            {/* Right Wallet Character - Red */}
-            <div className="hidden lg:flex flex-col items-center justify-center p-8 animate-fade-in">
-              <div className="relative">
-                <img 
-                  src="/lovable-uploads/3a973532-2477-462a-9a84-0390b7045844.png" 
-                  alt="Red Wallet Character" 
-                  className="w-64 h-64 object-contain animate-bounce [animation-duration:3s] [animation-delay:0.5s]"
-                />
-                <div className="absolute -bottom-4 left-1/2 transform -translate-x-1/2 w-32 h-8 bg-black/10 rounded-full blur-md animate-pulse [animation-delay:0.5s]"></div>
-              </div>
-            </div>
+            {/* Empty column for centering */}
+            <div className="hidden lg:block"></div>
           </div>
         </div>
       </div>
