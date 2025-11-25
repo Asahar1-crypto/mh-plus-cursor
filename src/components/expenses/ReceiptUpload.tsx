@@ -25,7 +25,8 @@ export const ReceiptUpload: React.FC<ReceiptUploadProps> = ({ onScanComplete, on
 
   const acceptedTypes = {
     'image/jpeg': ['.jpg', '.jpeg'],
-    'image/png': ['.png']
+    'image/png': ['.png'],
+    'application/pdf': ['.pdf']
   };
 
   const maxFileSize = 5 * 1024 * 1024; // 5MB
@@ -40,7 +41,7 @@ export const ReceiptUpload: React.FC<ReceiptUploadProps> = ({ onScanComplete, on
         toast({
           variant: "destructive",
           title: "פורמט קובץ לא נתמך",
-          description: "אנא העלה קובץ תמונה (JPG או PNG) בלבד. קבצי PDF לא נתמכים בזיהוי אוטומטי."
+          description: "אנא העלה קובץ תמונה (JPG, PNG) או PDF בלבד."
         });
         return;
       }
@@ -219,7 +220,7 @@ export const ReceiptUpload: React.FC<ReceiptUploadProps> = ({ onScanComplete, on
         description: `זוהו ${data.result.items.length} פריטים`
       });
 
-      onScanComplete(data.result);
+      onScanComplete({ ...data.result, receipt_id: data.scan_id });
 
     } catch (error) {
       console.log('🔍 ReceiptUpload: Scan error', error);

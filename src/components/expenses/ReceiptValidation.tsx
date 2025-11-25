@@ -20,6 +20,7 @@ interface ScanResult {
   total: number;
   currency?: string;
   confidence_score?: number;
+  receipt_id?: string;
   items: {
     name: string;
     price: number;
@@ -159,7 +160,8 @@ export const ReceiptValidation: React.FC<ReceiptValidationProps> = ({
           paidByName: user.name || 'משתמש',
           includeInMonthlyBalance: true,
           splitEqually: false,
-          isRecurring: false
+          isRecurring: false,
+          receiptId: i === 0 ? scanResult.receipt_id : undefined // Only link first item to receipt
         });
       }
 

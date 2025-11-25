@@ -68,6 +68,7 @@ export const expenseService = {
         approvedBy: expense.approved_by,
         approvedAt: expense.approved_at,
         receipt: expense.receipt_url,
+        receiptId: expense.receipt_id,
         isRecurring: expense.is_recurring || false,
         frequency: expense.frequency as 'monthly' | 'weekly' | 'yearly' | undefined,
         hasEndDate: expense.has_end_date || false,
@@ -130,7 +131,8 @@ export const expenseService = {
       end_date: expense.endDate || null,
       split_equally: expense.splitEqually,
       is_recurring: expense.isRecurring || false,
-      frequency: expense.frequency || null
+      frequency: expense.frequency || null,
+      receipt_id: expense.receiptId || null
     };
     
     console.log('Data being inserted:', expenseData);
