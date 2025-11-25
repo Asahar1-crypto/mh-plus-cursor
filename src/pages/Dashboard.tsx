@@ -11,6 +11,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Card, CardContent } from '@/components/ui/card';
 import { CalendarIcon } from 'lucide-react';
 import { OnboardingModal } from '@/components/onboarding/OnboardingModal';
+import confetti from 'canvas-confetti';
+import { toast } from '@/hooks/use-toast';
 
 const Dashboard = () => {
   const { user, account } = useAuth();
@@ -89,6 +91,54 @@ const Dashboard = () => {
   const allApprovedExpenses = useMemo(() => {
     return expenses.filter(exp => exp.status === 'approved');
   }, [expenses]);
+
+  // Wrapper for markAsPaid with confetti animation
+  const handleMarkAsPaidWithCelebration = async (id: string) => {
+    try {
+      await markAsPaid(id);
+      
+      // Celebration confetti with gold colors
+      const duration = 2500;
+      const animationEnd = Date.now() + duration;
+      const colors = ['#F59E0B', '#FBBF24', '#FCD34D'];
+
+      const interval = setInterval(() => {
+        const timeLeft = animationEnd - Date.now();
+        if (timeLeft <= 0) {
+          clearInterval(interval);
+          return;
+        }
+
+        confetti({
+          particleCount: 7,
+          angle: 60,
+          spread: 60,
+          origin: { x: 0, y: 0.5 },
+          colors: colors,
+          ticks: 200,
+        });
+        confetti({
+          particleCount: 7,
+          angle: 120,
+          spread: 60,
+          origin: { x: 1, y: 0.5 },
+          colors: colors,
+          ticks: 200,
+        });
+      }, 40);
+      
+      toast({
+        title: "💰 ההוצאה סומנה כשולמה!",
+        description: "התשלום נרשם בהצלחה",
+      });
+    } catch (error) {
+      toast({
+        title: "שגיאה",
+        description: "אירעה שגיאה בסימון ההוצאה כשולמה",
+        variant: "destructive"
+      });
+    }
+  };
 
   if (!user || !account) {
     return (
@@ -180,7 +230,7 @@ const Dashboard = () => {
             paidExpenses={filteredPaid}
             onApprove={approveExpense}
             onReject={rejectExpense}
-            onMarkPaid={markAsPaid}
+            onMarkPaid={handleMarkAsPaidWithCelebration}
           />
         </div>
         
