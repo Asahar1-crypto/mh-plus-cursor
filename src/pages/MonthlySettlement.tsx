@@ -14,6 +14,7 @@ import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { Calendar as CalendarIcon, Calculator, CheckCircle, Clock, TrendingUp, RefreshCw, Check, DollarSign, Archive, ChevronDown, ChevronUp, FileText, Download, User, Receipt } from 'lucide-react';
+import confetti from 'canvas-confetti';
 
 const MonthlySettlement = () => {
   const { user, account, isLoading } = useAuth();
@@ -124,8 +125,36 @@ const MonthlySettlement = () => {
       const promises = monthlyData.pending.expenses.map(expense => approveExpense(expense.id));
       await Promise.all(promises);
       
+      // Celebration confetti
+      const duration = 2000;
+      const animationEnd = Date.now() + duration;
+      const colors = ['#10B981', '#8B5CF6', '#EC4899'];
+
+      const interval = setInterval(() => {
+        const timeLeft = animationEnd - Date.now();
+        if (timeLeft <= 0) {
+          clearInterval(interval);
+          return;
+        }
+
+        confetti({
+          particleCount: 5,
+          angle: 60,
+          spread: 55,
+          origin: { x: 0, y: 0.6 },
+          colors: colors,
+        });
+        confetti({
+          particleCount: 5,
+          angle: 120,
+          spread: 55,
+          origin: { x: 1, y: 0.6 },
+          colors: colors,
+        });
+      }, 50);
+      
       toast({
-        title: "הצלחה!",
+        title: "🎉 הצלחה!",
         description: `${monthlyData.pending.count} הוצאות אושרו בהצלחה`,
       });
       
@@ -144,8 +173,38 @@ const MonthlySettlement = () => {
       const promises = monthlyData.approved.expenses.map(expense => markAsPaid(expense.id));
       await Promise.all(promises);
       
+      // Celebration confetti with gold colors
+      const duration = 2500;
+      const animationEnd = Date.now() + duration;
+      const colors = ['#F59E0B', '#FBBF24', '#FCD34D'];
+
+      const interval = setInterval(() => {
+        const timeLeft = animationEnd - Date.now();
+        if (timeLeft <= 0) {
+          clearInterval(interval);
+          return;
+        }
+
+        confetti({
+          particleCount: 7,
+          angle: 60,
+          spread: 60,
+          origin: { x: 0, y: 0.5 },
+          colors: colors,
+          ticks: 200,
+        });
+        confetti({
+          particleCount: 7,
+          angle: 120,
+          spread: 60,
+          origin: { x: 1, y: 0.5 },
+          colors: colors,
+          ticks: 200,
+        });
+      }, 40);
+      
       toast({
-        title: "הצלחה!",
+        title: "💰 הצלחה!",
         description: `${monthlyData.approved.count} הוצאות סומנו כשולמו`,
       });
       
@@ -184,8 +243,50 @@ const MonthlySettlement = () => {
         await Promise.all(paidPromises);
       }
       
+      // Epic celebration confetti for month close!
+      const duration = 4000;
+      const animationEnd = Date.now() + duration;
+      const colors = ['#8B5CF6', '#EC4899', '#10B981', '#F59E0B', '#3B82F6'];
+
+      const epicConfetti = setInterval(() => {
+        const timeLeft = animationEnd - Date.now();
+        if (timeLeft <= 0) {
+          clearInterval(epicConfetti);
+          return;
+        }
+
+        // Multiple bursts from different positions
+        confetti({
+          particleCount: 10,
+          angle: 60,
+          spread: 70,
+          origin: { x: 0, y: 0.6 },
+          colors: colors,
+          ticks: 300,
+        });
+        confetti({
+          particleCount: 10,
+          angle: 120,
+          spread: 70,
+          origin: { x: 1, y: 0.6 },
+          colors: colors,
+          ticks: 300,
+        });
+        
+        // Center burst
+        if (Math.random() > 0.7) {
+          confetti({
+            particleCount: 15,
+            spread: 360,
+            origin: { x: 0.5, y: 0.5 },
+            colors: colors,
+            ticks: 250,
+          });
+        }
+      }, 80);
+      
       toast({
-        title: "חודש נסגר בהצלחה!",
+        title: "🎉 חודש נסגר בהצלחה!",
         description: `כל ההוצאות של ${months[selectedMonth]} ${selectedYear} סומנו כשולמו`,
       });
       

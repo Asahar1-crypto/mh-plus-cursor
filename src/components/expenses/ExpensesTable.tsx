@@ -34,6 +34,7 @@ import {
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/auth';
 import { memberService } from '@/contexts/auth/services/account/memberService';
+import confetti from 'canvas-confetti';
 
 interface ExpensesTableProps {
   expenses: Expense[];
@@ -98,7 +99,36 @@ export const ExpensesTable: React.FC<ExpensesTableProps> = ({
     setIsPerformingBulkAction(true);
     try {
       await Promise.all(selectedPendingExpenses.map(id => approveExpense(id)));
-      toast.success(`אושרו ${selectedPendingExpenses.length} הוצאות בהצלחה`);
+      
+      // Celebration confetti
+      const duration = 2000;
+      const animationEnd = Date.now() + duration;
+      const colors = ['#10B981', '#8B5CF6', '#EC4899'];
+
+      const interval = setInterval(() => {
+        const timeLeft = animationEnd - Date.now();
+        if (timeLeft <= 0) {
+          clearInterval(interval);
+          return;
+        }
+
+        confetti({
+          particleCount: 5,
+          angle: 60,
+          spread: 55,
+          origin: { x: 0, y: 0.6 },
+          colors: colors,
+        });
+        confetti({
+          particleCount: 5,
+          angle: 120,
+          spread: 55,
+          origin: { x: 1, y: 0.6 },
+          colors: colors,
+        });
+      }, 50);
+
+      toast.success(`🎉 אושרו ${selectedPendingExpenses.length} הוצאות בהצלחה!`);
       setSelectedPendingExpenses([]);
     } catch (error) {
       toast.error('שגיאה באישור ההוצאות');
@@ -113,7 +143,38 @@ export const ExpensesTable: React.FC<ExpensesTableProps> = ({
     setIsPerformingBulkAction(true);
     try {
       await Promise.all(selectedApprovedExpenses.map(id => markAsPaid(id)));
-      toast.success(`סומנו כשולם ${selectedApprovedExpenses.length} הוצאות בהצלחה`);
+      
+      // Celebration confetti with gold colors
+      const duration = 2500;
+      const animationEnd = Date.now() + duration;
+      const colors = ['#F59E0B', '#FBBF24', '#FCD34D'];
+
+      const interval = setInterval(() => {
+        const timeLeft = animationEnd - Date.now();
+        if (timeLeft <= 0) {
+          clearInterval(interval);
+          return;
+        }
+
+        confetti({
+          particleCount: 7,
+          angle: 60,
+          spread: 60,
+          origin: { x: 0, y: 0.5 },
+          colors: colors,
+          ticks: 200,
+        });
+        confetti({
+          particleCount: 7,
+          angle: 120,
+          spread: 60,
+          origin: { x: 1, y: 0.5 },
+          colors: colors,
+          ticks: 200,
+        });
+      }, 40);
+
+      toast.success(`💰 סומנו כשולם ${selectedApprovedExpenses.length} הוצאות בהצלחה!`);
       setSelectedApprovedExpenses([]);
     } catch (error) {
       toast.error('שגיאה בסימון ההוצאות כשולמות');

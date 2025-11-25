@@ -10,6 +10,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { UserPlus, Loader2, AlertCircle } from 'lucide-react';
 import { Account } from '@/contexts/auth/types';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import confetti from 'canvas-confetti';
+import { toast } from 'sonner';
 
 const inviteSchema = z.object({
   email: z.string().email({ message: 'אימייל לא תקין' }),
@@ -48,6 +50,36 @@ const InviteUserForm: React.FC<InviteUserFormProps> = ({ account, onInvite }) =>
       
       await onInvite(data.email);
       console.log('Invitation sent successfully');
+      
+      // Celebration confetti
+      const duration = 2000;
+      const animationEnd = Date.now() + duration;
+      const colors = ['#8B5CF6', '#EC4899', '#3B82F6'];
+
+      const interval = setInterval(() => {
+        const timeLeft = animationEnd - Date.now();
+        if (timeLeft <= 0) {
+          clearInterval(interval);
+          return;
+        }
+
+        confetti({
+          particleCount: 4,
+          angle: 60,
+          spread: 55,
+          origin: { x: 0, y: 0.7 },
+          colors: colors,
+        });
+        confetti({
+          particleCount: 4,
+          angle: 120,
+          spread: 55,
+          origin: { x: 1, y: 0.7 },
+          colors: colors,
+        });
+      }, 60);
+
+      toast.success('🎉 ההזמנה נשלחה בהצלחה!');
       inviteForm.reset();
     } catch (error: any) {
       console.error('Failed to send invitation:', error);
