@@ -12,7 +12,6 @@ import NotificationsCard from '@/components/account/NotificationsCard';
 import UserProfileCard from '@/components/account/UserProfileCard';
 import ChangePasswordCard from '@/components/account/ChangePasswordCard';
 import BillingCycleCard from '@/components/account/BillingCycleCard';
-import BackfillRecurringExpenses from '@/components/admin/BackfillRecurringExpenses';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -76,9 +75,6 @@ const AccountSettings = () => {
       </div>
 
       <AccountStatusAlert account={account} />
-
-      {/* Temporary backfill component - remove after running once */}
-      <BackfillRecurringExpenses />
 
       <div className="grid gap-6 md:grid-cols-2">
         <div className="space-y-6">
