@@ -23,24 +23,25 @@ export const CelebrationModal: React.FC<CelebrationModalProps> = ({
   return (
     <>
       {/* Backdrop */}
-      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 animate-fade-in" />
+      <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-40 animate-fade-in transition-all duration-300" />
       
       {/* Modal */}
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-        <Card className="max-w-md w-full mx-auto animate-scale-in border-0 shadow-2xl">
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fade-in">
+        <Card className="max-w-md w-full mx-auto animate-scale-in border-2 border-purple-500/20 shadow-2xl shadow-purple-500/20 bg-gradient-to-br from-background to-accent/10">
           <CardContent className="p-8 text-center space-y-6">
             {/* Success Icon with Animation */}
             <div className="relative flex justify-center">
+              <div className="absolute inset-0 bg-gradient-to-r from-purple-500/20 to-pink-500/20 blur-3xl rounded-full animate-pulse" />
               <div className="relative">
                 <CheckCircle 
-                  className="w-20 h-20 text-green-500 animate-bounce"
+                  className="w-20 h-20 sm:w-24 sm:h-24 text-green-500 animate-bounce drop-shadow-lg"
                   strokeWidth={1.5}
                 />
                 <Sparkles 
-                  className="absolute -top-2 -right-2 w-8 h-8 text-yellow-400 animate-spin"
+                  className="absolute -top-2 -right-2 w-7 h-7 sm:w-8 sm:h-8 text-yellow-400 animate-spin"
                 />
                 <Star 
-                  className="absolute -bottom-2 -left-2 w-8 h-8 text-purple-500 animate-pulse"
+                  className="absolute -bottom-2 -left-2 w-7 h-7 sm:w-8 sm:h-8 text-purple-500 animate-pulse"
                 />
               </div>
             </div>
@@ -65,7 +66,7 @@ export const CelebrationModal: React.FC<CelebrationModalProps> = ({
             {/* Action Button */}
             <Button 
               onClick={onClose}
-              className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-semibold py-3 text-lg shadow-lg transform transition-all duration-200 hover:scale-105"
+              className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-semibold py-3 text-base sm:text-lg shadow-lg shadow-purple-500/50 transform transition-all duration-300 hover:scale-105 hover:shadow-xl hover:shadow-purple-500/60 active:scale-95"
             >
               🎉 המשך לאפליקציה
             </Button>
