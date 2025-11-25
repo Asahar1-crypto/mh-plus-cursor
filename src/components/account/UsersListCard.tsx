@@ -101,52 +101,52 @@ const UsersListCard: React.FC<UsersListCardProps> = ({ account, user, onRemovePa
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle>חברי החשבון</CardTitle>
-        <CardDescription>
+      <CardHeader className="p-4 sm:p-6">
+        <CardTitle className="text-lg sm:text-xl">חברי החשבון</CardTitle>
+        <CardDescription className="text-xs sm:text-sm">
           רשימת כל המשתמשים שיש להם גישה לחשבון זה
         </CardDescription>
       </CardHeader>
-      <CardContent>
+      <CardContent className="p-4 sm:p-6">
         {membersLoading ? (
-          <div className="flex items-center justify-center p-8">
-            <Loader2 className="h-6 w-6 animate-spin" />
-            <span className="mr-2">טוען חברי חשבון...</span>
+          <div className="flex items-center justify-center p-6 sm:p-8">
+            <Loader2 className="h-5 w-5 sm:h-6 sm:w-6 animate-spin" />
+            <span className="mr-2 text-sm">טוען חברי חשבון...</span>
           </div>
         ) : members.length === 0 ? (
-          <div className="text-center p-8 text-muted-foreground">
-            <User className="h-12 w-12 mx-auto mb-4 opacity-50" />
-            <p>אין חברים בחשבון זה</p>
+          <div className="text-center p-6 sm:p-8 text-muted-foreground">
+            <User className="h-10 w-10 sm:h-12 sm:w-12 mx-auto mb-3 sm:mb-4 opacity-50" />
+            <p className="text-sm">אין חברים בחשבון זה</p>
           </div>
         ) : (
           <div className="border rounded-md divide-y">
             {members.map((member) => (
-              <div key={member.user_id} className="p-4 flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+              <div key={member.user_id} className="p-3 sm:p-4 flex flex-col xs:flex-row items-start xs:items-center justify-between gap-3">
+                <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
+                  <div className="h-8 w-8 sm:h-10 sm:w-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
                     {getRoleIcon(member.role)}
                   </div>
-                  <div>
+                  <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
-                      <p className="font-medium">{member.user_name}</p>
+                      <p className="font-medium text-sm sm:text-base truncate">{member.user_name}</p>
                       {member.user_id === user?.id && (
-                        <span className="text-xs text-muted-foreground">(אתה)</span>
+                        <span className="text-xs text-muted-foreground whitespace-nowrap">(אתה)</span>
                       )}
                     </div>
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-xs sm:text-sm text-muted-foreground">
                       הצטרף ב-{new Date(member.joined_at).toLocaleDateString('he-IL')}
                     </p>
                   </div>
                 </div>
                 
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 w-full xs:w-auto">
                   {getRoleBadge(member.role)}
                   
                   {canRemoveMember(member) && (
                     <Button 
                       variant="outline" 
                       size="sm" 
-                      className="text-destructive border-destructive hover:bg-destructive/10"
+                      className="text-destructive border-destructive hover:bg-destructive/10 flex-1 xs:flex-none h-8 text-xs"
                       disabled={isRemoving || isLoading}
                       onClick={() => {
                         setMemberToRemove(member);
@@ -154,10 +154,10 @@ const UsersListCard: React.FC<UsersListCardProps> = ({ account, user, onRemovePa
                       }}
                     >
                       {isRemoving && memberToRemove?.user_id === member.user_id ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
+                        <Loader2 className="h-3 w-3 sm:h-4 sm:w-4 animate-spin" />
                       ) : (
                         <>
-                          <XCircle className="h-4 w-4 mr-1" />
+                          <XCircle className="h-3 w-3 sm:h-4 sm:w-4 ml-1" />
                           הסר
                         </>
                       )}

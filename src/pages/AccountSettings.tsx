@@ -69,37 +69,49 @@ const AccountSettings = () => {
   }
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold">הגדרות חשבון</h1>
+    <div className="min-h-screen bg-gradient-to-br from-background via-background/95 to-muted/30 animate-fade-in">
+      {/* Background decorative elements */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute -top-20 -right-20 w-96 h-96 bg-primary/5 rounded-full blur-3xl animate-pulse"></div>
+        <div className="absolute -bottom-20 -left-20 w-96 h-96 bg-secondary/5 rounded-full blur-3xl animate-pulse [animation-delay:2s]"></div>
       </div>
 
-      <AccountStatusAlert account={account} />
-
-      <div className="grid gap-6 md:grid-cols-2">
-        <div className="space-y-6">
-          <UserProfileCard />
-          <ChangePasswordCard />
-          <UserAccountsCard />
-          <BillingCycleCard 
-            accountId={account?.id}
-            currentBillingDay={account?.billing_cycle_start_day}
-            isAdmin={isAdmin || false}
-          />
-          <AccountDetailsCard account={account} />
-          <PendingInvitationsCard />
+      <div className="relative z-10 container mx-auto p-3 sm:p-4 md:p-6 space-y-4 sm:space-y-6">
+        <div className="flex items-center justify-between animate-fade-in">
+          <h1 className="text-xl sm:text-2xl md:text-3xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
+            הגדרות חשבון
+          </h1>
         </div>
-        
-        <div className="space-y-6">
-          <InviteUserForm account={account} onInvite={handleInvite} />
-          <SentInvitationsCard account={account} />
-          <UsersListCard 
-            account={account} 
-            user={user} 
-            onRemovePartner={handleRemovePartner}
-            isLoading={isLoading}
-          />
-          <NotificationsCard />
+
+        <div className="animate-fade-in [animation-delay:200ms]">
+          <AccountStatusAlert account={account} />
+        </div>
+
+        <div className="grid gap-3 sm:gap-4 md:gap-6 lg:grid-cols-2 animate-fade-in [animation-delay:400ms]">
+          <div className="space-y-3 sm:space-y-4 md:space-y-6">
+            <UserProfileCard />
+            <ChangePasswordCard />
+            <UserAccountsCard />
+            <BillingCycleCard 
+              accountId={account?.id}
+              currentBillingDay={account?.billing_cycle_start_day}
+              isAdmin={isAdmin || false}
+            />
+            <AccountDetailsCard account={account} />
+            <PendingInvitationsCard />
+          </div>
+          
+          <div className="space-y-3 sm:space-y-4 md:space-y-6">
+            <InviteUserForm account={account} onInvite={handleInvite} />
+            <SentInvitationsCard account={account} />
+            <UsersListCard 
+              account={account} 
+              user={user} 
+              onRemovePartner={handleRemovePartner}
+              isLoading={isLoading}
+            />
+            <NotificationsCard />
+          </div>
         </div>
       </div>
     </div>

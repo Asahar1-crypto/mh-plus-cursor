@@ -107,17 +107,17 @@ const InviteUserForm: React.FC<InviteUserFormProps> = ({ account, onInvite }) =>
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle>הזמנת משתמש לחשבון</CardTitle>
-        <CardDescription>הזמן משתמש נוסף לצפייה וניהול החשבון</CardDescription>
+      <CardHeader className="p-4 sm:p-6">
+        <CardTitle className="text-lg sm:text-xl">הזמנת משתמש לחשבון</CardTitle>
+        <CardDescription className="text-xs sm:text-sm">הזמן משתמש נוסף לצפייה וניהול החשבון</CardDescription>
       </CardHeader>
-      <CardContent>
+      <CardContent className="p-4 sm:p-6">
         <Form {...inviteForm}>
-          <form onSubmit={inviteForm.handleSubmit(onSubmitInvite)} className="space-y-4">
+          <form onSubmit={inviteForm.handleSubmit(onSubmitInvite)} className="space-y-3 sm:space-y-4">
             {error && (
-              <Alert variant="destructive" className="mb-4">
-                <AlertCircle className="h-4 w-4" />
-                <AlertDescription>{error}</AlertDescription>
+              <Alert variant="destructive" className="mb-3 sm:mb-4">
+                <AlertCircle className="h-3 w-3 sm:h-4 sm:w-4" />
+                <AlertDescription className="text-xs sm:text-sm">{error}</AlertDescription>
               </Alert>
             )}
             
@@ -126,33 +126,34 @@ const InviteUserForm: React.FC<InviteUserFormProps> = ({ account, onInvite }) =>
               name="email"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>כתובת אימייל</FormLabel>
+                  <FormLabel className="text-sm sm:text-base">כתובת אימייל</FormLabel>
                   <FormControl>
                     <Input 
                       placeholder="דוא״ל של המשתמש" 
                       {...field} 
                       disabled={isInviting} 
                       autoComplete="email"
+                      className="h-9 sm:h-10 text-sm"
                     />
                   </FormControl>
-                  <FormMessage />
+                  <FormMessage className="text-xs" />
                 </FormItem>
               )}
             />
             
             <Button 
               type="submit" 
-              className="w-full" 
+              className="w-full h-9 sm:h-10 text-xs sm:text-sm" 
               disabled={isInviting}
             >
               {isInviting ? (
                 <span className="flex items-center gap-2">
-                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <Loader2 className="h-3 w-3 sm:h-4 sm:w-4 animate-spin" />
                   שולח הזמנה...
                 </span>
               ) : (
                 <>
-                  <UserPlus className="mr-2 h-4 w-4" />
+                  <UserPlus className="ml-2 h-3 w-3 sm:h-4 sm:w-4" />
                   שלח הזמנה
                 </>
               )}

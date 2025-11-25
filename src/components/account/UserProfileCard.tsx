@@ -157,34 +157,34 @@ const UserProfileCard: React.FC = () => {
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <User className="h-5 w-5" />
+      <CardHeader className="p-4 sm:p-6">
+        <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
+          <User className="h-4 w-4 sm:h-5 sm:w-5" />
           פרופיל משתמש
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-3 sm:space-y-4 p-4 sm:p-6">
         <div className="space-y-2">
-          <Label htmlFor="email">כתובת מייל</Label>
-          <div className="flex items-center gap-2">
+          <Label htmlFor="email" className="text-sm sm:text-base">כתובת מייל</Label>
+          <div className="flex flex-col xs:flex-row items-stretch xs:items-center gap-2">
             <Input
               id="email"
               type="email"
               value={user.email || ''}
               disabled
-              className="bg-muted flex-1"
+              className="bg-muted flex-1 h-9 sm:h-10 text-sm"
             />
             <Dialog open={isEmailDialogOpen} onOpenChange={setIsEmailDialogOpen}>
               <DialogTrigger asChild>
-                <Button variant="outline" size="sm">
-                  <Mail className="h-4 w-4" />
+                <Button variant="outline" size="sm" className="w-full xs:w-auto h-9 text-xs sm:text-sm">
+                  <Mail className="h-3 w-3 sm:h-4 sm:w-4 ml-1" />
                   שנה
                 </Button>
               </DialogTrigger>
-              <DialogContent>
+              <DialogContent className="max-w-[90vw] sm:max-w-md">
                 <DialogHeader>
-                  <DialogTitle>שנה כתובת מייל</DialogTitle>
-                  <DialogDescription>
+                  <DialogTitle className="text-lg sm:text-xl">שנה כתובת מייל</DialogTitle>
+                  <DialogDescription className="text-xs sm:text-sm">
                     הזן כתובת מייל חדשה. תקבל אימייל אישור בשתי הכתובות.
                   </DialogDescription>
                 </DialogHeader>
@@ -239,9 +239,9 @@ const UserProfileCard: React.FC = () => {
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="name">שם לתצוגה</Label>
+          <Label htmlFor="name" className="text-sm sm:text-base">שם לתצוגה</Label>
           {isEditing ? (
-            <div className="space-y-3">
+            <div className="space-y-2 sm:space-y-3">
               <Input
                 id="name"
                 type="text"
@@ -249,21 +249,23 @@ const UserProfileCard: React.FC = () => {
                 onChange={(e) => setName(e.target.value)}
                 placeholder="הכנס שם לתצוגה"
                 maxLength={50}
+                className="h-9 sm:h-10 text-sm"
               />
               <div className="flex gap-2">
                 <Button
                   onClick={handleSave}
                   disabled={isLoading || !name.trim()}
                   size="sm"
+                  className="flex-1 xs:flex-none h-9 text-xs sm:text-sm"
                 >
                   {isLoading ? (
                     <span className="flex items-center gap-2">
-                      <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-r-transparent" />
+                      <span className="h-3 w-3 sm:h-4 sm:w-4 animate-spin rounded-full border-2 border-current border-r-transparent" />
                       שומר...
                     </span>
                   ) : (
                     <>
-                      <Save className="h-4 w-4" />
+                      <Save className="h-3 w-3 sm:h-4 sm:w-4 ml-1" />
                       שמור
                     </>
                   )}
@@ -273,6 +275,7 @@ const UserProfileCard: React.FC = () => {
                   variant="outline"
                   size="sm"
                   disabled={isLoading}
+                  className="flex-1 xs:flex-none h-9 text-xs sm:text-sm"
                 >
                   ביטול
                 </Button>
@@ -280,15 +283,16 @@ const UserProfileCard: React.FC = () => {
             </div>
           ) : (
             <div className="flex items-center justify-between">
-              <span className="text-sm font-medium">
+              <span className="text-sm font-medium truncate ml-2">
                 {profile?.name || 'לא הוגדר שם'}
               </span>
               <Button
                 onClick={() => setIsEditing(true)}
                 variant="outline"
                 size="sm"
+                className="h-9 text-xs sm:text-sm"
               >
-                <Edit2 className="h-4 w-4" />
+                <Edit2 className="h-3 w-3 sm:h-4 sm:w-4 ml-1" />
                 ערוך
               </Button>
             </div>
