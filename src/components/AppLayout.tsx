@@ -1,8 +1,8 @@
-
 import React, { useState, useEffect } from 'react';
 import { Navigate, Outlet } from 'react-router-dom';
 import { useAuth } from '@/contexts/auth';
 import { TooltipProvider } from '@/components/ui/tooltip';
+import { useIsMobile } from '@/hooks/use-mobile';
 import AppHeader from './AppHeader';
 import AppSidebar from './AppSidebar';
 import TrialStatusBanner from './TrialStatusBanner';
@@ -10,22 +10,28 @@ import NoAccountScreen from './NoAccountScreen';
 
 const AppLayout = () => {
   const { isAuthenticated, isLoading, account, user } = useAuth();
+  const isMobile = useIsMobile();
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
-  // Check if mobile on mount and resize
+  // Close mobile sidebar when switching to desktop
   useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768);
-      if (window.innerWidth >= 768) {
-        setIsMobileSidebarOpen(false);
-      }
-    };
+    if (!isMobile) {
+      setIsMobileSidebarOpen(false);
+    }
+  }, [isMobile]);
 
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
-  }, []);
+  // Lock body scroll when mobile sidebar is open
+  useEffect(() => {
+    if (isMobile && isMobileSidebarOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isMobile, isMobileSidebarOpen]);
 
   // Show loading state while checking auth
   if (isLoading) {
@@ -48,18 +54,28 @@ const AppLayout = () => {
 
   return (
     <TooltipProvider>
-      <div className="flex min-h-screen w-full bg-background">
+      <div className="flex min-h-screen w-full bg-background overflow-x-hidden">
         <AppSidebar 
           isMobile={isMobile}
           isOpen={isMobileSidebarOpen}
           onClose={() => setIsMobileSidebarOpen(false)}
+          collapsed={isSidebarCollapsed}
+          onToggleCollapse={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
         />
-        <div className={`flex flex-col flex-1 transition-all duration-300 ${isMobile ? 'w-full' : 'mr-64'}`}>
+        <div 
+          className={`flex flex-col flex-1 transition-all duration-300 ${
+            isMobile 
+              ? 'w-full' 
+              : isSidebarCollapsed 
+                ? 'mr-16' 
+                : 'mr-64'
+          }`}
+        >
           <AppHeader 
             onMenuClick={() => setIsMobileSidebarOpen(!isMobileSidebarOpen)}
             isMobile={isMobile}
           />
-          <main className="flex-1 p-4 md:p-6 lg:p-8 overflow-x-hidden bg-gradient-to-br from-background to-accent/20">
+          <main className="flex-1 p-3 sm:p-6 lg:p-8 overflow-x-hidden bg-gradient-to-br from-background to-accent/20">
             <TrialStatusBanner />
             <Outlet />
           </main>

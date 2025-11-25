@@ -24,49 +24,59 @@ const AppHeader: React.FC<AppHeaderProps> = ({ onMenuClick, isMobile }) => {
   };
 
   return (
-    <header className="bg-card/95 backdrop-blur-xl border-b border-border shadow-sm px-4 py-3 sticky top-0 z-30">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
+    <header className="bg-card/95 backdrop-blur-xl border-b border-border shadow-sm px-3 sm:px-4 py-3 sticky top-0 z-30">
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2 sm:gap-3 min-w-0">
           {isMobile && (
             <Button
               variant="ghost"
               size="sm"
               onClick={onMenuClick}
-              className="p-2"
+              className="p-2 flex-shrink-0"
+              aria-label="פתח תפריט"
             >
-              <Menu className="h-4 w-4" />
+              <Menu className="h-5 w-5" />
             </Button>
           )}
           <Link to="/" className="flex items-center hover:opacity-80 transition-opacity">
-            <Logo size="sm" showText={true} />
+            <Logo size="sm" showText={!isMobile} />
           </Link>
         </div>
         
-        <div className="flex items-center gap-2 sm:gap-4">
+        <div className="flex items-center gap-2 sm:gap-3 min-w-0">
           {isAuthenticated && (
             <>
-              <div className="hidden sm:block">
+              {/* Account Switcher - always in same place, just scaled */}
+              <div className="flex-shrink-0">
                 <AccountSwitcher />
               </div>
-                <div className="flex items-center gap-1 sm:gap-2">
-                  <span className="text-xs sm:text-sm text-muted-foreground hidden md:inline">
-                    שלום, {profile?.name || user?.name || user?.email}
-                  </span>
-                  <Button variant="ghost" size="sm" onClick={handleLogout} className="p-2">
-                    <LogOut className="h-4 w-4" />
-                  </Button>
-                </div>
+              
+              {/* User greeting and logout */}
+              <div className="flex items-center gap-1 sm:gap-2 min-w-0">
+                <span className="text-xs sm:text-sm text-muted-foreground hidden lg:inline truncate max-w-[150px]">
+                  שלום, {profile?.name || user?.name || user?.email?.split('@')[0]}
+                </span>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={handleLogout} 
+                  className="p-2 flex-shrink-0"
+                  aria-label="התנתק"
+                >
+                  <LogOut className="h-4 w-4" />
+                </Button>
+              </div>
             </>
           )}
           {!isAuthenticated && (
             <div className="flex items-center gap-2">
               <Link to="/login">
-                <Button variant="outline" size="sm" className="text-xs sm:text-sm">
+                <Button variant="outline" size="sm" className="text-xs sm:text-sm h-8 sm:h-9">
                   התחברות
                 </Button>
               </Link>
               <Link to="/register">
-                <Button size="sm" className="text-xs sm:text-sm">
+                <Button size="sm" className="text-xs sm:text-sm h-8 sm:h-9">
                   הרשמה
                 </Button>
               </Link>
@@ -74,12 +84,6 @@ const AppHeader: React.FC<AppHeaderProps> = ({ onMenuClick, isMobile }) => {
           )}
         </div>
       </div>
-      {/* Mobile account switcher */}
-      {isAuthenticated && isMobile && (
-        <div className="mt-3 pt-3 border-t border-border">
-          <AccountSwitcher />
-        </div>
-      )}
     </header>
   );
 };
