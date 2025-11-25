@@ -117,7 +117,7 @@ const Dashboard = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5 animate-fade-in">
       <OnboardingModal />
-      <div className="w-full max-w-7xl mx-auto p-4 sm:p-6 space-y-6 sm:space-y-8">
+      <div className="w-full max-w-7xl mx-auto p-3 sm:p-4 md:p-6 space-y-4 sm:space-y-6 lg:space-y-8">
         <div className="animate-scale-in">
           <PendingInvitationAlert />
         </div>
@@ -130,14 +130,16 @@ const Dashboard = () => {
         <div className="animate-slide-in-right [animation-delay:400ms]">
           <Card className="bg-gradient-to-r from-card/90 to-card/95 backdrop-blur-lg border border-border/50 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.02] group overflow-hidden">
             <div className="absolute inset-0 bg-gradient-to-r from-primary/5 to-accent/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-            <CardContent className="p-4 sm:p-6 relative">
-              <div className="flex items-center gap-4">
-                <div className="p-2 rounded-full bg-primary/10 group-hover:bg-primary/20 transition-colors duration-300">
-                  <CalendarIcon className="h-5 w-5 text-primary group-hover:scale-110 transition-transform duration-300" />
+            <CardContent className="p-3 sm:p-4 md:p-6 relative">
+              <div className="flex flex-col xs:flex-row items-start xs:items-center gap-2 xs:gap-3 sm:gap-4">
+                <div className="flex items-center gap-2 xs:gap-3 flex-1 xs:flex-none">
+                  <div className="p-1.5 sm:p-2 rounded-full bg-primary/10 group-hover:bg-primary/20 transition-colors duration-300">
+                    <CalendarIcon className="h-4 w-4 sm:h-5 sm:w-5 text-primary group-hover:scale-110 transition-transform duration-300" />
+                  </div>
+                  <label className="text-xs sm:text-sm font-semibold text-foreground whitespace-nowrap">סינון לפי חודש:</label>
                 </div>
-                <label className="text-sm font-semibold text-foreground">סינון לפי חודש:</label>
                 <Select value={selectedMonth} onValueChange={setSelectedMonth}>
-                  <SelectTrigger className="w-52 bg-background/80 border-border/50 hover:bg-background hover:border-primary/50 transition-all duration-300 hover:shadow-md">
+                  <SelectTrigger className="w-full xs:w-44 sm:w-52 h-9 sm:h-10 bg-background/80 border-border/50 hover:bg-background hover:border-primary/50 transition-all duration-300 hover:shadow-md text-xs sm:text-sm">
                     <SelectValue placeholder="בחר חודש" />
                   </SelectTrigger>
                   <SelectContent className="bg-background/95 backdrop-blur-lg border border-border/50 shadow-xl">
@@ -145,7 +147,7 @@ const Dashboard = () => {
                       <SelectItem 
                         key={option.value} 
                         value={option.value}
-                        className="hover:bg-primary/10 focus:bg-primary/10 transition-colors duration-200"
+                        className="hover:bg-primary/10 focus:bg-primary/10 transition-colors duration-200 text-xs sm:text-sm"
                       >
                         {option.label}
                       </SelectItem>
