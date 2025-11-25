@@ -142,61 +142,52 @@ const Register = () => {
   return (
     <>
       <AnimatedBackground />
-      <div className="container mx-auto py-8 px-4 flex items-center justify-center min-h-[calc(100vh-4rem)] relative z-10">
-        <div className="w-full max-w-7xl">
-          <div className="grid lg:grid-cols-5 gap-8 items-center" dir="ltr">
-            {/* Left Wallet Character - Green */}
-            <div className="hidden lg:flex flex-col items-center justify-center p-8 animate-fade-in">
-              <div className="relative">
-                <img 
-                  src="/lovable-uploads/3d7094a5-211e-416b-a8c4-8fd864c98499.png" 
-                  alt="Green Wallet Character" 
-                  className="w-64 h-64 object-contain animate-bounce [animation-duration:3s]"
-                />
-                <div className="absolute -bottom-4 left-1/2 transform -translate-x-1/2 w-32 h-8 bg-black/10 rounded-full blur-md animate-pulse"></div>
-              </div>
-            </div>
+      <div className="container mx-auto py-4 sm:py-8 px-3 sm:px-4 flex items-center justify-center min-h-[calc(100vh-4rem)] relative z-10">
+        <div className="w-full max-w-6xl">
+          <div className="grid lg:grid-cols-3 gap-4 lg:gap-8 items-center" dir="ltr">
+            {/* Empty column for centering */}
+            <div className="hidden lg:block"></div>
 
-            {/* Registration Card - Center (3 columns) */}
-            <div className="w-full max-w-xl mx-auto lg:mx-0 lg:col-span-3" dir="rtl">
-          <Card className="border-border shadow-xl animate-fade-in glass shadow-card p-2">
-            <CardHeader className="text-center pb-8 pt-8">
+            {/* Registration Card - Center */}
+            <div className="w-full" dir="rtl">
+          <Card className="border-border shadow-xl animate-fade-in glass shadow-card">
+            <CardHeader className="text-center p-4 sm:p-6 lg:p-8">
               {/* Mobile wallet characters */}
-              <div className="lg:hidden flex justify-center gap-4 mb-4">
+              <div className="flex justify-center gap-3 sm:gap-4 mb-4 sm:mb-6">
                 <img 
                   src="/lovable-uploads/3a973532-2477-462a-9a84-0390b7045844.png" 
                   alt="Red Wallet Character" 
-                  className="w-28 h-28 object-contain animate-bounce [animation-duration:2s]"
+                  className="w-32 h-32 sm:w-40 sm:h-40 object-contain animate-bounce [animation-duration:2s]"
                 />
                 <img 
                   src="/lovable-uploads/3d7094a5-211e-416b-a8c4-8fd864c98499.png" 
                   alt="Green Wallet Character" 
-                  className="w-28 h-28 object-contain animate-bounce [animation-duration:2s] [animation-delay:0.3s]"
+                  className="w-32 h-32 sm:w-40 sm:h-40 object-contain animate-bounce [animation-duration:2s] [animation-delay:0.3s]"
                 />
               </div>
               <div className="flex items-center justify-center gap-2 mb-2">
-                <CardTitle className="text-2xl font-bold bg-gradient-to-r from-primary to-primary-glow bg-clip-text text-transparent">
+                <CardTitle className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-primary to-primary-glow bg-clip-text text-transparent">
                   הרשמה למערכת
                 </CardTitle>
               </div>
-              <CardDescription className="text-base">
+              <CardDescription className="text-sm sm:text-base">
                 צור חשבון חדש במערכת מחציות פלוס
                 {emailFromInvitation && (
-                  <div className="mt-3 p-3 bg-gradient-to-r from-blue-50 to-blue-100 rounded-xl border border-blue-200">
-                    <div className="text-sm text-blue-800 font-medium">
-                      הרשמה עם האימייל: {emailFromInvitation}
+                  <div className="mt-2 sm:mt-3 p-2 sm:p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                    <div className="text-xs sm:text-sm text-blue-800 dark:text-blue-200 font-medium">
+                      הזמנה: {emailFromInvitation}
                     </div>
                     {invitationId && (
-                      <div className="mt-2 text-xs text-green-700 bg-green-50 p-2 rounded-lg">
-                        תחובר אוטומטית לחשבון המשותף אחרי אימות האימייל ומספר הטלפון
+                      <div className="mt-1 text-[10px] sm:text-xs text-green-700 dark:text-green-300">
+                        ✓ חיבור אוטומטי אחרי אימות
                       </div>
                     )}
                   </div>
                 )}
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-8 px-8 pb-8">
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            <CardContent className="space-y-4 sm:space-y-6 p-4 sm:p-6 lg:p-8">
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 sm:space-y-5">
                 <ModernInput
                   label="שם מלא"
                   icon="user"
@@ -251,7 +242,7 @@ const Register = () => {
                 
                 <ModernButton 
                   type="submit" 
-                  className="w-full mt-8" 
+                  className="w-full mt-6 sm:mt-8 h-11 sm:h-12" 
                   size="lg"
                   loading={isLoading}
                   variant="gradient"
@@ -260,8 +251,8 @@ const Register = () => {
                 </ModernButton>
               </form>
             </CardContent>
-            <CardFooter className="flex justify-center pt-8 pb-8 px-8">
-              <p className="text-sm text-muted-foreground">
+            <CardFooter className="flex justify-center p-4 sm:p-6 lg:p-8">
+              <p className="text-sm sm:text-base text-muted-foreground">
                 כבר יש לך חשבון?{' '}
                 <Link to="/login" className="text-primary hover:text-primary-glow transition-colors duration-300 font-medium">
                   התחבר כאן
@@ -271,17 +262,8 @@ const Register = () => {
           </Card>
         </div>
 
-        {/* Right Wallet Character - Red */}
-        <div className="hidden lg:flex flex-col items-center justify-center p-8 animate-fade-in">
-          <div className="relative">
-            <img 
-              src="/lovable-uploads/3a973532-2477-462a-9a84-0390b7045844.png" 
-              alt="Red Wallet Character" 
-              className="w-64 h-64 object-contain animate-bounce [animation-duration:3s] [animation-delay:0.5s]"
-            />
-            <div className="absolute -bottom-4 left-1/2 transform -translate-x-1/2 w-32 h-8 bg-black/10 rounded-full blur-md animate-pulse [animation-delay:0.5s]"></div>
-          </div>
-        </div>
+        {/* Empty column for centering */}
+        <div className="hidden lg:block"></div>
       </div>
     </div>
   </div>
