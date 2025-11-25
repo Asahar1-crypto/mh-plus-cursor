@@ -186,7 +186,36 @@ export const ExpensesTable: React.FC<ExpensesTableProps> = ({
   const handleApprove = async (id: string) => {
     try {
       await approveExpense(id);
-      toast.success('ההוצאה אושרה בהצלחה');
+      
+      // Celebration confetti
+      const duration = 2000;
+      const animationEnd = Date.now() + duration;
+      const colors = ['#10B981', '#8B5CF6', '#EC4899'];
+
+      const interval = setInterval(() => {
+        const timeLeft = animationEnd - Date.now();
+        if (timeLeft <= 0) {
+          clearInterval(interval);
+          return;
+        }
+
+        confetti({
+          particleCount: 5,
+          angle: 60,
+          spread: 55,
+          origin: { x: 0, y: 0.6 },
+          colors: colors,
+        });
+        confetti({
+          particleCount: 5,
+          angle: 120,
+          spread: 55,
+          origin: { x: 1, y: 0.6 },
+          colors: colors,
+        });
+      }, 50);
+      
+      toast.success('🎉 ההוצאה אושרה בהצלחה!');
     } catch (error) {
       toast.error('שגיאה באישור ההוצאה');
     }
@@ -204,7 +233,38 @@ export const ExpensesTable: React.FC<ExpensesTableProps> = ({
   const handleMarkAsPaid = async (id: string) => {
     try {
       await markAsPaid(id);
-      toast.success('ההוצאה סומנה כשולמה');
+      
+      // Celebration confetti with gold colors
+      const duration = 2500;
+      const animationEnd = Date.now() + duration;
+      const colors = ['#F59E0B', '#FBBF24', '#FCD34D'];
+
+      const interval = setInterval(() => {
+        const timeLeft = animationEnd - Date.now();
+        if (timeLeft <= 0) {
+          clearInterval(interval);
+          return;
+        }
+
+        confetti({
+          particleCount: 7,
+          angle: 60,
+          spread: 60,
+          origin: { x: 0, y: 0.5 },
+          colors: colors,
+          ticks: 200,
+        });
+        confetti({
+          particleCount: 7,
+          angle: 120,
+          spread: 60,
+          origin: { x: 1, y: 0.5 },
+          colors: colors,
+          ticks: 200,
+        });
+      }, 40);
+      
+      toast.success('💰 ההוצאה סומנה כשולמה!');
     } catch (error) {
       toast.error('שגיאה בסימון ההוצאה כשולמה');
     }
