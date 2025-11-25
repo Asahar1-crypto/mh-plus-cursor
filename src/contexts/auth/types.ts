@@ -21,6 +21,7 @@ export interface Account {
   name: string;
   subscription_status?: string;
   trial_ends_at?: string;
+  billing_cycle_start_day?: number | null;
   // Legacy fields (will be removed in future)
   ownerId?: string;
   sharedWithId?: string;

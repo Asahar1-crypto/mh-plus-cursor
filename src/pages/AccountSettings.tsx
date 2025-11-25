@@ -11,9 +11,33 @@ import SentInvitationsCard from '@/components/account/SentInvitationsCard';
 import NotificationsCard from '@/components/account/NotificationsCard';
 import UserProfileCard from '@/components/account/UserProfileCard';
 import ChangePasswordCard from '@/components/account/ChangePasswordCard';
+import BillingCycleCard from '@/components/account/BillingCycleCard';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 
 const AccountSettings = () => {
   const { user, account, isLoading, sendInvitation, removeInvitation } = useAuth();
+
+  // Check if user is admin
+  const { data: isAdmin } = useQuery({
+    queryKey: ['is-admin', account?.id, user?.id],
+    queryFn: async () => {
+      if (!account?.id || !user?.id) return false;
+      
+      const { data, error } = await supabase.rpc('is_account_admin', {
+        account_uuid: account.id,
+        user_uuid: user.id
+      });
+
+      if (error) {
+        console.error('Error checking admin status:', error);
+        return false;
+      }
+
+      return data || false;
+    },
+    enabled: !!account?.id && !!user?.id
+  });
 
   const handleInvite = async (email: string) => {
     await sendInvitation(email);
@@ -57,6 +81,11 @@ const AccountSettings = () => {
           <UserProfileCard />
           <ChangePasswordCard />
           <UserAccountsCard />
+          <BillingCycleCard 
+            accountId={account?.id}
+            currentBillingDay={account?.billing_cycle_start_day}
+            isAdmin={isAdmin || false}
+          />
           <AccountDetailsCard account={account} />
           <PendingInvitationsCard />
         </div>
