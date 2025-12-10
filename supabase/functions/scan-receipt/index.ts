@@ -112,53 +112,74 @@ serve(async (req) => {
     // Create service role client for database operations (bypasses RLS)
     const supabase = createClient(supabaseUrl!, supabaseServiceKey!);
 
-    // Call OpenAI API
-    console.log('🤖 Calling OpenAI API...');
+    // Call OpenAI API with Tool Calling for structured output
+    console.log('🤖 Calling OpenAI API with Tool Calling...');
     
-    const prompt = `Please analyze this receipt/invoice document and extract the following information in JSON format:
-{
-  "date": "YYYY-MM-DD format",
-  "vendor": "store/company name",
-  "total": number (total amount),
-  "items": [
-    {
-      "name": "item name",
-      "price": number,
-      "quantity": number (if available),
-      "category": "food/other classification"
-    }
-  ],
-  "currency": "ILS or other currency code",
-  "confidence_score": number (0-100, your confidence in the extraction)
-}
+    const systemPrompt = `אתה מומחה בקריאת חשבוניות וקבלות בעברית ובאנגלית.
+המשימה שלך פשוטה: חלץ 3 נתונים בלבד מהחשבונית:
+1. סה"כ לתשלום (המספר הסופי שהלקוח שילם)
+2. שם העסק/ספק
+3. תאריך העסקה
 
-Please be as accurate as possible and only include information that is clearly visible in the document.`;
+חפש את המילים: "סה"כ", "לתשלום", "total", "סכום כולל", "grand total".
+אם יש מע"מ, קח את הסכום הסופי כולל מע"מ.
+אם לא מצאת תאריך, השתמש בתאריך היום.
+היה מדויק - עדיף לא לנחש.`;
+
+    const userPrompt = `קרא את החשבונית הזו והחזר את הסה"כ, שם העסק והתאריך.`;
 
     const openaiBody = {
       model: 'gpt-4o',
       messages: [
         {
           role: 'system',
-          content: 'You are a helpful assistant that extracts information from receipts and invoices. You can process both images and PDF documents.'
+          content: systemPrompt
         },
         {
           role: 'user',
           content: [
-            { type: 'text', text: prompt },
+            { type: 'text', text: userPrompt },
             { type: 'image_url', image_url: { url: file_url } }
           ]
         }
       ],
-      max_tokens: 1000
+      tools: [
+        {
+          type: 'function',
+          function: {
+            name: 'extract_receipt_data',
+            description: 'חילוץ נתונים מחשבונית',
+            parameters: {
+              type: 'object',
+              properties: {
+                total: {
+                  type: 'number',
+                  description: 'סה"כ לתשלום בשקלים (המספר הסופי שהלקוח שילם)'
+                },
+                vendor: {
+                  type: 'string',
+                  description: 'שם העסק או הספק'
+                },
+                date: {
+                  type: 'string',
+                  description: 'תאריך העסקה בפורמט YYYY-MM-DD'
+                },
+                confidence_score: {
+                  type: 'number',
+                  description: 'רמת הביטחון בזיהוי (0-100)'
+                }
+              },
+              required: ['total', 'vendor', 'date', 'confidence_score'],
+              additionalProperties: false
+            }
+          }
+        }
+      ],
+      tool_choice: { type: 'function', function: { name: 'extract_receipt_data' } },
+      max_tokens: 500
     };
 
-    console.log('📤 OpenAI request body structure:', {
-      model: openaiBody.model,
-      messagesCount: openaiBody.messages.length,
-      maxTokens: openaiBody.max_tokens,
-      firstMessageRole: openaiBody.messages[0].role,
-      secondMessageContent: Array.isArray(openaiBody.messages[1].content) ? 'array with text and image' : 'text only'
-    });
+    console.log('📤 OpenAI request with Tool Calling');
 
     const openaiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -194,42 +215,31 @@ Please be as accurate as possible and only include information that is clearly v
     }
 
     const openaiData = await openaiResponse.json();
-    console.log('✅ OpenAI response received:', {
-      hasChoices: !!openaiData.choices,
-      choicesLength: openaiData.choices?.length || 0,
-      hasMessage: !!openaiData.choices?.[0]?.message,
-      hasContent: !!openaiData.choices?.[0]?.message?.content
-    });
+    console.log('✅ OpenAI response received');
 
-    const gptContent = openaiData.choices[0]?.message?.content;
-
-    if (!gptContent) {
-      console.error('❌ No content from OpenAI');
+    // Extract tool call result
+    const toolCall = openaiData.choices?.[0]?.message?.tool_calls?.[0];
+    
+    if (!toolCall || toolCall.function.name !== 'extract_receipt_data') {
+      console.error('❌ No tool call in response');
       return new Response(JSON.stringify({ 
         success: false, 
-        error: 'No content received from OpenAI' 
+        error: 'לא הצלחנו לקרוא את החשבונית. נסה תמונה ברורה יותר.' 
       }), {
-        status: 500,
+        status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
     }
 
-    console.log('🔍 GPT content preview:', gptContent.substring(0, 300) + '...');
-
-    // Parse GPT response
     let scanResult;
     try {
-      const cleanJson = gptContent.replace(/```json\n?|\n?```/g, '').trim();
-      console.log('🧹 Cleaned JSON preview:', cleanJson.substring(0, 200) + '...');
-      scanResult = JSON.parse(cleanJson);
-      console.log('✅ JSON parsed successfully');
+      scanResult = JSON.parse(toolCall.function.arguments);
+      console.log('✅ Tool call parsed successfully:', scanResult);
     } catch (parseError) {
-      console.error('❌ JSON parsing error:', parseError);
-      console.error('🔍 Full GPT response:', gptContent);
-      
+      console.error('❌ Tool call parsing error:', parseError);
       return new Response(JSON.stringify({ 
         success: false, 
-        error: 'Failed to parse AI response' 
+        error: 'שגיאה בעיבוד התוצאות' 
       }), {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -237,21 +247,37 @@ Please be as accurate as possible and only include information that is clearly v
     }
 
     // Validate scan result
-    if (!scanResult.items || !Array.isArray(scanResult.items) || scanResult.items.length === 0) {
-      console.error('❌ No items found in scan result');
+    if (!scanResult.total || scanResult.total <= 0) {
+      console.error('❌ Invalid total in scan result:', scanResult.total);
       return new Response(JSON.stringify({ 
         success: false, 
-        error: 'לא נמצאו פריטים בחשבונית. נסה תמונה ברורה יותר או הזן את הנתונים ידנית.' 
+        error: 'לא זוהה סכום תקין בחשבונית. נסה תמונה ברורה יותר.' 
       }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
     }
 
-    // Set default confidence score if not provided
+    // Set defaults
     if (!scanResult.confidence_score) {
       scanResult.confidence_score = 75;
     }
+    if (!scanResult.vendor) {
+      scanResult.vendor = 'עסק לא מזוהה';
+    }
+    if (!scanResult.date) {
+      scanResult.date = new Date().toISOString().split('T')[0];
+    }
+
+    // Format result for frontend compatibility (keeping items array for backward compatibility)
+    const formattedResult = {
+      total: scanResult.total,
+      vendor: scanResult.vendor,
+      date: scanResult.date,
+      confidence_score: scanResult.confidence_score,
+      currency: 'ILS',
+      items: [] // Empty - we now focus on the total only
+    };
 
     console.log('💾 Saving to database...');
     const { data: scannedReceipt, error: saveError } = await supabase
@@ -263,8 +289,8 @@ Please be as accurate as possible and only include information that is clearly v
         file_name: file_name || 'receipt',
         file_size: file_size || 0,
         file_type: file_type || 'image',
-        gpt_response: scanResult,
-        confidence_score: scanResult.confidence_score,
+        gpt_response: formattedResult,
+        confidence_score: formattedResult.confidence_score,
         processed_at: new Date().toISOString()
       })
       .select()
@@ -281,11 +307,17 @@ Please be as accurate as possible and only include information that is clearly v
       });
     }
 
-    console.log('🎉 Scan completed successfully!');
+    console.log('🎉 Scan completed successfully!', {
+      total: formattedResult.total,
+      vendor: formattedResult.vendor,
+      date: formattedResult.date,
+      confidence: formattedResult.confidence_score
+    });
+    
     return new Response(JSON.stringify({
       success: true,
       scan_id: scannedReceipt.id,
-      result: scanResult
+      result: formattedResult
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
