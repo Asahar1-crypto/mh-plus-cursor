@@ -114,6 +114,13 @@ export const RecurringExpensesTable: React.FC<RecurringExpensesTableProps> = ({
     setIsDeletingExpense(expenseId);
     
     try {
+      // First, unlink any child expenses that reference this recurring expense
+      await supabase
+        .from('expenses')
+        .update({ recurring_parent_id: null })
+        .eq('recurring_parent_id', expenseId);
+
+      // Then delete the recurring expense itself
       const { error } = await supabase
         .from('expenses')
         .delete()
