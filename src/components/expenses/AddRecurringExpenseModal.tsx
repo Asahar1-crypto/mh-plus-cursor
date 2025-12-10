@@ -147,7 +147,7 @@ export const AddRecurringExpenseModal: React.FC<AddRecurringExpenseModalProps> =
       };
 
       // Add child association if provided
-      if (data.childId) {
+      if (data.childId && data.childId !== 'none') {
         expenseData.child_id = data.childId;
       }
 
@@ -268,7 +268,7 @@ export const AddRecurringExpenseModal: React.FC<AddRecurringExpenseModalProps> =
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="">ללא שיוך לילד</SelectItem>
+                      <SelectItem value="none">ללא שיוך לילד</SelectItem>
                       {childrenList.map((child) => (
                         <SelectItem key={child.id} value={child.id}>
                           {child.name}
