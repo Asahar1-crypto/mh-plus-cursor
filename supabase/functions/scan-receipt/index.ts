@@ -61,9 +61,6 @@ serve(async (req) => {
       });
     }
 
-    // Initialize Supabase client
-    const supabase = createClient(supabaseUrl!, supabaseServiceKey!);
-
     // Get user from auth header
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
@@ -77,8 +74,16 @@ serve(async (req) => {
       });
     }
 
-    const token = authHeader.replace('Bearer ', '');
-    const { data: { user }, error: userError } = await supabase.auth.getUser(token);
+    // Initialize Supabase client with user's token for auth verification
+    const supabaseAuth = createClient(supabaseUrl!, supabaseServiceKey!, {
+      global: {
+        headers: {
+          Authorization: authHeader
+        }
+      }
+    });
+
+    const { data: { user }, error: userError } = await supabaseAuth.auth.getUser();
     
     if (userError || !user) {
       console.error('❌ User authentication failed:', userError);
@@ -90,6 +95,9 @@ serve(async (req) => {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
     }
+
+    // Create service role client for database operations
+    const supabase = createClient(supabaseUrl!, supabaseServiceKey!);
 
     console.log('✅ User authenticated successfully:', user.id);
 
