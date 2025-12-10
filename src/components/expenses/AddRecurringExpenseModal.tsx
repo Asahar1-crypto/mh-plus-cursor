@@ -146,16 +146,24 @@ export const AddRecurringExpenseModal: React.FC<AddRecurringExpenseModalProps> =
         include_in_monthly_balance: includeInMonthlyBalance,
       };
 
-      // Add child association if provided
-      if (data.childId && data.childId !== 'none') {
-        expenseData.child_id = data.childId;
-      }
-
-      const { error } = await supabase
+      const { data: insertedExpense, error } = await supabase
         .from('expenses')
-        .insert([expenseData]);
+        .insert([expenseData])
+        .select('id')
+        .single();
 
       if (error) throw error;
+
+      // Add child association if provided using expense_children table
+      if (data.childId && data.childId !== 'none' && insertedExpense) {
+        const { error: childError } = await supabase
+          .from('expense_children')
+          .insert({ expense_id: insertedExpense.id, child_id: data.childId });
+        
+        if (childError) {
+          console.error('Error adding child association:', childError);
+        }
+      }
 
       toast.success('הוצאה חוזרת נוספה בהצלחה');
       await onSuccess();
