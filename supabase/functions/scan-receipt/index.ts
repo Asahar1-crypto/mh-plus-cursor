@@ -41,11 +41,13 @@ serve(async (req) => {
     // Check environment variables
     const supabaseUrl = Deno.env.get('SUPABASE_URL');
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY');
     const openaiApiKey = Deno.env.get('OPENAI_API_KEY');
     
     console.log('🔍 Environment variables check:', {
       supabaseUrl: supabaseUrl ? 'present' : 'missing',
       supabaseServiceKey: supabaseServiceKey ? 'present' : 'missing',
+      supabaseAnonKey: supabaseAnonKey ? 'present' : 'missing',
       openaiApiKey: openaiApiKey ? 'present' : 'missing',
       openaiKeyLength: openaiApiKey ? openaiApiKey.length : 0
     });
@@ -78,11 +80,21 @@ serve(async (req) => {
     const token = authHeader.replace('Bearer ', '');
     console.log('🔑 Token extracted, length:', token.length);
 
-    // Create service role client for database operations
-    const supabase = createClient(supabaseUrl!, supabaseServiceKey!);
+    // Create anon client for auth verification (with user's token)
+    const supabaseAuth = createClient(supabaseUrl!, supabaseAnonKey!, {
+      global: {
+        headers: {
+          Authorization: authHeader
+        }
+      },
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false
+      }
+    });
 
-    // Verify the user's JWT token using service role client
-    const { data: { user }, error: userError } = await supabase.auth.getUser(token);
+    // Verify the user's JWT token
+    const { data: { user }, error: userError } = await supabaseAuth.auth.getUser();
     
     if (userError || !user) {
       console.error('❌ User authentication failed:', userError);
@@ -96,6 +108,9 @@ serve(async (req) => {
     }
 
     console.log('✅ User authenticated successfully:', user.id);
+
+    // Create service role client for database operations (bypasses RLS)
+    const supabase = createClient(supabaseUrl!, supabaseServiceKey!);
 
     // Call OpenAI API
     console.log('🤖 Calling OpenAI API...');
