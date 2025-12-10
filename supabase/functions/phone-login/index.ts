@@ -144,13 +144,13 @@ serve(async (req) => {
 
     console.log('OTP stored successfully');
 
-    // Send SMS via Twilio
-    const twilioSid = Deno.env.get('TWILIO_ACCOUNT_SID');
-    const twilioToken = Deno.env.get('TWILIO_AUTH_TOKEN');
-    const twilioPhone = Deno.env.get('TWILIO_PHONE_NUMBER');
+    // Send SMS via Vonage
+    const vonageApiKey = Deno.env.get('VONAGE_API_KEY');
+    const vonageApiSecret = Deno.env.get('VONAGE_API_SECRET');
+    const vonageFromNumber = Deno.env.get('VONAGE_FROM_NUMBER');
 
-    if (!twilioSid || !twilioToken || !twilioPhone) {
-      console.error('Missing Twilio configuration');
+    if (!vonageApiKey || !vonageApiSecret || !vonageFromNumber) {
+      console.error('Missing Vonage configuration');
       return new Response(
         JSON.stringify({ error: 'SMS service not configured' }),
         { 
@@ -162,27 +162,32 @@ serve(async (req) => {
 
     const message = `קוד הכניסה שלך: ${otpCode}\nתוקף: 10 דקות\nלא תשתף את הקוד עם אחרים`;
 
-    const twilioAuth = btoa(`${twilioSid}:${twilioToken}`);
-    const twilioResponse = await fetch(
-      `https://api.twilio.com/2010-04-01/Accounts/${twilioSid}/Messages.json`,
-      {
-        method: 'POST',
-        headers: {
-          'Authorization': `Basic ${twilioAuth}`,
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        body: new URLSearchParams({
-          To: normalizedPhone,
-          From: twilioPhone,
-          Body: message,
-        }),
-      }
-    );
+    // Remove '+' from phone number for Vonage
+    const cleanPhoneNumber = normalizedPhone.replace(/^\+/, '');
 
-    const twilioResult = await twilioResponse.json();
+    const vonageResponse = await fetch('https://rest.nexmo.com/sms/json', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        api_key: vonageApiKey,
+        api_secret: vonageApiSecret,
+        from: vonageFromNumber,
+        to: cleanPhoneNumber,
+        text: message,
+        type: 'unicode'
+      }),
+    });
+
+    const vonageResult = await vonageResponse.json();
     
-    if (!twilioResponse.ok) {
-      console.error('Twilio error:', twilioResult);
+    console.log('Vonage response:', JSON.stringify(vonageResult));
+    
+    // Vonage returns status in messages array
+    if (!vonageResult.messages || vonageResult.messages[0]?.status !== '0') {
+      const errorText = vonageResult.messages?.[0]?.['error-text'] || 'Unknown error';
+      console.error('Vonage error:', errorText);
       return new Response(
         JSON.stringify({ error: 'Failed to send SMS' }),
         { 
@@ -192,7 +197,7 @@ serve(async (req) => {
       );
     }
 
-    console.log('SMS sent successfully via Twilio:', twilioResult.sid);
+    console.log('SMS sent successfully via Vonage:', vonageResult.messages[0]['message-id']);
 
     return new Response(
       JSON.stringify({ 
