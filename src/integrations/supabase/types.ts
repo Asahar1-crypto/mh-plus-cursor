@@ -864,6 +864,16 @@ export type Database = {
           raw_user_meta_data: Json
         }[]
       }
+      get_public_invitation_details: {
+        Args: { p_invitation_id: string }
+        Returns: {
+          accepted_at: string
+          account_id: string
+          account_name: string
+          expires_at: string
+          owner_name: string
+        }[]
+      }
       get_system_setting: { Args: { key_name: string }; Returns: string }
       get_unverified_users: {
         Args: never
