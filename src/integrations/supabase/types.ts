@@ -820,6 +820,20 @@ export type Database = {
           invitation_id: string
         }[]
       }
+      get_account_member_profile: {
+        Args: { member_user_id: string }
+        Returns: {
+          id: string
+          name: string
+        }[]
+      }
+      get_account_members_basic_info: {
+        Args: { account_uuid: string }
+        Returns: {
+          id: string
+          name: string
+        }[]
+      }
       get_account_members_with_details: {
         Args: { account_uuid: string }
         Returns: {
