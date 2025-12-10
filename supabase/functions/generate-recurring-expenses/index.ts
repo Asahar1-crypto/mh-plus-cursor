@@ -89,7 +89,7 @@ Deno.serve(async (req) => {
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     const supabase = createClient<Database>(supabaseUrl, supabaseKey)
 
-    console.log('🔄 Starting daily recurring expenses check...')
+    console.log('🔄 Starting recurring expenses generation (self-healing mode)...')
 
     // Get current date info
     const now = new Date()
@@ -109,32 +109,27 @@ Deno.serve(async (req) => {
       throw accountsError
     }
 
-    console.log(`👥 Found ${accounts?.length || 0} accounts`)
+    console.log(`👥 Found ${accounts?.length || 0} accounts to process`)
 
     let totalGenerated = 0
+    let totalSkipped = 0
     const processedAccounts: string[] = []
+    const accountResults: Array<{accountId: string, generated: number, skipped: number}> = []
 
-    // Process each account
+    // Process ALL accounts - not just those where today is billing day
     if (accounts && accounts.length > 0) {
       for (const account of accounts) {
-        let billingDay = account.billing_cycle_start_day || 1
+        const billingDay = account.billing_cycle_start_day || 1
         
+        // Calculate the expense date for this billing cycle
         // Handle months with fewer days (e.g., February)
         const lastDayOfMonth = new Date(currentYear, currentMonth, 0).getDate()
-        if (billingDay > lastDayOfMonth) {
-          billingDay = lastDayOfMonth
-        }
-
-        // Check if today is the billing day for this account
-        if (currentDay !== billingDay) {
-          continue
-        }
-
-        console.log(`💳 Processing account ${account.id} (billing day: ${billingDay})`)
-
-        // Calculate the expense date for this billing cycle
-        const expenseDate = new Date(currentYear, currentMonth - 1, billingDay)
+        const actualBillingDay = Math.min(billingDay, lastDayOfMonth)
+        
+        const expenseDate = new Date(currentYear, currentMonth - 1, actualBillingDay)
         const expenseDateStr = expenseDate.toISOString().split('T')[0]
+
+        console.log(`\n💳 Processing account ${account.id} (billing day: ${billingDay}, expense date: ${expenseDateStr})`)
 
         // Get all recurring expenses for this account
         const { data: recurringExpenses, error: fetchError } = await supabase
@@ -149,100 +144,124 @@ Deno.serve(async (req) => {
           continue
         }
 
-        console.log(`📊 Found ${recurringExpenses?.length || 0} recurring expenses for account ${account.id}`)
+        if (!recurringExpenses || recurringExpenses.length === 0) {
+          console.log(`📊 No recurring expenses found for account ${account.id}`)
+          continue
+        }
+
+        console.log(`📊 Found ${recurringExpenses.length} recurring expense templates for account ${account.id}`)
 
         let accountGenerated = 0
+        let accountSkipped = 0
 
-        if (recurringExpenses && recurringExpenses.length > 0) {
-          for (const expense of recurringExpenses) {
-            if (expense.frequency !== 'monthly') {
-              continue
-            }
-
-            console.log(`🔍 Processing expense: ${expense.description} (${expense.amount} ₪)`)
-
-            // Check if expense already exists for this billing cycle
-            // Look for expenses with same recurring_parent_id in the same month/year
-            const cycleStartDate = new Date(currentYear, currentMonth - 1, 1)
-            const cycleEndDate = new Date(currentYear, currentMonth, 1)
-
-            const { data: existingExpenses, error: checkError } = await supabase
-              .from('expenses')
-              .select('id, date')
-              .eq('recurring_parent_id', expense.id)
-              .gte('date', cycleStartDate.toISOString().split('T')[0])
-              .lt('date', cycleEndDate.toISOString().split('T')[0])
-
-            if (checkError) {
-              console.error(`❌ Error checking existing expenses for ${expense.id}:`, checkError)
-              continue
-            }
-
-            if (existingExpenses && existingExpenses.length > 0) {
-              console.log(`⏭️ Expense already exists for this billing cycle: ${expense.description}`)
-              continue
-            }
-
-            // Generate new monthly expense
-            // Auto-approve if the same user who created the recurring expense is also the one paying
-            const isAutoApproved = expense.paid_by_id === expense.created_by_id;
-            
-            const newExpenseData = {
-              account_id: expense.account_id,
-              amount: expense.amount,
-              description: `${expense.description} (חודשי)`,
-              date: expenseDateStr,
-              category: expense.category,
-              paid_by_id: expense.paid_by_id,
-              created_by_id: expense.created_by_id,
-              status: isAutoApproved ? 'approved' : 'pending',
-              approved_by: isAutoApproved ? expense.created_by_id : null,
-              approved_at: isAutoApproved ? new Date().toISOString() : null,
-              split_equally: expense.split_equally,
-              is_recurring: false,
-              frequency: null,
-              recurring_parent_id: expense.id,
-              has_end_date: false,
-              end_date: null
-            }
-
-            const { data: newExpense, error: insertError } = await supabase
-              .from('expenses')
-              .insert(newExpenseData)
-              .select('id, description, amount')
-              .single()
-
-            if (insertError) {
-              console.error(`❌ Error creating monthly expense for ${expense.description}:`, insertError)
-              continue
-            }
-
-            console.log(`✅ Generated monthly expense: ${newExpense?.description} (${newExpense?.amount} ₪)`)
-            accountGenerated++
-            totalGenerated++
+        for (const expense of recurringExpenses) {
+          if (expense.frequency !== 'monthly') {
+            console.log(`⏭️ Skipping non-monthly expense: ${expense.description} (frequency: ${expense.frequency})`)
+            continue
           }
+
+          // Check if expense already exists for current month
+          // Look for expenses with same recurring_parent_id in the current month
+          const cycleStartDate = new Date(currentYear, currentMonth - 1, 1)
+          const cycleEndDate = new Date(currentYear, currentMonth, 1)
+
+          const { data: existingExpenses, error: checkError } = await supabase
+            .from('expenses')
+            .select('id, date, description')
+            .eq('recurring_parent_id', expense.id)
+            .gte('date', cycleStartDate.toISOString().split('T')[0])
+            .lt('date', cycleEndDate.toISOString().split('T')[0])
+
+          if (checkError) {
+            console.error(`❌ Error checking existing expenses for ${expense.description}:`, checkError)
+            continue
+          }
+
+          if (existingExpenses && existingExpenses.length > 0) {
+            console.log(`⏭️ Expense already exists for ${currentMonth}/${currentYear}: ${expense.description}`)
+            accountSkipped++
+            totalSkipped++
+            continue
+          }
+
+          // GENERATE the missing expense for current month
+          console.log(`🆕 Creating missing expense for ${currentMonth}/${currentYear}: ${expense.description} (${expense.amount} ₪)`)
+
+          // Auto-approve if the same user who created the recurring expense is also the one paying
+          const isAutoApproved = expense.paid_by_id === expense.created_by_id
+          
+          const newExpenseData = {
+            account_id: expense.account_id,
+            amount: expense.amount,
+            description: `${expense.description} (חודשי)`,
+            date: expenseDateStr,
+            category: expense.category,
+            paid_by_id: expense.paid_by_id,
+            created_by_id: expense.created_by_id,
+            status: isAutoApproved ? 'approved' : 'pending',
+            approved_by: isAutoApproved ? expense.created_by_id : null,
+            approved_at: isAutoApproved ? new Date().toISOString() : null,
+            split_equally: expense.split_equally,
+            is_recurring: false,
+            frequency: null,
+            recurring_parent_id: expense.id,
+            has_end_date: false,
+            end_date: null
+          }
+
+          const { data: newExpense, error: insertError } = await supabase
+            .from('expenses')
+            .insert(newExpenseData)
+            .select('id, description, amount')
+            .single()
+
+          if (insertError) {
+            console.error(`❌ Error creating expense for ${expense.description}:`, insertError)
+            continue
+          }
+
+          console.log(`✅ Generated: ${newExpense?.description} (${newExpense?.amount} ₪)`)
+          accountGenerated++
+          totalGenerated++
         }
 
         if (accountGenerated > 0) {
           processedAccounts.push(account.id)
         }
 
-        console.log(`✅ Account ${account.id}: Generated ${accountGenerated} expenses`)
+        accountResults.push({
+          accountId: account.id,
+          generated: accountGenerated,
+          skipped: accountSkipped
+        })
+
+        console.log(`✅ Account ${account.id}: Generated ${accountGenerated}, Skipped ${accountSkipped} (already exist)`)
       }
     }
 
-    console.log(`🎉 Completed! Generated ${totalGenerated} expenses for ${processedAccounts.length} accounts`)
+    const summary = {
+      success: true,
+      message: `Generated ${totalGenerated} recurring expenses across ${processedAccounts.length} accounts`,
+      totalGenerated,
+      totalSkipped,
+      processedAccountsCount: processedAccounts.length,
+      totalAccountsChecked: accounts?.length || 0,
+      currentDate: {
+        day: currentDay,
+        month: currentMonth,
+        year: currentYear
+      },
+      accountResults
+    }
+
+    console.log(`\n🎉 SUMMARY:`)
+    console.log(`   - Total accounts checked: ${accounts?.length || 0}`)
+    console.log(`   - Accounts with new expenses: ${processedAccounts.length}`)
+    console.log(`   - Total expenses generated: ${totalGenerated}`)
+    console.log(`   - Total expenses skipped (already exist): ${totalSkipped}`)
 
     return new Response(
-      JSON.stringify({ 
-        success: true, 
-        message: `Generated ${totalGenerated} recurring expenses for ${processedAccounts.length} accounts`,
-        totalGenerated,
-        processedAccountsCount: processedAccounts.length,
-        currentDay,
-        currentMonth,
-        currentYear
-      }),
+      JSON.stringify(summary),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 200,
