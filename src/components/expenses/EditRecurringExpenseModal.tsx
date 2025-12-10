@@ -212,7 +212,7 @@ export const EditRecurringExpenseModal: React.FC<EditRecurringExpenseModalProps>
         }
       }
 
-      toast.success('הוצאה חוזרת עודכנה בהצלחה');
+      toast.success('הוצאה חוזרת עודכנה בהצלחה - השינויים יחולו על חודשים עתידיים בלבד');
       await onSuccess();
       onClose();
     } catch (error) {
