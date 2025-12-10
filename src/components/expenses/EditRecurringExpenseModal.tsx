@@ -183,7 +183,6 @@ export const EditRecurringExpenseModal: React.FC<EditRecurringExpenseModalProps>
         frequency: data.frequency,
         has_end_date: data.hasEndDate,
         end_date: data.hasEndDate ? data.endDate : null,
-        include_in_monthly_balance: includeInMonthlyBalance,
         updated_at: new Date().toISOString(),
       };
 
