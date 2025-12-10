@@ -29,12 +29,15 @@ import {
   Square,
   Users,
   Zap,
-  Eye
+  Eye,
+  ChevronDown,
+  ChevronUp
 } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/auth';
 import { memberService } from '@/contexts/auth/services/account/memberService';
 import confetti from 'canvas-confetti';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
 interface ExpensesTableProps {
   expenses: Expense[];
@@ -57,6 +60,7 @@ export const ExpensesTable: React.FC<ExpensesTableProps> = ({
   const [selectedApprovedExpenses, setSelectedApprovedExpenses] = useState<string[]>([]);
   const [isPerformingBulkAction, setIsPerformingBulkAction] = useState(false);
   const [previewReceiptId, setPreviewReceiptId] = useState<string | null>(null);
+  const [expandedRows, setExpandedRows] = useState<string[]>([]);
 
   // Get account members
   const { data: accountMembers } = useQuery({
@@ -91,6 +95,12 @@ export const ExpensesTable: React.FC<ExpensesTableProps> = ({
     } else {
       setSelectedApprovedExpenses(approvedExpenses.map(expense => expense.id));
     }
+  };
+
+  const toggleRowExpanded = (id: string) => {
+    setExpandedRows(prev => 
+      prev.includes(id) ? prev.filter(rowId => rowId !== id) : [...prev, id]
+    );
   };
 
   const bulkApprove = async () => {
@@ -414,215 +424,194 @@ export const ExpensesTable: React.FC<ExpensesTableProps> = ({
           </div>
         )}
 
-        {/* Desktop/Tablet: Table Layout */}
+        {/* Desktop/Tablet: Compact Table Layout without horizontal scroll */}
         {!isMobile && (
-          <div className="overflow-x-auto">
-            <Table dir="rtl">
+          <div className="w-full">
+            <Table dir="rtl" className="table-fixed w-full">
               <TableHeader>
                 <TableRow className="bg-muted/30 border-b border-border/50">
-                  <TableHead className="text-right font-semibold w-12">בחר</TableHead>
-                  <TableHead className="text-right font-semibold">
-                    <div className="flex items-center gap-2 justify-end">
-                      <Calendar className="h-4 w-4" />
-                      תאריך
-                    </div>
-                  </TableHead>
-                  <TableHead className="text-right font-semibold">
-                    <div className="flex items-center gap-2 justify-end">
-                      <FileText className="h-4 w-4" />
-                      תיאור
-                    </div>
-                  </TableHead>
-                  <TableHead className="text-right font-semibold">סכום</TableHead>
-                  <TableHead className="text-right font-semibold hidden md:table-cell">
-                    <div className="flex items-center gap-2 justify-end">
-                      <Tag className="h-4 w-4" />
-                      קטגוריה
-                    </div>
-                  </TableHead>
-                  <TableHead className="text-right font-semibold hidden lg:table-cell">
-                    <div className="flex items-center gap-2 justify-end">
-                      <User className="h-4 w-4" />
-                      ילד
-                    </div>
-                  </TableHead>
-                  <TableHead className="text-right font-semibold hidden xl:table-cell">
-                    <div className="flex items-center gap-2 justify-end">
-                      <Users className="h-4 w-4" />
-                      משלם
-                    </div>
-                  </TableHead>
-                  <TableHead className="text-right font-semibold">
-                    <div className="flex items-center gap-2 justify-end">
-                      <Zap className="h-4 w-4" />
-                      סטטוס
-                    </div>
-                  </TableHead>
-                  <TableHead className="text-right font-semibold hidden lg:table-cell">
-                    <div className="flex items-center gap-2 justify-end">
-                      <FileText className="h-4 w-4" />
-                      חשבונית
-                    </div>
-                  </TableHead>
-                  <TableHead className="text-right font-semibold">פעולות</TableHead>
+                  <TableHead className="text-right font-semibold w-10 p-2"></TableHead>
+                  <TableHead className="text-right font-semibold w-10 p-2">בחר</TableHead>
+                  <TableHead className="text-right font-semibold w-20 p-2">תאריך</TableHead>
+                  <TableHead className="text-right font-semibold p-2">תיאור</TableHead>
+                  <TableHead className="text-right font-semibold w-24 p-2">סכום</TableHead>
+                  <TableHead className="text-right font-semibold w-24 p-2">סטטוס</TableHead>
+                  <TableHead className="text-right font-semibold w-32 p-2">פעולות</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {expenses.map((expense, index) => {
                   const creatorName = accountMembers?.find(m => m.user_id === expense.createdBy)?.user_name || 'לא ידוע';
                   const paidByName = accountMembers?.find(m => m.user_id === expense.paidById)?.user_name || 'לא ידוע';
+                  const isExpanded = expandedRows.includes(expense.id);
                   
                   return (
-                    <TableRow 
-                      key={expense.id} 
-                      className="border-b border-border/30 hover:bg-muted/20 transition-colors duration-200 group animate-fade-in"
-                      style={{ animationDelay: `${index * 50}ms` }}
-                    >
-                      <TableCell className="w-12 p-4">
-                        {expense.status === 'pending' && (
-                          <Checkbox
-                            checked={selectedPendingExpenses.includes(expense.id)}
-                            onCheckedChange={(checked) => {
-                              if (checked) {
-                                setSelectedPendingExpenses([...selectedPendingExpenses, expense.id]);
-                              } else {
-                                setSelectedPendingExpenses(selectedPendingExpenses.filter(id => id !== expense.id));
-                              }
-                            }}
-                            className="group-hover:scale-110 transition-transform duration-200"
-                          />
-                        )}
-                        {expense.status === 'approved' && (
-                          <Checkbox
-                            checked={selectedApprovedExpenses.includes(expense.id)}
-                            onCheckedChange={(checked) => {
-                              if (checked) {
-                                setSelectedApprovedExpenses([...selectedApprovedExpenses, expense.id]);
-                              } else {
-                                setSelectedApprovedExpenses(selectedApprovedExpenses.filter(id => id !== expense.id));
-                              }
-                            }}
-                            className="group-hover:scale-110 transition-transform duration-200"
-                          />
-                        )}
-                      </TableCell>
-                      
-                      <TableCell className="font-medium text-right p-4">
-                        <div className="flex items-center gap-2 justify-end">
-                          <span className="text-sm">{format(new Date(expense.date), 'dd/MM/yyyy')}</span>
-                          <Calendar className="h-3 w-3 text-muted-foreground" />
-                        </div>
-                      </TableCell>
-                      
-                      <TableCell className="text-right p-4">
-                        <div className="max-w-[200px] lg:max-w-xs text-right">
-                          <p className="font-medium truncate text-sm">{expense.description}</p>
-                          <p className="text-xs text-muted-foreground">נוצר על ידי: {creatorName}</p>
-                        </div>
-                      </TableCell>
-                      
-                      <TableCell className="text-right p-4">
-                        <div className="flex items-center gap-2 justify-end">
-                          <span className="font-bold text-lg">₪{expense.amount}</span>
-                        </div>
-                      </TableCell>
-                      
-                      <TableCell className="text-right p-4 hidden md:table-cell">
-                        <div className="flex justify-end">
-                          <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20 text-xs">
-                            {expense.category || 'לא צוין'}
-                          </Badge>
-                        </div>
-                      </TableCell>
-                      
-                      <TableCell className="text-right p-4 hidden lg:table-cell">
-                        {expense.childName ? (
-                          <div className="flex items-center gap-2 justify-end">
-                            <span className="text-sm font-medium">{expense.childName}</span>
-                            <User className="h-3 w-3 text-muted-foreground" />
-                          </div>
-                        ) : (
-                          <span className="text-muted-foreground text-sm">כללי</span>
-                        )}
-                      </TableCell>
-                      
-                      <TableCell className="text-right p-4 hidden xl:table-cell">
-                        <div className="space-y-1">
-                          <div className="flex items-center gap-2 justify-end">
-                            <span className="text-sm font-medium">{paidByName}</span>
-                            <Users className="h-3 w-3 text-muted-foreground" />
-                          </div>
-                          {expense.splitEqually && (
-                            <div className="flex justify-end">
-                              <Badge variant="secondary" className="text-xs">
-                                חלוקה שווה
-                              </Badge>
-                            </div>
-                          )}
-                        </div>
-                      </TableCell>
-                      
-                      <TableCell className="text-right p-4">
-                        <div className="flex justify-end">
-                          <StatusBadge status={expense.status} />
-                        </div>
-                      </TableCell>
+                    <React.Fragment key={expense.id}>
+                      <TableRow 
+                        className="border-b border-border/30 hover:bg-muted/20 transition-colors duration-200 group animate-fade-in"
+                        style={{ animationDelay: `${index * 50}ms` }}
+                      >
+                        {/* Expand button */}
+                        <TableCell className="w-10 p-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => toggleRowExpanded(expense.id)}
+                            className="h-7 w-7 p-0"
+                          >
+                            {isExpanded ? (
+                              <ChevronUp className="h-4 w-4" />
+                            ) : (
+                              <ChevronDown className="h-4 w-4" />
+                            )}
+                          </Button>
+                        </TableCell>
 
-                      <TableCell className="text-right p-4 hidden lg:table-cell">
-                        <div className="flex gap-1 justify-end">
-                          {expense.receiptId ? (
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={() => setPreviewReceiptId(expense.receiptId!)}
-                              className="h-8 w-8 p-0 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-                              title="תצוגה מקדימה"
-                            >
-                              <Eye className="h-4 w-4" />
-                            </Button>
-                          ) : (
-                            <span className="text-xs text-muted-foreground">-</span>
-                          )}
-                        </div>
-                      </TableCell>
-                      
-                      <TableCell className="text-right p-4">
-                        <div className="flex gap-1 justify-end">
+                        {/* Checkbox */}
+                        <TableCell className="w-10 p-2">
                           {expense.status === 'pending' && (
-                            <>
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                onClick={() => handleApprove(expense.id)}
-                                className="h-8 w-8 p-0 text-green-600 hover:text-green-700 hover:bg-green-50"
-                                title="אשר"
-                              >
-                                <Check className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                onClick={() => handleReject(expense.id)}
-                                className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
-                                title="דחה"
-                              >
-                                <X className="h-4 w-4" />
-                              </Button>
-                            </>
+                            <Checkbox
+                              checked={selectedPendingExpenses.includes(expense.id)}
+                              onCheckedChange={(checked) => {
+                                if (checked) {
+                                  setSelectedPendingExpenses([...selectedPendingExpenses, expense.id]);
+                                } else {
+                                  setSelectedPendingExpenses(selectedPendingExpenses.filter(id => id !== expense.id));
+                                }
+                              }}
+                              className="group-hover:scale-110 transition-transform duration-200"
+                            />
                           )}
                           {expense.status === 'approved' && (
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={() => handleMarkAsPaid(expense.id)}
-                              className="h-8 px-3 text-sm text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-                            >
-                              סמן כשולם
-                            </Button>
+                            <Checkbox
+                              checked={selectedApprovedExpenses.includes(expense.id)}
+                              onCheckedChange={(checked) => {
+                                if (checked) {
+                                  setSelectedApprovedExpenses([...selectedApprovedExpenses, expense.id]);
+                                } else {
+                                  setSelectedApprovedExpenses(selectedApprovedExpenses.filter(id => id !== expense.id));
+                                }
+                              }}
+                              className="group-hover:scale-110 transition-transform duration-200"
+                            />
                           )}
-                        </div>
-                      </TableCell>
-                    </TableRow>
+                        </TableCell>
+                        
+                        {/* Date */}
+                        <TableCell className="w-20 p-2">
+                          <span className="text-xs">{format(new Date(expense.date), 'dd/MM/yy')}</span>
+                        </TableCell>
+                        
+                        {/* Description */}
+                        <TableCell className="p-2">
+                          <p className="font-medium truncate text-sm">{expense.description}</p>
+                        </TableCell>
+                        
+                        {/* Amount */}
+                        <TableCell className="w-24 p-2">
+                          <span className="font-bold text-sm">₪{expense.amount}</span>
+                        </TableCell>
+                        
+                        {/* Status */}
+                        <TableCell className="w-24 p-2">
+                          <StatusBadge status={expense.status} />
+                        </TableCell>
+                        
+                        {/* Actions */}
+                        <TableCell className="w-32 p-2">
+                          <div className="flex gap-1 justify-end">
+                            {expense.receiptId && (
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => setPreviewReceiptId(expense.receiptId!)}
+                                className="h-7 w-7 p-0 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                                title="תצוגה מקדימה"
+                              >
+                                <Eye className="h-3.5 w-3.5" />
+                              </Button>
+                            )}
+                            {expense.status === 'pending' && (
+                              <>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={() => handleApprove(expense.id)}
+                                  className="h-7 w-7 p-0 text-green-600 hover:text-green-700 hover:bg-green-50"
+                                  title="אשר"
+                                >
+                                  <Check className="h-3.5 w-3.5" />
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={() => handleReject(expense.id)}
+                                  className="h-7 w-7 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+                                  title="דחה"
+                                >
+                                  <X className="h-3.5 w-3.5" />
+                                </Button>
+                              </>
+                            )}
+                            {expense.status === 'approved' && (
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => handleMarkAsPaid(expense.id)}
+                                className="h-7 px-2 text-xs text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                              >
+                                שולם
+                              </Button>
+                            )}
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                      
+                      {/* Expanded Details Row */}
+                      {isExpanded && (
+                        <TableRow className="bg-muted/10 border-b border-border/30">
+                          <TableCell colSpan={7} className="p-3">
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                              <div className="flex items-center gap-2">
+                                <Tag className="h-4 w-4 text-muted-foreground" />
+                                <div>
+                                  <span className="text-muted-foreground text-xs">קטגוריה:</span>
+                                  <p className="font-medium">{expense.category || 'לא צוין'}</p>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <User className="h-4 w-4 text-muted-foreground" />
+                                <div>
+                                  <span className="text-muted-foreground text-xs">ילד:</span>
+                                  <p className="font-medium">{expense.childName || 'כללי'}</p>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Users className="h-4 w-4 text-muted-foreground" />
+                                <div>
+                                  <span className="text-muted-foreground text-xs">משלם:</span>
+                                  <p className="font-medium">{paidByName}</p>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <FileText className="h-4 w-4 text-muted-foreground" />
+                                <div>
+                                  <span className="text-muted-foreground text-xs">נוצר על ידי:</span>
+                                  <p className="font-medium">{creatorName}</p>
+                                </div>
+                              </div>
+                              {expense.splitEqually && (
+                                <div className="col-span-2 md:col-span-4">
+                                  <Badge variant="secondary" className="text-xs">
+                                    חלוקה שווה
+                                  </Badge>
+                                </div>
+                              )}
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      )}
+                    </React.Fragment>
                   );
                 })}
               </TableBody>
