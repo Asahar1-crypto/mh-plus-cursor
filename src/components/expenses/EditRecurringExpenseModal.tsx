@@ -187,13 +187,6 @@ export const EditRecurringExpenseModal: React.FC<EditRecurringExpenseModalProps>
         updated_at: new Date().toISOString(),
       };
 
-      // Update child association if provided
-      if (data.childId && data.childId !== 'none') {
-        updateData.child_id = data.childId;
-      } else {
-        updateData.child_id = null;
-      }
-
       const { error } = await supabase
         .from('expenses')
         .update(updateData)
@@ -201,6 +194,24 @@ export const EditRecurringExpenseModal: React.FC<EditRecurringExpenseModalProps>
         .eq('account_id', account.id);
 
       if (error) throw error;
+
+      // Update child association using expense_children table
+      // First, delete existing associations
+      await supabase
+        .from('expense_children')
+        .delete()
+        .eq('expense_id', expense.id);
+
+      // Then add new association if a child is selected
+      if (data.childId && data.childId !== 'none') {
+        const { error: childError } = await supabase
+          .from('expense_children')
+          .insert({ expense_id: expense.id, child_id: data.childId });
+        
+        if (childError) {
+          console.error('Error adding child association:', childError);
+        }
+      }
 
       toast.success('הוצאה חוזרת עודכנה בהצלחה');
       await onSuccess();
