@@ -188,8 +188,10 @@ export const EditRecurringExpenseModal: React.FC<EditRecurringExpenseModalProps>
       };
 
       // Update child association if provided
-      if (data.childId) {
+      if (data.childId && data.childId !== 'none') {
         updateData.child_id = data.childId;
+      } else {
+        updateData.child_id = null;
       }
 
       const { error } = await supabase
@@ -300,7 +302,7 @@ export const EditRecurringExpenseModal: React.FC<EditRecurringExpenseModalProps>
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="">ללא שיוך לילד</SelectItem>
+                      <SelectItem value="none">ללא שיוך לילד</SelectItem>
                       {childrenList.map((child) => (
                         <SelectItem key={child.id} value={child.id}>
                           {child.name}
