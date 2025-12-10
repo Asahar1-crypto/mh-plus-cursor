@@ -74,16 +74,15 @@ serve(async (req) => {
       });
     }
 
-    // Initialize Supabase client with user's token for auth verification
-    const supabaseAuth = createClient(supabaseUrl!, supabaseServiceKey!, {
-      global: {
-        headers: {
-          Authorization: authHeader
-        }
-      }
-    });
+    // Extract JWT token from Authorization header
+    const token = authHeader.replace('Bearer ', '');
+    console.log('🔑 Token extracted, length:', token.length);
 
-    const { data: { user }, error: userError } = await supabaseAuth.auth.getUser();
+    // Create service role client for database operations
+    const supabase = createClient(supabaseUrl!, supabaseServiceKey!);
+
+    // Verify the user's JWT token using service role client
+    const { data: { user }, error: userError } = await supabase.auth.getUser(token);
     
     if (userError || !user) {
       console.error('❌ User authentication failed:', userError);
@@ -95,9 +94,6 @@ serve(async (req) => {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
     }
-
-    // Create service role client for database operations
-    const supabase = createClient(supabaseUrl!, supabaseServiceKey!);
 
     console.log('✅ User authenticated successfully:', user.id);
 
