@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { ArrowLeft, Search, Users, Calendar, DollarSign, MoreHorizontal, RefreshCw, Eye, Activity, Database, Trash2, UserMinus, UserPlus } from 'lucide-react';
+import { ArrowLeft, Search, Users, Calendar, DollarSign, MoreHorizontal, RefreshCw, Eye, Activity, Database, Trash2, UserMinus, UserPlus, MessageSquare } from 'lucide-react';
 import { InvitationsSection } from '@/components/admin/InvitationsSection';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -41,6 +41,7 @@ interface Tenant {
   last_activity: string | null;
   monthly_expenses_count: number;
   data_size_mb: number;
+  sms_notifications_enabled: boolean;
   member_details: Array<{
     name: string;
     email: string;
@@ -134,6 +135,7 @@ const AdminTenants: React.FC = () => {
           trial_ends_at,
           created_at,
           owner_id,
+          sms_notifications_enabled,
           profiles!accounts_owner_id_fkey(name, last_login),
           account_members(
             user_id,
@@ -233,6 +235,7 @@ const AdminTenants: React.FC = () => {
             last_activity: lastActivity?.[0]?.created_at || null,
             monthly_expenses_count: monthlyExpenses?.length || 0,
             data_size_mb: parseFloat(estimatedDataSize.toFixed(2)),
+            sms_notifications_enabled: (tenant as any).sms_notifications_enabled || false,
             member_details: memberDetails
           };
         })
@@ -324,6 +327,43 @@ const AdminTenants: React.FC = () => {
       toast({
         title: 'שגיאה',
         description: 'שגיאה בעדכון סטטוס המשפחה',
+        variant: 'destructive'
+      });
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const toggleSmsNotifications = async (tenantId: string, currentValue: boolean) => {
+    try {
+      setActionLoading(`sms-${tenantId}`);
+
+      const { error } = await supabase
+        .from('accounts')
+        .update({ sms_notifications_enabled: !currentValue })
+        .eq('id', tenantId);
+
+      if (error) throw error;
+
+      toast({
+        title: 'הצלחה',
+        description: !currentValue ? 'התראות SMS הופעלו למשפחה' : 'התראות SMS בוטלו למשפחה',
+      });
+
+      await loadTenants();
+      
+      // Update viewDetailsDialog if it's open for this tenant
+      if (viewDetailsDialog.tenant?.id === tenantId) {
+        setViewDetailsDialog({
+          open: true,
+          tenant: { ...viewDetailsDialog.tenant, sms_notifications_enabled: !currentValue }
+        });
+      }
+    } catch (error) {
+      console.error('Error toggling SMS notifications:', error);
+      toast({
+        title: 'שגיאה',
+        description: 'שגיאה בעדכון הגדרות SMS',
         variant: 'destructive'
       });
     } finally {
@@ -1277,6 +1317,42 @@ const AdminTenants: React.FC = () => {
                         <div>פעילות אחרונה: {new Date(viewDetailsDialog.tenant.last_activity).toLocaleDateString('he-IL')}</div>
                       )}
                     </div>
+                  </div>
+                </div>
+
+                {/* הגדרות SMS */}
+                <div className="border-t pt-4">
+                  <h4 className="font-medium mb-3 flex items-center gap-2">
+                    <MessageSquare className="h-4 w-4" />
+                    הגדרות SMS
+                  </h4>
+                  <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
+                    <div>
+                      <div className="font-medium">התראות SMS על הוצאות</div>
+                      <div className="text-sm text-muted-foreground">
+                        שליחת SMS לצד השני כשנוצרת הוצאה לאישור
+                      </div>
+                    </div>
+                    <Button
+                      variant={viewDetailsDialog.tenant.sms_notifications_enabled ? "default" : "outline"}
+                      size="sm"
+                      disabled={actionLoading === `sms-${viewDetailsDialog.tenant.id}`}
+                      onClick={() => toggleSmsNotifications(
+                        viewDetailsDialog.tenant!.id,
+                        viewDetailsDialog.tenant!.sms_notifications_enabled
+                      )}
+                    >
+                      {actionLoading === `sms-${viewDetailsDialog.tenant.id}` ? (
+                        'מעדכן...'
+                      ) : viewDetailsDialog.tenant.sms_notifications_enabled ? (
+                        <>
+                          <MessageSquare className="h-4 w-4 ml-1" />
+                          מופעל
+                        </>
+                      ) : (
+                        'כבוי'
+                      )}
+                    </Button>
                   </div>
                 </div>
               </div>

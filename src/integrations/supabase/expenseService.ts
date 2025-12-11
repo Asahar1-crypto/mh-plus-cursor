@@ -109,7 +109,7 @@ export const expenseService = {
     }));
   },
 
-  async addExpense(user: User, account: Account, expense: Omit<Expense, 'id' | 'createdBy' | 'creatorName' | 'status'>): Promise<void> {
+  async addExpense(user: User, account: Account, expense: Omit<Expense, 'id' | 'createdBy' | 'creatorName' | 'status'>): Promise<{ id: string; isPending: boolean }> {
     console.log(`Adding expense to account ${account.id} (${account.name})`);
     console.log('Expense data:', expense);
     
@@ -167,6 +167,8 @@ export const expenseService = {
         console.log('Successfully linked expense to child');
       }
     }
+
+    return { id: newExpense.id, isPending: !isAutoApproved };
   },
 
   async updateExpenseStatus(user: User, account: Account, expenseId: string, status: 'pending' | 'approved' | 'rejected' | 'paid'): Promise<void> {

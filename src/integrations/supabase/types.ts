@@ -71,6 +71,7 @@ export type Database = {
           owner_id: string
           shared_with_email: string | null
           shared_with_id: string | null
+          sms_notifications_enabled: boolean | null
           subscription_status: string | null
           trial_ends_at: string | null
           updated_at: string
@@ -86,6 +87,7 @@ export type Database = {
           owner_id: string
           shared_with_email?: string | null
           shared_with_id?: string | null
+          sms_notifications_enabled?: boolean | null
           subscription_status?: string | null
           trial_ends_at?: string | null
           updated_at?: string
@@ -101,6 +103,7 @@ export type Database = {
           owner_id?: string
           shared_with_email?: string | null
           shared_with_id?: string | null
+          sms_notifications_enabled?: boolean | null
           subscription_status?: string | null
           trial_ends_at?: string | null
           updated_at?: string
@@ -373,6 +376,57 @@ export type Database = {
             columns: ["expense_id"]
             isOneToOne: false
             referencedRelation: "expenses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      expense_notifications: {
+        Row: {
+          created_at: string
+          error_message: string | null
+          expense_id: string
+          id: string
+          notification_type: string
+          recipient_phone: string | null
+          recipient_user_id: string | null
+          sent_at: string
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          error_message?: string | null
+          expense_id: string
+          id?: string
+          notification_type?: string
+          recipient_phone?: string | null
+          recipient_user_id?: string | null
+          sent_at?: string
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          error_message?: string | null
+          expense_id?: string
+          id?: string
+          notification_type?: string
+          recipient_phone?: string | null
+          recipient_user_id?: string | null
+          sent_at?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "expense_notifications_expense_id_fkey"
+            columns: ["expense_id"]
+            isOneToOne: false
+            referencedRelation: "expenses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expense_notifications_recipient_user_id_fkey"
+            columns: ["recipient_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]

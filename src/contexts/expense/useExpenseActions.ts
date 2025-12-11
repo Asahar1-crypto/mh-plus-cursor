@@ -4,6 +4,7 @@ import { Expense, Child } from './types';
 import { User } from '@/contexts/AuthContext';
 import { Account } from '@/contexts/auth/types';
 import { expenseService } from '@/integrations/supabase/expenseService';
+import { supabase } from '@/integrations/supabase/client';
 
 export interface ExpenseActions {
   addExpense: (expense: Omit<Expense, 'id' | 'createdBy' | 'creatorName' | 'status' | 'approvedBy' | 'approvedAt'>) => Promise<void>;
@@ -16,6 +17,25 @@ export interface ExpenseActions {
   uploadReceipt: (expenseId: string, receiptUrl: string) => Promise<void>;
   isSubmitting: boolean;
 }
+
+// Helper function to send SMS notification for pending expenses
+const sendExpenseNotification = async (expenseId: string, accountId: string) => {
+  try {
+    console.log('Sending expense notification SMS for expense:', expenseId);
+    const { data, error } = await supabase.functions.invoke('notify-expense-approval', {
+      body: { expense_id: expenseId, account_id: accountId }
+    });
+    
+    if (error) {
+      console.error('Error sending expense notification:', error);
+    } else {
+      console.log('Expense notification result:', data);
+    }
+  } catch (error) {
+    console.error('Failed to send expense notification:', error);
+    // Don't throw - notification failure shouldn't block expense creation
+  }
+};
 
 export const useExpenseActions = (
   user: User | null, 
@@ -41,8 +61,14 @@ export const useExpenseActions = (
 
     setIsSubmitting(true);
     try {
-      await expenseService.addExpense(user, account, newExpense);
+      const result = await expenseService.addExpense(user, account, newExpense);
       console.log('Expense added successfully, refreshing data...');
+      
+      // Send SMS notification if expense is pending (needs approval)
+      if (result.isPending) {
+        sendExpenseNotification(result.id, account.id);
+      }
+      
       await refreshData(); // Refresh data to show new expense
       toast.success('ההוצאה נוספה בהצלחה');
     } catch (error) {
