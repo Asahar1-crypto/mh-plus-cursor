@@ -73,7 +73,7 @@ export async function sendInvitation(phoneNumber: string, user: User, account: A
     console.log("sendInvitation: Invitation created successfully");
 
     // Send SMS with invitation link - always use production URL
-    const productionUrl = 'https://family-finance-plus.lovable.app';
+    const productionUrl = 'https://mhplus.online';
     
     try {
       const { data, error } = await supabase.functions.invoke('send-invitation-sms', {

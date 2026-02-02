@@ -62,8 +62,8 @@ serve(async (req) => {
       normalizedPhone = phoneNumber;
     }
 
-    // Create invitation URL
-    const invitationUrl = `${baseUrl || 'https://family-finance-plus.lovable.app'}/family-invitation?invitationId=${invitationId}`;
+    // Create invitation URL - default to production domain
+    const invitationUrl = `${baseUrl || 'https://mhplus.online'}/family-invitation?invitationId=${invitationId}`;
 
     // Create SMS message (keep it short for SMS)
     const smsMessage = `שלום! ${inviterName || 'מישהו'} הזמין/ה אותך להצטרף לחשבון "${accountName}" באפליקציית מחציות פלוס.\n\nלהצטרפות: ${invitationUrl}\n\nתוקף: 48 שעות`;
