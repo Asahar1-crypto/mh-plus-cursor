@@ -95,9 +95,11 @@ const App = () => (
                 <Route path="/admin/email-management" element={<AdminEmailManagement />} />
               </Route>
               
-              {/* Special routes */}
-              <Route path="/invitation/:invitationId" element={<AcceptInvitation />} />
-              <Route path="/accept-invitation" element={<AcceptInvitation />} />
+              {/* Special routes - wrapped in AuthLayout for proper auth context */}
+              <Route element={<AuthLayout requiresAuth={false} />}>
+                <Route path="/invitation/:invitationId" element={<AcceptInvitation />} />
+                <Route path="/accept-invitation" element={<AcceptInvitation />} />
+              </Route>
               
               {/* Catch all */}
               <Route path="*" element={<NotFound />} />

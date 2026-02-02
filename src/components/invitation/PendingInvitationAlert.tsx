@@ -149,13 +149,23 @@ const PendingInvitationAlert = () => {
   const accountName = firstInvitation.accounts?.name || 'חשבון משותף';
   
   const handleViewInvitation = () => {
+    console.log('PendingInvitationAlert: handleViewInvitation clicked');
+    console.log('PendingInvitationAlert: invitation data:', firstInvitation);
+    
+    if (!firstInvitation.invitation_id) {
+      console.error('PendingInvitationAlert: No invitation_id found');
+      return;
+    }
+    
     // Use family-invitation for SMS invitations, regular invitation for email
     const isPhoneInvitation = !!firstInvitation.phone_number;
     const path = isPhoneInvitation 
       ? `/family-invitation?invitationId=${firstInvitation.invitation_id}`
       : `/invitation/${firstInvitation.invitation_id}`;
-    navigate(path);
+    
+    console.log('PendingInvitationAlert: Navigating to:', path);
     setDismissed(true);
+    navigate(path);
   };
   
   const handleDismiss = () => {
