@@ -27,12 +27,13 @@ export const useAuthenticationActions = (
     }
   };
 
-  const register = async (name: string, email: string, password: string, phoneNumber?: string): Promise<void> => {
+  const register = async (name: string, email: string, password: string, phoneNumber?: string): Promise<User> => {
     setIsLoading(true);
     try {
-      await authService.register(name, email, password, phoneNumber);
+      const user = await authService.register(name, email, password, phoneNumber);
       // SMS אומת - לא צריך הודעה על אימייל
       toast.success('נרשמת בהצלחה!');
+      return user;
     } catch (error: any) {
       console.error('Registration failed:', error);
       toast.error(`שגיאה ברישום: ${error.message}`);
