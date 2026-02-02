@@ -7,15 +7,11 @@ import { CheckCircle, Loader2 } from 'lucide-react';
 import { User } from '@/contexts/auth/types';
 import InvitationDetailsCard from './InvitationDetailsCard';
 import LoginRequiredAlert from './LoginRequiredAlert';
-import EmailMismatchAlert from './EmailMismatchAlert';
 import ClearInvitationsButton from './ClearInvitationsButton';
+import { InvitationDetails } from './types';
 
 interface SuccessStateProps {
-  invitationDetails: {
-    ownerName: string;
-    accountName: string;
-    email: string;
-  };
+  invitationDetails: InvitationDetails;
   invitationId: string;
   user: User | null;
   isAuthenticated: boolean;
@@ -51,13 +47,20 @@ const SuccessState = ({
   };
   
   const handleRegister = () => {
-    // Navigate to registration page with email from invitation
-    navigate(`/register?email=${encodeURIComponent(invitationDetails.email)}&invitationId=${invitationId}`);
+    // Navigate to registration page with phone from invitation
+    const params = new URLSearchParams();
+    params.set('invitationId', invitationId);
+    if (invitationDetails.phoneNumber) {
+      params.set('phone', invitationDetails.phoneNumber);
+    }
+    if (invitationDetails.email) {
+      params.set('email', invitationDetails.email);
+    }
+    navigate(`/family-register?${params.toString()}`);
   };
   
-  // FIXED: Use case-insensitive email comparison
-  const emailMismatch = isAuthenticated && user && invitationDetails && 
-    user.email.toLowerCase() !== invitationDetails.email.toLowerCase();
+  // Check if this is a phone-based invitation
+  const isPhoneInvitation = !!invitationDetails.phoneNumber;
   
   return (
     <Card className="w-full max-w-md border-border shadow-lg animate-fade-in">
@@ -76,32 +79,27 @@ const SuccessState = ({
             ownerName={invitationDetails.ownerName}
             accountName={invitationDetails.accountName}
             email={invitationDetails.email}
+            phoneNumber={invitationDetails.phoneNumber}
           />
           
           {!isAuthenticated && (
             <>
               <LoginRequiredAlert 
-                email={invitationDetails.email} 
+                email={invitationDetails.email || ''} 
                 invitationId={invitationId}
+                phoneNumber={invitationDetails.phoneNumber}
               />
               <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
-                <p className="mb-2 text-sm text-blue-800">אין לך חשבון? הירשם עכשיו עם האימייל מההזמנה:</p>
+                <p className="mb-2 text-sm text-blue-800">אין לך חשבון? הירשם עכשיו:</p>
                 <Button 
                   onClick={handleRegister} 
                   variant="outline" 
                   className="w-full border-blue-300 text-blue-700 hover:bg-blue-100"
                 >
-                  הירשם עם {invitationDetails.email}
+                  הירשם והצטרף למשפחה
                 </Button>
               </div>
             </>
-          )}
-          
-          {emailMismatch && user && (
-            <EmailMismatchAlert 
-              invitationEmail={invitationDetails.email} 
-              userEmail={user.email} 
-            />
           )}
           
           {/* Add button to clear invitations if there's an error */}
@@ -117,11 +115,7 @@ const SuccessState = ({
         </Button>
         <Button 
           onClick={handleAccept}
-          disabled={
-            !isAuthenticated || 
-            isProcessing || 
-            emailMismatch
-          }
+          disabled={!isAuthenticated || isProcessing}
         >
           {isProcessing ? (
             <span className="flex items-center gap-2">
