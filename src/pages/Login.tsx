@@ -167,20 +167,20 @@ const Login = () => {
                         name="email"
                         render={({ field }) => (
                           <FormItem className="space-y-2">
-                            <FormLabel className="text-sm font-medium text-foreground/80">כתובת אימייל</FormLabel>
+                            <FormLabel className="text-sm sm:text-base font-medium text-foreground">כתובת אימייל</FormLabel>
                             <FormControl>
                               <div className="relative group">
-                                <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none z-10">
-                                  <Mail className="w-4 h-4 text-muted-foreground group-focus-within:text-primary transition-colors duration-200" />
+                                <div className="absolute inset-y-0 left-3 sm:left-4 flex items-center pointer-events-none z-10">
+                                  <Mail className="w-4 h-4 sm:w-5 sm:h-5 text-muted-foreground group-focus-within:text-primary transition-colors duration-200" />
                                 </div>
                                 <Input 
                                   placeholder="your@email.com" 
                                   {...field} 
-                                  className="pl-10 h-12 text-base bg-muted/30 border-muted-foreground/20 rounded-xl transition-all duration-300 focus:bg-background focus:shadow-glow focus:border-primary/50 hover:border-primary/30"
+                                  className="pl-10 sm:pl-12 h-12 sm:h-14 text-base sm:text-lg bg-background/95 border-2 border-border shadow-sm rounded-xl transition-all duration-300 focus:bg-background focus:shadow-glow focus:border-primary focus:ring-2 focus:ring-primary/20 hover:border-primary/50 placeholder:text-muted-foreground/60"
                                 />
                               </div>
                             </FormControl>
-                            <FormMessage className="text-xs" />
+                            <FormMessage className="text-xs sm:text-sm" />
                           </FormItem>
                         )}
                       />
@@ -190,21 +190,21 @@ const Login = () => {
                         name="password"
                         render={({ field }) => (
                           <FormItem className="space-y-2">
-                            <FormLabel className="text-sm font-medium text-foreground/80">סיסמה</FormLabel>
+                            <FormLabel className="text-sm sm:text-base font-medium text-foreground">סיסמה</FormLabel>
                             <FormControl>
                               <div className="relative group">
-                                <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none z-10">
-                                  <Lock className="w-4 h-4 text-muted-foreground group-focus-within:text-primary transition-colors duration-200" />
+                                <div className="absolute inset-y-0 left-3 sm:left-4 flex items-center pointer-events-none z-10">
+                                  <Lock className="w-4 h-4 sm:w-5 sm:h-5 text-muted-foreground group-focus-within:text-primary transition-colors duration-200" />
                                 </div>
                                 <Input 
                                   type="password" 
                                   placeholder="••••••••" 
                                   {...field} 
-                                  className="pl-10 h-12 text-base bg-muted/30 border-muted-foreground/20 rounded-xl transition-all duration-300 focus:bg-background focus:shadow-glow focus:border-primary/50 hover:border-primary/30"
+                                  className="pl-10 sm:pl-12 h-12 sm:h-14 text-base sm:text-lg bg-background/95 border-2 border-border shadow-sm rounded-xl transition-all duration-300 focus:bg-background focus:shadow-glow focus:border-primary focus:ring-2 focus:ring-primary/20 hover:border-primary/50 placeholder:text-muted-foreground/60"
                                 />
                               </div>
                             </FormControl>
-                            <FormMessage className="text-xs" />
+                            <FormMessage className="text-xs sm:text-sm" />
                           </FormItem>
                         )}
                       />
