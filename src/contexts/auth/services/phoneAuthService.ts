@@ -67,11 +67,16 @@ export const phoneAuthService = {
         throw new Error(normalizationResult.error || 'Invalid phone number format');
       }
       
+      // Get current origin for redirect
+      const redirectUrl = window.location.origin;
+      console.log('Using redirect URL:', redirectUrl);
+      
       const { data, error } = await supabase.functions.invoke('verify-sms-code', {
         body: { 
           phoneNumber: normalizationResult.data!.e164, 
           code,
-          verificationType: 'login'
+          verificationType: 'login',
+          redirectUrl
         }
       });
 
