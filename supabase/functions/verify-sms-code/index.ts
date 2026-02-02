@@ -14,9 +14,9 @@ serve(async (req) => {
   }
 
   try {
-    const { phoneNumber, code, verificationType = 'registration' } = await req.json()
+    const { phoneNumber, code, verificationType = 'registration', redirectUrl } = await req.json()
     
-    console.log('Verification request received:', { phoneNumber, code, verificationType })
+    console.log('Verification request received:', { phoneNumber, code, verificationType, redirectUrl })
     
     if (!phoneNumber || !code) {
       console.error('Missing required fields:', { phoneNumber: !!phoneNumber, code: !!code })
@@ -206,12 +206,22 @@ serve(async (req) => {
         );
       }
 
-      // Use Supabase's secure session creation
+      // Use Supabase's secure session creation with custom redirect
+      const linkOptions: any = {
+        type: 'magiclink',
+        email: authUser.user.email!
+      };
+      
+      // Add redirect_to if provided from client
+      if (redirectUrl) {
+        linkOptions.options = {
+          redirectTo: redirectUrl
+        };
+        console.log('Using custom redirect URL:', redirectUrl);
+      }
+      
       const { data: sessionResult, error: sessionError } = await supabase.auth.admin
-        .generateLink({
-          type: 'magiclink',
-          email: authUser.user.email!
-        });
+        .generateLink(linkOptions);
 
       if (sessionError) {
         console.error('Error generating session:', sessionError);
