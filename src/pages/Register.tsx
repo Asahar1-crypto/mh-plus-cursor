@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -12,9 +11,11 @@ import { useAuth } from '@/contexts/auth';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import SmsVerification from '@/components/auth/SmsVerification';
+import PhoneExistsAlert from '@/components/auth/PhoneExistsAlert';
 import { useConfetti } from '@/components/ui/confetti';
 import { CelebrationModal } from '@/components/ui/celebration-modal';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
 const registerSchema = z.object({
   name: z.string().min(2, { message: 'שם חייב להיות לפחות 2 תווים' }),
@@ -37,6 +38,8 @@ const Register = () => {
   const [emailFromInvitation, setEmailFromInvitation] = useState<string>('');
   const [invitationId, setInvitationId] = useState<string | null>(null);
   const [showSmsVerification, setShowSmsVerification] = useState(false);
+  const [showPhoneExists, setShowPhoneExists] = useState(false);
+  const [existingUserName, setExistingUserName] = useState<string | undefined>();
   const [registrationData, setRegistrationData] = useState<z.infer<typeof registerSchema> | null>(null);
   const [showCelebration, setShowCelebration] = useState(false);
   const { isActive: confettiActive, fire: fireConfetti, ConfettiComponent } = useConfetti();
@@ -78,15 +81,75 @@ const Register = () => {
   
   const onSubmit = async (data: z.infer<typeof registerSchema>) => {
     try {
-      console.log("Proceeding to SMS verification with data:", { ...data, invitationId });
+      console.log("Checking if phone exists before SMS verification...");
+      
+      // Pre-check if phone exists before proceeding to SMS
+      const { data: checkData, error: checkError } = await supabase.functions.invoke('send-sms', {
+        body: {
+          phoneNumber: data.phoneNumber,
+          type: 'verification',
+          verificationType: 'registration'
+        }
+      });
+
+      // Check for phone exists error
+      if (checkError) {
+        const errorBody = checkError.message || '';
+        console.log('SMS check error:', checkError);
+        
+        // Try to parse error response
+        try {
+          const parsed = JSON.parse(errorBody);
+          if (parsed.error === 'PHONE_EXISTS') {
+            console.log('Phone exists, showing recovery options');
+            setExistingUserName(parsed.existingUserName);
+            setRegistrationData(data);
+            setShowPhoneExists(true);
+            return;
+          }
+        } catch {
+          // Not a JSON error, check status
+        }
+        
+        toast.error('שגיאה בשליחת קוד האימות');
+        return;
+      }
+
+      // If we got a 409 response in data (shouldn't happen but check anyway)
+      if (checkData?.error === 'PHONE_EXISTS') {
+        console.log('Phone exists (from data), showing recovery options');
+        setExistingUserName(checkData.existingUserName);
+        setRegistrationData(data);
+        setShowPhoneExists(true);
+        return;
+      }
+
+      console.log("Phone is new, proceeding to SMS verification with data:", { ...data, invitationId });
       
       // Store registration data for later use
       setRegistrationData(data);
       
-      // Show SMS verification step
+      // Show SMS verification step (SMS was already sent in the check above)
       setShowSmsVerification(true);
-    } catch (error) {
-      console.error('Registration error:', error);
+    } catch (error: any) {
+      console.error('Registration pre-check error:', error);
+      
+      // Check if this is a PHONE_EXISTS error from the response
+      if (error?.context?.body) {
+        try {
+          const body = JSON.parse(error.context.body);
+          if (body.error === 'PHONE_EXISTS') {
+            setExistingUserName(body.existingUserName);
+            setRegistrationData(data);
+            setShowPhoneExists(true);
+            return;
+          }
+        } catch {
+          // Ignore parse error
+        }
+      }
+      
+      toast.error('שגיאה בתהליך ההרשמה');
     }
   };
 
@@ -149,9 +212,30 @@ const Register = () => {
 
   const handleBackToForm = () => {
     setShowSmsVerification(false);
+    setShowPhoneExists(false);
     setRegistrationData(null);
+    setExistingUserName(undefined);
   };
+
+  // Show phone exists alert
+  if (showPhoneExists && registrationData) {
+    return (
+      <>
+        <AnimatedBackground />
+        <div className="container mx-auto py-10 px-4 flex items-center justify-center min-h-[calc(100vh-4rem)] relative z-10">
+          <div className="w-full max-w-md">
+            <PhoneExistsAlert
+              phoneNumber={registrationData.phoneNumber}
+              userName={existingUserName}
+              onBack={handleBackToForm}
+            />
+          </div>
+        </div>
+      </>
+    );
+  }
   
+  // Show SMS verification
   if (showSmsVerification && registrationData) {
     return (
       <div className="container mx-auto py-10 px-4 flex items-center justify-center min-h-[calc(100vh-4rem)]">
