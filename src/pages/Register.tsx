@@ -194,12 +194,8 @@ const Register = () => {
 
   const handleCelebrationClose = () => {
     setShowCelebration(false);
-    // Navigate based on whether there's an invitation
-    if (invitationId) {
-      navigate('/dashboard');
-    } else {
-      navigate('/login', { state: { message: 'נרשמת בהצלחה! אנא התחבר עם הפרטים שלך' } });
-    }
+    // Always navigate to dashboard - NoAccountScreen will be shown if no account
+    navigate('/dashboard');
   };
 
   const handleBackToForm = () => {
