@@ -12,8 +12,6 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import SmsVerification from '@/components/auth/SmsVerification';
 import PhoneExistsAlert from '@/components/auth/PhoneExistsAlert';
-import { useConfetti } from '@/components/ui/confetti';
-import { CelebrationModal } from '@/components/ui/celebration-modal';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -41,8 +39,7 @@ const Register = () => {
   const [showPhoneExists, setShowPhoneExists] = useState(false);
   const [existingUserName, setExistingUserName] = useState<string | undefined>();
   const [registrationData, setRegistrationData] = useState<z.infer<typeof registerSchema> | null>(null);
-  const [showCelebration, setShowCelebration] = useState(false);
-  const { isActive: confettiActive, fire: fireConfetti, ConfettiComponent } = useConfetti();
+  
   
   useEffect(() => {
     // Check if there's an invitationId in the URL
@@ -182,20 +179,29 @@ const Register = () => {
       
       console.log('Registration successful, user:', user);
       
-      // Since SMS is verified, show celebration
-      fireConfetti();
-      setShowCelebration(true);
+      // Auto-login after successful registration
+      console.log('Auto-logging in after registration...');
+      const { error: loginError } = await supabase.auth.signInWithPassword({
+        email: registrationData.email,
+        password: registrationData.password
+      });
+      
+      if (loginError) {
+        console.error('Auto-login failed:', loginError);
+        toast.error('הרישום הצליח אך ההתחברות נכשלה - נסה להתחבר ידנית');
+        navigate('/login');
+        return;
+      }
+      
+      console.log('Auto-login successful, navigating to dashboard...');
+      
+      // Navigate directly to dashboard - user is now logged in
+      navigate('/dashboard');
     } catch (error: any) {
       console.error('Registration error:', error);
       // Show error but don't navigate away - let user retry
       toast.error(`שגיאה ברישום: ${error.message || 'נסה שוב'}`);
     }
-  };
-
-  const handleCelebrationClose = () => {
-    setShowCelebration(false);
-    // Always navigate to dashboard - NoAccountScreen will be shown if no account
-    navigate('/dashboard');
   };
 
   const handleBackToForm = () => {
@@ -368,16 +374,6 @@ const Register = () => {
     </div>
   </div>
 
-      {/* Confetti Animation */}
-      <ConfettiComponent duration={4000} particleCount={100} />
-
-      {/* Success Celebration Modal */}
-      <CelebrationModal
-        isOpen={showCelebration}
-        title="🎉 ברכות!"
-        message="נרשמת בהצלחה למערכת מחציות פלוס!"
-        onClose={handleCelebrationClose}
-      />
     </>
   );
 };
