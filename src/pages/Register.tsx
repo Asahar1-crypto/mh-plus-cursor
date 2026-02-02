@@ -166,10 +166,8 @@ const Register = () => {
                 />
               </div>
               <div className="flex flex-col items-center justify-center gap-2 mb-2">
-                <CardTitle className="text-2xl sm:text-3xl font-extrabold tracking-tight animate-in fade-in slide-in-from-top duration-500">
-                  <span className="bg-gradient-to-r from-primary via-primary/80 to-accent bg-clip-text text-transparent">
-                    הרשמה למערכת
-                  </span>
+                <CardTitle className="text-2xl sm:text-3xl font-extrabold tracking-tight text-primary animate-in fade-in slide-in-from-top duration-500">
+                  הרשמה למערכת
                 </CardTitle>
                 <div className="h-1 w-16 bg-gradient-to-r from-primary to-accent rounded-full animate-in fade-in duration-700 delay-200" />
               </div>
