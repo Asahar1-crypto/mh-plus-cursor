@@ -95,28 +95,47 @@ const Register = () => {
     }
 
     try {
-      // If we have an invitationId, store it along with the email for auto-linking after verification
+      // Store phone number for profile update after registration
+      localStorage.setItem('pendingPhoneVerification', JSON.stringify({
+        phoneNumber: registrationData.phoneNumber,
+        verified: true
+      }));
+      
+      // If we have an invitationId, store it along with the email for auto-linking
       if (invitationId) {
         const pendingInvitations = {
           email: registrationData.email,
           invitations: [{ 
             invitationId,
-            // Empty values since we don't have this data yet, will be fetched during auth check
             accountId: "",
             accountName: "חשבון משותף",
             ownerId: ""
-          }]
+          }],
+          skipOnboarding: true // דילוג על Onboarding למוזמנים
         };
         
         localStorage.setItem('pendingInvitationsAfterRegistration', JSON.stringify(pendingInvitations));
-        console.log(`Stored invitation ${invitationId} for email ${registrationData.email} for processing after verification`);
+        console.log(`Stored invitation ${invitationId} for email ${registrationData.email}`);
       }
       
-      // Complete registration with phone verification
-      await register(registrationData.name, registrationData.email, registrationData.password);
-      navigate('/verify-email', { state: { email: registrationData.email } });
+      // Complete registration - SMS verified, no email verification needed
+      await register(registrationData.name, registrationData.email, registrationData.password, registrationData.phoneNumber);
+      
+      // Since SMS is verified, go directly to dashboard or show celebration
+      fireConfetti();
+      setShowCelebration(true);
     } catch (error) {
       console.error('Registration error:', error);
+    }
+  };
+
+  const handleCelebrationClose = () => {
+    setShowCelebration(false);
+    // Navigate based on whether there's an invitation
+    if (invitationId) {
+      navigate('/dashboard');
+    } else {
+      navigate('/login', { state: { message: 'נרשמת בהצלחה! אנא התחבר עם הפרטים שלך' } });
     }
   };
 
@@ -268,6 +287,17 @@ const Register = () => {
       </div>
     </div>
   </div>
+
+      {/* Confetti Animation */}
+      <ConfettiComponent duration={4000} particleCount={100} />
+
+      {/* Success Celebration Modal */}
+      <CelebrationModal
+        isOpen={showCelebration}
+        title="🎉 ברכות!"
+        message="נרשמת בהצלחה למערכת מחציות פלוס!"
+        onClose={handleCelebrationClose}
+      />
     </>
   );
 };

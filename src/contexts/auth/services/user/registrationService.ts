@@ -29,13 +29,16 @@ export const registrationService = {
         console.error("Error checking invitations:", invitationsError);
       }
       
-      // Sign up with Supabase - use built-in email confirmation
+      // Sign up with Supabase - no email confirmation required (SMS verified)
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
-          data: { name, phone_number: phoneNumber },
-          emailRedirectTo: `${window.location.origin}/verify-email`
+          data: { 
+            name, 
+            phone_number: phoneNumber,
+            phone_verified: !!phoneNumber // SMS כבר אומת
+          }
         }
       });
       
@@ -47,12 +50,12 @@ export const registrationService = {
       if (data?.user) {
         console.log('User created successfully with Supabase auth');
         
-        // Update SMS verification codes with user_id after registration
+        // Update profile with verified phone number after registration
         if (phoneNumber) {
           try {
             // Wait a bit for the profile to be created by the trigger
             setTimeout(async () => {
-              // First normalize the phone number to match what was stored in SMS codes
+              // First normalize the phone number
               const { parsePhoneNumber } = await import('libphonenumber-js');
               let normalizedPhone = phoneNumber;
               
@@ -77,10 +80,27 @@ export const registrationService = {
                 console.error('Error normalizing phone for update:', normalizeError);
               }
               
-              // Update the SMS verification code with the new user_id
+              // Update the profile with verified phone number
+              const { error: profileUpdateError } = await supabase
+                .from('profiles')
+                .update({ 
+                  phone_number: normalizedPhone,
+                  phone_e164: normalizedPhone,
+                  phone_verified: true,
+                  raw_phone_input: phoneNumber
+                })
+                .eq('id', data.user!.id);
+
+              if (profileUpdateError) {
+                console.error('Error updating profile with phone:', profileUpdateError);
+              } else {
+                console.log('Profile updated with verified phone number');
+              }
+              
+              // Also update the SMS verification code with the new user_id
               const { error: smsUpdateError } = await supabase
                 .from('sms_verification_codes')
-                .update({ user_id: data.user.id })
+                .update({ user_id: data.user!.id })
                 .eq('phone_number', normalizedPhone)
                 .eq('verification_type', 'registration')
                 .is('user_id', null)
@@ -92,9 +112,9 @@ export const registrationService = {
               } else {
                 console.log('SMS verification code updated with user_id');
               }
-            }, 1000);
+            }, 1500); // Wait for profile trigger to complete
           } catch (updateError) {
-            console.error('Error in SMS update:', updateError);
+            console.error('Error in phone update:', updateError);
           }
         }
         
@@ -116,7 +136,7 @@ export const registrationService = {
           console.log('Stored pending invitations');
         }
         
-        toast.success('נרשמת בהצלחה! בדוק את האימייל שלך לאישור החשבון');
+        toast.success('נרשמת בהצלחה!');
         
         // Create user object
         const user: User = {
