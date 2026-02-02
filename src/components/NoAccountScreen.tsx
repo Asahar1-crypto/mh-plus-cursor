@@ -39,8 +39,11 @@ const NoAccountScreen = () => {
         description: `המשפחה "${accountName}" נוצרה בהצלחה`,
       });
 
-      // רענון נתוני המשתמש
+      // רענון נתוני המשתמש ומעבר לדשבורד
       await refreshProfile();
+      
+      // Navigate to dashboard after successful family creation
+      navigate('/dashboard');
       
     } catch (error: any) {
       console.error('Error creating family:', error);
