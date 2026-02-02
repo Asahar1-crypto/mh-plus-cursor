@@ -1,17 +1,13 @@
-
 import React from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { format } from 'date-fns';
-import { CalendarIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Calendar } from '@/components/ui/calendar';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { cn } from '@/lib/utils';
+import { DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { BirthDatePicker } from '@/components/ui/birth-date-picker';
 import { useExpense } from '@/contexts/ExpenseContext';
 
 const childSchema = z.object({
@@ -82,39 +78,15 @@ const AddChildForm: React.FC<AddChildFormProps> = ({ open, setOpen }) => {
             render={({ field }) => (
               <FormItem className="flex flex-col">
                 <FormLabel>תאריך לידה</FormLabel>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <FormControl>
-                      <Button
-                        variant="outline"
-                        className={cn(
-                          "w-full pl-3 text-left font-normal",
-                          !field.value && "text-muted-foreground"
-                        )}
-                      >
-                        {field.value ? (
-                          format(field.value, 'dd/MM/yyyy')
-                        ) : (
-                          <span>בחר תאריך</span>
-                        )}
-                        <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                      </Button>
-                    </FormControl>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={field.value}
-                      onSelect={field.onChange}
-                      disabled={(date) => 
-                        date > new Date() || 
-                        date < new Date('2000-01-01')
-                      }
-                      initialFocus
-                      className={cn("p-3 pointer-events-auto")}
-                    />
-                  </PopoverContent>
-                </Popover>
+                <FormControl>
+                  <BirthDatePicker
+                    value={field.value}
+                    onChange={field.onChange}
+                    placeholder="בחר תאריך לידה"
+                    minYear={2000}
+                    maxYear={new Date().getFullYear()}
+                  />
+                </FormControl>
                 <FormDescription>
                   תאריך הלידה של הילד/ה
                 </FormDescription>
