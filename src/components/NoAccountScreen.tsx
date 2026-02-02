@@ -3,15 +3,18 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Users, UserPlus, Mail, ArrowRight } from 'lucide-react';
+import { Users, UserPlus, Mail, ArrowRight, LogOut } from 'lucide-react';
 import { useAuth } from '@/contexts/auth';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { useNavigate } from 'react-router-dom';
 
 const NoAccountScreen = () => {
   const { user, refreshProfile } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [isCreating, setIsCreating] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [accountName, setAccountName] = useState(`משפחת ${user?.name || 'המשתמש'}`);
 
   const createNewFamily = async () => {
@@ -48,6 +51,26 @@ const NoAccountScreen = () => {
       });
     } finally {
       setIsCreating(false);
+    }
+  };
+  const handleLogout = async () => {
+    try {
+      setIsLoggingOut(true);
+      await supabase.auth.signOut();
+      toast({
+        title: 'התנתקת בהצלחה',
+        description: 'להתראות!',
+      });
+      navigate('/login');
+    } catch (error) {
+      console.error('Logout error:', error);
+      toast({
+        title: 'שגיאה',
+        description: 'שגיאה בהתנתקות',
+        variant: 'destructive'
+      });
+    } finally {
+      setIsLoggingOut(false);
     }
   };
 
@@ -145,9 +168,29 @@ const NoAccountScreen = () => {
           </Card>
         </div>
 
-        {/* Help note */}
-        <div className="text-center text-sm text-muted-foreground">
-          זקוק לעזרה? צור קשר עם מנהל המערכת
+        {/* Logout button */}
+        <div className="text-center space-y-3">
+          <Button 
+            variant="ghost" 
+            onClick={handleLogout}
+            disabled={isLoggingOut}
+            className="text-muted-foreground hover:text-foreground"
+          >
+            {isLoggingOut ? (
+              <>
+                <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent ml-2" />
+                מתנתק...
+              </>
+            ) : (
+              <>
+                <LogOut className="h-4 w-4 ml-2" />
+                התנתק והתחבר עם משתמש אחר
+              </>
+            )}
+          </Button>
+          <div className="text-sm text-muted-foreground">
+            זקוק לעזרה? צור קשר עם מנהל המערכת
+          </div>
         </div>
       </div>
     </div>
