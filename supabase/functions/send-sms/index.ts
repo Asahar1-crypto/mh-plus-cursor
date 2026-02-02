@@ -31,7 +31,7 @@ serve(async (req) => {
       );
     }
 
-    const { phoneNumber, code, message, type = 'verification', verificationType = 'registration' } = await req.json();
+    const { phoneNumber, code, message, type = 'verification', verificationType = 'registration', skipExistingCheck = false } = await req.json();
     console.log(`SMS request received for: ${phoneNumber}, type: ${type}, verificationType: ${verificationType}`);
 
     if (!phoneNumber) {
@@ -55,8 +55,45 @@ serve(async (req) => {
       normalizedPhone = phoneNumber;
     }
 
-    // Initialize Supabase client
+    // Initialize Supabase client early for phone check
     const supabase = createClient(supabaseUrl, supabaseServiceRoleKey);
+
+    // Check if phone number already exists in the system (for registration type only)
+    if (verificationType === 'registration' && !skipExistingCheck) {
+      console.log('Checking if phone number exists in profiles...');
+      
+      // Check by normalized E.164 format
+      const { data: existingProfile, error: profileError } = await supabase
+        .from('profiles')
+        .select('id, name, phone_e164, phone_number')
+        .or(`phone_e164.eq.${normalizedPhone},phone_number.eq.${normalizedPhone}`)
+        .limit(1)
+        .maybeSingle();
+      
+      if (profileError) {
+        console.error('Error checking existing phone:', profileError);
+      }
+      
+      if (existingProfile) {
+        console.log(`Phone number ${normalizedPhone} already exists in profile: ${existingProfile.id}`);
+        return new Response(
+          JSON.stringify({ 
+            error: 'PHONE_EXISTS',
+            message: 'מספר הטלפון הזה כבר רשום במערכת',
+            existingUserName: existingProfile.name,
+            suggestion: 'password_reset'
+          }),
+          { 
+            status: 409, // Conflict
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          }
+        );
+      }
+      
+      console.log('Phone number not found in existing profiles, proceeding with SMS');
+    }
+
+    // Note: supabase client already initialized above for phone check
 
     // If no code provided, find the latest verification code for this phone number
     let verificationCode = code;
