@@ -99,59 +99,56 @@ const InternationalPhoneInput = forwardRef<HTMLInputElement, InternationalPhoneI
         {label}
       </label>
 
-      <div className="relative group">
-        {/* Input Container */}
-        <div className="flex gap-2 sm:gap-3">
-          {/* Country Selector */}
-          <div className="w-28 sm:w-32 shrink-0">
-            <CountrySelector
-              value={selectedCountry}
-              onChange={handleCountryChange}
-              disabled={props.disabled}
-            />
+      <div className="relative group space-y-2">
+        {/* Country Selector - Full width on its own row */}
+        <div className="w-full">
+          <CountrySelector
+            value={selectedCountry}
+            onChange={handleCountryChange}
+            disabled={props.disabled}
+          />
+        </div>
+
+        {/* Phone Input - Full width on its own row */}
+        <div className={cn(
+          "relative flex items-center w-full transition-all duration-300",
+          "bg-background/95 border-2 border-border shadow-sm rounded-xl",
+          "hover:border-primary/50",
+          isFocused && "border-primary ring-2 ring-primary/20",
+          (validation === 'valid' || internalValidation === 'valid') && "border-green-500 ring-2 ring-green-500/20",
+          (validation === 'invalid' || internalValidation === 'invalid') && "border-red-500 ring-2 ring-red-500/20"
+        )}>
+          {/* Phone Icon */}
+          <div className="absolute left-3 sm:left-4 top-1/2 transform -translate-y-1/2 text-muted-foreground z-20">
+            <Phone className="w-4 h-4 sm:w-5 sm:h-5" />
           </div>
 
-          {/* Phone Input - takes remaining space */}
-          <div className={cn(
-            "relative flex items-center flex-1 transition-all duration-300",
-            "bg-background/95 border-2 border-border shadow-sm rounded-xl",
-            "hover:border-primary/50",
-            isFocused && "border-primary ring-2 ring-primary/20",
-            (validation === 'valid' || internalValidation === 'valid') && "border-green-500 ring-2 ring-green-500/20",
-            (validation === 'invalid' || internalValidation === 'invalid') && "border-red-500 ring-2 ring-red-500/20"
-          )}>
-            {/* Phone Icon */}
-            <div className="absolute left-3 sm:left-4 top-1/2 transform -translate-y-1/2 text-muted-foreground z-20">
-              <Phone className="w-4 h-4 sm:w-5 sm:h-5" />
-            </div>
-
-            {/* Input Field */}
-            <input
-              type="tel"
-              dir="ltr"
-              className={cn(
-                "w-full bg-transparent border-none outline-none transition-all duration-300",
-                "h-12 sm:h-14 text-base sm:text-lg font-medium text-foreground",
-                "pl-10 sm:pl-12 pr-10 sm:pr-12",
-                "placeholder:text-muted-foreground/60",
-                className
-              )}
-              ref={ref}
-              value={formattedValue}
-              onChange={handleInputChange}
-              onFocus={() => setIsFocused(true)}
-              onBlur={() => setIsFocused(false)}
-              placeholder="050-000-0000"
-              {...props}
-            />
-
-            {/* Validation Icon */}
-            {(validation !== 'none' || internalValidation !== 'none') && (
-              <div className="absolute right-3 sm:right-4 top-1/2 transform -translate-y-1/2">
-                {getValidationIcon()}
-              </div>
+          {/* Input Field */}
+          <input
+            type="tel"
+            dir="ltr"
+            className={cn(
+              "w-full bg-transparent border-none outline-none transition-all duration-300",
+              "h-12 sm:h-14 text-base sm:text-lg font-medium text-foreground",
+              "pl-10 sm:pl-12 pr-10 sm:pr-12",
+              "placeholder:text-muted-foreground/60",
+              className
             )}
-          </div>
+            ref={ref}
+            value={formattedValue}
+            onChange={handleInputChange}
+            onFocus={() => setIsFocused(true)}
+            onBlur={() => setIsFocused(false)}
+            placeholder="050-000-0000"
+            {...props}
+          />
+
+          {/* Validation Icon */}
+          {(validation !== 'none' || internalValidation !== 'none') && (
+            <div className="absolute right-3 sm:right-4 top-1/2 transform -translate-y-1/2">
+              {getValidationIcon()}
+            </div>
+          )}
         </div>
       </div>
 
