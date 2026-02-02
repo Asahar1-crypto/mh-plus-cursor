@@ -51,7 +51,8 @@ export const showInvitationNotification = (invitationId: string) => {
           action: {
             label: "צפה בהזמנה",
             onClick: () => {
-              window.location.href = `/invitation/${invitationId}`;
+              // Phone invitations go to family-invitation page
+              window.location.href = `/family-invitation?invitationId=${invitationId}`;
             }
           }
         }
@@ -68,20 +69,30 @@ export const showInvitationNotification = (invitationId: string) => {
 /**
  * Checks if there are pending invitations for the current user
  */
-export const hasPendingInvitations = async (currentUserEmail?: string): Promise<boolean> => {
-  if (!currentUserEmail) return false;
+export const hasPendingInvitations = async (currentUserEmail?: string, currentUserPhone?: string): Promise<boolean> => {
+  if (!currentUserEmail && !currentUserPhone) return false;
   
   try {
-    // Check database for invitations with explicit conditions
-    const { data, error } = await supabase
+    // Build query to check both email and phone invitations
+    let query = supabase
       .from('invitations')
-      .select('invitation_id, email')
-      .eq('email', currentUserEmail.toLowerCase())
+      .select('invitation_id, email, phone_number')
       .is('accepted_at', null)
       .gt('expires_at', 'now()');
     
+    // Check by email OR phone
+    if (currentUserEmail && currentUserPhone) {
+      query = query.or(`email.eq.${currentUserEmail.toLowerCase()},phone_number.eq.${currentUserPhone}`);
+    } else if (currentUserEmail) {
+      query = query.eq('email', currentUserEmail.toLowerCase());
+    } else if (currentUserPhone) {
+      query = query.eq('phone_number', currentUserPhone);
+    }
+    
+    const { data, error } = await query;
+    
     if (!error && data && data.length > 0) {
-      console.log(`Found ${data.length} pending invitations in database for ${currentUserEmail}`);
+      console.log(`Found ${data.length} pending invitations in database for ${currentUserEmail || currentUserPhone}`);
       return true;
     }
     
