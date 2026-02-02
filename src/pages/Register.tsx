@@ -14,6 +14,7 @@ import { useEffect, useState } from 'react';
 import SmsVerification from '@/components/auth/SmsVerification';
 import { useConfetti } from '@/components/ui/confetti';
 import { CelebrationModal } from '@/components/ui/celebration-modal';
+import { toast } from 'sonner';
 
 const registerSchema = z.object({
   name: z.string().min(2, { message: 'שם חייב להיות לפחות 2 תווים' }),
@@ -91,10 +92,13 @@ const Register = () => {
 
   const handleSmsVerificationComplete = async (verified: boolean) => {
     if (!verified || !registrationData) {
+      console.log('SMS verification not completed or no registration data');
       return;
     }
 
     try {
+      console.log('SMS verified, proceeding with registration...');
+      
       // Store phone number for profile update after registration
       localStorage.setItem('pendingPhoneVerification', JSON.stringify({
         phoneNumber: registrationData.phoneNumber,
@@ -119,13 +123,17 @@ const Register = () => {
       }
       
       // Complete registration - SMS verified, no email verification needed
-      await register(registrationData.name, registrationData.email, registrationData.password, registrationData.phoneNumber);
+      const user = await register(registrationData.name, registrationData.email, registrationData.password, registrationData.phoneNumber);
       
-      // Since SMS is verified, go directly to dashboard or show celebration
+      console.log('Registration successful, user:', user);
+      
+      // Since SMS is verified, show celebration
       fireConfetti();
       setShowCelebration(true);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Registration error:', error);
+      // Show error but don't navigate away - let user retry
+      toast.error(`שגיאה ברישום: ${error.message || 'נסה שוב'}`);
     }
   };
 
