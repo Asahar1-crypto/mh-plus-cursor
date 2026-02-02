@@ -1,5 +1,5 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -29,25 +29,27 @@ serve(async (req) => {
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
     const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
 
-    // Verify authentication using anon client with user's token
+    // Verify authentication using JWT claims validation (doesn't depend on session row)
     const authHeader = req.headers.get("Authorization");
-    if (!authHeader) {
+    if (!authHeader?.startsWith("Bearer ")) {
       throw new Error("No authorization header provided");
     }
 
-    // Create anon client to validate user token
+    const token = authHeader.replace("Bearer ", "").trim();
+
     const anonClient = createClient(supabaseUrl, supabaseAnonKey, {
-      global: { headers: { Authorization: authHeader } },
-      auth: { persistSession: false }
+      auth: { persistSession: false },
     });
 
-    const { data: userData, error: userError } = await anonClient.auth.getUser();
-    if (userError || !userData.user) {
-      logStep("Auth error", { error: userError?.message });
-      throw new Error(`Authentication failed: ${userError?.message || 'Unknown error'}`);
+    const { data: claimsData, error: claimsError } = await anonClient.auth.getClaims(token);
+    const callingUserId = claimsData?.claims?.sub;
+
+    if (claimsError || !callingUserId) {
+      logStep("Auth error", { error: claimsError?.message });
+      throw new Error(`Authentication failed: ${claimsError?.message || 'Unknown error'}`);
     }
 
-    logStep("User authenticated", { userId: userData.user.id });
+    logStep("User authenticated", { userId: callingUserId });
 
     // Initialize service role client for admin operations
     const supabaseClient = createClient(supabaseUrl, supabaseServiceKey, {
@@ -58,7 +60,7 @@ serve(async (req) => {
     const { data: profile, error: profileError } = await supabaseClient
       .from('profiles')
       .select('is_super_admin')
-      .eq('id', userData.user.id)
+      .eq('id', callingUserId)
       .single();
 
     if (profileError || !profile?.is_super_admin) {
@@ -275,7 +277,7 @@ serve(async (req) => {
         original_user_id: user_id,
         email: userToDelete.user.email,
         name: userProfile?.name || null,
-        deleted_by: userData.user.id,
+        deleted_by: callingUserId,
         accounts_deleted: userAccounts?.map(acc => acc.name) || []
       });
 
