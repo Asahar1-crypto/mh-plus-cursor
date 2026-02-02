@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import LoadingState from '@/components/invitation/LoadingState';
 import ErrorState from '@/components/invitation/ErrorState';
-import { Clock, Users, Mail } from 'lucide-react';
+import { Clock, Users, Smartphone, Mail } from 'lucide-react';
 
 const FamilyInvitation = () => {
   const [searchParams] = useSearchParams();
@@ -38,6 +38,12 @@ const FamilyInvitation = () => {
   const now = new Date();
   const hoursLeft = Math.max(0, Math.ceil((expiresAt.getTime() - now.getTime()) / (1000 * 60 * 60)));
 
+  // Determine if invitation is phone-based or email-based
+  const isPhoneInvitation = !!invitationDetails.phoneNumber;
+  const registerPath = isPhoneInvitation 
+    ? `/family-phone-register?invitationId=${invitationId}` 
+    : `/family-register?invitationId=${invitationId}`;
+
   return (
     <div className="container mx-auto py-10 px-4 flex flex-col items-center justify-center min-h-[calc(100vh-4rem)]" dir="rtl">
       <Card className="w-full max-w-md">
@@ -69,6 +75,17 @@ const FamilyInvitation = () => {
                 <p className="text-sm text-muted-foreground">{invitationDetails.ownerName}</p>
               </div>
             </div>
+
+            {/* Show phone or email based on invitation type */}
+            {isPhoneInvitation && (
+              <div className="flex items-center gap-3 p-3 bg-muted rounded-lg">
+                <Smartphone className="w-5 h-5 text-muted-foreground" />
+                <div>
+                  <p className="font-medium">מספר טלפון</p>
+                  <p className="text-sm text-muted-foreground" dir="ltr">{invitationDetails.phoneNumber}</p>
+                </div>
+              </div>
+            )}
             
             <div className="flex items-center gap-3 p-3 bg-muted rounded-lg">
               <Clock className="w-5 h-5 text-muted-foreground" />
@@ -84,7 +101,7 @@ const FamilyInvitation = () => {
           {/* Action Buttons */}
           <div className="space-y-3">
             {hoursLeft > 0 ? (
-              <Link to={`/family-register?invitationId=${invitationId}`} className="w-full">
+              <Link to={registerPath} className="w-full">
                 <Button className="w-full" size="lg">
                   הצטרף למשפחה
                 </Button>
