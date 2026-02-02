@@ -43,8 +43,8 @@ export const useAuthActions = (
     checkAndSetUserData
   );
 
-  // Invitation actions - inline implementation
-  const sendInvitation = async (email: string): Promise<void> => {
+  // Invitation actions - inline implementation (now uses phone number)
+  const sendInvitation = async (phoneNumber: string): Promise<void> => {
     if (!user || !account) {
       toast.error('יש להתחבר כדי לשלוח הזמנה');
       return;
@@ -52,8 +52,8 @@ export const useAuthActions = (
 
     setIsSubmitting(true);
     try {
-      await authService.sendInvitation(email, user, account);
-      toast.success('ההזמנה נשלחה בהצלחה');
+      await authService.sendInvitation(phoneNumber, user, account);
+      toast.success('ההזמנה נשלחה בהצלחה ב-SMS');
       // Force data refresh after successful invitation
       await checkAndSetUserData(true);
     } catch (error: any) {

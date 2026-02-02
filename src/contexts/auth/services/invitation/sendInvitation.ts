@@ -1,15 +1,14 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { v4 as uuidv4 } from 'uuid';
 import { User, Account } from '../../types';
 import { toast } from 'sonner';
 
-export async function sendInvitation(email: string, user: User, account: Account): Promise<void> {
+export async function sendInvitation(phoneNumber: string, user: User, account: Account): Promise<void> {
   try {
-    console.log(`sendInvitation: User ${user.id} (${user.email}) sending invitation to ${email} for account ${account.id}`);
+    console.log(`sendInvitation: User ${user.id} (${user.email}) sending invitation to phone ${phoneNumber} for account ${account.id}`);
     
-    if (!email || !user || !account) {
-      console.error("sendInvitation: Missing required parameters", { email, user: user?.id, account: account?.id });
+    if (!phoneNumber || !user || !account) {
+      console.error("sendInvitation: Missing required parameters", { phoneNumber, user: user?.id, account: account?.id });
       throw new Error('נתונים חסרים לשליחת ההזמנה');
     }
 
@@ -30,18 +29,12 @@ export async function sendInvitation(email: string, user: User, account: Account
     
     console.log("sendInvitation: Admin verification successful");
 
-    // Check if user is trying to invite themselves
-    if (email.toLowerCase() === user.email.toLowerCase()) {
-      console.error("sendInvitation: User trying to invite themselves");
-      throw new Error('לא ניתן להזמין את עצמך');
-    }
-
-    // Check if there's already an active invitation for this email and account
+    // Check if there's already an active invitation for this phone and account
     console.log("sendInvitation: Checking for existing invitations");
     const { data: existingInvitation, error: existingError } = await supabase
       .from('invitations')
       .select('*')
-      .eq('email', email.toLowerCase())
+      .eq('phone_number', phoneNumber)
       .eq('account_id', account.id)
       .is('accepted_at', null)
       .gt('expires_at', 'now()');
@@ -53,24 +46,21 @@ export async function sendInvitation(email: string, user: User, account: Account
 
     if (existingInvitation && existingInvitation.length > 0) {
       console.log("sendInvitation: Active invitation already exists");
-      throw new Error('כבר נשלחה הזמנה פעילה לכתובת האימייל הזו');
+      throw new Error('כבר נשלחה הזמנה פעילה למספר הטלפון הזה');
     }
-
-    // Note: In the new member-based architecture, we'll check for existing membership 
-    // when the invitation is accepted, not here. This allows inviting users who 
-    // haven't registered yet.
 
     // Generate unique invitation ID
     const invitationId = uuidv4();
     console.log(`sendInvitation: Generated invitation ID: ${invitationId}`);
 
-    // Create invitation record
+    // Create invitation record with phone_number instead of email
     console.log("sendInvitation: Creating invitation record");
     const { error: invitationError } = await supabase
       .from('invitations')
       .insert({
-        account_id: account.id, // Make sure we use the verified account ID
-        email: email.toLowerCase(),
+        account_id: account.id,
+        phone_number: phoneNumber,
+        email: null, // No email for SMS invitations
         invitation_id: invitationId,
         expires_at: new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString() // 48 hours from now
       });
@@ -82,42 +72,29 @@ export async function sendInvitation(email: string, user: User, account: Account
 
     console.log("sendInvitation: Invitation created successfully");
 
-    console.log("sendInvitation: Invitation created successfully - no account update needed in member-based architecture");
-
-    // Try to send email (this might fail if email service is not configured)
+    // Send SMS with invitation link
     try {
-      const invitationUrl = `${window.location.origin}/family-invitation?invitationId=${invitationId}`;
-      
-      // Try to send email using the edge function
-      const { data, error } = await supabase.functions.invoke('send-email', {
+      const { data, error } = await supabase.functions.invoke('send-invitation-sms', {
         body: {
-          to: email,
-          subject: 'הוזמנת לחשבון משותף - מחציות פלוס',
-          html: `
-            <div style="direction: rtl; text-align: right; font-family: Arial, sans-serif;">
-              <h2>הוזמנת לחשבון משותף!</h2>
-              <p>שלום,</p>
-              <p>${user.name || user.email} הזמין/ה אותך להצטרף לחשבון "${account.name}" באפליקציית מחציות פלוס.</p>
-              <p>כדי לקבל את ההזמנה, לחץ/י על הקישור הבא:</p>
-              <a href="${invitationUrl}" style="background-color: #4CAF50; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block; margin: 10px 0;">קבל/י הזמנה</a>
-              <p>אם הקישור לא עובד, העתק/י והדבק/י את הכתובת הבאה לדפדפן:</p>
-              <p style="background-color: #f5f5f5; padding: 10px; border-radius: 3px; word-break: break-all;">${invitationUrl}</p>
-              <p>ההזמנה תפוג תוך 48 שעות.</p>
-              <p>בברכה,<br>צוות מחציות פלוס</p>
-            </div>
-          `
+          phoneNumber: phoneNumber,
+          invitationId: invitationId,
+          accountName: account.name,
+          inviterName: user.name || user.email,
+          baseUrl: window.location.origin
         }
       });
 
       if (error) {
-        console.warn("sendInvitation: Email sending failed:", error);
-        console.log("sendInvitation: Invitation created but email not sent. User can still accept via the app.");
+        console.warn("sendInvitation: SMS sending failed:", error);
+        console.log("sendInvitation: Invitation created but SMS not sent. Link:", `${window.location.origin}/family-invitation?invitationId=${invitationId}`);
+        toast.warning('ההזמנה נוצרה אך לא הצלחנו לשלוח SMS. אפשר לשתף את הלינק ידנית.');
       } else {
-        console.log("sendInvitation: Email sent successfully");
+        console.log("sendInvitation: SMS sent successfully");
       }
-    } catch (emailError) {
-      console.warn("sendInvitation: Email service error:", emailError);
-      console.log("sendInvitation: Invitation created but email not sent. User can still accept via the app.");
+    } catch (smsError) {
+      console.warn("sendInvitation: SMS service error:", smsError);
+      console.log("sendInvitation: Invitation created but SMS not sent.");
+      toast.warning('ההזמנה נוצרה אך לא הצלחנו לשלוח SMS. אפשר לשתף את הלינק ידנית.');
     }
 
     console.log("sendInvitation: Invitation process completed successfully");

@@ -49,28 +49,15 @@ export function useInvitationDetails(invitationId: string | undefined) {
           sessionStorage.setItem('pendingInvitationAccountId', invitation.account_id);
         }
         
-        // For authenticated users, try to get full invitation details including email
-        // This will only work if the email matches the logged-in user (via RLS)
-        const { data: session } = await supabase.auth.getSession();
-        let invitationEmail = '';
-        
-        if (session?.session?.user) {
-          // Authenticated user - can see invitation if it's for their email
-          const { data: fullInvitation } = await supabase
-            .from('invitations')
-            .select('email, account_id')
-            .eq('invitation_id', invitationId)
-            .maybeSingle();
-            
-          if (fullInvitation) {
-            invitationEmail = fullInvitation.email || '';
-          }
-        }
+        // Get email and phone from invitation (returned from secure RPC)
+        const invitationEmail = invitation.email || '';
+        const invitationPhone = invitation.phone_number || '';
         
         setInvitationDetails({
           ownerName: invitation.owner_name || 'בעל החשבון',
           accountName: invitation.account_name || 'חשבון משותף',
           email: invitationEmail,
+          phoneNumber: invitationPhone,
           expires_at: invitation.expires_at,
         });
         
@@ -80,6 +67,7 @@ export function useInvitationDetails(invitationId: string | undefined) {
           account_id: invitation.account_id,
           expires_at: invitation.expires_at,
           email: invitationEmail,
+          phone_number: invitationPhone,
           accounts: { name: invitation.account_name },
           owner_profile: { name: invitation.owner_name }
         }));

@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { InternationalPhoneInput } from '@/components/ui/international-phone-input';
 import LoadingState from '@/components/invitation/LoadingState';
 import ErrorState from '@/components/invitation/ErrorState';
-import { Users, Eye, EyeOff, Smartphone } from 'lucide-react';
+import { Users, Eye, EyeOff, Smartphone, Mail } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -20,6 +20,7 @@ import AnimatedBackground from '@/components/ui/animated-background';
 
 const registerSchema = z.object({
   name: z.string().min(2, 'השם חייב להכיל לפחות 2 תווים'),
+  email: z.string().email('כתובת אימייל לא תקינה'),
   password: z.string().min(6, 'הסיסמה חייבת להכיל לפחות 6 תווים'),
   confirmPassword: z.string(),
   phoneNumber: z.string().min(10, 'מספר טלפון לא תקין'),
@@ -34,6 +35,7 @@ const FamilyPhoneRegister = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const invitationId = searchParams.get('invitationId');
+  const phoneFromUrl = searchParams.get('phone');
   const { status, invitationDetails, errorMessage } = useInvitationDetails(invitationId);
   
   const [showPassword, setShowPassword] = useState(false);
@@ -51,6 +53,10 @@ const FamilyPhoneRegister = () => {
     displayPhone: string;
   } | null>(null);
 
+  // Get phone from invitation or URL
+  const invitationPhone = invitationDetails?.phoneNumber || phoneFromUrl || '';
+  const hasPrefilledPhone = !!invitationPhone;
+
   const {
     register,
     handleSubmit,
@@ -58,11 +64,18 @@ const FamilyPhoneRegister = () => {
     watch,
     formState: { errors }
   } = useForm<RegisterFormData>({
-    resolver: zodResolver(registerSchema)
+    resolver: zodResolver(registerSchema),
+    defaultValues: {
+      email: invitationDetails?.email || '',
+    }
   });
 
-  // Auto-fill email from invitation (read-only)
-  const email = invitationDetails?.email || '';
+  // Set phone from invitation when available
+  useEffect(() => {
+    if (invitationPhone) {
+      setValue('phoneNumber', invitationPhone);
+    }
+  }, [invitationPhone, setValue]);
 
   const handlePhoneChange = (value: string) => {
     setPhoneError('');
@@ -93,7 +106,6 @@ const FamilyPhoneRegister = () => {
       
       console.log('Family registration data:', {
         ...data,
-        email,
         invitationId,
         normalizedPhone
       });
@@ -101,7 +113,7 @@ const FamilyPhoneRegister = () => {
       // Set family info and move to OTP verification
       const newFamilyInfo = {
         name: data.name,
-        email,
+        email: data.email,
         invitationId,
         password: data.password,
         phone: normalizedPhone,
@@ -240,36 +252,64 @@ const FamilyPhoneRegister = () => {
                       )}
                     </div>
 
-                    {/* Email field (read-only) */}
+                    {/* Email field */}
                     <div className="space-y-3">
-                      <Label htmlFor="email" className="text-base font-medium">כתובת אימייל</Label>
+                      <Label htmlFor="email" className="text-base font-medium flex items-center gap-2">
+                        <Mail className="w-4 h-4" />
+                        כתובת אימייל *
+                      </Label>
                       <Input
                         id="email"
                         type="email"
-                        value={email}
-                        readOnly
-                        className="bg-muted cursor-not-allowed h-12 text-base"
+                        placeholder="example@email.com"
+                        {...register('email')}
+                        className={`h-12 text-base ${errors.email ? 'border-destructive' : ''}`}
+                        dir="ltr"
                       />
+                      {errors.email && (
+                        <p className="text-sm text-destructive">{errors.email.message}</p>
+                      )}
                       <p className="text-xs text-muted-foreground">
-                        כתובת האימייל נקבעת על פי ההזמנה ולא ניתן לשנותה
+                        האימייל ישמש לאיפוס סיסמה ולקבלת התראות
                       </p>
                     </div>
 
                     {/* Phone field */}
                     <div className="space-y-3">
-                      <Label htmlFor="phoneNumber" className="text-base font-medium">מספר טלפון *</Label>
-                      <InternationalPhoneInput
-                        label=""
-                        value={watch('phoneNumber') || ''}
-                        onChange={handlePhoneChange}
-                        onCountryChange={handleCountryChange}
-                        defaultCountry={selectedCountry}
-                        validation={phoneError ? 'invalid' : watch('phoneNumber') && watch('phoneNumber').startsWith('+') && watch('phoneNumber').length >= 10 ? 'valid' : 'none'}
-                        validationMessage={phoneError}
-                      />
-                      <p className="text-xs text-muted-foreground">
-                        נשלח קוד אימות למספר הטלפון לאימות
-                      </p>
+                      <Label htmlFor="phoneNumber" className="text-base font-medium flex items-center gap-2">
+                        <Smartphone className="w-4 h-4" />
+                        מספר טלפון *
+                      </Label>
+                      {hasPrefilledPhone ? (
+                        <>
+                          <Input
+                            id="phoneNumber"
+                            type="tel"
+                            value={watch('phoneNumber') || invitationPhone}
+                            readOnly
+                            className="bg-muted cursor-not-allowed h-12 text-base"
+                            dir="ltr"
+                          />
+                          <p className="text-xs text-muted-foreground">
+                            מספר הטלפון נקבע על פי ההזמנה
+                          </p>
+                        </>
+                      ) : (
+                        <>
+                          <InternationalPhoneInput
+                            label=""
+                            value={watch('phoneNumber') || ''}
+                            onChange={handlePhoneChange}
+                            onCountryChange={handleCountryChange}
+                            defaultCountry={selectedCountry}
+                            validation={phoneError ? 'invalid' : watch('phoneNumber') && watch('phoneNumber').startsWith('+') && watch('phoneNumber').length >= 10 ? 'valid' : 'none'}
+                            validationMessage={phoneError}
+                          />
+                          <p className="text-xs text-muted-foreground">
+                            נשלח קוד אימות למספר הטלפון לאימות
+                          </p>
+                        </>
+                      )}
                     </div>
 
                     {/* Password field */}

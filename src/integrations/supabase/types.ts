@@ -942,8 +942,10 @@ export type Database = {
           accepted_at: string
           account_id: string
           account_name: string
+          email: string
           expires_at: string
           owner_name: string
+          phone_number: string
         }[]
       }
       get_system_setting: { Args: { key_name: string }; Returns: string }

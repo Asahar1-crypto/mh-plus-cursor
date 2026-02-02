@@ -5,11 +5,34 @@ import { Button } from '@/components/ui/button';
 
 interface LoginRequiredAlertProps {
   email?: string;
+  phoneNumber?: string;
   invitationId?: string;
 }
 
-const LoginRequiredAlert = ({ email, invitationId }: LoginRequiredAlertProps) => {
+const LoginRequiredAlert = ({ email, phoneNumber, invitationId }: LoginRequiredAlertProps) => {
   const navigate = useNavigate();
+  
+  const handleRegister = () => {
+    const params = new URLSearchParams();
+    if (invitationId) {
+      params.set('invitationId', invitationId);
+    }
+    if (phoneNumber) {
+      params.set('phone', phoneNumber);
+    }
+    if (email) {
+      params.set('email', email);
+    }
+    
+    // For phone-based invitations, go to family register
+    if (phoneNumber) {
+      navigate(`/family-register?${params.toString()}`);
+    } else if (email && invitationId) {
+      navigate(`/register?email=${encodeURIComponent(email)}&invitationId=${invitationId}`);
+    } else {
+      navigate('/register');
+    }
+  };
   
   return (
     <div className="bg-yellow-50 border border-yellow-200 p-3 rounded-md text-sm text-yellow-800">
@@ -18,15 +41,7 @@ const LoginRequiredAlert = ({ email, invitationId }: LoginRequiredAlertProps) =>
         <Button 
           size="sm" 
           variant="outline" 
-          onClick={() => {
-            // If we have an email and invitationId, include them in the URL
-            if (email && invitationId) {
-              console.log(`Navigating to register with email=${email} and invitationId=${invitationId}`);
-              navigate(`/register?email=${encodeURIComponent(email)}&invitationId=${invitationId}`);
-            } else {
-              navigate('/register');
-            }
-          }}
+          onClick={handleRegister}
         >
           {"הרשמה"}
         </Button>

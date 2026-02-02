@@ -1,19 +1,40 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { UserPlus, Mail, CheckCircle2 } from 'lucide-react';
+import { UserPlus, Smartphone, CheckCircle2 } from 'lucide-react';
 import { OnboardingStepProps } from '../types';
 import { useAuth } from '@/contexts/auth';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { InternationalPhoneInput } from '@/components/ui/international-phone-input';
+import { normalizePhoneNumber } from '@/utils/phoneUtils';
+import { CountryCode } from 'libphonenumber-js';
 
 export const InviteUserStep: React.FC<OnboardingStepProps> = ({ onNext, onBack, onSkip }) => {
-  const { account } = useAuth();
-  const [email, setEmail] = useState('');
+  const { account, user } = useAuth();
+  const [phoneNumber, setPhoneNumber] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isInvited, setIsInvited] = useState(false);
+  const [selectedCountry, setSelectedCountry] = useState<CountryCode>('IL');
+  const [phoneValidation, setPhoneValidation] = useState<'none' | 'valid' | 'invalid'>('none');
+
+  const handlePhoneChange = (value: string) => {
+    setPhoneNumber(value);
+    
+    // Validate phone on change
+    if (value.length >= 10) {
+      const result = normalizePhoneNumber(value, selectedCountry);
+      setPhoneValidation(result.success ? 'valid' : 'invalid');
+    } else {
+      setPhoneValidation('none');
+    }
+  };
+
+  const handleCountryChange = (country: CountryCode) => {
+    setSelectedCountry(country);
+    setPhoneValidation('none');
+  };
 
   const handleInvite = async () => {
     if (!account) {
@@ -21,17 +42,20 @@ export const InviteUserStep: React.FC<OnboardingStepProps> = ({ onNext, onBack, 
       return;
     }
 
-    if (!email.trim()) {
-      toast.error('יש להזין כתובת מייל');
+    if (!phoneNumber.trim()) {
+      toast.error('יש להזין מספר טלפון');
       return;
     }
 
-    // Basic email validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      toast.error('כתובת מייל לא תקינה');
+    // Validate phone number
+    const validationResult = normalizePhoneNumber(phoneNumber, selectedCountry);
+    if (!validationResult.success) {
+      toast.error('מספר טלפון לא תקין');
+      setPhoneValidation('invalid');
       return;
     }
+
+    const normalizedPhone = validationResult.data!.e164;
 
     setIsLoading(true);
     try {
@@ -39,26 +63,43 @@ export const InviteUserStep: React.FC<OnboardingStepProps> = ({ onNext, onBack, 
       const expiresAt = new Date();
       expiresAt.setHours(expiresAt.getHours() + 48);
 
+      // Create invitation with phone number
       const { error } = await supabase
         .from('invitations')
         .insert({
           account_id: account.id,
-          email: email.trim().toLowerCase(),
+          phone_number: normalizedPhone,
+          email: null,
           invitation_id: invitationId,
           expires_at: expiresAt.toISOString(),
         });
 
       if (error) {
         if (error.message.includes('duplicate')) {
-          toast.error('כבר נשלחה הזמנה לכתובת מייל זו');
+          toast.error('כבר נשלחה הזמנה למספר טלפון זה');
         } else {
           throw error;
         }
         return;
       }
 
+      // Send SMS
+      try {
+        await supabase.functions.invoke('send-invitation-sms', {
+          body: {
+            phoneNumber: normalizedPhone,
+            invitationId: invitationId,
+            accountName: account.name,
+            inviterName: user?.name || user?.email || 'מישהו',
+            baseUrl: window.location.origin
+          }
+        });
+      } catch (smsError) {
+        console.warn('SMS sending failed, invitation still created:', smsError);
+      }
+
       setIsInvited(true);
-      toast.success('ההזמנה נשלחה בהצלחה!');
+      toast.success('ההזמנה נשלחה בהצלחה ב-SMS!');
     } catch (error) {
       console.error('Error sending invitation:', error);
       toast.error('שגיאה בשליחת ההזמנה');
@@ -100,37 +141,37 @@ export const InviteUserStep: React.FC<OnboardingStepProps> = ({ onNext, onBack, 
             ))}
           </div>
 
-          {/* Email Input */}
+          {/* Phone Input */}
           <div className="space-y-2 animate-in slide-in-from-bottom duration-500 delay-300">
-            <Label htmlFor="invite-email">כתובת מייל</Label>
-            <div className="relative">
-              <Mail className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input
-                id="invite-email"
-                type="email"
-                placeholder="example@email.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="pr-10 transition-all duration-300 focus:scale-[1.02]"
-                dir="ltr"
-              />
-            </div>
+            <Label htmlFor="invite-phone" className="flex items-center gap-2">
+              <Smartphone className="w-4 h-4" />
+              מספר טלפון
+            </Label>
+            <InternationalPhoneInput
+              label=""
+              value={phoneNumber}
+              onChange={handlePhoneChange}
+              onCountryChange={handleCountryChange}
+              defaultCountry={selectedCountry}
+              validation={phoneValidation}
+              validationMessage={phoneValidation === 'invalid' ? 'מספר טלפון לא תקין' : undefined}
+            />
           </div>
 
           {/* Send Invitation Button */}
           <Button
             onClick={handleInvite}
-            disabled={isLoading || !email.trim()}
+            disabled={isLoading || !phoneNumber.trim()}
             className="w-full bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 transition-all duration-300 hover:scale-105"
           >
-            {isLoading ? 'שולח הזמנה...' : 'שלח הזמנה'}
+            {isLoading ? 'שולח הזמנה...' : 'שלח הזמנה ב-SMS'}
           </Button>
         </>
       ) : (
         <Alert className="animate-in zoom-in duration-500 border-primary/50 bg-primary/5">
           <CheckCircle2 className="h-5 w-5 text-primary" />
           <AlertDescription className="text-base">
-            ההזמנה נשלחה בהצלחה! המשתמש יקבל מייל עם קישור להצטרפות לחשבון.
+            ההזמנה נשלחה בהצלחה ב-SMS! המשתמש יקבל הודעה עם קישור להצטרפות לחשבון.
           </AlertDescription>
         </Alert>
       )}
