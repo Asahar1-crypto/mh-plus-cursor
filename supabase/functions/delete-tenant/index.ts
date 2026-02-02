@@ -25,26 +25,34 @@ serve(async (req) => {
   try {
     logStep("Function started");
 
-    // Initialize Supabase client with service role key for admin operations
-    const supabaseClient = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
-      { auth: { persistSession: false } }
-    );
+    const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
+    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
 
-    // Verify authentication
+    // Verify authentication using anon client with user's token
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
       throw new Error("No authorization header provided");
     }
 
-    const token = authHeader.replace("Bearer ", "");
-    const { data: userData, error: userError } = await supabaseClient.auth.getUser(token);
+    // Create anon client to validate user token
+    const anonClient = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: authHeader } },
+      auth: { persistSession: false }
+    });
+
+    const { data: userData, error: userError } = await anonClient.auth.getUser();
     if (userError || !userData.user) {
-      throw new Error("Authentication failed");
+      logStep("Auth error", { error: userError?.message });
+      throw new Error(`Authentication failed: ${userError?.message || 'Unknown error'}`);
     }
 
     logStep("User authenticated", { userId: userData.user.id });
+
+    // Initialize service role client for admin operations
+    const supabaseClient = createClient(supabaseUrl, supabaseServiceKey, {
+      auth: { persistSession: false }
+    });
 
     // Verify super admin permissions
     const { data: profile, error: profileError } = await supabaseClient
