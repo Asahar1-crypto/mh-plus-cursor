@@ -165,10 +165,13 @@ const Register = () => {
                   className="w-32 h-32 sm:w-40 sm:h-40 object-contain animate-bounce [animation-duration:2s] [animation-delay:0.3s]"
                 />
               </div>
-              <div className="flex items-center justify-center gap-2 mb-2">
-                <CardTitle className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-primary to-primary-glow bg-clip-text text-transparent">
-                  הרשמה למערכת
+              <div className="flex flex-col items-center justify-center gap-2 mb-2">
+                <CardTitle className="text-2xl sm:text-3xl font-extrabold tracking-tight animate-in fade-in slide-in-from-top duration-500">
+                  <span className="bg-gradient-to-r from-primary via-primary/80 to-accent bg-clip-text text-transparent">
+                    הרשמה למערכת
+                  </span>
                 </CardTitle>
+                <div className="h-1 w-16 bg-gradient-to-r from-primary to-accent rounded-full animate-in fade-in duration-700 delay-200" />
               </div>
               <CardDescription className="text-sm sm:text-base">
                 צור חשבון חדש במערכת מחציות פלוס
