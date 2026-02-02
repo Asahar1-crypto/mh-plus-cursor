@@ -38,9 +38,30 @@ serve(async (req) => {
       }
     });
 
-    // 1. Check if user already exists by email
+    // 1. Check if user already exists - FIRST by phone (since invitation is phone-based), then by email
     const { data: existingUsers } = await supabaseAdmin.auth.admin.listUsers();
-    const existingUser = existingUsers?.users?.find(u => u.email?.toLowerCase() === email.toLowerCase());
+    
+    // First, check if there's a user with this phone number
+    const { data: phoneProfile } = await supabaseAdmin
+      .from('profiles')
+      .select('id')
+      .eq('phone_e164', phone)
+      .maybeSingle();
+    
+    let existingUser = null;
+    if (phoneProfile?.id) {
+      // Found user by phone - use them
+      existingUser = existingUsers?.users?.find(u => u.id === phoneProfile.id);
+      console.log('Found existing user by phone:', existingUser?.id, existingUser?.email);
+    }
+    
+    // If no user found by phone, check by email
+    if (!existingUser) {
+      existingUser = existingUsers?.users?.find(u => u.email?.toLowerCase() === email.toLowerCase());
+      if (existingUser) {
+        console.log('Found existing user by email:', existingUser.id);
+      }
+    }
     
     let userId: string;
     let isExistingUser = false;
