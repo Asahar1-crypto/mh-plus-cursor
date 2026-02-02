@@ -40,9 +40,8 @@ const FamilyInvitation = () => {
 
   // Determine if invitation is phone-based or email-based
   const isPhoneInvitation = !!invitationDetails.phoneNumber;
-  const registerPath = isPhoneInvitation 
-    ? `/family-phone-register?invitationId=${invitationId}` 
-    : `/family-register?invitationId=${invitationId}`;
+  // Both phone and email invitations go to /family-register (FamilyPhoneRegister component)
+  const registerPath = `/family-register?invitationId=${invitationId}`;
 
   return (
     <div className="container mx-auto py-10 px-4 flex flex-col items-center justify-center min-h-[calc(100vh-4rem)]" dir="rtl">
