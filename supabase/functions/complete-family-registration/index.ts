@@ -51,18 +51,38 @@ serve(async (req) => {
       userId = existingUser.id;
       isExistingUser = true;
       
-      // Update their profile with phone number if not set
+      // For family registration, ALWAYS update the phone to match the verified phone
+      // This ensures the phone matches the invitation for validation
       const { error: profileUpdateError } = await supabaseAdmin
         .from('profiles')
         .update({ 
           phone_number: phone,
           phone_e164: phone 
         })
-        .eq('id', userId)
-        .is('phone_e164', null);
+        .eq('id', userId);
       
       if (profileUpdateError) {
-        console.log('Profile phone update skipped (may already have phone):', profileUpdateError.message);
+        console.error('Profile phone update error:', profileUpdateError.message);
+        // If update fails due to unique constraint, check if user already has this phone
+        const { data: existingProfile } = await supabaseAdmin
+          .from('profiles')
+          .select('phone_e164')
+          .eq('id', userId)
+          .single();
+        
+        if (existingProfile?.phone_e164 !== phone) {
+          // Phone is different and can't be updated - might belong to another user
+          return new Response(
+            JSON.stringify({ error: 'מספר הטלפון כבר בשימוש על ידי משתמש אחר' }),
+            { 
+              status: 400, 
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+            }
+          );
+        }
+        // If phone matches, continue - profile already has correct phone
+      } else {
+        console.log('Profile phone updated to:', phone);
       }
     } else {
       // Create new user
