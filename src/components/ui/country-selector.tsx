@@ -22,9 +22,10 @@ interface CountrySelectorProps {
   value: CountryCode;
   onChange: (country: CountryCode) => void;
   disabled?: boolean;
+  className?: string;
 }
 
-export function CountrySelector({ value, onChange, disabled }: CountrySelectorProps) {
+export function CountrySelector({ value, onChange, disabled, className }: CountrySelectorProps) {
   const [open, setOpen] = useState(false);
   const countries = getCommonCountries();
   
@@ -38,16 +39,18 @@ export function CountrySelector({ value, onChange, disabled }: CountrySelectorPr
           role="combobox"
           aria-expanded={open}
           className={cn(
-            "w-full justify-between h-14 px-3 rounded-xl border-border/30",
-            "glass hover:shadow-glow transition-all duration-300",
-            "focus:ring-2 focus:ring-primary/50 focus:ring-offset-2",
-            disabled && "opacity-50 cursor-not-allowed"
+            "w-full justify-between h-12 sm:h-14 px-2 sm:px-3 rounded-xl",
+            "bg-background/95 border-2 border-border shadow-sm",
+            "hover:border-primary/50 transition-all duration-300",
+            "focus:border-primary focus:ring-2 focus:ring-primary/20",
+            disabled && "opacity-50 cursor-not-allowed",
+            className
           )}
           disabled={disabled}
         >
-          <div className="flex items-center gap-2 min-w-0">
-            <span className="text-xl flex-shrink-0">{selectedCountry?.flag}</span>
-            <span className="text-sm font-medium truncate">
+          <div className="flex items-center gap-1 sm:gap-2 min-w-0">
+            <span className="text-lg sm:text-xl flex-shrink-0">{selectedCountry?.flag}</span>
+            <span className="text-sm sm:text-base font-medium truncate">
               {selectedCountry?.callingCode}
             </span>
           </div>
