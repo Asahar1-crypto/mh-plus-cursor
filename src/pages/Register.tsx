@@ -92,30 +92,38 @@ const Register = () => {
         }
       });
 
-      // Check for phone exists error
+      // Check for phone exists error - Supabase Functions returns non-2xx in error
       if (checkError) {
-        const errorBody = checkError.message || '';
         console.log('SMS check error:', checkError);
         
-        // Try to parse error response
-        try {
-          const parsed = JSON.parse(errorBody);
-          if (parsed.error === 'PHONE_EXISTS') {
-            console.log('Phone exists, showing recovery options');
-            setExistingUserName(parsed.existingUserName);
-            setRegistrationData(data);
-            setShowPhoneExists(true);
-            return;
+        // For FunctionsHttpError, we need to check the context for the response body
+        // The error.context contains the Response object
+        if (checkError.name === 'FunctionsHttpError' && checkError.context) {
+          try {
+            // Try to get the response body from the context
+            const errorResponse = checkError.context;
+            if (errorResponse && typeof errorResponse.json === 'function') {
+              const errorBody = await errorResponse.json();
+              console.log('Error response body:', errorBody);
+              
+              if (errorBody?.error === 'PHONE_EXISTS') {
+                console.log('Phone exists, showing recovery options');
+                setExistingUserName(errorBody.existingUserName);
+                setRegistrationData(data);
+                setShowPhoneExists(true);
+                return;
+              }
+            }
+          } catch (parseError) {
+            console.log('Could not parse error response:', parseError);
           }
-        } catch {
-          // Not a JSON error, check status
         }
         
         toast.error('שגיאה בשליחת קוד האימות');
         return;
       }
 
-      // If we got a 409 response in data (shouldn't happen but check anyway)
+      // If we got a PHONE_EXISTS response in data (shouldn't happen but check anyway)
       if (checkData?.error === 'PHONE_EXISTS') {
         console.log('Phone exists (from data), showing recovery options');
         setExistingUserName(checkData.existingUserName);
@@ -133,22 +141,6 @@ const Register = () => {
       setShowSmsVerification(true);
     } catch (error: any) {
       console.error('Registration pre-check error:', error);
-      
-      // Check if this is a PHONE_EXISTS error from the response
-      if (error?.context?.body) {
-        try {
-          const body = JSON.parse(error.context.body);
-          if (body.error === 'PHONE_EXISTS') {
-            setExistingUserName(body.existingUserName);
-            setRegistrationData(data);
-            setShowPhoneExists(true);
-            return;
-          }
-        } catch {
-          // Ignore parse error
-        }
-      }
-      
       toast.error('שגיאה בתהליך ההרשמה');
     }
   };
