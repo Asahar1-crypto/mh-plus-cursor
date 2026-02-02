@@ -83,7 +83,8 @@ export const InviteUserStep: React.FC<OnboardingStepProps> = ({ onNext, onBack, 
         return;
       }
 
-      // Send SMS
+      // Send SMS - always use production URL
+      const productionUrl = 'https://mhplus.online';
       try {
         await supabase.functions.invoke('send-invitation-sms', {
           body: {
@@ -91,7 +92,7 @@ export const InviteUserStep: React.FC<OnboardingStepProps> = ({ onNext, onBack, 
             invitationId: invitationId,
             accountName: account.name,
             inviterName: user?.name || user?.email || 'מישהו',
-            baseUrl: window.location.origin
+            baseUrl: productionUrl
           }
         });
       } catch (smsError) {
