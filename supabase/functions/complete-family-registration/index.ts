@@ -38,56 +38,84 @@ serve(async (req) => {
       }
     });
 
-    // 1. Generate a random password for the user
-    const generateRandomPassword = () => {
-      const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*';
-      let password = '';
-      for (let i = 0; i < 12; i++) {
-        password += chars.charAt(Math.floor(Math.random() * chars.length));
+    // 1. Check if user already exists by email
+    const { data: existingUsers } = await supabaseAdmin.auth.admin.listUsers();
+    const existingUser = existingUsers?.users?.find(u => u.email?.toLowerCase() === email.toLowerCase());
+    
+    let userId: string;
+    let isExistingUser = false;
+    
+    if (existingUser) {
+      // User already exists - use their existing account
+      console.log('User already exists:', existingUser.id);
+      userId = existingUser.id;
+      isExistingUser = true;
+      
+      // Update their profile with phone number if not set
+      const { error: profileUpdateError } = await supabaseAdmin
+        .from('profiles')
+        .update({ 
+          phone_number: phone,
+          phone_e164: phone 
+        })
+        .eq('id', userId)
+        .is('phone_e164', null);
+      
+      if (profileUpdateError) {
+        console.log('Profile phone update skipped (may already have phone):', profileUpdateError.message);
       }
-      return password;
-    };
-
-    const password = generateRandomPassword();
-
-    // 2. Create user with admin privileges (pre-confirmed email)
-    const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
-      email,
-      password,
-      email_confirm: true, // This automatically confirms the email!
-      user_metadata: {
-        name,
-        phone_number: phone
-      }
-    });
-
-    if (authError) {
-      console.error('Error creating user:', authError);
-      return new Response(
-        JSON.stringify({ error: `שגיאה ביצירת משתמש: ${authError.message}` }),
-        { 
-          status: 400, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+    } else {
+      // Create new user
+      const generateRandomPassword = () => {
+        const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*';
+        let password = '';
+        for (let i = 0; i < 12; i++) {
+          password += chars.charAt(Math.floor(Math.random() * chars.length));
         }
-      );
+        return password;
+      };
+
+      const password = generateRandomPassword();
+
+      const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
+        email,
+        password,
+        email_confirm: true,
+        user_metadata: {
+          name,
+          phone_number: phone
+        }
+      });
+
+      if (authError) {
+        console.error('Error creating user:', authError);
+        return new Response(
+          JSON.stringify({ error: `שגיאה ביצירת משתמש: ${authError.message}` }),
+          { 
+            status: 400, 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          }
+        );
+      }
+
+      if (!authData.user) {
+        return new Response(
+          JSON.stringify({ error: 'לא ניתן ליצור משתמש' }),
+          { 
+            status: 400, 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          }
+        );
+      }
+
+      userId = authData.user.id;
+      console.log('User created successfully:', userId);
     }
 
-    if (!authData.user) {
-      return new Response(
-        JSON.stringify({ error: 'לא ניתן ליצור משתמש' }),
-        { 
-          status: 400, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
-      );
-    }
-
-    console.log('User created successfully:', authData.user.id);
-
-    // 3. Update SMS verification codes with user_id
+    // 2. Update SMS verification codes with user_id
     const { error: smsUpdateError } = await supabaseAdmin
       .from('sms_verification_codes')
-      .update({ user_id: authData.user.id })
+      .update({ user_id: userId })
       .eq('phone_number', phone)
       .eq('verified', true)
       .is('user_id', null);
@@ -98,17 +126,19 @@ serve(async (req) => {
       console.log('SMS verification updated with user_id');
     }
 
-    // 4. Accept the invitation and add user to account
+    // 3. Accept the invitation and add user to account
     const { error: invitationError } = await supabaseAdmin.rpc('accept_invitation_and_add_member', {
       invitation_uuid: invitationId,
-      user_uuid: authData.user.id
+      user_uuid: userId
     });
 
     if (invitationError) {
       console.error('Error accepting invitation:', invitationError);
       
-      // If invitation failed, clean up by deleting the user
-      await supabaseAdmin.auth.admin.deleteUser(authData.user.id);
+      // Only delete user if we just created them
+      if (!isExistingUser) {
+        await supabaseAdmin.auth.admin.deleteUser(userId);
+      }
       
       return new Response(
         JSON.stringify({ error: `שגיאה בקבלת ההזמנה: ${invitationError.message}` }),
@@ -121,12 +151,12 @@ serve(async (req) => {
 
     console.log('Invitation accepted successfully');
 
-    // 5. Generate a one-time sign-in link for the user
+    // 4. Generate a one-time sign-in link for the user
     const { data: signInData, error: signInError } = await supabaseAdmin.auth.admin.generateLink({
       type: 'magiclink',
       email: email,
       options: {
-        redirectTo: `${Deno.env.get('SUPABASE_URL').replace('supabase.co', 'vercel.app')}/dashboard`
+        redirectTo: 'https://family-finance-plus.lovable.app/dashboard'
       }
     });
 
@@ -137,10 +167,13 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({ 
         success: true,
-        userId: authData.user.id,
+        userId: userId,
         email: email,
+        isExistingUser: isExistingUser,
         magicLink: signInData?.properties?.action_link,
-        message: 'הרישום הושלם בהצלחה! המשתמש נוסף לחשבון המשפחתי'
+        message: isExistingUser 
+          ? 'המשתמש נוסף לחשבון המשפחתי בהצלחה!'
+          : 'הרישום הושלם בהצלחה! המשתמש נוסף לחשבון המשפחתי'
       }),
       { 
         status: 200, 
