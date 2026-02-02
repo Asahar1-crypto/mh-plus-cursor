@@ -39,13 +39,34 @@ const PendingInvitationAlert = () => {
     try {
       console.log("PendingInvitationAlert: Checking for pending invitations for", user.email);
       
-      // First get all pending invitations
-      const { data: rawInvitations, error } = await supabase
+      // Get user's phone from profile
+      let userPhone: string | null = null;
+      if (user?.id) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('phone_e164')
+          .eq('id', user.id)
+          .single();
+        userPhone = profile?.phone_e164;
+      }
+      
+      // Build query to check both email and phone invitations
+      let query = supabase
         .from('invitations')
         .select('*')
-        .eq('email', user.email.toLowerCase())
         .is('accepted_at', null)
         .gt('expires_at', 'now()');
+      
+      // Check by email OR phone
+      if (user?.email && userPhone) {
+        query = query.or(`email.eq.${user.email.toLowerCase()},phone_number.eq.${userPhone}`);
+      } else if (user?.email) {
+        query = query.eq('email', user.email.toLowerCase());
+      } else if (userPhone) {
+        query = query.eq('phone_number', userPhone);
+      }
+      
+      const { data: rawInvitations, error } = await query;
       
       if (error) {
         console.error('PendingInvitationAlert: Error fetching invitations:', error);
@@ -128,7 +149,12 @@ const PendingInvitationAlert = () => {
   const accountName = firstInvitation.accounts?.name || 'חשבון משותף';
   
   const handleViewInvitation = () => {
-    navigate(`/invitation/${firstInvitation.invitation_id}`);
+    // Use family-invitation for SMS invitations, regular invitation for email
+    const isPhoneInvitation = !!firstInvitation.phone_number;
+    const path = isPhoneInvitation 
+      ? `/family-invitation?invitationId=${firstInvitation.invitation_id}`
+      : `/invitation/${firstInvitation.invitation_id}`;
+    navigate(path);
     setDismissed(true);
   };
   
