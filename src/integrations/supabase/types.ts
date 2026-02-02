@@ -544,28 +544,31 @@ export type Database = {
           accepted_at: string | null
           account_id: string
           created_at: string
-          email: string
+          email: string | null
           expires_at: string
           id: string
           invitation_id: string
+          phone_number: string | null
         }
         Insert: {
           accepted_at?: string | null
           account_id: string
           created_at?: string
-          email: string
+          email?: string | null
           expires_at?: string
           id?: string
           invitation_id: string
+          phone_number?: string | null
         }
         Update: {
           accepted_at?: string | null
           account_id?: string
           created_at?: string
-          email?: string
+          email?: string | null
           expires_at?: string
           id?: string
           invitation_id?: string
+          phone_number?: string | null
         }
         Relationships: [
           {
@@ -898,6 +901,7 @@ export type Database = {
         }[]
       }
       get_current_user_email: { Args: never; Returns: string }
+      get_current_user_phone: { Args: never; Returns: string }
       get_email_change_status: {
         Args: { p_user_id: string }
         Returns: {
