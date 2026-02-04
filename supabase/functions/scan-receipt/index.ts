@@ -112,6 +112,37 @@ serve(async (req) => {
     // Create service role client for database operations (bypasses RLS)
     const supabase = createClient(supabaseUrl!, supabaseServiceKey!);
 
+    // 🔒 SECURITY: Verify user is a member of the requested account
+    console.log('🔐 Verifying account membership...');
+    const { data: isMember, error: memberError } = await supabase.rpc(
+      'is_account_member',
+      { user_uuid: user.id, account_uuid: account_id }
+    );
+
+    if (memberError) {
+      console.error('❌ Membership check error:', memberError);
+      return new Response(JSON.stringify({ 
+        success: false, 
+        error: 'Failed to verify account membership' 
+      }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    if (!isMember) {
+      console.error('❌ Access denied: User', user.id, 'is not a member of account', account_id);
+      return new Response(JSON.stringify({ 
+        success: false, 
+        error: 'Access denied: Not a member of this account' 
+      }), {
+        status: 403,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    console.log('✅ Account membership verified');
+
     // Call OpenAI API with Tool Calling for structured output
     console.log('🤖 Calling OpenAI API with Tool Calling...');
     
