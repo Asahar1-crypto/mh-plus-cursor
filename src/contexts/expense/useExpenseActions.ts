@@ -9,6 +9,7 @@ import { supabase } from '@/integrations/supabase/client';
 export interface ExpenseActions {
   addExpense: (expense: Omit<Expense, 'id' | 'createdBy' | 'creatorName' | 'status' | 'approvedBy' | 'approvedAt'>) => Promise<void>;
   approveExpense: (id: string) => Promise<void>;
+  approveAllRecurring: (id: string) => Promise<void>;
   rejectExpense: (id: string) => Promise<void>;
   markAsPaid: (id: string) => Promise<void>;
   updateExpenseStatus: (id: string, status: 'pending' | 'approved' | 'rejected' | 'paid') => Promise<void>;
@@ -204,6 +205,42 @@ export const useExpenseActions = (
     await updateExpenseStatus(id, 'approved');
   };
 
+  const approveAllRecurring = async (id: string): Promise<void> => {
+    const expenseToApprove = expenses.find(expense => expense.id === id);
+      
+    if (!expenseToApprove) {
+      toast.error('ההוצאה לא נמצאה');
+      return;
+    }
+    
+    if (user && expenseToApprove.createdBy === user.id) {
+      toast.error('לא ניתן לאשר הוצאה שהוספת בעצמך');
+      return;
+    }
+
+    if (!expenseToApprove.recurringParentId) {
+      toast.error('הוצאה זו אינה חלק מסדרה חוזרת');
+      return;
+    }
+
+    if (!user || !account) {
+      toast.error('יש להתחבר כדי לאשר הוצאות');
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      await expenseService.approveAllRecurring(user, account, id);
+      await refreshData();
+      toast.success('🎉 ההוצאה אושרה! כל ההוצאות העתידיות יאושרו אוטומטית');
+    } catch (error) {
+      console.error('Failed to approve all recurring:', error);
+      toast.error('שגיאה באישור ההוצאות החוזרות');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const rejectExpense = async (id: string): Promise<void> => {
     const expenseToReject = expenses.find(expense => expense.id === id);
       
@@ -239,6 +276,7 @@ export const useExpenseActions = (
   return {
     addExpense,
     approveExpense,
+    approveAllRecurring,
     rejectExpense,
     markAsPaid,
     updateExpenseStatus,

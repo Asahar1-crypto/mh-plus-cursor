@@ -22,6 +22,10 @@ export interface Expense {
   endDate?: string;
   includeInMonthlyBalance: boolean;
   splitEqually: boolean;
+  // New fields for recurring expense auto-approval
+  recurringParentId?: string;
+  recurringAutoApproved?: boolean;
+  recurringApprovedBy?: string;
 }
 
 export interface Child {
@@ -37,6 +41,7 @@ export interface ExpenseContextType {
   isSubmitting: boolean;
   addExpense: (expense: Omit<Expense, 'id' | 'createdBy' | 'creatorName' | 'status' | 'approvedBy' | 'approvedAt'>) => Promise<void>;
   approveExpense: (id: string) => Promise<void>;
+  approveAllRecurring: (id: string) => Promise<void>;
   rejectExpense: (id: string) => Promise<void>;
   markAsPaid: (id: string) => Promise<void>;
   updateExpenseStatus: (id: string, status: 'pending' | 'approved' | 'rejected' | 'paid') => Promise<void>;

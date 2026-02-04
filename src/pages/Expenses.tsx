@@ -20,7 +20,8 @@ const ExpensesPage = () => {
   const { 
     expenses, 
     childrenList, 
-    approveExpense, 
+    approveExpense,
+    approveAllRecurring,
     rejectExpense, 
     markAsPaid,
     isLoading,
@@ -279,6 +280,7 @@ const ExpensesPage = () => {
                 <ExpensesTable 
                   expenses={filteredExpenses}
                   approveExpense={approveExpense}
+                  approveAllRecurring={approveAllRecurring}
                   rejectExpense={rejectExpense}
                   markAsPaid={markAsPaid}
                   updateExpenseStatus={updateExpenseStatus}

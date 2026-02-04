@@ -74,7 +74,11 @@ export const expenseService = {
         hasEndDate: expense.has_end_date || false,
         endDate: expense.end_date || undefined,
         includeInMonthlyBalance: true, // Default value
-        splitEqually: expense.split_equally || false
+        splitEqually: expense.split_equally || false,
+        // New fields for recurring auto-approval
+        recurringParentId: expense.recurring_parent_id || undefined,
+        recurringAutoApproved: expense.recurring_auto_approved || false,
+        recurringApprovedBy: expense.recurring_approved_by || undefined
       };
     });
 
@@ -191,6 +195,61 @@ export const expenseService = {
     if (error) {
       console.error('Error updating expense status:', error);
       throw error;
+    }
+  },
+
+  async approveAllRecurring(user: User, account: Account, expenseId: string): Promise<void> {
+    console.log(`Approving expense ${expenseId} and all future recurring in account ${account.id} (${account.name})`);
+    
+    // First get the expense to find its recurring_parent_id
+    const { data: expense, error: fetchError } = await supabase
+      .from('expenses')
+      .select('recurring_parent_id')
+      .eq('id', expenseId)
+      .eq('account_id', account.id)
+      .single();
+
+    if (fetchError) {
+      console.error('Error fetching expense:', fetchError);
+      throw fetchError;
+    }
+
+    const parentId = expense?.recurring_parent_id;
+    
+    if (!parentId) {
+      console.error('Expense is not part of a recurring series');
+      throw new Error('הוצאה זו אינה חלק מסדרה חוזרת');
+    }
+
+    // Approve the current expense
+    const { error: approveError } = await supabase
+      .from('expenses')
+      .update({
+        status: 'approved',
+        approved_by: user.id,
+        approved_at: new Date().toISOString()
+      })
+      .eq('id', expenseId)
+      .eq('account_id', account.id);
+
+    if (approveError) {
+      console.error('Error approving expense:', approveError);
+      throw approveError;
+    }
+
+    // Mark the parent template for auto-approval of future expenses
+    const { error: updateParentError } = await supabase
+      .from('expenses')
+      .update({
+        recurring_auto_approved: true,
+        recurring_approved_by: user.id
+      })
+      .eq('id', parentId)
+      .eq('account_id', account.id);
+
+    if (updateParentError) {
+      console.error('Error updating parent recurring expense:', updateParentError);
+      throw updateParentError;
     }
   },
 
