@@ -66,7 +66,55 @@ Deno.serve(async (req) => {
   try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!
+
+    // 🔒 SECURITY: Verify JWT authentication
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader?.startsWith('Bearer ')) {
+      console.error('❌ No authorization header');
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 401 }
+      );
+    }
+
+    const token = authHeader.replace('Bearer ', '');
+    const anonClient = createClient(supabaseUrl, supabaseAnonKey, {
+      auth: { persistSession: false }
+    });
+
+    const { data: claimsData, error: claimsError } = await anonClient.auth.getClaims(token);
+    const userId = claimsData?.claims?.sub;
+
+    if (claimsError || !userId) {
+      console.error('❌ Authentication failed:', claimsError?.message);
+      return new Response(
+        JSON.stringify({ error: 'Authentication failed' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 401 }
+      );
+    }
+
+    console.log('✅ User authenticated:', userId);
+
+    // Service role client for database operations
     const supabase = createClient<Database>(supabaseUrl, supabaseKey)
+
+    // 🔒 SECURITY: Verify super-admin permissions
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('is_super_admin')
+      .eq('id', userId)
+      .single();
+
+    if (profileError || !profile?.is_super_admin) {
+      console.error('❌ Access denied: Super admin rights required');
+      return new Response(
+        JSON.stringify({ error: 'Access denied: Super admin rights required' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 403 }
+      );
+    }
+
+    console.log('✅ Super admin verified')
 
     console.log('🔄 Starting backfill for missing recurring expenses...')
 
