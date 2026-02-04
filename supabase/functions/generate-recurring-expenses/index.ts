@@ -87,9 +87,60 @@ Deno.serve(async (req) => {
     // Initialize Supabase client
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-    const supabase = createClient<Database>(supabaseUrl, supabaseKey)
+    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!
+    const cronSecret = Deno.env.get('CRON_SECRET')
+    
+    // 🔒 SECURITY: Dual authentication - either cron secret OR super-admin JWT
+    const authHeader = req.headers.get('Authorization');
+    const cronSecretHeader = req.headers.get('X-Cron-Secret');
+    
+    let isAuthorized = false;
+    let authMethod = '';
 
-    console.log('🔄 Starting recurring expenses generation (self-healing mode)...')
+    // Method 1: Cron secret (for scheduled jobs)
+    if (cronSecretHeader && cronSecret && cronSecretHeader === cronSecret) {
+      isAuthorized = true;
+      authMethod = 'cron-secret';
+      console.log('✅ Authenticated via cron secret');
+    }
+    // Method 2: Super-admin JWT (for manual calls)
+    else if (authHeader?.startsWith('Bearer ')) {
+      const token = authHeader.replace('Bearer ', '');
+      const anonClient = createClient(supabaseUrl, supabaseAnonKey, {
+        auth: { persistSession: false }
+      });
+
+      const { data: claimsData, error: claimsError } = await anonClient.auth.getClaims(token);
+      const userId = claimsData?.claims?.sub;
+
+      if (!claimsError && userId) {
+        // Service role client to check super-admin
+        const supabaseAdmin = createClient<Database>(supabaseUrl, supabaseKey);
+        const { data: profile } = await supabaseAdmin
+          .from('profiles')
+          .select('is_super_admin')
+          .eq('id', userId)
+          .single();
+
+        if (profile?.is_super_admin) {
+          isAuthorized = true;
+          authMethod = 'super-admin';
+          console.log('✅ Authenticated as super-admin:', userId);
+        }
+      }
+    }
+
+    if (!isAuthorized) {
+      console.error('❌ Access denied: Requires cron secret or super-admin JWT');
+      return new Response(
+        JSON.stringify({ error: 'Access denied: Requires cron secret or super-admin rights' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 403 }
+      );
+    }
+
+    console.log(`🔄 Starting recurring expenses generation (auth: ${authMethod})...`);
+
+    const supabase = createClient<Database>(supabaseUrl, supabaseKey)
 
     // Get current date info
     const now = new Date()
