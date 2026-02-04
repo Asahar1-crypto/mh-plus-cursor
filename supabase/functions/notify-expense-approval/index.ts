@@ -14,10 +14,40 @@ serve(async (req) => {
   try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
     const vonageApiKey = Deno.env.get('VONAGE_API_KEY');
     const vonageApiSecret = Deno.env.get('VONAGE_API_SECRET');
     const vonageFromNumber = Deno.env.get('VONAGE_FROM_NUMBER');
 
+    // 🔒 SECURITY: Verify JWT authentication
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader?.startsWith('Bearer ')) {
+      console.error('❌ No authorization header');
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const token = authHeader.replace('Bearer ', '');
+    const anonClient = createClient(supabaseUrl, supabaseAnonKey, {
+      auth: { persistSession: false }
+    });
+
+    const { data: claimsData, error: claimsError } = await anonClient.auth.getClaims(token);
+    const userId = claimsData?.claims?.sub;
+
+    if (claimsError || !userId) {
+      console.error('❌ Authentication failed:', claimsError?.message);
+      return new Response(
+        JSON.stringify({ error: 'Authentication failed' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    console.log('✅ User authenticated:', userId);
+
+    // Service role client for database operations
     const supabase = createClient(supabaseUrl, supabaseServiceRoleKey);
 
     const { expense_id, account_id } = await req.json();
@@ -29,6 +59,31 @@ serve(async (req) => {
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
+
+    // 🔒 SECURITY: Verify user is a member of the requested account
+    console.log('🔐 Verifying account membership...');
+    const { data: isMember, error: memberError } = await supabase.rpc(
+      'is_account_member',
+      { user_uuid: userId, account_uuid: account_id }
+    );
+
+    if (memberError) {
+      console.error('❌ Membership check error:', memberError);
+      return new Response(
+        JSON.stringify({ error: 'Failed to verify account membership' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    if (!isMember) {
+      console.error('❌ Access denied: User', userId, 'is not a member of account', account_id);
+      return new Response(
+        JSON.stringify({ error: 'Access denied: Not a member of this account' }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    console.log('✅ Account membership verified');
 
     // Check if SMS notifications are enabled for this account
     const { data: account, error: accountError } = await supabase
