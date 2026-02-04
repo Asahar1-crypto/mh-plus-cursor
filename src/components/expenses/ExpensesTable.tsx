@@ -33,7 +33,8 @@ import {
   Eye,
   ChevronDown,
   ChevronUp,
-  Search
+  Search,
+  Repeat
 } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/auth';
@@ -44,6 +45,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 interface ExpensesTableProps {
   expenses: Expense[];
   approveExpense: (id: string) => Promise<void>;
+  approveAllRecurring: (id: string) => Promise<void>;
   rejectExpense: (id: string) => Promise<void>;
   markAsPaid: (id: string) => Promise<void>;
   updateExpenseStatus: (id: string, status: Expense['status']) => Promise<void>;
@@ -51,7 +53,8 @@ interface ExpensesTableProps {
 
 export const ExpensesTable: React.FC<ExpensesTableProps> = ({ 
   expenses, 
-  approveExpense, 
+  approveExpense,
+  approveAllRecurring,
   rejectExpense, 
   markAsPaid,
   updateExpenseStatus
@@ -243,6 +246,44 @@ export const ExpensesTable: React.FC<ExpensesTableProps> = ({
       toast.success('🎉 ההוצאה אושרה בהצלחה!');
     } catch (error) {
       toast.error('שגיאה באישור ההוצאה');
+    }
+  };
+
+  const handleApproveAllRecurring = async (id: string) => {
+    try {
+      await approveAllRecurring(id);
+      
+      // Extra celebration confetti for recurring approval
+      const duration = 2500;
+      const animationEnd = Date.now() + duration;
+      const colors = ['#10B981', '#8B5CF6', '#EC4899', '#F59E0B'];
+
+      const interval = setInterval(() => {
+        const timeLeft = animationEnd - Date.now();
+        if (timeLeft <= 0) {
+          clearInterval(interval);
+          return;
+        }
+
+        confetti({
+          particleCount: 8,
+          angle: 60,
+          spread: 70,
+          origin: { x: 0, y: 0.5 },
+          colors: colors,
+        });
+        confetti({
+          particleCount: 8,
+          angle: 120,
+          spread: 70,
+          origin: { x: 1, y: 0.5 },
+          colors: colors,
+        });
+      }, 40);
+      
+      toast.success('🎉 ההוצאה אושרה! כל ההוצאות העתידיות יאושרו אוטומטית');
+    } catch (error) {
+      toast.error('שגיאה באישור ההוצאות החוזרות');
     }
   };
 
@@ -455,6 +496,7 @@ export const ExpensesTable: React.FC<ExpensesTableProps> = ({
                       }
                     }}
                     onApprove={() => handleApprove(expense.id)}
+                    onApproveAllRecurring={expense.recurringParentId ? () => handleApproveAllRecurring(expense.id) : undefined}
                     onReject={() => handleReject(expense.id)}
                     onMarkAsPaid={() => handleMarkAsPaid(expense.id)}
                     onPreviewReceipt={expense.receiptId ? () => setPreviewReceiptId(expense.receiptId!) : undefined}
@@ -580,10 +622,21 @@ export const ExpensesTable: React.FC<ExpensesTableProps> = ({
                                   variant="ghost"
                                   onClick={() => handleApprove(expense.id)}
                                   className="h-7 w-7 p-0 text-green-600 hover:text-green-700 hover:bg-green-50"
-                                  title="אשר"
+                                  title={expense.recurringParentId ? "אשר פעם אחת" : "אשר"}
                                 >
                                   <Check className="h-3.5 w-3.5" />
                                 </Button>
+                                {expense.recurringParentId && (
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    onClick={() => handleApproveAllRecurring(expense.id)}
+                                    className="h-7 w-7 p-0 text-purple-600 hover:text-purple-700 hover:bg-purple-50"
+                                    title="אשר את כל החוזרות"
+                                  >
+                                    <Repeat className="h-3.5 w-3.5" />
+                                  </Button>
+                                )}
                                 <Button
                                   size="sm"
                                   variant="ghost"

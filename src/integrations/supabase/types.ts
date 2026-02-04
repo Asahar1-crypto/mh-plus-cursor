@@ -450,6 +450,8 @@ export type Database = {
           paid_by_id: string
           receipt_id: string | null
           receipt_url: string | null
+          recurring_approved_by: string | null
+          recurring_auto_approved: boolean | null
           recurring_parent_id: string | null
           split_equally: boolean
           status: string
@@ -473,6 +475,8 @@ export type Database = {
           paid_by_id: string
           receipt_id?: string | null
           receipt_url?: string | null
+          recurring_approved_by?: string | null
+          recurring_auto_approved?: boolean | null
           recurring_parent_id?: string | null
           split_equally?: boolean
           status?: string
@@ -496,6 +500,8 @@ export type Database = {
           paid_by_id?: string
           receipt_id?: string | null
           receipt_url?: string | null
+          recurring_approved_by?: string | null
+          recurring_auto_approved?: boolean | null
           recurring_parent_id?: string | null
           split_equally?: boolean
           status?: string
@@ -528,6 +534,13 @@ export type Database = {
             columns: ["receipt_id"]
             isOneToOne: false
             referencedRelation: "scanned_receipts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expenses_recurring_approved_by_fkey"
+            columns: ["recurring_approved_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
           {

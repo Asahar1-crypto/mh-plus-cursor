@@ -33,6 +33,8 @@ interface Database {
           split_equally: boolean
           created_at: string
           updated_at: string
+          recurring_auto_approved: boolean | null
+          recurring_approved_by: string | null
         }
         Insert: {
           id?: string
@@ -238,8 +240,14 @@ Deno.serve(async (req) => {
           // GENERATE the missing expense for current month
           console.log(`🆕 Creating missing expense for ${currentMonth}/${currentYear}: ${expense.description} (${expense.amount} ₪)`)
 
-          // Auto-approve if the same user who created the recurring expense is also the one paying
-          const isAutoApproved = expense.paid_by_id === expense.created_by_id
+          // Auto-approve logic:
+          // 1. If recurring_auto_approved is set on the template, use that approval
+          // 2. Otherwise, auto-approve if the same user created and pays for the expense
+          const isAutoApprovedByRecurring = expense.recurring_auto_approved && expense.recurring_approved_by
+          const isAutoApprovedBySameUser = expense.paid_by_id === expense.created_by_id
+          const isAutoApproved = isAutoApprovedByRecurring || isAutoApprovedBySameUser
+          const approvedBy = isAutoApprovedByRecurring ? expense.recurring_approved_by : 
+                            (isAutoApprovedBySameUser ? expense.created_by_id : null)
           
           const newExpenseData = {
             account_id: expense.account_id,
@@ -250,7 +258,7 @@ Deno.serve(async (req) => {
             paid_by_id: expense.paid_by_id,
             created_by_id: expense.created_by_id,
             status: isAutoApproved ? 'approved' : 'pending',
-            approved_by: isAutoApproved ? expense.created_by_id : null,
+            approved_by: approvedBy,
             approved_at: isAutoApproved ? new Date().toISOString() : null,
             split_equally: expense.split_equally,
             is_recurring: false,

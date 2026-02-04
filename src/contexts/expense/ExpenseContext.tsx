@@ -33,6 +33,7 @@ export const ExpenseProvider = ({ children }: ExpenseProviderProps) => {
   const { 
     addExpense,
     approveExpense,
+    approveAllRecurring,
     rejectExpense,
     markAsPaid,
     updateExpenseStatus,
@@ -63,6 +64,7 @@ export const ExpenseProvider = ({ children }: ExpenseProviderProps) => {
     isSubmitting,
     addExpense,
     approveExpense,
+    approveAllRecurring,
     rejectExpense,
     markAsPaid,
     updateExpenseStatus,

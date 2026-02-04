@@ -13,7 +13,8 @@ import {
   Check,
   X,
   Eye,
-  FileText
+  FileText,
+  Repeat
 } from 'lucide-react';
 import { Expense } from '@/contexts/expense/types';
 
@@ -24,6 +25,7 @@ interface ExpenseCardMobileProps {
   isSelected: boolean;
   onSelect: (checked: boolean) => void;
   onApprove: () => void;
+  onApproveAllRecurring?: () => void;
   onReject: () => void;
   onMarkAsPaid: () => void;
   onPreviewReceipt?: () => void;
@@ -37,6 +39,7 @@ export const ExpenseCardMobile: React.FC<ExpenseCardMobileProps> = ({
   isSelected,
   onSelect,
   onApprove,
+  onApproveAllRecurring,
   onReject,
   onMarkAsPaid,
   onPreviewReceipt,
@@ -134,16 +137,29 @@ export const ExpenseCardMobile: React.FC<ExpenseCardMobileProps> = ({
                   size="sm"
                   variant="ghost"
                   onClick={onApprove}
-                  className="h-8 px-3 text-green-600 hover:text-green-700 hover:bg-green-50"
+                  className="h-8 px-2 text-green-600 hover:text-green-700 hover:bg-green-50"
+                  title={onApproveAllRecurring ? "אשר פעם אחת" : "אשר"}
                 >
                   <Check className="h-4 w-4 ml-1" />
-                  <span className="text-xs">אשר</span>
+                  <span className="text-xs">{onApproveAllRecurring ? "פעם אחת" : "אשר"}</span>
                 </Button>
+                {onApproveAllRecurring && (
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={onApproveAllRecurring}
+                    className="h-8 px-2 text-purple-600 hover:text-purple-700 hover:bg-purple-50"
+                    title="אשר את כל החוזרות"
+                  >
+                    <Repeat className="h-4 w-4 ml-1" />
+                    <span className="text-xs">כל החוזרות</span>
+                  </Button>
+                )}
                 <Button
                   size="sm"
                   variant="ghost"
                   onClick={onReject}
-                  className="h-8 px-3 text-red-600 hover:text-red-700 hover:bg-red-50"
+                  className="h-8 px-2 text-red-600 hover:text-red-700 hover:bg-red-50"
                 >
                   <X className="h-4 w-4 ml-1" />
                   <span className="text-xs">דחה</span>
