@@ -109,7 +109,8 @@ export const expenseService = {
     return children.map((child: any) => ({
       id: child.id,
       name: child.name,
-      birthDate: child.birth_date
+      birthDate: child.birth_date,
+      gender: child.gender || 'son'
     }));
   },
 
@@ -261,6 +262,7 @@ export const expenseService = {
       .insert({
         name: child.name,
         birth_date: child.birthDate,
+        gender: child.gender || 'son',
         account_id: account.id
       });
 
@@ -282,6 +284,10 @@ export const expenseService = {
     
     if (updates.birthDate !== undefined) {
       updateData.birth_date = updates.birthDate;
+    }
+
+    if (updates.gender !== undefined) {
+      updateData.gender = updates.gender;
     }
 
     const { error } = await supabase

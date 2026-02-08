@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { ModernInput } from '@/components/ui/modern-input';
 import { ModernButton } from '@/components/ui/modern-button';
 import { InternationalPhoneInput } from '@/components/ui/international-phone-input';
+import { Label } from '@/components/ui/label';
 import AnimatedBackground from '@/components/ui/animated-background';
 import { useAuth } from '@/contexts/auth';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
@@ -17,6 +18,7 @@ import { supabase } from '@/integrations/supabase/client';
 
 const registerSchema = z.object({
   name: z.string().min(2, { message: 'שם חייב להיות לפחות 2 תווים' }),
+  familyRole: z.enum(['father', 'mother', 'other'], { required_error: 'יש לבחור תפקיד' }),
   email: z.string().email({ message: 'אימייל לא תקין' }),
   phoneNumber: z.string().min(8, { message: 'מספר טלפון חייב להיות תקין' }).refine((phone) => {
     // Allow international phone numbers in E.164 format
@@ -62,6 +64,7 @@ const Register = () => {
     resolver: zodResolver(registerSchema),
     defaultValues: {
       name: '',
+      familyRole: undefined,
       email: emailFromInvitation || '',
       phoneNumber: '',
       password: '',
@@ -178,6 +181,20 @@ const Register = () => {
       const user = await register(registrationData.name, registrationData.email, registrationData.password, registrationData.phoneNumber);
       
       console.log('Registration successful, user:', user);
+
+      // Save family role to profile
+      if (user?.id && registrationData.familyRole) {
+        try {
+          await supabase
+            .from('profiles')
+            .update({ family_role: registrationData.familyRole })
+            .eq('id', user.id);
+          console.log('Family role saved:', registrationData.familyRole);
+        } catch (roleError) {
+          console.error('Error saving family role:', roleError);
+          // Non-critical - don't block registration
+        }
+      }
       
       // Auto-login after successful registration
       console.log('Auto-logging in after registration...');
@@ -303,6 +320,39 @@ const Register = () => {
                   validation={form.formState.errors.name ? 'invalid' : form.watch('name') && form.watch('name').length >= 2 ? 'valid' : 'none'}
                   validationMessage={form.formState.errors.name?.message}
                 />
+
+                {/* Family role selector */}
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">אני...</Label>
+                  <div className="grid grid-cols-3 gap-2">
+                    {([
+                      { value: 'father' as const, label: 'אבא', image: '/avatars/roles/father.png' },
+                      { value: 'mother' as const, label: 'אמא', image: '/avatars/roles/mother.png' },
+                      { value: 'other' as const, label: 'אחר', emoji: '👤' },
+                    ] as const).map((option) => (
+                      <button
+                        key={option.value}
+                        type="button"
+                        onClick={() => form.setValue('familyRole', option.value)}
+                        className={`flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 transition-all duration-200 text-sm font-medium ${
+                          form.watch('familyRole') === option.value
+                            ? 'border-primary bg-primary/10 text-primary shadow-sm'
+                            : 'border-border/50 bg-background/50 hover:border-primary/40 hover:bg-primary/5 text-muted-foreground'
+                        }`}
+                      >
+                        {'image' in option && option.image ? (
+                          <img src={option.image} alt={option.label} className="w-12 h-12 sm:w-14 sm:h-14 object-contain rounded-full" />
+                        ) : (
+                          <span className="text-2xl sm:text-3xl">{'emoji' in option ? option.emoji : '👤'}</span>
+                        )}
+                        <span>{option.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                  {form.formState.errors.familyRole && (
+                    <p className="text-xs text-destructive">{form.formState.errors.familyRole.message}</p>
+                  )}
+                </div>
                 
                 <ModernInput
                   label="כתובת אימייל"

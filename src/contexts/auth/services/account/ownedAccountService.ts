@@ -42,6 +42,7 @@ export const ownedAccountService = {
           subscription_status: ownedAccounts[0].subscription_status,
           trial_ends_at: ownedAccounts[0].trial_ends_at,
           billing_cycle_start_day: ownedAccounts[0].billing_cycle_start_day,
+          avatar_set: ownedAccounts[0].avatar_set,
           ownerId: ownedAccounts[0].owner_id,
           sharedWithId: sharedWithId,
           sharedWithEmail: sharedWithEmail,
@@ -55,6 +56,7 @@ export const ownedAccountService = {
         subscription_status: ownedAccounts[0].subscription_status,
         trial_ends_at: ownedAccounts[0].trial_ends_at,
         billing_cycle_start_day: ownedAccounts[0].billing_cycle_start_day,
+        avatar_set: ownedAccounts[0].avatar_set,
         ownerId: ownedAccounts[0].owner_id,
         sharedWithEmail: sharedWithEmail
       };
@@ -91,6 +93,7 @@ export const ownedAccountService = {
         subscription_status: account.subscription_status,
         trial_ends_at: account.trial_ends_at,
         billing_cycle_start_day: account.billing_cycle_start_day,
+        avatar_set: account.avatar_set,
         ownerId: account.owner_id,
         sharedWithId: account.shared_with_id,
         sharedWithEmail: account.shared_with_email,

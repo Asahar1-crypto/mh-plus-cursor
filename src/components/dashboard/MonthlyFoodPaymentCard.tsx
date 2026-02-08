@@ -1,11 +1,10 @@
 import React, { useMemo } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { useExpense } from '@/contexts/ExpenseContext';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/auth';
 import { memberService } from '@/contexts/auth/services/account/memberService';
-import { Separator } from '@/components/ui/separator';
-import { Wallet, ArrowRightLeft, CheckCircle, AlertTriangle, TrendingUp } from 'lucide-react';
+import { Wallet, ArrowLeft, CheckCircle } from 'lucide-react';
 
 interface PaymentBreakdown {
   userId: string;
@@ -91,45 +90,37 @@ export const MonthlyFoodPaymentCard: React.FC<MonthlyFoodPaymentCardProps> = ({ 
     // Calculate totals for display
     const totalExpenses = selectedMonthExpenses.reduce((sum, expense) => sum + expense.amount, 0);
     
-    // Debug logging to verify calculations
-    console.log('🔍 Payment Breakdown Debug:', {
-      selectedMonth,
-      targetMonth: targetMonth + 1, // Display as 1-based
-      targetYear,
-      totalExpenses,
-      selectedMonthExpensesCount: selectedMonthExpenses.length,
-      breakdown: breakdown.map(b => ({
-        name: b.userName,
-        shouldPay: Math.round(b.shouldPay),
-        balance: Math.round(b.balance)
-      }))
-    });
-    
     return {
       totalExpenses,
       breakdown,
       selectedMonth: selectedMonth || `${targetYear}-${String(targetMonth + 1).padStart(2, '0')}`
     };
   }, [expenses, accountMembers, selectedMonth]);
-  
+
+  // Helper to format the month label
+  const monthLabel = useMemo(() => {
+    const monthStr = paymentBreakdown?.selectedMonth || selectedMonth || '';
+    if (!monthStr) return '';
+    const [year, month] = monthStr.split('-');
+    const date = new Date(parseInt(year), parseInt(month) - 1);
+    return date.toLocaleDateString('he-IL', { year: 'numeric', month: 'long' });
+  }, [paymentBreakdown?.selectedMonth, selectedMonth]);
+
+  // Loading state
   if (!paymentBreakdown) {
     return (
-      <Card className="bg-gradient-to-br from-card/90 to-card/95 backdrop-blur-lg border border-border/50 shadow-xl hover:shadow-2xl transition-all duration-500 group overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-accent/10 opacity-60"></div>
-        <CardHeader className="relative z-10">
-          <CardTitle className="flex items-center gap-3 text-xl">
-            <div className="p-2 bg-primary/20 rounded-full">
-              <Wallet className="h-6 w-6 text-primary animate-pulse" />
+      <Card className="bg-gradient-to-br from-card/90 to-card/95 backdrop-blur-lg border border-border/50 shadow-xl overflow-hidden relative group transition-all duration-300 hover:shadow-2xl">
+        <div className="absolute inset-0 bg-gradient-to-br from-violet-500/5 to-purple-500/10 opacity-60"></div>
+        <CardContent className="p-4 sm:p-6 relative z-10">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="p-2 bg-violet-500/15 rounded-xl">
+              <Wallet className="h-5 w-5 text-violet-600 dark:text-violet-400" />
             </div>
-            חלוקת תשלומים חודשיים
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="relative z-10">
-          <div className="flex items-center justify-center p-8">
-            <div className="text-center space-y-3">
-              <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent mx-auto"></div>
-              <p className="text-muted-foreground font-medium">טוען נתוני חברי החשבון...</p>
-            </div>
+            <span className="font-bold text-lg">חלוקת תשלומים</span>
+          </div>
+          <div className="flex items-center justify-center py-6">
+            <div className="h-6 w-6 animate-spin rounded-full border-3 border-primary border-t-transparent"></div>
+            <span className="text-sm text-muted-foreground mr-3">טוען...</span>
           </div>
         </CardContent>
       </Card>
@@ -137,179 +128,120 @@ export const MonthlyFoodPaymentCard: React.FC<MonthlyFoodPaymentCardProps> = ({ 
   }
   
   const { totalExpenses, breakdown } = paymentBreakdown;
+
+  // Pre-calculate net result for the bottom banner
+  const userA = breakdown[0];
+  const userB = breakdown[1];
+  const hasNetCalc = userA && userB;
+  const netDifference = hasNetCalc ? userA.balance - userB.balance : 0;
+
+  // Color helpers for balance status
+  const getBalanceColor = (balance: number) => {
+    if (balance > 0) return {
+      bg: 'bg-red-500/10 dark:bg-red-500/15',
+      border: 'border-red-200/60 dark:border-red-800/40',
+      text: 'text-red-700 dark:text-red-400',
+      label: 'חייב'
+    };
+    if (balance < 0) return {
+      bg: 'bg-emerald-500/10 dark:bg-emerald-500/15',
+      border: 'border-emerald-200/60 dark:border-emerald-800/40',
+      text: 'text-emerald-700 dark:text-emerald-400',
+      label: 'זכאי'
+    };
+    return {
+      bg: 'bg-blue-500/10 dark:bg-blue-500/15',
+      border: 'border-blue-200/60 dark:border-blue-800/40',
+      text: 'text-blue-700 dark:text-blue-400',
+      label: 'מאוזן'
+    };
+  };
   
   return (
-    <Card className="bg-gradient-to-br from-card/90 to-card/95 backdrop-blur-lg border border-border/50 shadow-xl hover:shadow-2xl transition-all duration-500 group overflow-hidden animate-scale-in">
-      <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-accent/10 opacity-60 group-hover:opacity-90 transition-opacity duration-500"></div>
-      <div className="absolute -top-24 -right-24 w-48 h-48 bg-primary/10 rounded-full blur-3xl group-hover:scale-150 transition-transform duration-700"></div>
+    <Card className="bg-gradient-to-br from-card/90 to-card/95 backdrop-blur-lg border border-border/50 shadow-xl overflow-hidden relative group transition-all duration-300 hover:shadow-2xl">
+      <div className="absolute inset-0 bg-gradient-to-br from-violet-500/5 to-purple-500/10 opacity-60 group-hover:opacity-80 transition-opacity duration-300"></div>
+      <div className="absolute -top-20 -left-20 w-40 h-40 bg-violet-400/10 rounded-full blur-3xl"></div>
       
-      <CardHeader className="p-4 sm:p-6 relative z-10">
-        <CardTitle className="flex items-center gap-3 text-xl sm:text-2xl bg-gradient-to-r from-foreground to-primary bg-clip-text text-transparent">
-          <div className="p-2 bg-primary/20 rounded-full group-hover:bg-primary/30 transition-colors duration-300">
-            <Wallet className="h-6 w-6 text-primary animate-pulse group-hover:animate-bounce transition-all duration-300" />
-          </div>
-          חלוקת תשלומים - {(() => {
-            const [year, month] = (paymentBreakdown.selectedMonth || selectedMonth || '').split('-');
-            const date = new Date(parseInt(year), parseInt(month) - 1);
-            return date.toLocaleDateString('he-IL', { year: 'numeric', month: 'long' });
-          })()}
-        </CardTitle>
-      </CardHeader>
-      
-      <CardContent className="space-y-6 p-4 sm:p-6 pt-0 relative z-10">
-        {/* Total expenses summary with enhanced design */}
-        <div className="text-center p-4 sm:p-6 bg-gradient-to-r from-primary/10 to-accent/10 backdrop-blur-sm rounded-xl border border-primary/20 hover:border-primary/40 transition-all duration-300 group/total">
-          <div className="flex items-center justify-center gap-2 mb-2">
-            <TrendingUp className="h-5 w-5 text-primary animate-pulse" />
-            <div className="text-sm font-semibold text-muted-foreground">סה״כ הוצאות החודש</div>
-          </div>
-          <div className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent group-hover/total:scale-110 transition-transform duration-300">
-            ₪{Math.round(totalExpenses)}
-          </div>
-          <div className="text-xs text-muted-foreground mt-2 p-2 bg-background/50 rounded-lg">
-            סה״כ חובות: ₪{Math.round(breakdown.reduce((sum, person) => sum + Math.max(0, person.balance), 0))}
-          </div>
-        </div>
-        
-        <Separator className="bg-gradient-to-r from-transparent via-border to-transparent" />
-        
-        {/* Individual breakdown with enhanced design */}
-        <div className="space-y-4">
-          <h4 className="font-bold text-base sm:text-lg flex items-center gap-2">
-            <ArrowRightLeft className="h-5 w-5 text-primary" />
-            פירוט תשלומים:
-          </h4>
-          {breakdown.map((person, index) => (
-            <div 
-              key={person.userId} 
-              className="flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-xl bg-gradient-to-r from-background/80 to-background/60 backdrop-blur-sm border border-border/50 hover:border-primary/30 gap-3 sm:gap-0 group/person hover:shadow-lg transition-all duration-300 animate-fade-in"
-              style={{ animationDelay: `${index * 100}ms` }}
-            >
-              <div className="flex-1">
-                <div className="font-semibold text-base flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full bg-gradient-to-r from-primary to-accent"></div>
-                  {person.userName}
-                </div>
-              </div>
-              
-              <div className="text-right">
-                {person.balance > 0 ? (
-                  <div className="flex items-center gap-2 justify-end">
-                    <AlertTriangle className="h-4 w-4 text-red-500" />
-                    <div className="bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 px-3 py-2 rounded-lg">
-                      <div className="text-red-700 dark:text-red-400 font-bold text-sm sm:text-base">
-                        חייב: ₪{Math.round(person.balance)}
-                      </div>
-                    </div>
-                  </div>
-                ) : person.balance < 0 ? (
-                  <div className="flex items-center gap-2 justify-end">
-                    <CheckCircle className="h-4 w-4 text-green-500" />
-                    <div className="bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800 px-3 py-2 rounded-lg">
-                      <div className="text-green-700 dark:text-green-400 font-bold text-sm sm:text-base">
-                        זכאי: ₪{Math.round(Math.abs(person.balance))}
-                      </div>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-2 justify-end">
-                    <CheckCircle className="h-4 w-4 text-blue-500" />
-                    <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 px-3 py-2 rounded-lg">
-                      <div className="text-blue-700 dark:text-blue-400 font-bold text-sm sm:text-base">
-                        מאוזן ✓
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
+      <CardContent className="p-4 sm:p-6 relative z-10 space-y-4">
+        {/* Header row: icon + title + total */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-violet-500/15 rounded-xl group-hover:bg-violet-500/25 transition-colors duration-300">
+              <Wallet className="h-5 w-5 text-violet-600 dark:text-violet-400" />
             </div>
-          ))}
+            <div>
+              <h3 className="font-bold text-base sm:text-lg leading-tight">חלוקת תשלומים</h3>
+              <span className="text-xs text-muted-foreground">{monthLabel}</span>
+            </div>
+          </div>
+          <div className="text-left">
+            <div className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-violet-600 to-purple-600 dark:from-violet-400 dark:to-purple-400 bg-clip-text text-transparent leading-tight">
+              ₪{Math.round(totalExpenses).toLocaleString()}
+            </div>
+            <div className="text-[10px] sm:text-xs text-muted-foreground text-left">סה״כ הוצאות</div>
+          </div>
         </div>
-        
-        <Separator className="bg-gradient-to-r from-transparent via-border to-transparent" />
-        
-        {/* Net calculation with enhanced design */}
-        <div className="space-y-4">
-          <h4 className="font-bold text-base sm:text-lg flex items-center gap-2">
-            <ArrowRightLeft className="h-5 w-5 text-primary animate-pulse" />
-            החישוב הנטו:
-          </h4>
-          {(() => {
-            const userA = breakdown[0];
-            const userB = breakdown[1];
-            
-            if (!userA || !userB) {
-              return (
-                <div className="text-center p-4 bg-gradient-to-r from-muted/50 to-muted/30 backdrop-blur-sm rounded-xl border border-border/50">
-                  <div className="text-sm text-muted-foreground">נדרשים שני משתמשים לחישוב נטו</div>
-                </div>
-              );
-            }
-            
-            const netDifference = userA.balance - userB.balance;
-            
+
+        {/* Member breakdown grid */}
+        <div className="grid grid-cols-2 gap-2.5 sm:gap-3">
+          {breakdown.map((person) => {
+            const colors = getBalanceColor(person.balance);
+            const amount = Math.round(Math.abs(person.balance));
             return (
-              <div className="space-y-4">
-                {/* Individual balances with enhanced design */}
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="text-center p-3 bg-gradient-to-br from-background/80 to-background/60 backdrop-blur-sm rounded-xl border border-border/50 hover:border-primary/30 transition-all duration-300 group/balance">
-                    <div className="font-semibold text-sm mb-1">{userA.userName}</div>
-                    <div className="bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 px-2 py-1 rounded text-red-700 dark:text-red-400 text-xs font-bold">
-                      חייב: ₪{Math.round(userA.balance)}
-                    </div>
-                  </div>
-                  <div className="text-center p-3 bg-gradient-to-br from-background/80 to-background/60 backdrop-blur-sm rounded-xl border border-border/50 hover:border-primary/30 transition-all duration-300 group/balance">
-                    <div className="font-semibold text-sm mb-1">{userB.userName}</div>
-                    <div className="bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 px-2 py-1 rounded text-red-700 dark:text-red-400 text-xs font-bold">
-                      חייב: ₪{Math.round(userB.balance)}
-                    </div>
-                  </div>
+              <div 
+                key={person.userId} 
+                className={`rounded-xl p-3 sm:p-4 border ${colors.border} ${colors.bg} transition-all duration-200 hover:scale-[1.02]`}
+              >
+                <div className="flex items-center gap-2 mb-2">
+                  <div className={`w-2 h-2 rounded-full ${person.balance > 0 ? 'bg-red-500' : person.balance < 0 ? 'bg-emerald-500' : 'bg-blue-500'}`}></div>
+                  <span className="font-semibold text-sm truncate">{person.userName}</span>
                 </div>
-                
-                {/* Net result with enhanced design */}
-                <div className="text-center">
-                  <div className="text-sm font-semibold text-muted-foreground mb-3 flex items-center justify-center gap-2">
-                    <div className="w-2 h-2 bg-primary rounded-full animate-pulse"></div>
-                    תוצאה נטו:
-                  </div>
-                  {Math.abs(netDifference) < 1 ? (
-                    <div className="p-4 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/30 rounded-xl border border-green-200 dark:border-green-800 animate-scale-in">
-                      <div className="flex items-center justify-center gap-2 mb-2">
-                        <CheckCircle className="h-6 w-6 text-green-600 animate-bounce" />
-                        <div className="font-bold text-green-700 dark:text-green-400 text-lg">החשבון מאוזן!</div>
-                      </div>
-                      <div className="text-xs text-muted-foreground bg-background/50 p-2 rounded-lg">אין צורך בהעברת כסף</div>
-                    </div>
-                  ) : netDifference > 0 ? (
-                    <div className="p-4 bg-gradient-to-r from-orange-50 to-red-50 dark:from-orange-950/30 dark:to-red-950/30 rounded-xl border border-orange-200 dark:border-orange-800 animate-scale-in">
-                      <div className="flex items-center justify-center gap-2 mb-2">
-                        <ArrowRightLeft className="h-6 w-6 text-orange-600 animate-pulse" />
-                        <div className="font-bold text-orange-700 dark:text-orange-400 text-lg">
-                          {userA.userName} צריך להעביר ₪{Math.round(Math.abs(netDifference))} ל{userB.userName}
-                        </div>
-                      </div>
-                      <div className="text-xs text-muted-foreground bg-background/50 p-2 rounded-lg">
-                        {userA.userName} חייב ₪{Math.round(userA.balance)} מינוס {userB.userName} חייב ₪{Math.round(userB.balance)} = ₪{Math.round(Math.abs(netDifference))}
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="p-4 bg-gradient-to-r from-orange-50 to-red-50 dark:from-orange-950/30 dark:to-red-950/30 rounded-xl border border-orange-200 dark:border-orange-800 animate-scale-in">
-                      <div className="flex items-center justify-center gap-2 mb-2">
-                        <ArrowRightLeft className="h-6 w-6 text-orange-600 animate-pulse" />
-                        <div className="font-bold text-orange-700 dark:text-orange-400 text-lg">
-                          {userB.userName} צריך להעביר ₪{Math.round(Math.abs(netDifference))} ל{userA.userName}
-                        </div>
-                      </div>
-                      <div className="text-xs text-muted-foreground bg-background/50 p-2 rounded-lg">
-                        {userB.userName} חייב ₪{Math.round(userB.balance)} מינוס {userA.userName} חייב ₪{Math.round(userA.balance)} = ₪{Math.round(Math.abs(netDifference))}
-                      </div>
-                    </div>
-                  )}
+                <div className={`${colors.text} font-bold text-lg sm:text-xl leading-tight`}>
+                  ₪{amount.toLocaleString()}
+                </div>
+                <div className={`${colors.text} text-[10px] sm:text-xs font-medium opacity-80 mt-0.5`}>
+                  {colors.label}
                 </div>
               </div>
             );
-          })()}
+          })}
         </div>
+
+        {/* Net result banner */}
+        {hasNetCalc && (
+          <div className={`rounded-xl p-3 sm:p-4 text-center transition-all duration-200 ${
+            Math.abs(netDifference) < 1
+              ? 'bg-emerald-500/10 dark:bg-emerald-500/15 border border-emerald-200/60 dark:border-emerald-800/40'
+              : 'bg-amber-500/10 dark:bg-amber-500/15 border border-amber-200/60 dark:border-amber-800/40'
+          }`}>
+            {Math.abs(netDifference) < 1 ? (
+              <div className="flex items-center justify-center gap-2">
+                <CheckCircle className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+                <span className="font-bold text-emerald-700 dark:text-emerald-400 text-sm sm:text-base">החשבון מאוזן!</span>
+              </div>
+            ) : (
+              <div className="flex items-center justify-center gap-2 flex-wrap">
+                <span className="font-bold text-sm sm:text-base text-amber-800 dark:text-amber-300">
+                  {netDifference > 0 ? userA.userName : userB.userName}
+                </span>
+                <ArrowLeft className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0" />
+                <span className="font-bold text-sm sm:text-base bg-gradient-to-r from-amber-600 to-orange-600 dark:from-amber-400 dark:to-orange-400 bg-clip-text text-transparent">
+                  ₪{Math.round(Math.abs(netDifference)).toLocaleString()}
+                </span>
+                <ArrowLeft className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0" />
+                <span className="font-bold text-sm sm:text-base text-amber-800 dark:text-amber-300">
+                  {netDifference > 0 ? userB.userName : userA.userName}
+                </span>
+              </div>
+            )}
+          </div>
+        )}
+        
+        {!hasNetCalc && breakdown.length < 2 && (
+          <div className="text-center py-2">
+            <span className="text-xs text-muted-foreground">נדרשים שני חברי חשבון לחישוב נטו</span>
+          </div>
+        )}
       </CardContent>
     </Card>
   );

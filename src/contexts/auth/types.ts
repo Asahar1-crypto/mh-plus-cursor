@@ -5,9 +5,12 @@ export interface User {
   name: string;
 }
 
+export type FamilyRoleType = 'father' | 'mother' | 'other';
+
 export interface Profile {
   id: string;
   name: string;
+  family_role: FamilyRoleType | null;
   created_at: string;
   updated_at: string;
   selected_account_id: string | null;
@@ -22,6 +25,7 @@ export interface Account {
   subscription_status?: string;
   trial_ends_at?: string;
   billing_cycle_start_day?: number | null;
+  avatar_set?: string | null;
   // Legacy fields (will be removed in future)
   ownerId?: string;
   sharedWithId?: string;

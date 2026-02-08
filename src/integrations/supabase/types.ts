@@ -61,6 +61,7 @@ export type Database = {
       }
       accounts: {
         Row: {
+          avatar_set: string | null
           billing_cycle_end_day: number | null
           billing_cycle_start_day: number | null
           billing_cycle_type: string | null
@@ -77,6 +78,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          avatar_set?: string | null
           billing_cycle_end_day?: number | null
           billing_cycle_start_day?: number | null
           billing_cycle_type?: string | null
@@ -93,6 +95,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          avatar_set?: string | null
           billing_cycle_end_day?: number | null
           billing_cycle_start_day?: number | null
           billing_cycle_type?: string | null
@@ -210,6 +213,7 @@ export type Database = {
           account_id: string
           birth_date: string | null
           created_at: string
+          gender: string | null
           id: string
           name: string
           updated_at: string
@@ -218,6 +222,7 @@ export type Database = {
           account_id: string
           birth_date?: string | null
           created_at?: string
+          gender?: string | null
           id?: string
           name: string
           updated_at?: string
@@ -226,6 +231,7 @@ export type Database = {
           account_id?: string
           birth_date?: string | null
           created_at?: string
+          gender?: string | null
           id?: string
           name?: string
           updated_at?: string
@@ -623,6 +629,7 @@ export type Database = {
       profiles: {
         Row: {
           created_at: string
+          family_role: string | null
           id: string
           is_super_admin: boolean | null
           last_login: string | null
@@ -640,6 +647,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          family_role?: string | null
           id: string
           is_super_admin?: boolean | null
           last_login?: string | null
@@ -657,6 +665,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          family_role?: string | null
           id?: string
           is_super_admin?: boolean | null
           last_login?: string | null

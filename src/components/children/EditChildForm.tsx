@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useExpense } from '@/contexts/expense';
-import { Child } from '@/contexts/expense/types';
+import { Child, ChildGender } from '@/contexts/expense/types';
 import { useToast } from '@/hooks/use-toast';
 
 interface EditChildFormProps {
@@ -27,6 +27,7 @@ const EditChildForm: React.FC<EditChildFormProps> = ({ child, open, setOpen }) =
   const [formData, setFormData] = useState({
     name: child.name,
     birthDate: child.birthDate,
+    gender: (child.gender || 'son') as ChildGender,
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -55,6 +56,7 @@ const EditChildForm: React.FC<EditChildFormProps> = ({ child, open, setOpen }) =
       await updateChild(child.id, {
         name: formData.name.trim(),
         birthDate: formData.birthDate,
+        gender: formData.gender,
       });
       
       toast({
@@ -102,6 +104,31 @@ const EditChildForm: React.FC<EditChildFormProps> = ({ child, open, setOpen }) =
             placeholder="הכנס שם הילד"
             required
           />
+        </div>
+
+        {/* Gender selector */}
+        <div className="space-y-2">
+          <Label className="text-sm font-medium">בן / בת</Label>
+          <div className="grid grid-cols-2 gap-3">
+            {([
+              { value: 'son' as ChildGender, label: 'בן', image: '/avatars/roles/son.png' },
+              { value: 'daughter' as ChildGender, label: 'בת', image: '/avatars/roles/daughter.png' },
+            ]).map((option) => (
+              <button
+                key={option.value}
+                type="button"
+                onClick={() => setFormData(prev => ({ ...prev, gender: option.value }))}
+                className={`flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 transition-all duration-200 text-sm font-medium ${
+                  formData.gender === option.value
+                    ? 'border-primary bg-primary/10 text-primary shadow-sm'
+                    : 'border-border/50 bg-background/50 hover:border-primary/40 hover:bg-primary/5 text-muted-foreground'
+                }`}
+              >
+                <img src={option.image} alt={option.label} className="w-12 h-12 sm:w-14 sm:h-14 object-contain rounded-full" />
+                <span>{option.label}</span>
+              </button>
+            ))}
+          </div>
         </div>
 
         <div className="space-y-2">

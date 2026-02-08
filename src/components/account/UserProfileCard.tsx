@@ -10,6 +10,13 @@ import { useAuth } from '@/contexts/auth';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { User, Save, Edit2, Mail, Phone, Check, X } from 'lucide-react';
+import type { FamilyRoleType } from '@/contexts/auth/types';
+
+const FAMILY_ROLE_OPTIONS: { value: FamilyRoleType; label: string; image?: string; emoji?: string }[] = [
+  { value: 'father', label: 'אבא', image: '/avatars/roles/father.png' },
+  { value: 'mother', label: 'אמא', image: '/avatars/roles/mother.png' },
+  { value: 'other', label: 'אחר', emoji: '👤' },
+];
 
 const UserProfileCard: React.FC = () => {
   const { user, profile, refreshProfile, sendPhoneOtp, loginWithPhone } = useAuth();
@@ -19,6 +26,8 @@ const UserProfileCard: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isEmailDialogOpen, setIsEmailDialogOpen] = useState(false);
   const [newEmail, setNewEmail] = useState('');
+  const [familyRole, setFamilyRole] = useState<FamilyRoleType>((profile as any)?.family_role || 'other');
+  const [isSavingRole, setIsSavingRole] = useState(false);
   
   // Phone editing states
   const [isEditingPhone, setIsEditingPhone] = useState(false);
@@ -61,6 +70,39 @@ const UserProfileCard: React.FC = () => {
   const handleCancel = () => {
     setName(profile?.name || '');
     setIsEditing(false);
+  };
+
+  const handleSaveFamilyRole = async (newRole: FamilyRoleType) => {
+    if (!user) return;
+    
+    setIsSavingRole(true);
+    const previousRole = familyRole;
+    setFamilyRole(newRole);
+
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ family_role: newRole })
+        .eq('id', user.id);
+
+      if (error) throw error;
+
+      await refreshProfile();
+      toast({
+        title: "התפקיד עודכן בהצלחה",
+        description: `התפקיד שלך עודכן ל${FAMILY_ROLE_OPTIONS.find(o => o.value === newRole)?.label}`,
+      });
+    } catch (error) {
+      console.error('Error updating family role:', error);
+      setFamilyRole(previousRole);
+      toast({
+        title: "שגיאה בעדכון התפקיד",
+        description: "אנא נסה שוב",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSavingRole(false);
+    }
   };
 
   const handleSavePhone = async () => {
@@ -299,6 +341,36 @@ const UserProfileCard: React.FC = () => {
           )}
           <p className="text-xs text-muted-foreground">
             השם הזה יופיע בכל רחבי המערכת במקום כתובת המייל
+          </p>
+        </div>
+
+        {/* תפקיד במשפחה */}
+        <div className="space-y-2">
+          <Label className="text-sm sm:text-base">תפקיד במשפחה</Label>
+          <div className="grid grid-cols-3 gap-2">
+            {FAMILY_ROLE_OPTIONS.map((option) => (
+              <button
+                key={option.value}
+                type="button"
+                onClick={() => handleSaveFamilyRole(option.value)}
+                disabled={isSavingRole}
+                className={`flex flex-col items-center gap-1.5 p-2.5 sm:p-3 rounded-xl border-2 transition-all duration-200 text-xs sm:text-sm font-medium ${
+                  familyRole === option.value
+                    ? 'border-primary bg-primary/10 text-primary shadow-sm'
+                    : 'border-border/50 bg-background/50 hover:border-primary/40 hover:bg-primary/5 text-muted-foreground'
+                } ${isSavingRole ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+              >
+                {option.image ? (
+                  <img src={option.image} alt={option.label} className="w-12 h-12 sm:w-14 sm:h-14 object-contain rounded-full" />
+                ) : (
+                  <span className="text-2xl sm:text-3xl">{option.emoji}</span>
+                )}
+                <span>{option.label}</span>
+              </button>
+            ))}
+          </div>
+          <p className="text-xs text-muted-foreground">
+            התפקיד משפיע על האווטאר ועל הצגת הנתונים במערכת
           </p>
         </div>
 

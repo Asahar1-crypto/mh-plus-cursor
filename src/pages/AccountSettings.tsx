@@ -8,10 +8,12 @@ import InviteUserForm from '@/components/account/InviteUserForm';
 import UsersListCard from '@/components/account/UsersListCard';
 import PendingInvitationsCard from '@/components/account/PendingInvitationsCard';
 import SentInvitationsCard from '@/components/account/SentInvitationsCard';
-import NotificationsCard from '@/components/account/NotificationsCard';
 import UserProfileCard from '@/components/account/UserProfileCard';
 import ChangePasswordCard from '@/components/account/ChangePasswordCard';
 import BillingCycleCard from '@/components/account/BillingCycleCard';
+import AvatarSetCard from '@/components/account/AvatarSetCard';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { User, Settings, Users } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -77,41 +79,86 @@ const AccountSettings = () => {
       </div>
 
       <div className="relative z-10 container mx-auto p-3 sm:p-4 md:p-6 space-y-4 sm:space-y-6">
+        {/* Header */}
         <div className="flex items-center justify-between animate-fade-in">
           <h1 className="text-xl sm:text-2xl md:text-3xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
             הגדרות חשבון
           </h1>
         </div>
 
+        {/* Account Status Banner */}
         <div className="animate-fade-in [animation-delay:200ms]">
           <AccountStatusAlert account={account} />
         </div>
 
-        <div className="grid gap-3 sm:gap-4 md:gap-6 lg:grid-cols-2 animate-fade-in [animation-delay:400ms]">
-          <div className="space-y-3 sm:space-y-4 md:space-y-6">
-            <UserProfileCard />
-            <ChangePasswordCard />
-            <UserAccountsCard />
-            <BillingCycleCard 
-              accountId={account?.id}
-              currentBillingDay={account?.billing_cycle_start_day}
-              isAdmin={isAdmin || false}
-            />
-            <AccountDetailsCard account={account} />
-            <PendingInvitationsCard />
-          </div>
-          
-          <div className="space-y-3 sm:space-y-4 md:space-y-6">
-            <InviteUserForm account={account} onInvite={handleInvite} />
-            <SentInvitationsCard account={account} />
-            <UsersListCard 
-              account={account} 
-              user={user} 
-              onRemovePartner={handleRemovePartner}
-              isLoading={isLoading}
-            />
-            <NotificationsCard />
-          </div>
+        {/* Tabs Navigation */}
+        <div className="animate-fade-in [animation-delay:400ms]">
+          <Tabs defaultValue="profile" dir="rtl" className="w-full">
+            <TabsList className="w-full h-auto flex-wrap gap-1 bg-card/80 backdrop-blur-sm border border-border/50 rounded-xl p-1.5 shadow-sm">
+              <TabsTrigger 
+                value="profile" 
+                className="flex-1 min-w-[100px] gap-2 rounded-lg py-2.5 px-3 text-xs sm:text-sm font-medium transition-all data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md"
+              >
+                <User className="h-4 w-4" />
+                <span>פרופיל אישי</span>
+              </TabsTrigger>
+              <TabsTrigger 
+                value="account" 
+                className="flex-1 min-w-[100px] gap-2 rounded-lg py-2.5 px-3 text-xs sm:text-sm font-medium transition-all data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md"
+              >
+                <Settings className="h-4 w-4" />
+                <span>הגדרות חשבון</span>
+              </TabsTrigger>
+              <TabsTrigger 
+                value="family" 
+                className="flex-1 min-w-[100px] gap-2 rounded-lg py-2.5 px-3 text-xs sm:text-sm font-medium transition-all data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md"
+              >
+                <Users className="h-4 w-4" />
+                <span>חברי משפחה</span>
+              </TabsTrigger>
+            </TabsList>
+
+            {/* Tab 1: Profile */}
+            <TabsContent value="profile" className="mt-4 sm:mt-6">
+              <div className="max-w-2xl mx-auto space-y-4 sm:space-y-6 animate-fade-in">
+                <UserProfileCard />
+                <ChangePasswordCard />
+              </div>
+            </TabsContent>
+
+            {/* Tab 2: Account Settings */}
+            <TabsContent value="account" className="mt-4 sm:mt-6">
+              <div className="max-w-2xl mx-auto space-y-4 sm:space-y-6 animate-fade-in">
+                <AccountDetailsCard account={account} />
+                <BillingCycleCard 
+                  accountId={account?.id}
+                  currentBillingDay={account?.billing_cycle_start_day}
+                  isAdmin={isAdmin || false}
+                />
+                <AvatarSetCard
+                  accountId={account?.id}
+                  currentAvatarSet={account?.avatar_set}
+                  isAdmin={isAdmin || false}
+                />
+                <UserAccountsCard />
+              </div>
+            </TabsContent>
+
+            {/* Tab 3: Family Members */}
+            <TabsContent value="family" className="mt-4 sm:mt-6">
+              <div className="max-w-2xl mx-auto space-y-4 sm:space-y-6 animate-fade-in">
+                <PendingInvitationsCard />
+                <UsersListCard 
+                  account={account} 
+                  user={user} 
+                  onRemovePartner={handleRemovePartner}
+                  isLoading={isLoading}
+                />
+                <InviteUserForm account={account} onInvite={handleInvite} />
+                <SentInvitationsCard account={account} />
+              </div>
+            </TabsContent>
+          </Tabs>
         </div>
       </div>
     </div>

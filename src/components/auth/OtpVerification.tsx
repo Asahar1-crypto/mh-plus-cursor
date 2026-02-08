@@ -1,12 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { ArrowLeft, Smartphone, Shield, Clock } from 'lucide-react';
+import { ArrowLeft, Smartphone, Shield, Clock, RefreshCw, CheckCircle2 } from 'lucide-react';
+import { InputOTP, InputOTPGroup, InputOTPSlot, InputOTPSeparator } from '@/components/ui/input-otp';
 import { useAuth } from '@/contexts/auth';
 import { useNavigate } from 'react-router-dom';
 import { useConfetti } from '@/components/ui/confetti';
 import { CelebrationModal } from '@/components/ui/celebration-modal';
+import { REGEXP_ONLY_DIGITS } from 'input-otp';
 
 interface OtpVerificationProps {
   phoneNumber: string;
@@ -25,13 +26,14 @@ const OtpVerification: React.FC<OtpVerificationProps> = ({
 }) => {
   const { loginWithPhone, sendPhoneOtp, isLoading } = useAuth();
   const navigate = useNavigate();
-  const [otpCode, setOtpCode] = useState(['', '', '', '', '', '']);
+  const [otpValue, setOtpValue] = useState('');
   const [isVerifying, setIsVerifying] = useState(false);
   const [isResending, setIsResending] = useState(false);
-  const [countdown, setCountdown] = useState(120); // 2 minutes
+  const [countdown, setCountdown] = useState(120);
   const [error, setError] = useState('');
   const [showCelebration, setShowCelebration] = useState(false);
-  const { isActive: confettiActive, fire: fireConfetti, ConfettiComponent } = useConfetti();
+  const [resendSuccess, setResendSuccess] = useState(false);
+  const { fire: fireConfetti, ConfettiComponent } = useConfetti();
 
   // Countdown timer
   useEffect(() => {
@@ -47,46 +49,8 @@ const OtpVerification: React.FC<OtpVerificationProps> = ({
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
-  const handleOtpChange = (index: number, value: string) => {
-    if (value.length > 1) return; // Only allow single digit
-    
-    setError('');
-    const newOtp = [...otpCode];
-    newOtp[index] = value;
-    setOtpCode(newOtp);
-
-    // Auto-focus next input (left to right for numbers)
-    if (value && index < 5) {
-      const nextInput = document.getElementById(`otp-${index + 1}`) as HTMLInputElement;
-      nextInput?.focus();
-    }
-  };
-
-  const handleKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Backspace' && !otpCode[index] && index > 0) {
-      const prevInput = document.getElementById(`otp-${index - 1}`) as HTMLInputElement;
-      prevInput?.focus();
-    }
-  };
-
-  const handlePaste = (e: React.ClipboardEvent) => {
-    e.preventDefault();
-    const pastedData = e.clipboardData.getData('text').replace(/\D/g, '');
-    
-    if (pastedData.length === 6) {
-      const newOtp = pastedData.split('').slice(0, 6);
-      setOtpCode(newOtp);
-      setError('');
-      
-      // Focus last input after paste
-      const lastInput = document.getElementById('otp-5') as HTMLInputElement;
-      lastInput?.focus();
-    }
-  };
-
-  const handleVerifyOtp = async () => {
-    const code = otpCode.join('');
-    console.log('OTP verification - phoneNumber:', phoneNumber, 'code:', code, 'otpCode array:', otpCode);
+  const handleVerifyOtp = useCallback(async (code: string) => {
+    console.log('OTP verification - phoneNumber:', phoneNumber, 'code:', code);
     
     if (code.length !== 6) {
       setError('אנא הזן קוד בן 6 ספרות');
@@ -98,41 +62,41 @@ const OtpVerification: React.FC<OtpVerificationProps> = ({
 
     try {
       await loginWithPhone(phoneNumber, code);
-      
-      // Success celebration
       fireConfetti();
       setShowCelebration(true);
-      
     } catch (error: any) {
       console.error('OTP verification failed:', error);
-      setError('קוד שגוי או פג תוקף');
-      
-      // Clear OTP inputs on error
-      setOtpCode(['', '', '', '', '', '']);
-      const firstInput = document.getElementById('otp-0') as HTMLInputElement;
-      firstInput?.focus();
+      setError('קוד שגוי או פג תוקף. נסה שנית.');
+      setOtpValue('');
     } finally {
       setIsVerifying(false);
     }
-  };
+  }, [phoneNumber, loginWithPhone, fireConfetti]);
+
+  // Auto-verify when all 6 digits are entered
+  const handleOtpChange = useCallback((value: string) => {
+    setError('');
+    setOtpValue(value);
+    
+    if (value.length === 6) {
+      handleVerifyOtp(value);
+    }
+  }, [handleVerifyOtp]);
 
   const handleResendOtp = async () => {
     setIsResending(true);
     setError('');
+    setResendSuccess(false);
     
     try {
       await sendPhoneOtp(phoneNumber);
-      setCountdown(120); // Reset countdown
-      setOtpCode(['', '', '', '', '', '']); // Clear current OTP
-      
-      const firstInput = document.getElementById('otp-0') as HTMLInputElement;
-      firstInput?.focus();
-      
-      // Show success message
-      alert('קוד חדש נשלח למספר הטלפון שלך');
+      setCountdown(120);
+      setOtpValue('');
+      setResendSuccess(true);
+      setTimeout(() => setResendSuccess(false), 3000);
     } catch (error) {
       console.error('Failed to resend OTP:', error);
-      alert('שגיאה בשליחת קוד חדש');
+      setError('שגיאה בשליחת קוד חדש');
     } finally {
       setIsResending(false);
     }
@@ -144,66 +108,106 @@ const OtpVerification: React.FC<OtpVerificationProps> = ({
     navigate('/dashboard');
   };
 
+  // Timer progress for visual indicator
+  const timerProgress = (countdown / 120) * 100;
+
   return (
     <>
-      <Card className="border-border shadow-lg animate-fade-in glass">
-        <CardHeader className="text-center">
+      <Card className="border-border shadow-lg animate-fade-in glass overflow-hidden">
+        {/* Progress bar for timer */}
+        <div className="h-1 w-full bg-muted/30">
+          <div 
+            className="h-full bg-gradient-to-r from-primary to-primary-glow transition-all duration-1000 ease-linear"
+            style={{ width: `${timerProgress}%` }}
+          />
+        </div>
+
+        <CardHeader className="text-center pb-4">
           <div className="flex items-center justify-center gap-2 mb-2">
             <Shield className="w-6 h-6 text-green-500" />
-            <CardTitle className="text-2xl font-bold bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-transparent">
+            <CardTitle className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-transparent">
               אימות קוד
             </CardTitle>
           </div>
-          <CardDescription>
-            נשלח קוד אימות למספר {displayNumber}
+          <CardDescription className="text-sm sm:text-base">
+            <span>נשלח קוד אימות למספר</span>
             <br />
+            <span className="font-mono text-base sm:text-lg font-semibold text-foreground tracking-wider" dir="ltr">
+              {displayNumber}
+            </span>
             {userInfo.userName && (
-              <span className="text-primary font-medium">שלום {userInfo.userName}! 👋</span>
+              <>
+                <br />
+                <span className="text-primary font-medium">שלום {userInfo.userName}!</span>
+              </>
             )}
           </CardDescription>
         </CardHeader>
         
-        <CardContent className="space-y-6">
-          {/* OTP Input Fields */}
-          <div className="space-y-4">
-            <div className="flex justify-center gap-3" onPaste={handlePaste} dir="ltr">
-              {otpCode.map((digit, index) => (
-                <Input
-                  key={index}
-                  id={`otp-${index}`}
-                  type="text"
-                  inputMode="numeric"
-                  maxLength={1}
-                  value={digit}
-                  onChange={(e) => handleOtpChange(index, e.target.value.replace(/\D/g, ''))}
-                  onKeyDown={(e) => handleKeyDown(index, e)}
-                  className={`w-12 h-12 text-center text-xl font-bold border-2 transition-all duration-200 ${
-                    digit ? 'border-primary shadow-glow' : 'border-muted'
-                  } ${error ? 'border-destructive' : ''} focus:border-primary focus:shadow-glow`}
-                  dir="ltr"
-                />
-              ))}
+        <CardContent className="space-y-5 px-4 sm:px-6">
+          {/* OTP Input - using input-otp library */}
+          <div className="space-y-3">
+            <div className="flex justify-center" dir="ltr">
+              <InputOTP
+                maxLength={6}
+                value={otpValue}
+                onChange={handleOtpChange}
+                disabled={isVerifying || countdown === 0}
+                pattern={REGEXP_ONLY_DIGITS}
+                autoFocus
+                containerClassName="gap-1 sm:gap-2 justify-center"
+              >
+                <InputOTPGroup className="gap-1 sm:gap-1.5">
+                  <InputOTPSlot index={0} className={error ? 'border-destructive' : ''} />
+                  <InputOTPSlot index={1} className={error ? 'border-destructive' : ''} />
+                  <InputOTPSlot index={2} className={error ? 'border-destructive' : ''} />
+                </InputOTPGroup>
+                <InputOTPSeparator />
+                <InputOTPGroup className="gap-1 sm:gap-1.5">
+                  <InputOTPSlot index={3} className={error ? 'border-destructive' : ''} />
+                  <InputOTPSlot index={4} className={error ? 'border-destructive' : ''} />
+                  <InputOTPSlot index={5} className={error ? 'border-destructive' : ''} />
+                </InputOTPGroup>
+              </InputOTP>
             </div>
             
+            {/* Error message */}
             {error && (
-              <p className="text-center text-sm text-destructive animate-fade-in">{error}</p>
+              <p className="text-center text-sm text-destructive animate-fade-in font-medium">{error}</p>
+            )}
+
+            {/* Resend success message */}
+            {resendSuccess && (
+              <div className="flex items-center justify-center gap-2 text-green-600 animate-fade-in">
+                <CheckCircle2 className="w-4 h-4" />
+                <p className="text-sm font-medium">קוד חדש נשלח בהצלחה!</p>
+              </div>
             )}
           </div>
 
           {/* Timer */}
-          <div className="flex items-center justify-center gap-2 text-muted-foreground">
-            <Clock className="w-4 h-4" />
-            <span className="text-sm">
+          <div className="flex items-center justify-center gap-2">
+            <Clock className={`w-4 h-4 ${countdown <= 30 ? 'text-destructive animate-pulse' : 'text-muted-foreground'}`} />
+            <span className={`text-sm font-medium ${countdown <= 30 ? 'text-destructive' : 'text-muted-foreground'}`}>
               {countdown > 0 ? `הקוד יפוג בעוד ${formatTime(countdown)}` : 'הקוד פג תוקף'}
             </span>
           </div>
 
+          {/* Auto-verify indicator */}
+          {isVerifying && (
+            <div className="flex items-center justify-center gap-2 py-2 animate-fade-in">
+              <span className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-r-transparent" />
+              <span className="text-sm font-medium text-primary">מאמת את הקוד...</span>
+            </div>
+          )}
+
           {/* Action Buttons */}
-          <div className="space-y-3">
+          <div className="space-y-3 pt-1">
+            {/* Manual verify button - shown when auto-verify didn't trigger */}
             <Button 
-              onClick={handleVerifyOtp}
-              disabled={isVerifying || otpCode.join('').length !== 6 || countdown === 0}
-              className="w-full bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white font-semibold py-3 text-lg shadow-lg transform transition-all duration-200 hover:scale-105 disabled:transform-none"
+              onClick={() => handleVerifyOtp(otpValue)}
+              disabled={isVerifying || otpValue.length !== 6 || countdown === 0}
+              className="w-full bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white font-semibold py-3 h-12 sm:h-14 text-base sm:text-lg shadow-lg transform transition-all duration-200 hover:scale-[1.02] disabled:transform-none rounded-xl"
             >
               {isVerifying ? (
                 <span className="flex items-center gap-2">
@@ -221,16 +225,19 @@ const OtpVerification: React.FC<OtpVerificationProps> = ({
             <Button
               variant="outline"
               onClick={handleResendOtp}
-              disabled={isResending || countdown > 60} // Allow resend only after 1 minute
-              className="w-full"
+              disabled={isResending || countdown > 60}
+              className="w-full h-11 sm:h-12 rounded-xl text-sm sm:text-base"
             >
               {isResending ? (
                 <span className="flex items-center gap-2">
-                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-r-transparent" />
+                  <RefreshCw className="h-4 w-4 animate-spin" />
                   שולח שוב...
                 </span>
               ) : countdown > 60 ? (
-                `שלח שוב בעוד ${formatTime(countdown - 60)}`
+                <span className="flex items-center gap-2">
+                  <Clock className="w-4 h-4" />
+                  {`שלח שוב בעוד ${formatTime(countdown - 60)}`}
+                </span>
               ) : (
                 <span className="flex items-center gap-2">
                   <Smartphone className="w-4 h-4" />
@@ -242,7 +249,7 @@ const OtpVerification: React.FC<OtpVerificationProps> = ({
             <Button
               variant="ghost"
               onClick={onBack}
-              className="w-full flex items-center gap-2 hover:bg-muted/50 transition-colors"
+              className="w-full flex items-center gap-2 hover:bg-muted/50 transition-colors h-10 sm:h-11 text-sm sm:text-base"
             >
               <ArrowLeft className="w-4 h-4" />
               חזור להזנת מספר
@@ -250,9 +257,9 @@ const OtpVerification: React.FC<OtpVerificationProps> = ({
           </div>
 
           {/* Security Notice */}
-          <div className="text-center text-xs text-muted-foreground bg-muted/20 p-3 rounded-lg">
-            <p>🔒 לא תשתף את הקוד עם אחרים</p>
-            <p>🕒 הקוד תקף רק למשך 10 דקות</p>
+          <div className="text-center text-xs text-muted-foreground bg-muted/20 p-3 rounded-xl space-y-1">
+            <p>הקוד מוזן אוטומטית עם ההקלדה - פשוט הקלד 6 ספרות</p>
+            <p>ניתן גם להדביק קוד שהועתק מה-SMS</p>
           </div>
         </CardContent>
       </Card>
@@ -263,7 +270,7 @@ const OtpVerification: React.FC<OtpVerificationProps> = ({
       {/* Success Celebration Modal */}
       <CelebrationModal
         isOpen={showCelebration}
-        title="🎉 התחברת בהצלחה!"
+        title="התחברת בהצלחה!"
         message="ברוכים הבאים! אתה מועבר עכשיו לדשבורד"
         onClose={handleCelebrationClose}
       />

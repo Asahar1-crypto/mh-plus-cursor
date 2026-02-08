@@ -28,10 +28,13 @@ export interface Expense {
   recurringApprovedBy?: string;
 }
 
+export type ChildGender = 'son' | 'daughter';
+
 export interface Child {
   id: string;
   name: string;
   birthDate: string;
+  gender: ChildGender;
 }
 
 export interface ExpenseContextType {
