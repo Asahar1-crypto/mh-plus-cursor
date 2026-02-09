@@ -217,11 +217,11 @@ const ResetPassword: React.FC = () => {
   // Loading state while checking token
   if (isTokenChecking) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <Card className="w-full max-w-md mx-4">
-          <CardContent className="flex flex-col items-center justify-center p-8">
-            <Loader2 className="h-8 w-8 animate-spin text-primary mb-4" />
-            <p className="text-muted-foreground">בודק תוקף הלינק...</p>
+      <div className="min-h-screen flex items-center justify-center bg-background px-3 sm:px-4">
+        <Card className="w-full max-w-md">
+          <CardContent className="flex flex-col items-center justify-center p-6 sm:p-8">
+            <Loader2 className="h-6 w-6 sm:h-8 sm:w-8 animate-spin text-primary mb-3 sm:mb-4" />
+            <p className="text-sm sm:text-base text-muted-foreground">בודק תוקף הלינק...</p>
           </CardContent>
         </Card>
       </div>
@@ -231,14 +231,14 @@ const ResetPassword: React.FC = () => {
   // Invalid token state
   if (isValidToken === false) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <Card className="w-full max-w-md mx-4">
-          <CardHeader className="text-center">
-            <div className="flex justify-center mb-4">
-              <XCircle className="h-12 w-12 text-destructive" />
+      <div className="min-h-screen flex items-center justify-center bg-background px-3 sm:px-4">
+        <Card className="w-full max-w-md">
+          <CardHeader className="text-center px-4 sm:px-6">
+            <div className="flex justify-center mb-3 sm:mb-4">
+              <XCircle className="h-10 w-10 sm:h-12 sm:w-12 text-destructive" />
             </div>
-            <CardTitle className="text-2xl font-bold">לינק לא תקף</CardTitle>
-            <CardDescription>
+            <CardTitle className="text-xl sm:text-2xl font-bold">לינק לא תקף</CardTitle>
+            <CardDescription className="text-xs sm:text-sm">
               לינק איפוס הסיסמה אינו תקף או שפג תוקפו
             </CardDescription>
           </CardHeader>
@@ -264,14 +264,14 @@ const ResetPassword: React.FC = () => {
 
   // Valid token - show password reset form
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background">
-      <Card className="w-full max-w-md mx-4">
-        <CardHeader className="text-center">
-          <div className="flex justify-center mb-4">
-            <CheckCircle className="h-12 w-12 text-success" />
+    <div className="min-h-screen flex items-center justify-center bg-background px-3 sm:px-4">
+      <Card className="w-full max-w-md">
+        <CardHeader className="text-center px-4 sm:px-6">
+          <div className="flex justify-center mb-3 sm:mb-4">
+            <CheckCircle className="h-10 w-10 sm:h-12 sm:w-12 text-success" />
           </div>
-          <CardTitle className="text-2xl font-bold">עדכון סיסמה</CardTitle>
-          <CardDescription>
+          <CardTitle className="text-xl sm:text-2xl font-bold">עדכון סיסמה</CardTitle>
+          <CardDescription className="text-xs sm:text-sm">
             הזן סיסמה חדשה לחשבון שלך
           </CardDescription>
         </CardHeader>

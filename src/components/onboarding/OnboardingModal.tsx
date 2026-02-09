@@ -129,21 +129,21 @@ export const OnboardingModal: React.FC = () => {
       }
     }}>
       <DialogContent
-        className="max-w-3xl max-h-[90vh] overflow-y-auto p-0"
+        className="w-[95vw] max-w-3xl max-h-[90vh] overflow-y-auto p-0"
       >
         {/* Close Button */}
         {currentStep > 0 && (
           <Button
             variant="ghost"
             size="icon"
-            className="absolute left-4 top-4 z-50 rounded-full hover:bg-muted"
+            className="absolute left-3 sm:left-4 top-3 sm:top-4 z-50 rounded-full hover:bg-muted"
             onClick={handleClose}
           >
             <X className="w-4 h-4" />
           </Button>
         )}
 
-        <div className="p-8 space-y-8">
+        <div className="p-4 sm:p-6 md:p-8 space-y-4 sm:space-y-6 md:space-y-8">
           {/* Progress Bar - Hide on welcome and success steps */}
           {currentStep > 0 && currentStep < STEP_TITLES.length - 1 && (
             <OnboardingProgress
@@ -154,7 +154,7 @@ export const OnboardingModal: React.FC = () => {
           )}
 
           {/* Step Content */}
-          <div className="min-h-[400px]">{renderStep()}</div>
+          <div className="min-h-[300px] sm:min-h-[400px]">{renderStep()}</div>
         </div>
       </DialogContent>
     </Dialog>

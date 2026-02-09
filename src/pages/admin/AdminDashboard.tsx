@@ -102,18 +102,19 @@ const AdminDashboard: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background p-6" dir="rtl">
-      <div className="max-w-7xl mx-auto space-y-6">
+    <div className="min-h-screen bg-background p-3 sm:p-6" dir="rtl">
+      <div className="max-w-7xl mx-auto space-y-4 sm:space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
-            <h1 className="text-3xl font-bold">פנל ניהול מערכת</h1>
-            <p className="text-muted-foreground">ברוך הבא למסך הניהול הראשי</p>
+            <h1 className="text-xl sm:text-3xl font-bold">פנל ניהול מערכת</h1>
+            <p className="text-sm sm:text-base text-muted-foreground">ברוך הבא למסך הניהול הראשי</p>
           </div>
           <Button
             onClick={loadDashboardData}
             variant="outline"
-            className="gap-2"
+            className="gap-2 w-full sm:w-auto"
+            size="sm"
           >
             <TrendingUp className="h-4 w-4" />
             רענן נתונים
@@ -121,7 +122,7 @@ const AdminDashboard: React.FC = () => {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-3 sm:gap-6 grid-cols-2 lg:grid-cols-4">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">סה"כ משפחות</CardTitle>
@@ -168,7 +169,7 @@ const AdminDashboard: React.FC = () => {
         </div>
 
         {/* Status Breakdown */}
-        <div className="grid gap-6 md:grid-cols-2">
+        <div className="grid gap-4 sm:gap-6 md:grid-cols-2">
           <Card>
             <CardHeader>
               <CardTitle>פילוח סטטוס משפחות</CardTitle>
@@ -238,7 +239,7 @@ const AdminDashboard: React.FC = () => {
             <CardTitle>פעולות מהירות</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <div className="grid gap-3 sm:gap-4 grid-cols-2 lg:grid-cols-4">
               <Button
                 onClick={() => window.location.href = '/admin/tenants'}
                 variant="outline"

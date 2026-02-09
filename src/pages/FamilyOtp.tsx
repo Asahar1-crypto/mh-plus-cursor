@@ -80,7 +80,7 @@ const FamilyOtp: React.FC = () => {
 
   if (!invitationId || !phone || !name || !email) {
     return (
-      <div className="container mx-auto py-10 px-4 flex flex-col items-center justify-center min-h-[calc(100vh-4rem)]" dir="rtl">
+      <div className="container mx-auto py-6 sm:py-10 px-3 sm:px-4 flex flex-col items-center justify-center min-h-[calc(100vh-4rem)]" dir="rtl">
         <div className="text-center">
           <p className="text-destructive">נתונים חסרים לאימות</p>
           <button 
@@ -95,7 +95,7 @@ const FamilyOtp: React.FC = () => {
   }
 
   return (
-    <div className="container mx-auto py-10 px-4 flex items-center justify-center min-h-[calc(100vh-4rem)]" dir="rtl">
+    <div className="container mx-auto py-6 sm:py-10 px-3 sm:px-4 flex items-center justify-center min-h-[calc(100vh-4rem)]" dir="rtl">
       <div className="w-full max-w-md">
         <SmsVerification
           phoneNumber={phone}

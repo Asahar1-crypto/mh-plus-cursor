@@ -78,24 +78,24 @@ const NoAccountScreen = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background to-accent/20 flex items-center justify-center p-4" dir="rtl">
-      <div className="max-w-2xl w-full space-y-6">
+    <div className="min-h-screen bg-gradient-to-br from-background to-accent/20 flex items-center justify-center p-3 sm:p-4" dir="rtl">
+      <div className="max-w-2xl w-full space-y-4 sm:space-y-6">
         {/* Header */}
         <div className="text-center space-y-2">
           <div className="flex justify-center">
-            <div className="p-4 bg-primary/10 rounded-full">
-              <Users className="h-12 w-12 text-primary" />
+            <div className="p-3 sm:p-4 bg-primary/10 rounded-full">
+              <Users className="h-8 w-8 sm:h-12 sm:w-12 text-primary" />
             </div>
           </div>
-          <h1 className="text-3xl font-bold">ברוך הבא, {user?.name}!</h1>
-          <p className="text-muted-foreground text-lg">
+          <h1 className="text-xl sm:text-3xl font-bold">ברוך הבא, {user?.name}!</h1>
+          <p className="text-muted-foreground text-sm sm:text-lg px-2">
             נראה שאתה לא משויך כרגע לאף משפחה במערכת
           </p>
         </div>
 
 
         {/* Options */}
-        <div className="grid gap-6 md:grid-cols-2">
+        <div className="grid gap-4 sm:gap-6 md:grid-cols-2">
           {/* Create new family */}
           <Card className="border-2 hover:border-primary/50 transition-colors">
             <CardHeader className="text-center">
@@ -151,12 +151,12 @@ const NoAccountScreen = () => {
                 בקש ממנהל משפחה אחרת להזמין אותך
               </p>
               
-              <div className="bg-blue-50 p-4 rounded-lg space-y-2">
-                <h4 className="font-medium text-blue-800">איך זה עובד?</h4>
-                <ol className="text-sm text-blue-700 space-y-1 list-decimal list-inside">
+              <div className="bg-blue-50 p-3 sm:p-4 rounded-lg space-y-2">
+                <h4 className="font-medium text-blue-800 text-sm sm:text-base">איך זה עובד?</h4>
+                <ol className="text-xs sm:text-sm text-blue-700 space-y-1 list-decimal list-inside">
                   <li>פנה למנהל המשפחה הרצויה</li>
                   <li>בקש ממנו לשלוח לך הזמנה לכתובת:</li>
-                  <li className="font-mono bg-white px-2 py-1 rounded text-xs break-all">
+                  <li className="font-mono bg-white px-2 py-1 rounded text-[10px] sm:text-xs break-all">
                     {user?.email}
                   </li>
                   <li>קבל את ההזמנה והתחבר שוב</li>

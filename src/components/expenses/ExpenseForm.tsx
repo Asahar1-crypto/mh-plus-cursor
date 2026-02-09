@@ -165,8 +165,8 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({ onSubmitSuccess, onCan
   return (
     <div dir="rtl" className="w-full">
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 sm:space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
           <FormField
             control={form.control}
             name="date"
@@ -242,7 +242,7 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({ onSubmitSuccess, onCan
           )}
         />
         
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
           <FormField
             control={form.control}
             name="category"
@@ -363,19 +363,19 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({ onSubmitSuccess, onCan
             ];
 
             return (
-              <FormItem className="space-y-4">
-                <FormLabel className="text-lg font-semibold">מי שילם ומי צריך לשלם?</FormLabel>
+              <FormItem className="space-y-3 sm:space-y-4">
+                <FormLabel className="text-base sm:text-lg font-semibold">מי שילם ומי צריך לשלם?</FormLabel>
                 <FormControl>
                   <RadioGroup
                     onValueChange={field.onChange}
                     defaultValue={field.value}
-                    className="space-y-3"
+                    className="space-y-2 sm:space-y-3"
                     dir="rtl"
                   >
                     {accountMembers && accountMembers.length >= 2 && paymentOptions.map((option) => (
                       <div 
                         key={option.value}
-                        className="flex items-start space-x-3 space-x-reverse rounded-lg border p-4 hover:bg-muted/50 transition-colors"
+                        className="flex items-start space-x-3 space-x-reverse rounded-lg border p-3 sm:p-4 hover:bg-muted/50 transition-colors"
                       >
                         <RadioGroupItem 
                           value={option.value} 
@@ -385,14 +385,14 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({ onSubmitSuccess, onCan
                         <div className="flex-1 space-y-1">
                           <label 
                             htmlFor={option.value} 
-                            className="flex items-center gap-2 text-sm font-medium leading-none cursor-pointer"
+                            className="flex items-center gap-2 text-xs sm:text-sm font-medium leading-none cursor-pointer"
                           >
                             <span className={option.color}>
                               {option.icon}
                             </span>
                             {option.label}
                           </label>
-                          <p className="text-xs text-muted-foreground">
+                          <p className="text-[11px] sm:text-xs text-muted-foreground">
                             {option.description}
                           </p>
                         </div>
@@ -413,10 +413,10 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({ onSubmitSuccess, onCan
           control={form.control}
           name="isRecurring"
           render={({ field }) => (
-            <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+            <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 sm:p-4">
               <div className="space-y-0.5">
-                <FormLabel className="text-base">הוצאה קבועה</FormLabel>
-                <FormDescription>
+                <FormLabel className="text-sm sm:text-base">הוצאה קבועה</FormLabel>
+                <FormDescription className="text-xs sm:text-sm">
                   סמן אם זו הוצאה חוזרת (למשל: חוג, שיעור פרטי)
                 </FormDescription>
               </div>
@@ -464,10 +464,10 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({ onSubmitSuccess, onCan
               control={form.control}
               name="hasEndDate"
               render={({ field }) => (
-                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 sm:p-4">
                   <div className="space-y-0.5">
-                    <FormLabel className="text-base">הגדר תאריך סיום</FormLabel>
-                    <FormDescription>
+                    <FormLabel className="text-sm sm:text-base">הגדר תאריך סיום</FormLabel>
+                    <FormDescription className="text-xs sm:text-sm">
                       סמן אם ברצונך להגדיר תאריך סיום להוצאה הקבועה
                     </FormDescription>
                   </div>
@@ -531,10 +531,11 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({ onSubmitSuccess, onCan
         )}
 
         
-        <div className="flex justify-end gap-4 pt-4">
+        <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 sm:gap-4 pt-4">
           <Button 
             type="button" 
             variant="outline" 
+            className="w-full sm:w-auto"
             onClick={() => {
               if (onCancel) {
                 onCancel();
@@ -545,7 +546,7 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({ onSubmitSuccess, onCan
           >
             ביטול
           </Button>
-          <Button type="submit" disabled={isPending}>
+          <Button type="submit" disabled={isPending} className="w-full sm:w-auto">
             {isPending ? (
               <span className="flex items-center gap-2">
                 <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-r-transparent" />

@@ -103,13 +103,13 @@ const AdminSmsLogs: React.FC = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       <div className="flex items-center gap-2">
-        <MessageSquare className="w-6 h-6" />
-        <h1 className="text-3xl font-bold">יומני SMS</h1>
+        <MessageSquare className="w-5 h-5 sm:w-6 sm:h-6" />
+        <h1 className="text-xl sm:text-3xl font-bold">יומני SMS</h1>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">סה"כ הודעות</CardTitle>
@@ -161,44 +161,45 @@ const AdminSmsLogs: React.FC = () => {
         <CardHeader>
           <CardTitle>הודעות SMS אחרונות</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-0 sm:p-6">
+          <div className="overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>מספר טלפון</TableHead>
-                <TableHead>קוד</TableHead>
-                <TableHead>סוג</TableHead>
-                <TableHead>סטטוס</TableHead>
-                <TableHead>נוצר</TableHead>
-                <TableHead>מאומת</TableHead>
-                <TableHead>ניסיונות</TableHead>
+                <TableHead className="text-xs sm:text-sm">מספר טלפון</TableHead>
+                <TableHead className="text-xs sm:text-sm">קוד</TableHead>
+                <TableHead className="text-xs sm:text-sm hidden sm:table-cell">סוג</TableHead>
+                <TableHead className="text-xs sm:text-sm">סטטוס</TableHead>
+                <TableHead className="text-xs sm:text-sm hidden md:table-cell">נוצר</TableHead>
+                <TableHead className="text-xs sm:text-sm hidden lg:table-cell">מאומת</TableHead>
+                <TableHead className="text-xs sm:text-sm hidden sm:table-cell">ניסיונות</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {smsLogs.map((log) => (
                 <TableRow key={log.id}>
-                  <TableCell className="font-mono">
-                    <div className="flex items-center gap-2">
-                      <Phone className="w-4 h-4" />
-                      {log.phone_number}
+                  <TableCell className="font-mono text-xs sm:text-sm">
+                    <div className="flex items-center gap-1 sm:gap-2">
+                      <Phone className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
+                      <span className="truncate max-w-[100px] sm:max-w-none">{log.phone_number}</span>
                     </div>
                   </TableCell>
-                  <TableCell className="font-mono font-bold text-lg">
+                  <TableCell className="font-mono font-bold text-sm sm:text-lg">
                     {log.code}
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="hidden sm:table-cell">
                     {getVerificationTypeBadge(log.verification_type)}
                   </TableCell>
                   <TableCell>
                     {getStatusBadge(log)}
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="hidden md:table-cell text-xs sm:text-sm">
                     {format(new Date(log.created_at), 'dd/MM/yyyy HH:mm')}
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="hidden lg:table-cell text-xs sm:text-sm">
                     {log.verified_at ? format(new Date(log.verified_at), 'dd/MM/yyyy HH:mm') : '-'}
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="hidden sm:table-cell">
                     <Badge variant={log.attempts > 3 ? "destructive" : "secondary"}>
                       {log.attempts}
                     </Badge>
@@ -207,6 +208,7 @@ const AdminSmsLogs: React.FC = () => {
               ))}
             </TableBody>
           </Table>
+          </div>
           
           {smsLogs.length === 0 && (
             <div className="text-center py-8 text-muted-foreground">

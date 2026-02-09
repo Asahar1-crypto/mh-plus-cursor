@@ -122,7 +122,7 @@ export const AddExpenseModal: React.FC<{ onSubmitSuccess?: () => void }> = ({ on
         </Button>
       </DialogTrigger>
       <DialogContent 
-        className="w-[95vw] max-w-[900px] h-[90vh] max-h-[90vh] z-[9999] flex flex-col p-0"
+        className="w-[95vw] max-w-[900px] h-[85vh] sm:h-[90vh] max-h-[90vh] z-[9999] flex flex-col p-0"
         onPointerDownOutside={(e) => {
           if (shouldPreventClose) {
             e.preventDefault();
@@ -139,13 +139,13 @@ export const AddExpenseModal: React.FC<{ onSubmitSuccess?: () => void }> = ({ on
           }
         }}
       >
-        <DialogHeader className="flex-shrink-0 px-6 py-4 border-b">
-          <DialogTitle>
+        <DialogHeader className="flex-shrink-0 px-4 sm:px-6 py-3 sm:py-4 border-b">
+          <DialogTitle className="text-base sm:text-lg">
             {currentStep === 'select' ? "הוספת הוצאה" 
              : currentStep === 'upload' ? "סריקת חשבונית"
              : "אימות פרטי החשבונית"}
           </DialogTitle>
-          <DialogDescription>
+          <DialogDescription className="text-xs sm:text-sm">
             {currentStep === 'select' ? "בחר את הדרך להוספת ההוצאה"
              : currentStep === 'upload' ? "העלה קובץ חשבונית לסריקה אוטומטית"
              : "בדוק ואשר את הפריטים שזוהו"}
@@ -153,7 +153,7 @@ export const AddExpenseModal: React.FC<{ onSubmitSuccess?: () => void }> = ({ on
         </DialogHeader>
         
         <div className="flex-1 overflow-hidden">
-          <ScrollArea className="h-full px-6 py-4">
+          <ScrollArea className="h-full px-3 sm:px-6 py-3 sm:py-4">
             {currentStep === 'select' && (
               <div className="space-y-6">
                 <div className="flex gap-4">

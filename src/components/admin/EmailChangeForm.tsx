@@ -147,20 +147,20 @@ const EmailChangeForm: React.FC<EmailChangeFormProps> = ({ className, onEmailCha
 
   return (
     <Card className={className}>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Mail className="h-5 w-5" />
+      <CardHeader className="p-3 sm:p-4 md:p-6">
+        <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+          <Mail className="h-4 w-4 sm:h-5 sm:w-5" />
           שינוי כתובת מייל למשתמש
         </CardTitle>
-        <CardDescription>
+        <CardDescription className="text-xs sm:text-sm">
           שנה את כתובת המייל של משתמש קיים במערכת. פעולה זו דורשת הרשאות סופר אדמין.
         </CardDescription>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-4 p-3 sm:p-4 md:p-6 pt-0 sm:pt-0">
         {/* שדה מייל ישן + כפתור חיפוש */}
         <div className="space-y-2">
-          <Label htmlFor="oldEmail">כתובת מייל נוכחית</Label>
-          <div className="flex gap-2">
+          <Label htmlFor="oldEmail" className="text-xs sm:text-sm">כתובת מייל נוכחית</Label>
+          <div className="flex flex-col sm:flex-row gap-2">
             <Input
               id="oldEmail"
               type="email"
@@ -175,6 +175,7 @@ const EmailChangeForm: React.FC<EmailChangeFormProps> = ({ className, onEmailCha
               onClick={handleSearchUser}
               disabled={loading || searchLoading || !oldEmail.trim()}
               variant="outline"
+              className="w-full sm:w-auto shrink-0"
             >
               {searchLoading ? (
                 <>
@@ -194,9 +195,9 @@ const EmailChangeForm: React.FC<EmailChangeFormProps> = ({ className, onEmailCha
             <CheckCircle className="h-4 w-4" />
             <AlertDescription>
               <div className="space-y-1">
-                <p className="font-semibold">משתמש נמצא:</p>
-                <p className="text-sm">מייל: {foundUser.email}</p>
-                <p className="text-sm font-mono text-muted-foreground">ID: {foundUser.id}</p>
+                <p className="font-semibold text-sm">משתמש נמצא:</p>
+                <p className="text-xs sm:text-sm">מייל: {foundUser.email}</p>
+                <p className="text-xs font-mono text-muted-foreground truncate">ID: {foundUser.id}</p>
               </div>
             </AlertDescription>
           </Alert>
@@ -204,7 +205,7 @@ const EmailChangeForm: React.FC<EmailChangeFormProps> = ({ className, onEmailCha
 
         {/* שדה מייל חדש */}
         <div className="space-y-2">
-          <Label htmlFor="newEmail">כתובת מייל חדשה</Label>
+          <Label htmlFor="newEmail" className="text-xs sm:text-sm">כתובת מייל חדשה</Label>
           <Input
             id="newEmail"
             type="email"
@@ -221,8 +222,8 @@ const EmailChangeForm: React.FC<EmailChangeFormProps> = ({ className, onEmailCha
         <Alert>
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>
-            <p className="font-semibold mb-1">שים לב:</p>
-            <ul className="text-sm space-y-1 list-disc list-inside">
+            <p className="font-semibold mb-1 text-sm">שים לב:</p>
+            <ul className="text-xs sm:text-sm space-y-1 list-disc list-inside">
               <li>המייל החדש לא יכול להיות קיים במערכת</li>
               <li>המשתמש יצטרך להתחבר עם המייל החדש</li>
               <li>פעולה זו תירשם ב-audit log</li>

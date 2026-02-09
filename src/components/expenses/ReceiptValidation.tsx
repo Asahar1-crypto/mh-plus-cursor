@@ -144,12 +144,12 @@ export const ReceiptValidation: React.FC<ReceiptValidationProps> = ({
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Confidence Score Alert */}
       {isLowConfidence && (
         <Alert>
           <AlertTriangle className="h-4 w-4" />
-          <AlertDescription>
+          <AlertDescription className="text-xs sm:text-sm">
             רמת הוודאות בזיהוי נמוכה ({confidenceScore}%). אנא בדוק את הנתונים בעיון.
           </AlertDescription>
         </Alert>
@@ -157,18 +157,18 @@ export const ReceiptValidation: React.FC<ReceiptValidationProps> = ({
 
       {/* Main Receipt Info - Editable */}
       <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center justify-between">
+        <CardHeader className="p-3 sm:p-4 md:p-6">
+          <CardTitle className="flex items-center justify-between text-base sm:text-lg">
             פרטי החשבונית
-            <Badge variant={isLowConfidence ? "destructive" : "default"}>
+            <Badge variant={isLowConfidence ? "destructive" : "default"} className="text-[10px] sm:text-xs">
               דיוק: {confidenceScore}%
             </Badge>
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <CardContent className="p-3 sm:p-4 md:p-6 pt-0 sm:pt-0 md:pt-0 space-y-3 sm:space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
             <div>
-              <Label htmlFor="vendor">ספק / תיאור</Label>
+              <Label htmlFor="vendor" className="text-xs sm:text-sm">ספק / תיאור</Label>
               <Input
                 id="vendor"
                 value={editedVendor}
@@ -177,7 +177,7 @@ export const ReceiptValidation: React.FC<ReceiptValidationProps> = ({
               />
             </div>
             <div>
-              <Label htmlFor="date">תאריך</Label>
+              <Label htmlFor="date" className="text-xs sm:text-sm">תאריך</Label>
               <Input
                 id="date"
                 type="date"
@@ -188,10 +188,10 @@ export const ReceiptValidation: React.FC<ReceiptValidationProps> = ({
           </div>
 
           {/* Editable Total - Prominent */}
-          <div className="p-4 bg-primary/5 rounded-lg border-2 border-primary/20">
-            <Label htmlFor="total" className="text-lg font-semibold">סה"כ לתשלום</Label>
+          <div className="p-3 sm:p-4 bg-primary/5 rounded-lg border-2 border-primary/20">
+            <Label htmlFor="total" className="text-base sm:text-lg font-semibold">סה"כ לתשלום</Label>
             <div className="flex items-center gap-2 mt-2">
-              <span className="text-2xl font-bold">₪</span>
+              <span className="text-xl sm:text-2xl font-bold">₪</span>
               <Input
                 id="total"
                 type="number"
@@ -199,26 +199,26 @@ export const ReceiptValidation: React.FC<ReceiptValidationProps> = ({
                 onChange={(e) => setEditedTotal(parseFloat(e.target.value) || 0)}
                 min="0"
                 step="0.01"
-                className="text-2xl font-bold h-14 text-center"
+                className="text-xl sm:text-2xl font-bold h-10 sm:h-14 text-center"
               />
             </div>
             {calculatedTotal !== editedTotal && (
-              <p className="text-sm text-muted-foreground mt-2">
+              <p className="text-xs sm:text-sm text-muted-foreground mt-2">
                 סכום הפריטים שזוהו: ₪{calculatedTotal.toFixed(2)}
               </p>
             )}
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4">
             <div>
-              <Label>קטגוריה</Label>
+              <Label className="text-xs sm:text-sm">קטגוריה</Label>
               <CategoryDropdown
                 value={selectedCategory}
                 onValueChange={setSelectedCategory}
               />
             </div>
             <div>
-              <Label>ילד</Label>
+              <Label className="text-xs sm:text-sm">ילד</Label>
               <ChildDropdown
                 children={childrenList}
                 value={selectedChild || "none"}
@@ -226,7 +226,7 @@ export const ReceiptValidation: React.FC<ReceiptValidationProps> = ({
               />
             </div>
             <div>
-              <Label>סוג תשלום</Label>
+              <Label className="text-xs sm:text-sm">סוג תשלום</Label>
               <PaymentTypeDropdown
                 value={paymentType}
                 onValueChange={setPaymentType}
@@ -239,13 +239,13 @@ export const ReceiptValidation: React.FC<ReceiptValidationProps> = ({
       {/* Items List - Reference Only */}
       {scanResult.items.length > 0 && (
         <Card>
-          <CardHeader>
-            <CardTitle className="text-base">פריטים שזוהו (לעיון בלבד)</CardTitle>
+          <CardHeader className="p-3 sm:p-4 md:p-6">
+            <CardTitle className="text-sm sm:text-base">פריטים שזוהו (לעיון בלבד)</CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-3 sm:p-4 md:p-6 pt-0 sm:pt-0 md:pt-0">
             <div className="divide-y">
               {scanResult.items.map((item, index) => (
-                <div key={index} className="py-2 flex justify-between items-center text-sm">
+                <div key={index} className="py-1.5 sm:py-2 flex justify-between items-center text-xs sm:text-sm">
                   <span className="text-muted-foreground">
                     {item.name}
                     {item.quantity && item.quantity > 1 && ` (x${item.quantity})`}
@@ -259,22 +259,22 @@ export const ReceiptValidation: React.FC<ReceiptValidationProps> = ({
       )}
 
       {/* Action Buttons */}
-      <div className="flex gap-3">
+      <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
         <Button
           onClick={handleSubmit}
           disabled={isSubmitting}
-          className="flex-1"
+          className="flex-1 text-xs sm:text-sm"
         >
           {isSubmitting ? (
             "יוצר הוצאה..."
           ) : (
             <>
-              <Check className="mr-2 h-4 w-4" />
+              <Check className="mr-1.5 sm:mr-2 h-3.5 w-3.5 sm:h-4 sm:w-4" />
               אשר ויצור הוצאה
             </>
           )}
         </Button>
-        <Button variant="outline" onClick={onCancel} disabled={isSubmitting}>
+        <Button variant="outline" onClick={onCancel} disabled={isSubmitting} className="w-full sm:w-auto text-xs sm:text-sm">
           ביטול
         </Button>
       </div>

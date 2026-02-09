@@ -361,13 +361,13 @@ const AdminEmailSettings: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background p-6" dir="rtl">
-      <div className="max-w-7xl mx-auto space-y-6">
+    <div className="min-h-screen bg-background p-3 sm:p-4 md:p-6" dir="rtl">
+      <div className="max-w-7xl mx-auto space-y-4 sm:space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
           <div>
-            <h1 className="text-3xl font-bold">ניהול הגדרות אימייל</h1>
-            <p className="text-muted-foreground">הגדרת חיבור SendGrid ותבניות אימייל</p>
+            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold">ניהול הגדרות אימייל</h1>
+            <p className="text-xs sm:text-sm text-muted-foreground">הגדרת חיבור SendGrid ותבניות אימייל</p>
           </div>
           <div className="flex items-center gap-2">
             <Badge variant={connectionStatus === 'connected' ? 'default' : 'destructive'}>
@@ -387,24 +387,24 @@ const AdminEmailSettings: React.FC = () => {
         </div>
 
         <Tabs defaultValue="connection" className="w-full">
-          <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="connection">חיבור SendGrid</TabsTrigger>
-            <TabsTrigger value="templates">תבניות אימייל</TabsTrigger>
-            <TabsTrigger value="test">בדיקה ומעקב</TabsTrigger>
-            <TabsTrigger value="logs">היסטוריית שליחות</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 h-auto">
+            <TabsTrigger value="connection" className="text-xs sm:text-sm py-2">חיבור SendGrid</TabsTrigger>
+            <TabsTrigger value="templates" className="text-xs sm:text-sm py-2">תבניות אימייל</TabsTrigger>
+            <TabsTrigger value="test" className="text-xs sm:text-sm py-2">בדיקה ומעקב</TabsTrigger>
+            <TabsTrigger value="logs" className="text-xs sm:text-sm py-2">היסטוריית שליחות</TabsTrigger>
           </TabsList>
 
           {/* חיבור SendGrid */}
-          <TabsContent value="connection" className="space-y-6">
+          <TabsContent value="connection" className="space-y-4 sm:space-y-6">
             <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Key className="h-5 w-5" />
+              <CardHeader className="p-4 sm:p-6">
+                <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+                  <Key className="h-4 w-4 sm:h-5 sm:w-5" />
                   הגדרות חיבור SendGrid
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid gap-4 md:grid-cols-2">
+              <CardContent className="space-y-4 p-4 sm:p-6 pt-0 sm:pt-0">
+                <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
                   <div className="space-y-2">
                     <Label htmlFor="senderEmail">כתובת שולח</Label>
                     <Input
@@ -434,16 +434,16 @@ const AdminEmailSettings: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="flex gap-4">
-                  <Button onClick={updateApiKey} variant="outline" className="gap-2">
+                <div className="flex flex-col sm:flex-row gap-2 sm:gap-4">
+                  <Button onClick={updateApiKey} variant="outline" className="gap-2 w-full sm:w-auto" size="sm">
                     <Key className="h-4 w-4" />
                     עדכן מפתח API
                   </Button>
-                  <Button onClick={checkConnection} variant="outline" className="gap-2">
+                  <Button onClick={checkConnection} variant="outline" className="gap-2 w-full sm:w-auto" size="sm">
                     <Settings className="h-4 w-4" />
                     בדוק חיבור
                   </Button>
-                  <Button onClick={saveSettings} disabled={saving} className="gap-2">
+                  <Button onClick={saveSettings} disabled={saving} className="gap-2 w-full sm:w-auto" size="sm">
                     {saving ? (
                       <>
                         <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
@@ -462,14 +462,14 @@ const AdminEmailSettings: React.FC = () => {
           </TabsContent>
 
           {/* תבניות אימייל */}
-          <TabsContent value="templates" className="space-y-6">
-            <div className="grid gap-6">
+          <TabsContent value="templates" className="space-y-4 sm:space-y-6">
+            <div className="grid gap-4 sm:gap-6">
               {/* תבנית הזמנה */}
               <Card>
-                <CardHeader>
-                  <CardTitle>תבנית אימייל הזמנה</CardTitle>
+                <CardHeader className="p-4 sm:p-6">
+                  <CardTitle className="text-base sm:text-lg">תבנית אימייל הזמנה</CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-4">
+                <CardContent className="space-y-4 p-4 sm:p-6 pt-0 sm:pt-0">
                   <div className="space-y-2">
                     <Label htmlFor="invitationSubject">נושא הודעה</Label>
                     <Input
@@ -495,10 +495,10 @@ const AdminEmailSettings: React.FC = () => {
 
               {/* תבנית איפוס סיסמה */}
               <Card>
-                <CardHeader>
-                  <CardTitle>תבנית איפוס סיסמה</CardTitle>
+                <CardHeader className="p-4 sm:p-6">
+                  <CardTitle className="text-base sm:text-lg">תבנית איפוס סיסמה</CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-4">
+                <CardContent className="space-y-4 p-4 sm:p-6 pt-0 sm:pt-0">
                   <div className="space-y-2">
                     <Label htmlFor="resetPasswordSubject">נושא הודעה</Label>
                     <Input
@@ -524,7 +524,7 @@ const AdminEmailSettings: React.FC = () => {
             </div>
 
             <div className="flex justify-end">
-              <Button onClick={saveSettings} disabled={saving} className="gap-2">
+              <Button onClick={saveSettings} disabled={saving} className="gap-2 w-full sm:w-auto">
                 {saving ? (
                   <>
                     <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
@@ -541,16 +541,16 @@ const AdminEmailSettings: React.FC = () => {
           </TabsContent>
 
           {/* בדיקה ומעקב */}
-          <TabsContent value="test" className="space-y-6">
+          <TabsContent value="test" className="space-y-4 sm:space-y-6">
             <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <TestTube className="h-5 w-5" />
+              <CardHeader className="p-4 sm:p-6">
+                <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+                  <TestTube className="h-4 w-4 sm:h-5 sm:w-5" />
                   שליחת אימייל בדיקה
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex gap-4">
+              <CardContent className="space-y-4 p-4 sm:p-6 pt-0 sm:pt-0">
+                <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
                   <div className="flex-1">
                     <Label htmlFor="testEmail">כתובת אימייל לבדיקה</Label>
                     <Input
@@ -562,7 +562,7 @@ const AdminEmailSettings: React.FC = () => {
                     />
                   </div>
                   <div className="flex items-end">
-                    <Button onClick={sendTestEmail} disabled={testing} className="gap-2">
+                    <Button onClick={sendTestEmail} disabled={testing} className="gap-2 w-full sm:w-auto">
                       {testing ? (
                         <>
                           <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
@@ -581,22 +581,22 @@ const AdminEmailSettings: React.FC = () => {
             </Card>
 
             <Card>
-              <CardHeader>
-                <CardTitle>סטטוס חיבור</CardTitle>
+              <CardHeader className="p-4 sm:p-6">
+                <CardTitle className="text-base sm:text-lg">סטטוס חיבור</CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="flex items-center justify-between p-4 border rounded-lg">
-                  <div className="flex items-center gap-3">
+              <CardContent className="p-4 sm:p-6 pt-0 sm:pt-0">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-3 sm:p-4 border rounded-lg gap-3">
+                  <div className="flex items-center gap-2 sm:gap-3">
                     {connectionStatus === 'connected' ? (
-                      <CheckCircle className="h-5 w-5 text-green-600" />
+                      <CheckCircle className="h-4 w-4 sm:h-5 sm:w-5 text-green-600 shrink-0" />
                     ) : (
-                      <AlertCircle className="h-5 w-5 text-red-600" />
+                      <AlertCircle className="h-4 w-4 sm:h-5 sm:w-5 text-red-600 shrink-0" />
                     )}
                     <div>
-                      <p className="font-medium">
+                      <p className="font-medium text-sm sm:text-base">
                         {connectionStatus === 'connected' ? 'חיבור SendGrid פעיל' : 'שגיאה בחיבור SendGrid'}
                       </p>
-                      <p className="text-sm text-muted-foreground">
+                      <p className="text-xs sm:text-sm text-muted-foreground">
                         {connectionStatus === 'connected' 
                           ? 'המערכת מחוברת בהצלחה לשירות SendGrid'
                           : 'יש בעיה בחיבור לשירות SendGrid. בדוק את מפתח ה-API'
@@ -604,7 +604,7 @@ const AdminEmailSettings: React.FC = () => {
                       </p>
                     </div>
                   </div>
-                  <Button onClick={checkConnection} variant="outline" size="sm">
+                  <Button onClick={checkConnection} variant="outline" size="sm" className="w-full sm:w-auto">
                     בדוק שוב
                   </Button>
                 </div>
@@ -613,38 +613,38 @@ const AdminEmailSettings: React.FC = () => {
           </TabsContent>
 
           {/* היסטוריית שליחות */}
-          <TabsContent value="logs" className="space-y-6">
+          <TabsContent value="logs" className="space-y-4 sm:space-y-6">
             <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <History className="h-5 w-5" />
+              <CardHeader className="p-4 sm:p-6">
+                <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+                  <History className="h-4 w-4 sm:h-5 sm:w-5" />
                   היסטוריית שליחת אימיילים
                 </CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
+              <CardContent className="p-4 sm:p-6 pt-0 sm:pt-0">
+                <div className="space-y-3 sm:space-y-4">
                   {emailLogs.map((log) => (
-                    <div key={log.id} className="flex items-center justify-between p-4 border rounded-lg">
-                      <div className="flex items-center gap-3">
-                        <Mail className="h-4 w-4 text-muted-foreground" />
-                        <div>
-                          <p className="font-medium">{log.subject}</p>
-                          <p className="text-sm text-muted-foreground">
+                    <div key={log.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-3 sm:p-4 border rounded-lg gap-2 sm:gap-3">
+                      <div className="flex items-start sm:items-center gap-2 sm:gap-3">
+                        <Mail className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5 sm:mt-0" />
+                        <div className="min-w-0">
+                          <p className="font-medium text-sm sm:text-base">{log.subject}</p>
+                          <p className="text-xs sm:text-sm text-muted-foreground break-all">
                             נשלח ל-{log.to} • {new Date(log.timestamp).toLocaleString('he-IL')}
                           </p>
                           {log.error && (
-                            <p className="text-sm text-red-600">{log.error}</p>
+                            <p className="text-xs sm:text-sm text-red-600">{log.error}</p>
                           )}
                         </div>
                       </div>
-                      <Badge variant={log.status === 'sent' ? 'default' : 'destructive'}>
+                      <Badge variant={log.status === 'sent' ? 'default' : 'destructive'} className="shrink-0">
                         {log.status === 'sent' ? 'נשלח' : 'נכשל'}
                       </Badge>
                     </div>
                   ))}
                   
                   {emailLogs.length === 0 && (
-                    <div className="text-center py-8 text-muted-foreground">
+                    <div className="text-center py-8 text-muted-foreground text-sm">
                       אין היסטוריית שליחות זמינה
                     </div>
                   )}

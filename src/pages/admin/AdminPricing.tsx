@@ -141,34 +141,35 @@ const AdminPricing: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background p-6" dir="rtl">
-      <div className="max-w-4xl mx-auto space-y-6">
+    <div className="min-h-screen bg-background p-3 sm:p-4 md:p-6" dir="rtl">
+      <div className="max-w-4xl mx-auto space-y-4 sm:space-y-6">
         {/* Header */}
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2 sm:gap-4">
           <Button
             onClick={() => window.history.back()}
             variant="ghost"
-            className="gap-2"
+            size="sm"
+            className="gap-1 sm:gap-2"
           >
             <ArrowLeft className="h-4 w-4" />
-            חזור
+            <span className="hidden sm:inline">חזור</span>
           </Button>
           <div>
-            <h1 className="text-3xl font-bold">ניהול מחירים והגדרות</h1>
-            <p className="text-muted-foreground">עדכן מחירים ותנאי השירות</p>
+            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold">ניהול מחירים והגדרות</h1>
+            <p className="text-xs sm:text-sm text-muted-foreground">עדכן מחירים ותנאי השירות</p>
           </div>
         </div>
 
-        <div className="grid gap-6 lg:grid-cols-2">
+        <div className="grid gap-4 sm:gap-6 grid-cols-1 lg:grid-cols-2">
           {/* הגדרות מחיר */}
           <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <DollarSign className="h-5 w-5" />
+            <CardHeader className="p-4 sm:p-6">
+              <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+                <DollarSign className="h-4 w-4 sm:h-5 sm:w-5" />
                 הגדרות תמחור
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-4 p-4 sm:p-6 pt-0 sm:pt-0">
               <div className="space-y-2">
                 <Label htmlFor="monthly_price">מחיר חודשי</Label>
                 <div className="relative">
@@ -215,13 +216,13 @@ const AdminPricing: React.FC = () => {
 
           {/* הגדרות כלליות */}
           <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Globe className="h-5 w-5" />
+            <CardHeader className="p-4 sm:p-6">
+              <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+                <Globe className="h-4 w-4 sm:h-5 sm:w-5" />
                 הגדרות כלליות
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-4 p-4 sm:p-6 pt-0 sm:pt-0">
               <div className="space-y-2">
                 <Label htmlFor="app_name">שם האפליקציה</Label>
                 <Input
@@ -246,16 +247,16 @@ const AdminPricing: React.FC = () => {
 
         {/* תצוגה מקדימה */}
         <Card>
-          <CardHeader>
-            <CardTitle>תצוגה מקדימה</CardTitle>
+          <CardHeader className="p-4 sm:p-6">
+            <CardTitle className="text-base sm:text-lg">תצוגה מקדימה</CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="bg-muted p-4 rounded-lg text-center">
-              <h3 className="text-lg font-semibold mb-2">{settings.app_name}</h3>
-              <div className="text-3xl font-bold text-primary mb-2">
+          <CardContent className="p-4 sm:p-6 pt-0 sm:pt-0">
+            <div className="bg-muted p-3 sm:p-4 rounded-lg text-center">
+              <h3 className="text-base sm:text-lg font-semibold mb-2">{settings.app_name}</h3>
+              <div className="text-2xl sm:text-3xl font-bold text-primary mb-2">
                 ₪{settings.monthly_price}/חודש
               </div>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-xs sm:text-sm text-muted-foreground">
                 {settings.trial_days} ימי ניסיון חינם • ללא התחייבות
               </p>
             </div>
@@ -263,11 +264,11 @@ const AdminPricing: React.FC = () => {
         </Card>
 
         {/* פעולות */}
-        <div className="flex gap-4">
+        <div className="flex flex-col sm:flex-row gap-2 sm:gap-4">
           <Button
             onClick={saveSettings}
             disabled={saving}
-            className="gap-2"
+            className="gap-2 w-full sm:w-auto"
           >
             <Save className="h-4 w-4" />
             {saving ? 'שומר...' : 'שמור שינויים'}
@@ -276,6 +277,7 @@ const AdminPricing: React.FC = () => {
           <Button
             onClick={loadSettings}
             variant="outline"
+            className="w-full sm:w-auto"
           >
             בטל שינויים
           </Button>
@@ -284,19 +286,19 @@ const AdminPricing: React.FC = () => {
         {/* היסטוריית שינויים */}
         {changeHistory.length > 0 && (
           <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Calendar className="h-5 w-5" />
+            <CardHeader className="p-4 sm:p-6">
+              <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+                <Calendar className="h-4 w-4 sm:h-5 sm:w-5" />
                 שינויים אחרונים
               </CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-4 sm:p-6 pt-0 sm:pt-0">
               <div className="space-y-2">
                 {changeHistory.map((change, index) => (
-                  <div key={index} className="flex items-center justify-between py-2 border-b last:border-b-0">
-                    <span className="font-medium">{change.setting_key}</span>
-                    <div className="text-left">
-                      <div className="text-sm">{change.setting_value}</div>
+                  <div key={index} className="flex items-center justify-between py-2 border-b last:border-b-0 gap-2">
+                    <span className="font-medium text-sm sm:text-base truncate">{change.setting_key}</span>
+                    <div className="text-left shrink-0">
+                      <div className="text-xs sm:text-sm">{change.setting_value}</div>
                       <div className="text-xs text-muted-foreground">
                         {new Date(change.updated_at).toLocaleDateString('he-IL')}
                       </div>

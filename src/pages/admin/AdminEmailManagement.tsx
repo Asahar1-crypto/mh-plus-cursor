@@ -13,12 +13,12 @@ const AdminEmailManagement: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background p-6" dir="rtl">
-      <div className="max-w-7xl mx-auto space-y-6">
+    <div className="min-h-screen bg-background p-3 sm:p-4 md:p-6" dir="rtl">
+      <div className="max-w-7xl mx-auto space-y-4 sm:space-y-6">
         {/* Header */}
         <div>
-          <h1 className="text-3xl font-bold">ניהול כתובות מייל</h1>
-          <p className="text-muted-foreground">שינוי ומעקב אחרי כתובות מייל של משתמשים</p>
+          <h1 className="text-xl sm:text-2xl md:text-3xl font-bold">ניהול כתובות מייל</h1>
+          <p className="text-xs sm:text-sm text-muted-foreground">שינוי ומעקב אחרי כתובות מייל של משתמשים</p>
         </div>
 
         {/* Email Change Form */}

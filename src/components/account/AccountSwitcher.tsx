@@ -64,7 +64,7 @@ const AccountSwitcher = () => {
         value={currentAccountValue} 
         onValueChange={handleAccountChange}
       >
-        <SelectTrigger className="w-[200px]">
+        <SelectTrigger className="w-[140px] sm:w-[200px] text-xs sm:text-sm h-8 sm:h-10">
           <SelectValue placeholder="בחר חשבון" />
         </SelectTrigger>
         <SelectContent>

@@ -24,14 +24,14 @@ const TrialStatusBanner = () => {
   const isLastDays = daysRemaining <= 3;
 
   return (
-    <Alert className={`mb-4 border-l-4 ${isLastDays ? 'border-l-destructive bg-destructive/10' : 'border-l-warning bg-warning/10'}`}>
+    <Alert className={`mb-3 sm:mb-4 border-l-4 ${isLastDays ? 'border-l-destructive bg-destructive/10' : 'border-l-warning bg-warning/10'}`}>
       <div className="flex items-center gap-2">
         {isLastDays ? (
-          <Clock className="h-4 w-4 text-destructive" />
+          <Clock className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-destructive flex-shrink-0" />
         ) : (
-          <Calendar className="h-4 w-4 text-warning" />
+          <Calendar className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-warning flex-shrink-0" />
         )}
-        <AlertDescription className={`text-sm font-medium ${isLastDays ? 'text-destructive' : 'text-warning'}`}>
+        <AlertDescription className={`text-xs sm:text-sm font-medium ${isLastDays ? 'text-destructive' : 'text-warning'}`}>
           {daysRemaining === 1 ? (
             <span>תקופת הניסיון שלך מסתיימת מחר! 🚨</span>
           ) : daysRemaining <= 3 ? (

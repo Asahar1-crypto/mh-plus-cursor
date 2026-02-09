@@ -247,67 +247,67 @@ const AccountManagement = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* כותרת */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-4">
         <div>
-          <h1 className="text-3xl font-bold">ניהול חשבון</h1>
-          <p className="text-muted-foreground">נהל את החשבון שלך ואת החברים בו</p>
+          <h1 className="text-xl sm:text-2xl md:text-3xl font-bold">ניהול חשבון</h1>
+          <p className="text-xs sm:text-sm text-muted-foreground">נהל את החשבון שלך ואת החברים בו</p>
         </div>
-        <Badge variant={currentAccount.subscription_status === 'active' ? 'default' : 'secondary'}>
+        <Badge variant={currentAccount.subscription_status === 'active' ? 'default' : 'secondary'} className="w-fit">
           {currentAccount.subscription_status === 'active' ? 'מנוי פעיל' : 'תקופת ניסיון'}
         </Badge>
       </div>
 
       {/* סטטיסטיקות */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-3 sm:gap-4 grid-cols-2 lg:grid-cols-4">
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">חברי החשבון</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-3 sm:p-6 sm:pb-2">
+            <CardTitle className="text-xs sm:text-sm font-medium">חברי החשבון</CardTitle>
+            <Users className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.totalMembers}</div>
+          <CardContent className="p-3 pt-0 sm:p-6 sm:pt-0">
+            <div className="text-lg sm:text-2xl font-bold">{stats.totalMembers}</div>
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">סך הוצאות</CardTitle>
-            <BarChart3 className="h-4 w-4 text-muted-foreground" />
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-3 sm:p-6 sm:pb-2">
+            <CardTitle className="text-xs sm:text-sm font-medium">סך הוצאות</CardTitle>
+            <BarChart3 className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.totalExpenses}</div>
+          <CardContent className="p-3 pt-0 sm:p-6 sm:pt-0">
+            <div className="text-lg sm:text-2xl font-bold">{stats.totalExpenses}</div>
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">הוצאות החודש</CardTitle>
-            <Calendar className="h-4 w-4 text-muted-foreground" />
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-3 sm:p-6 sm:pb-2">
+            <CardTitle className="text-xs sm:text-sm font-medium">הוצאות החודש</CardTitle>
+            <Calendar className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">₪{stats.monthlyExpenses.toLocaleString()}</div>
+          <CardContent className="p-3 pt-0 sm:p-6 sm:pt-0">
+            <div className="text-lg sm:text-2xl font-bold">₪{stats.monthlyExpenses.toLocaleString()}</div>
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">הזמנות ממתינות</CardTitle>
-            <Mail className="h-4 w-4 text-muted-foreground" />
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-3 sm:p-6 sm:pb-2">
+            <CardTitle className="text-xs sm:text-sm font-medium">הזמנות ממתינות</CardTitle>
+            <Mail className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.pendingInvitations}</div>
+          <CardContent className="p-3 pt-0 sm:p-6 sm:pt-0">
+            <div className="text-lg sm:text-2xl font-bold">{stats.pendingInvitations}</div>
           </CardContent>
         </Card>
       </div>
 
       {/* תוכן עיקרי */}
       <Tabs defaultValue="members" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="members">חברי החשבון</TabsTrigger>
-          <TabsTrigger value="settings">הגדרות החשבון</TabsTrigger>
-          <TabsTrigger value="reports">דוחות</TabsTrigger>
+        <TabsList className="w-full sm:w-auto">
+          <TabsTrigger value="members" className="text-xs sm:text-sm flex-1 sm:flex-none">חברי החשבון</TabsTrigger>
+          <TabsTrigger value="settings" className="text-xs sm:text-sm flex-1 sm:flex-none">הגדרות החשבון</TabsTrigger>
+          <TabsTrigger value="reports" className="text-xs sm:text-sm flex-1 sm:flex-none">דוחות</TabsTrigger>
         </TabsList>
 
         {/* חברי החשבון */}
@@ -323,7 +323,7 @@ const AccountManagement = () => {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="flex gap-4">
+              <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
                 <Input
                   type="email"
                   placeholder="כתובת אימייל"
@@ -331,7 +331,7 @@ const AccountManagement = () => {
                   onChange={(e) => setNewMemberEmail(e.target.value)}
                   className="flex-1"
                 />
-                <Button onClick={inviteMember}>שלח הזמנה</Button>
+                <Button onClick={inviteMember} className="w-full sm:w-auto">שלח הזמנה</Button>
               </div>
             </CardContent>
           </Card>
@@ -346,21 +346,21 @@ const AccountManagement = () => {
             <CardContent>
               <div className="space-y-4">
                 {members.map((member) => (
-                  <div key={member.user_id} className="flex items-center justify-between p-4 border rounded-lg">
-                    <div className="flex items-center gap-4">
-                      <Avatar>
+                  <div key={member.user_id} className="flex flex-col sm:flex-row sm:items-center justify-between p-3 sm:p-4 border rounded-lg gap-3">
+                    <div className="flex items-center gap-3 sm:gap-4">
+                      <Avatar className="h-8 w-8 sm:h-10 sm:w-10">
                         <AvatarImage src={`https://api.dicebear.com/7.x/initials/svg?seed=${member.user_name}`} />
-                        <AvatarFallback>{member.user_name.charAt(0)}</AvatarFallback>
+                        <AvatarFallback className="text-xs sm:text-sm">{member.user_name.charAt(0)}</AvatarFallback>
                       </Avatar>
                       <div>
-                        <p className="font-medium">{member.user_name}</p>
-                        <p className="text-sm text-muted-foreground">
+                        <p className="font-medium text-sm sm:text-base">{member.user_name}</p>
+                        <p className="text-xs sm:text-sm text-muted-foreground">
                           הצטרף ב-{new Date(member.joined_at).toLocaleDateString('he-IL')}
                         </p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <Badge variant={member.role === 'admin' ? 'default' : 'secondary'}>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <Badge variant={member.role === 'admin' ? 'default' : 'secondary'} className="text-xs">
                         {member.role === 'admin' ? (
                           <>
                             <Crown className="h-3 w-3 mr-1" />
@@ -376,7 +376,7 @@ const AccountManagement = () => {
                             value={member.role} 
                             onValueChange={(value: 'admin' | 'member') => updateMemberRole(member.user_id, value)}
                           >
-                            <SelectTrigger className="w-32">
+                            <SelectTrigger className="w-24 sm:w-32 h-8 sm:h-10 text-xs sm:text-sm">
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
@@ -387,6 +387,7 @@ const AccountManagement = () => {
                           <Button 
                             variant="destructive" 
                             size="sm"
+                            className="text-xs sm:text-sm"
                             onClick={() => removeMember(member.user_id)}
                           >
                             הסר
@@ -410,17 +411,17 @@ const AccountManagement = () => {
                 הגדרות בסיסיות
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-3 sm:space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="accountName">שם החשבון</Label>
-                <div className="flex gap-4">
+                <Label htmlFor="accountName" className="text-sm">שם החשבון</Label>
+                <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
                   <Input
                     id="accountName"
                     value={accountName}
                     onChange={(e) => setAccountName(e.target.value)}
                     className="flex-1"
                   />
-                  <Button onClick={updateAccountName} disabled={accountName === currentAccount.name}>
+                  <Button onClick={updateAccountName} disabled={accountName === currentAccount.name} className="w-full sm:w-auto">
                     עדכן
                   </Button>
                 </div>

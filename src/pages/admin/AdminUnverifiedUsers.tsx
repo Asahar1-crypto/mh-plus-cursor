@@ -435,13 +435,13 @@ const AdminUnverifiedUsers: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background p-6" dir="rtl">
-      <div className="max-w-7xl mx-auto space-y-6">
+    <div className="min-h-screen bg-background p-3 sm:p-4 md:p-6" dir="rtl">
+      <div className="max-w-7xl mx-auto space-y-4 sm:space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
           <div>
-            <h1 className="text-3xl font-bold">ניהול משתמשים בעייתיים</h1>
-            <p className="text-muted-foreground">
+            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold">ניהול משתמשים בעייתיים</h1>
+            <p className="text-xs sm:text-sm text-muted-foreground">
               ניהול משתמשים לא מאומתים ומשתמשים מאומתים ללא חשבון
             </p>
           </div>
@@ -451,7 +451,8 @@ const AdminUnverifiedUsers: React.FC = () => {
               loadOrphanedUsers();
             }}
             variant="outline"
-            className="gap-2"
+            size="sm"
+            className="gap-1 sm:gap-2 w-full sm:w-auto"
           >
             <RefreshCw className="h-4 w-4" />
             רענן נתונים
@@ -459,90 +460,90 @@ const AdminUnverifiedUsers: React.FC = () => {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="unverified" className="flex items-center gap-2">
-              <UserX className="h-4 w-4" />
-              לא מאומתים ({stats.total})
+          <TabsList className="grid w-full grid-cols-3 h-auto">
+            <TabsTrigger value="unverified" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm py-2 px-1 sm:px-3">
+              <UserX className="h-3 w-3 sm:h-4 sm:w-4 hidden xs:block" />
+              <span className="truncate">לא מאומתים ({stats.total})</span>
             </TabsTrigger>
-            <TabsTrigger value="orphaned" className="flex items-center gap-2">
-              <ShieldAlert className="h-4 w-4" />
-              מאומתים ללא חשבון ({orphanedStats.total})
+            <TabsTrigger value="orphaned" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm py-2 px-1 sm:px-3">
+              <ShieldAlert className="h-3 w-3 sm:h-4 sm:w-4 hidden xs:block" />
+              <span className="truncate">ללא חשבון ({orphanedStats.total})</span>
             </TabsTrigger>
-            <TabsTrigger value="email-change" className="flex items-center gap-2">
-              <UserCog className="h-4 w-4" />
-              שינוי מייל לקוח
+            <TabsTrigger value="email-change" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm py-2 px-1 sm:px-3">
+              <UserCog className="h-3 w-3 sm:h-4 sm:w-4 hidden xs:block" />
+              <span className="truncate">שינוי מייל</span>
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="unverified" className="space-y-6">
+          <TabsContent value="unverified" className="space-y-4 sm:space-y-6">
             {/* Stats Cards for Unverified */}
-            <div className="grid gap-4 md:grid-cols-4">
+            <div className="grid gap-3 sm:gap-4 grid-cols-2 md:grid-cols-4">
               <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">סה"כ לא מאומתים</CardTitle>
-                  <AlertTriangle className="h-4 w-4 text-orange-500" />
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-3 sm:p-4 md:p-6 sm:pb-2">
+                  <CardTitle className="text-xs sm:text-sm font-medium">סה"כ לא מאומתים</CardTitle>
+                  <AlertTriangle className="h-3 w-3 sm:h-4 sm:w-4 text-orange-500" />
                 </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{stats.total}</div>
-                  <p className="text-xs text-muted-foreground">משתמשים שעדיין לא אימתו אימייל</p>
+                <CardContent className="p-3 sm:p-4 md:p-6 pt-0">
+                  <div className="text-xl sm:text-2xl font-bold">{stats.total}</div>
+                  <p className="text-xs text-muted-foreground hidden sm:block">משתמשים שעדיין לא אימתו אימייל</p>
                 </CardContent>
               </Card>
 
               <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">השבוע</CardTitle>
-                  <Clock className="h-4 w-4 text-blue-500" />
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-3 sm:p-4 md:p-6 sm:pb-2">
+                  <CardTitle className="text-xs sm:text-sm font-medium">השבוע</CardTitle>
+                  <Clock className="h-3 w-3 sm:h-4 sm:w-4 text-blue-500" />
                 </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{stats.lastWeek}</div>
-                  <p className="text-xs text-muted-foreground">נרשמו השבוע</p>
+                <CardContent className="p-3 sm:p-4 md:p-6 pt-0">
+                  <div className="text-xl sm:text-2xl font-bold">{stats.lastWeek}</div>
+                  <p className="text-xs text-muted-foreground hidden sm:block">נרשמו השבוע</p>
                 </CardContent>
               </Card>
 
               <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">היום</CardTitle>
-                  <Clock className="h-4 w-4 text-green-500" />
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-3 sm:p-4 md:p-6 sm:pb-2">
+                  <CardTitle className="text-xs sm:text-sm font-medium">היום</CardTitle>
+                  <Clock className="h-3 w-3 sm:h-4 sm:w-4 text-green-500" />
                 </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{stats.lastDay}</div>
-                  <p className="text-xs text-muted-foreground">נרשמו היום</p>
+                <CardContent className="p-3 sm:p-4 md:p-6 pt-0">
+                  <div className="text-xl sm:text-2xl font-bold">{stats.lastDay}</div>
+                  <p className="text-xs text-muted-foreground hidden sm:block">נרשמו היום</p>
                 </CardContent>
               </Card>
 
               <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">החודש</CardTitle>
-                  <Clock className="h-4 w-4 text-purple-500" />
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-3 sm:p-4 md:p-6 sm:pb-2">
+                  <CardTitle className="text-xs sm:text-sm font-medium">החודש</CardTitle>
+                  <Clock className="h-3 w-3 sm:h-4 sm:w-4 text-purple-500" />
                 </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{stats.lastMonth}</div>
-                  <p className="text-xs text-muted-foreground">נרשמו החודש</p>
+                <CardContent className="p-3 sm:p-4 md:p-6 pt-0">
+                  <div className="text-xl sm:text-2xl font-bold">{stats.lastMonth}</div>
+                  <p className="text-xs text-muted-foreground hidden sm:block">נרשמו החודש</p>
                 </CardContent>
               </Card>
             </div>
 
             {/* Filters and Actions for Unverified */}
             <Card>
-              <CardHeader>
-                <CardTitle>סינון ופעולות - משתמשים לא מאומתים</CardTitle>
+              <CardHeader className="p-3 sm:p-4 md:p-6">
+                <CardTitle className="text-base sm:text-lg">סינון ופעולות - משתמשים לא מאומתים</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex flex-col sm:flex-row gap-4">
+              <CardContent className="space-y-4 p-3 sm:p-4 md:p-6 pt-0">
+                <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
                   <div className="flex-1">
                     <input
                       type="text"
                       placeholder="חפש לפי אימייל או שם..."
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
-                      className="w-full px-3 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                      className="w-full px-3 py-2 text-sm border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
                     />
                   </div>
                   <div className="flex gap-2">
                     <select
                       value={timeFilter}
                       onChange={(e) => setTimeFilter(e.target.value as any)}
-                      className="px-3 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                      className="w-full sm:w-auto px-3 py-2 text-sm border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
                     >
                       <option value="all">כל הזמנים</option>
                       <option value="day">היום</option>
@@ -557,7 +558,7 @@ const AdminUnverifiedUsers: React.FC = () => {
                     onClick={() => deleteOldUsers(7, 'unverified')}
                     variant="destructive"
                     size="sm"
-                    className="gap-1"
+                    className="gap-1 text-xs sm:text-sm"
                   >
                     <Trash2 className="h-3 w-3" />
                     מחק ישנים מ-7 ימים
@@ -566,7 +567,7 @@ const AdminUnverifiedUsers: React.FC = () => {
                     onClick={() => deleteOldUsers(30, 'unverified')}
                     variant="destructive"
                     size="sm"
-                    className="gap-1"
+                    className="gap-1 text-xs sm:text-sm"
                   >
                     <Trash2 className="h-3 w-3" />
                     מחק ישנים מ-30 ימים
@@ -575,7 +576,7 @@ const AdminUnverifiedUsers: React.FC = () => {
                     onClick={() => deleteOldUsers(90, 'unverified')}
                     variant="destructive"
                     size="sm"
-                    className="gap-1"
+                    className="gap-1 text-xs sm:text-sm"
                   >
                     <Trash2 className="h-3 w-3" />
                     מחק ישנים מ-90 ימים
@@ -586,20 +587,20 @@ const AdminUnverifiedUsers: React.FC = () => {
 
             {/* Unverified Users Table */}
             <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <UserX className="h-5 w-5" />
+              <CardHeader className="p-3 sm:p-4 md:p-6">
+                <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+                  <UserX className="h-4 w-4 sm:h-5 sm:w-5" />
                   רשימת משתמשים לא מאומתים
                 </CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="p-0 sm:p-4 md:p-6 sm:pt-0 md:pt-0">
                 {filteredUsers.length === 0 ? (
-                  <div className="text-center py-8">
-                    <UserX className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                    <h3 className="text-lg font-semibold mb-2">
+                  <div className="text-center py-8 px-3">
+                    <UserX className="h-10 w-10 sm:h-12 sm:w-12 text-muted-foreground mx-auto mb-4" />
+                    <h3 className="text-base sm:text-lg font-semibold mb-2">
                       {searchTerm || timeFilter !== 'all' ? 'אין תוצאות' : 'אין משתמשים לא מאומתים'}
                     </h3>
-                    <p className="text-muted-foreground">
+                    <p className="text-xs sm:text-sm text-muted-foreground">
                       {searchTerm || timeFilter !== 'all' 
                         ? 'נסה לשנות את החיפוש או הסינון'
                         : 'כל המשתמשים במערכת אימתו את כתובת האימייל שלהם'
@@ -611,54 +612,55 @@ const AdminUnverifiedUsers: React.FC = () => {
                     <Table>
                       <TableHeader>
                         <TableRow>
-                          <TableHead>אימייל</TableHead>
-                          <TableHead>שם</TableHead>
-                          <TableHead>תאריך רישום</TableHead>
-                          <TableHead>זמן שעבר</TableHead>
-                          <TableHead>סטטוס</TableHead>
-                          <TableHead>פעולות</TableHead>
+                          <TableHead className="text-xs sm:text-sm">אימייל</TableHead>
+                          <TableHead className="text-xs sm:text-sm hidden sm:table-cell">שם</TableHead>
+                          <TableHead className="text-xs sm:text-sm hidden md:table-cell">תאריך רישום</TableHead>
+                          <TableHead className="text-xs sm:text-sm hidden lg:table-cell">זמן שעבר</TableHead>
+                          <TableHead className="text-xs sm:text-sm hidden sm:table-cell">סטטוס</TableHead>
+                          <TableHead className="text-xs sm:text-sm">פעולות</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
                         {filteredUsers.map((user) => (
                           <TableRow key={user.id}>
-                            <TableCell className="font-medium">{user.email}</TableCell>
-                            <TableCell>
+                            <TableCell className="font-medium text-xs sm:text-sm break-all max-w-[150px] sm:max-w-none">{user.email}</TableCell>
+                            <TableCell className="hidden sm:table-cell text-xs sm:text-sm">
                               {user.raw_user_meta_data?.name || 'לא צוין'}
                             </TableCell>
-                            <TableCell>
+                            <TableCell className="hidden md:table-cell text-xs sm:text-sm">
                               {format(new Date(user.created_at), 'dd/MM/yyyy HH:mm', { locale: he })}
                             </TableCell>
-                            <TableCell>
-                              <div className="flex items-center gap-1">
+                            <TableCell className="hidden lg:table-cell">
+                              <div className="flex items-center gap-1 text-xs sm:text-sm">
                                 <Clock className="h-3 w-3 text-muted-foreground" />
                                 {getTimeAgo(user.created_at)}
                               </div>
                             </TableCell>
-                            <TableCell>
-                              <Badge variant="secondary" className="bg-orange-100 text-orange-800">
+                            <TableCell className="hidden sm:table-cell">
+                              <Badge variant="secondary" className="bg-orange-100 text-orange-800 text-xs">
                                 לא מאומת
                               </Badge>
                             </TableCell>
                             <TableCell>
-                              <div className="flex items-center gap-2">
+                              <div className="flex items-center gap-1 sm:gap-2">
                                 <Button
                                   size="sm"
                                   variant="outline"
                                   onClick={() => resendVerificationEmail(user.email)}
-                                  className="gap-1"
+                                  className="gap-1 text-xs h-7 sm:h-8 px-2 sm:px-3"
                                 >
                                   <Mail className="h-3 w-3" />
-                                  שלח אימות מחדש
+                                  <span className="hidden sm:inline">שלח אימות מחדש</span>
+                                  <span className="sm:hidden">שלח</span>
                                 </Button>
                                 <Button
                                   size="sm"
                                   variant="destructive"
                                   onClick={() => deleteUser(user.id, user.email)}
-                                  className="gap-1"
+                                  className="gap-1 text-xs h-7 sm:h-8 px-2 sm:px-3"
                                 >
                                   <Trash2 className="h-3 w-3" />
-                                  מחק
+                                  <span className="hidden sm:inline">מחק</span>
                                 </Button>
                               </div>
                             </TableCell>
@@ -672,64 +674,64 @@ const AdminUnverifiedUsers: React.FC = () => {
             </Card>
           </TabsContent>
 
-          <TabsContent value="orphaned" className="space-y-6">
+          <TabsContent value="orphaned" className="space-y-4 sm:space-y-6">
             {/* Stats Cards for Orphaned */}
-            <div className="grid gap-4 md:grid-cols-3">
+            <div className="grid gap-3 sm:gap-4 grid-cols-3">
               <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">סה"כ ללא חשבון</CardTitle>
-                  <ShieldAlert className="h-4 w-4 text-red-500" />
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-3 sm:p-4 md:p-6 sm:pb-2">
+                  <CardTitle className="text-xs sm:text-sm font-medium">סה"כ ללא חשבון</CardTitle>
+                  <ShieldAlert className="h-3 w-3 sm:h-4 sm:w-4 text-red-500" />
                 </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{orphanedStats.total}</div>
-                  <p className="text-xs text-muted-foreground">משתמשים מאומתים ללא חשבון</p>
+                <CardContent className="p-3 sm:p-4 md:p-6 pt-0">
+                  <div className="text-xl sm:text-2xl font-bold">{orphanedStats.total}</div>
+                  <p className="text-xs text-muted-foreground hidden sm:block">משתמשים מאומתים ללא חשבון</p>
                 </CardContent>
               </Card>
 
               <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">עם פרופיל</CardTitle>
-                  <Users className="h-4 w-4 text-blue-500" />
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-3 sm:p-4 md:p-6 sm:pb-2">
+                  <CardTitle className="text-xs sm:text-sm font-medium">עם פרופיל</CardTitle>
+                  <Users className="h-3 w-3 sm:h-4 sm:w-4 text-blue-500" />
                 </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{orphanedStats.withProfiles}</div>
-                  <p className="text-xs text-muted-foreground">יש להם פרופיל</p>
+                <CardContent className="p-3 sm:p-4 md:p-6 pt-0">
+                  <div className="text-xl sm:text-2xl font-bold">{orphanedStats.withProfiles}</div>
+                  <p className="text-xs text-muted-foreground hidden sm:block">יש להם פרופיל</p>
                 </CardContent>
               </Card>
 
               <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">ללא פרופיל</CardTitle>
-                  <UserX className="h-4 w-4 text-gray-500" />
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-3 sm:p-4 md:p-6 sm:pb-2">
+                  <CardTitle className="text-xs sm:text-sm font-medium">ללא פרופיל</CardTitle>
+                  <UserX className="h-3 w-3 sm:h-4 sm:w-4 text-gray-500" />
                 </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{orphanedStats.withoutProfiles}</div>
-                  <p className="text-xs text-muted-foreground">אין להם פרופיל</p>
+                <CardContent className="p-3 sm:p-4 md:p-6 pt-0">
+                  <div className="text-xl sm:text-2xl font-bold">{orphanedStats.withoutProfiles}</div>
+                  <p className="text-xs text-muted-foreground hidden sm:block">אין להם פרופיל</p>
                 </CardContent>
               </Card>
             </div>
 
             {/* Filters and Actions for Orphaned */}
             <Card>
-              <CardHeader>
-                <CardTitle>סינון ופעולות - משתמשים מאומתים ללא חשבון</CardTitle>
+              <CardHeader className="p-3 sm:p-4 md:p-6">
+                <CardTitle className="text-base sm:text-lg">סינון ופעולות - מאומתים ללא חשבון</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex flex-col sm:flex-row gap-4">
+              <CardContent className="space-y-4 p-3 sm:p-4 md:p-6 pt-0">
+                <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
                   <div className="flex-1">
                     <input
                       type="text"
                       placeholder="חפש לפי אימייל או שם..."
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
-                      className="w-full px-3 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                      className="w-full px-3 py-2 text-sm border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
                     />
                   </div>
                   <div className="flex gap-2">
                     <select
                       value={timeFilter}
                       onChange={(e) => setTimeFilter(e.target.value as any)}
-                      className="px-3 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                      className="w-full sm:w-auto px-3 py-2 text-sm border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
                     >
                       <option value="all">כל הזמנים</option>
                       <option value="day">היום</option>
@@ -744,7 +746,7 @@ const AdminUnverifiedUsers: React.FC = () => {
                     onClick={() => deleteOldUsers(7, 'orphaned')}
                     variant="destructive"
                     size="sm"
-                    className="gap-1"
+                    className="gap-1 text-xs sm:text-sm"
                   >
                     <Trash2 className="h-3 w-3" />
                     מחק ישנים מ-7 ימים
@@ -753,7 +755,7 @@ const AdminUnverifiedUsers: React.FC = () => {
                     onClick={() => deleteOldUsers(30, 'orphaned')}
                     variant="destructive"
                     size="sm"
-                    className="gap-1"
+                    className="gap-1 text-xs sm:text-sm"
                   >
                     <Trash2 className="h-3 w-3" />
                     מחק ישנים מ-30 ימים
@@ -764,20 +766,20 @@ const AdminUnverifiedUsers: React.FC = () => {
 
             {/* Orphaned Users Table */}
             <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <ShieldAlert className="h-5 w-5" />
+              <CardHeader className="p-3 sm:p-4 md:p-6">
+                <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+                  <ShieldAlert className="h-4 w-4 sm:h-5 sm:w-5" />
                   רשימת משתמשים מאומתים ללא חשבון
                 </CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="p-0 sm:p-4 md:p-6 sm:pt-0 md:pt-0">
                 {filteredOrphaned.length === 0 ? (
-                  <div className="text-center py-8">
-                    <ShieldAlert className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                    <h3 className="text-lg font-semibold mb-2">
+                  <div className="text-center py-8 px-3">
+                    <ShieldAlert className="h-10 w-10 sm:h-12 sm:w-12 text-muted-foreground mx-auto mb-4" />
+                    <h3 className="text-base sm:text-lg font-semibold mb-2">
                       {searchTerm || timeFilter !== 'all' ? 'אין תוצאות' : 'אין משתמשים מאומתים ללא חשבון'}
                     </h3>
-                    <p className="text-muted-foreground">
+                    <p className="text-xs sm:text-sm text-muted-foreground">
                       {searchTerm || timeFilter !== 'all' 
                         ? 'נסה לשנות את החיפוש או הסינון'
                         : 'כל המשתמשים המאומתים שייכים לחשבון'
@@ -789,33 +791,33 @@ const AdminUnverifiedUsers: React.FC = () => {
                     <Table>
                       <TableHeader>
                         <TableRow>
-                          <TableHead>אימייל</TableHead>
-                          <TableHead>שם בפרופיל</TableHead>
-                          <TableHead>תאריך אימות</TableHead>
-                          <TableHead>זמן שעבר</TableHead>
-                          <TableHead>סטטוס פרופיל</TableHead>
-                          <TableHead>פעולות</TableHead>
+                          <TableHead className="text-xs sm:text-sm">אימייל</TableHead>
+                          <TableHead className="text-xs sm:text-sm hidden sm:table-cell">שם בפרופיל</TableHead>
+                          <TableHead className="text-xs sm:text-sm hidden md:table-cell">תאריך אימות</TableHead>
+                          <TableHead className="text-xs sm:text-sm hidden lg:table-cell">זמן שעבר</TableHead>
+                          <TableHead className="text-xs sm:text-sm hidden sm:table-cell">סטטוס פרופיל</TableHead>
+                          <TableHead className="text-xs sm:text-sm">פעולות</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
                         {filteredOrphaned.map((user) => (
                           <TableRow key={user.id}>
-                            <TableCell className="font-medium">{user.email}</TableCell>
-                            <TableCell>
+                            <TableCell className="font-medium text-xs sm:text-sm break-all max-w-[150px] sm:max-w-none">{user.email}</TableCell>
+                            <TableCell className="hidden sm:table-cell text-xs sm:text-sm">
                               {user.profile_name || user.raw_user_meta_data?.name || 'לא צוין'}
                             </TableCell>
-                            <TableCell>
+                            <TableCell className="hidden md:table-cell text-xs sm:text-sm">
                               {format(new Date(user.email_confirmed_at), 'dd/MM/yyyy HH:mm', { locale: he })}
                             </TableCell>
-                            <TableCell>
-                              <div className="flex items-center gap-1">
+                            <TableCell className="hidden lg:table-cell">
+                              <div className="flex items-center gap-1 text-xs sm:text-sm">
                                 <Clock className="h-3 w-3 text-muted-foreground" />
                                 {getTimeAgo(user.email_confirmed_at)}
                               </div>
                             </TableCell>
-                            <TableCell>
+                            <TableCell className="hidden sm:table-cell">
                               <Badge variant={user.has_profile ? "default" : "secondary"} 
-                                     className={user.has_profile ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"}>
+                                     className={`text-xs ${user.has_profile ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"}`}>
                                 {user.has_profile ? 'יש פרופיל' : 'אין פרופיל'}
                               </Badge>
                             </TableCell>
@@ -824,10 +826,11 @@ const AdminUnverifiedUsers: React.FC = () => {
                                 size="sm"
                                 variant="destructive"
                                 onClick={() => deleteUser(user.id, user.email)}
-                                className="gap-1"
+                                className="gap-1 text-xs h-7 sm:h-8 px-2 sm:px-3"
                               >
                                 <Trash2 className="h-3 w-3" />
-                                מחק משתמש
+                                <span className="hidden sm:inline">מחק משתמש</span>
+                                <span className="sm:hidden">מחק</span>
                               </Button>
                             </TableCell>
                           </TableRow>
@@ -840,27 +843,27 @@ const AdminUnverifiedUsers: React.FC = () => {
             </Card>
           </TabsContent>
 
-          <TabsContent value="email-change" className="space-y-6">
+          <TabsContent value="email-change" className="space-y-4 sm:space-y-6">
             {/* Email Change Card */}
             <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <UserCog className="h-5 w-5" />
+              <CardHeader className="p-3 sm:p-4 md:p-6">
+                <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+                  <UserCog className="h-4 w-4 sm:h-5 sm:w-5" />
                   שינוי כתובת מייל לקוח
                 </CardTitle>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-xs sm:text-sm text-muted-foreground">
                   אפשרות לשנות כתובת מייל של לקוח תוך שמירה על כל הנתונים וההעדפות
                 </p>
               </CardHeader>
-              <CardContent className="space-y-6">
+              <CardContent className="space-y-4 sm:space-y-6 p-3 sm:p-4 md:p-6 pt-0">
                 {/* Select User */}
                 <div className="space-y-4">
-                  <h3 className="text-lg font-medium">בחירת משתמש</h3>
+                  <h3 className="text-base sm:text-lg font-medium">בחירת משתמש</h3>
                   <div className="grid gap-4">
                     <div>
-                      <label className="text-sm font-medium">בחר משתמש מהרשימה:</label>
+                      <label className="text-xs sm:text-sm font-medium">בחר משתמש מהרשימה:</label>
                       <select
-                        className="w-full mt-1 px-3 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                        className="w-full mt-1 px-3 py-2 text-sm border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
                         value={emailChangeUser.id}
                         onChange={(e) => {
                           const selectedUser = allUsers.find(u => u.id === e.target.value);
@@ -892,50 +895,50 @@ const AdminUnverifiedUsers: React.FC = () => {
 
                 {/* Email Change Form */}
                 {emailChangeUser.id && (
-                  <div className="space-y-4 p-4 border border-border rounded-lg bg-muted/30">
-                    <h3 className="text-lg font-medium">פרטי שינוי המייל</h3>
+                  <div className="space-y-4 p-3 sm:p-4 border border-border rounded-lg bg-muted/30">
+                    <h3 className="text-base sm:text-lg font-medium">פרטי שינוי המייל</h3>
                     
-                    <div className="grid gap-4 md:grid-cols-2">
+                    <div className="grid gap-3 sm:gap-4 grid-cols-1 md:grid-cols-2">
                       <div>
-                        <label className="text-sm font-medium text-muted-foreground">מייל נוכחי:</label>
+                        <label className="text-xs sm:text-sm font-medium text-muted-foreground">מייל נוכחי:</label>
                         <input
                           type="email"
                           value={emailChangeUser.currentEmail}
                           disabled
-                          className="w-full mt-1 px-3 py-2 border border-border rounded-md bg-muted text-muted-foreground"
+                          className="w-full mt-1 px-3 py-2 text-sm border border-border rounded-md bg-muted text-muted-foreground"
                         />
                       </div>
                       
                       <div>
-                        <label className="text-sm font-medium">מייל חדש: <span className="text-red-500">*</span></label>
+                        <label className="text-xs sm:text-sm font-medium">מייל חדש: <span className="text-red-500">*</span></label>
                         <input
                           type="email"
                           value={emailChangeUser.newEmail}
                           onChange={(e) => setEmailChangeUser(prev => ({ ...prev, newEmail: e.target.value }))}
                           placeholder="הכנס מייל חדש..."
-                          className="w-full mt-1 px-3 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                          className="w-full mt-1 px-3 py-2 text-sm border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
                         />
                       </div>
                       
                       <div>
-                        <label className="text-sm font-medium">אישור מייל חדש: <span className="text-red-500">*</span></label>
+                        <label className="text-xs sm:text-sm font-medium">אישור מייל חדש: <span className="text-red-500">*</span></label>
                         <input
                           type="email"
                           value={emailChangeUser.confirmEmail}
                           onChange={(e) => setEmailChangeUser(prev => ({ ...prev, confirmEmail: e.target.value }))}
                           placeholder="הכנס שוב את המייל החדש..."
-                          className="w-full mt-1 px-3 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                          className="w-full mt-1 px-3 py-2 text-sm border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
                         />
                       </div>
                     </div>
 
                     {/* Warnings */}
-                    <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
+                    <div className="bg-orange-50 border border-orange-200 rounded-lg p-3 sm:p-4">
                       <div className="flex items-start gap-2">
-                        <AlertTriangle className="h-5 w-5 text-orange-500 mt-0.5" />
+                        <AlertTriangle className="h-4 w-4 sm:h-5 sm:w-5 text-orange-500 mt-0.5 shrink-0" />
                         <div className="space-y-2">
-                          <h4 className="font-medium text-orange-800">אזהרות חשובות:</h4>
-                          <ul className="text-sm text-orange-700 space-y-1">
+                          <h4 className="font-medium text-orange-800 text-sm sm:text-base">אזהרות חשובות:</h4>
+                          <ul className="text-xs sm:text-sm text-orange-700 space-y-1">
                             <li>• השינוי יתבצע מיידית ולא ניתן לביטול</li>
                             <li>• כל הנתונים, הגדרות וחברויות יישמרו</li>
                             <li>• המשתמש יקבל הודעה למייל החדש על השינוי</li>
@@ -946,11 +949,11 @@ const AdminUnverifiedUsers: React.FC = () => {
                     </div>
 
                     {/* Action Buttons */}
-                    <div className="flex gap-2 pt-4">
+                    <div className="flex flex-col sm:flex-row gap-2 pt-4">
                       <Button
                         onClick={changeUserEmail}
                         disabled={emailChangeLoading || !emailChangeUser.newEmail || !emailChangeUser.confirmEmail}
-                        className="gap-2"
+                        className="gap-2 w-full sm:w-auto"
                       >
                         {emailChangeLoading ? (
                           <>
@@ -969,6 +972,7 @@ const AdminUnverifiedUsers: React.FC = () => {
                         variant="outline"
                         onClick={() => setEmailChangeUser({ id: '', currentEmail: '', newEmail: '', confirmEmail: '' })}
                         disabled={emailChangeLoading}
+                        className="w-full sm:w-auto"
                       >
                         ביטול
                       </Button>
@@ -977,12 +981,12 @@ const AdminUnverifiedUsers: React.FC = () => {
                 )}
 
                 {/* Instructions */}
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 sm:p-4">
                   <div className="flex items-start gap-2">
-                    <Users className="h-5 w-5 text-blue-500 mt-0.5" />
+                    <Users className="h-4 w-4 sm:h-5 sm:w-5 text-blue-500 mt-0.5 shrink-0" />
                     <div className="space-y-2">
-                      <h4 className="font-medium text-blue-800">הוראות שימוש:</h4>
-                      <ol className="text-sm text-blue-700 space-y-1">
+                      <h4 className="font-medium text-blue-800 text-sm sm:text-base">הוראות שימוש:</h4>
+                      <ol className="text-xs sm:text-sm text-blue-700 space-y-1">
                         <li>1. בחר משתמש מהרשימה (סופר אדמינים מוסתרים)</li>
                         <li>2. הכנס את כתובת המייל החדשה</li>
                         <li>3. אשר את כתובת המייל החדשה</li>
@@ -1002,28 +1006,28 @@ const AdminUnverifiedUsers: React.FC = () => {
 
         {/* Instructions Card */}
         <Card>
-          <CardHeader>
-            <CardTitle>הסבר על הבעיות</CardTitle>
+          <CardHeader className="p-3 sm:p-4 md:p-6">
+            <CardTitle className="text-base sm:text-lg">הסבר על הבעיות</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid gap-4 md:grid-cols-2">
+          <CardContent className="space-y-4 p-3 sm:p-4 md:p-6 pt-0">
+            <div className="grid gap-3 sm:gap-4 grid-cols-1 md:grid-cols-2">
               <div className="space-y-2">
-                <h4 className="font-semibold flex items-center gap-2">
+                <h4 className="font-semibold flex items-center gap-2 text-sm sm:text-base">
                   <UserX className="h-4 w-4 text-orange-500" />
                   משתמשים לא מאומתים
                 </h4>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-xs sm:text-sm text-muted-foreground">
                   אנשים שהתחילו רישום אבל לא לחצו על לינק האימות באימייל. 
                   הם לא יכולים להתחבר למערכת עד שיאמתו.
                 </p>
               </div>
 
               <div className="space-y-2">
-                <h4 className="font-semibold flex items-center gap-2">
+                <h4 className="font-semibold flex items-center gap-2 text-sm sm:text-base">
                   <ShieldAlert className="h-4 w-4 text-red-500" />
                   מאומתים ללא חשבון
                 </h4>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-xs sm:text-sm text-muted-foreground">
                   משתמשים שאימתו את האימייל אבל לא שויכו לאף חשבון משפחה. 
                   זה יכול לקרות בגלל בעיות ברישום או הזמנות שלא עבדו.
                 </p>
@@ -1031,7 +1035,7 @@ const AdminUnverifiedUsers: React.FC = () => {
             </div>
 
             <div className="pt-4 border-t">
-              <p className="text-sm text-muted-foreground">
+              <p className="text-xs sm:text-sm text-muted-foreground">
                 <strong>המלצות:</strong> מחק משתמשים ישנים שלא פעילים כדי לנקות את המערכת. 
                 לפני מחיקה של משתמשים מאומתים, וודא שהם באמת לא אמורים להיות במערכת.
               </p>

@@ -601,37 +601,39 @@ const AdminTenants: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background p-6" dir="rtl">
-      <div className="max-w-7xl mx-auto space-y-6">
+    <div className="min-h-screen bg-background p-3 sm:p-4 md:p-6" dir="rtl">
+      <div className="max-w-7xl mx-auto space-y-4 sm:space-y-6">
         {/* Header */}
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2 sm:gap-4">
           <Button
             onClick={() => window.history.back()}
             variant="ghost"
-            className="gap-2"
+            size="sm"
+            className="gap-1 sm:gap-2"
           >
             <ArrowLeft className="h-4 w-4" />
-            חזור
+            <span className="hidden sm:inline">חזור</span>
           </Button>
-          <div className="flex-1">
-            <h1 className="text-3xl font-bold">ניהול משפחות</h1>
-            <p className="text-muted-foreground">נהל את כל המשפחות במערכת</p>
+          <div className="flex-1 min-w-0">
+            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold">ניהול משפחות</h1>
+            <p className="text-xs sm:text-sm text-muted-foreground">נהל את כל המשפחות במערכת</p>
           </div>
           <Button
             onClick={loadTenants}
             variant="outline"
-            className="gap-2"
+            size="sm"
+            className="gap-1 sm:gap-2"
           >
             <RefreshCw className="h-4 w-4" />
-            רענן
+            <span className="hidden sm:inline">רענן</span>
           </Button>
         </div>
 
         {/* Filters */}
         <Card>
-          <CardContent className="pt-6">
-            <div className="flex gap-4 items-center">
-              <div className="relative flex-1 max-w-sm">
+          <CardContent className="p-3 sm:p-4 md:p-6">
+            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 sm:items-center">
+              <div className="relative flex-1 sm:max-w-sm">
                 <Search className="absolute right-3 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input
                   placeholder="חפש משפחה או בעלים..."
@@ -644,7 +646,7 @@ const AdminTenants: React.FC = () => {
               <select
                 value={selectedStatus}
                 onChange={(e) => setSelectedStatus(e.target.value)}
-                className="rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring"
+                className="w-full sm:w-auto rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring"
               >
                 <option value="all">כל הסטטוסים</option>
                 <option value="trial">תקופת ניסיון</option>
@@ -657,60 +659,60 @@ const AdminTenants: React.FC = () => {
         </Card>
 
         {/* Stats */}
-        <div className="grid gap-4 md:grid-cols-4">
+        <div className="grid gap-3 sm:gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-5">
           <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center gap-2">
-                <Users className="h-4 w-4 text-muted-foreground" />
-                <span className="text-sm text-muted-foreground">סה"כ משפחות</span>
+            <CardContent className="p-3 sm:p-4">
+              <div className="flex items-center gap-1 sm:gap-2">
+                <Users className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
+                <span className="text-xs sm:text-sm text-muted-foreground">סה"כ משפחות</span>
               </div>
-              <div className="text-2xl font-bold">{tenants.length}</div>
+              <div className="text-xl sm:text-2xl font-bold">{tenants.length}</div>
             </CardContent>
           </Card>
 
           <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center gap-2">
-                <DollarSign className="h-4 w-4 text-green-500" />
-                <span className="text-sm text-muted-foreground">פעילות</span>
+            <CardContent className="p-3 sm:p-4">
+              <div className="flex items-center gap-1 sm:gap-2">
+                <DollarSign className="h-3 w-3 sm:h-4 sm:w-4 text-green-500" />
+                <span className="text-xs sm:text-sm text-muted-foreground">פעילות</span>
               </div>
-              <div className="text-2xl font-bold text-green-600">
+              <div className="text-xl sm:text-2xl font-bold text-green-600">
                 {tenants.filter(t => t.subscription_status === 'active').length}
               </div>
             </CardContent>
           </Card>
 
           <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center gap-2">
-                <Calendar className="h-4 w-4 text-blue-500" />
-                <span className="text-sm text-muted-foreground">ניסיון</span>
+            <CardContent className="p-3 sm:p-4">
+              <div className="flex items-center gap-1 sm:gap-2">
+                <Calendar className="h-3 w-3 sm:h-4 sm:w-4 text-blue-500" />
+                <span className="text-xs sm:text-sm text-muted-foreground">ניסיון</span>
               </div>
-              <div className="text-2xl font-bold text-blue-600">
+              <div className="text-xl sm:text-2xl font-bold text-blue-600">
                 {tenants.filter(t => t.subscription_status === 'trial').length}
               </div>
             </CardContent>
           </Card>
 
           <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center gap-2">
-                <Calendar className="h-4 w-4 text-red-500" />
-                <span className="text-sm text-muted-foreground">פג תוקף</span>
+            <CardContent className="p-3 sm:p-4">
+              <div className="flex items-center gap-1 sm:gap-2">
+                <Calendar className="h-3 w-3 sm:h-4 sm:w-4 text-red-500" />
+                <span className="text-xs sm:text-sm text-muted-foreground">פג תוקף</span>
               </div>
-              <div className="text-2xl font-bold text-red-600">
+              <div className="text-xl sm:text-2xl font-bold text-red-600">
                 {tenants.filter(t => t.subscription_status === 'expired').length}
               </div>
             </CardContent>
           </Card>
 
           <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center gap-2">
-                <UserMinus className="h-4 w-4 text-gray-500" />
-                <span className="text-sm text-muted-foreground">נמחקו</span>
+            <CardContent className="p-3 sm:p-4">
+              <div className="flex items-center gap-1 sm:gap-2">
+                <UserMinus className="h-3 w-3 sm:h-4 sm:w-4 text-gray-500" />
+                <span className="text-xs sm:text-sm text-muted-foreground">נמחקו</span>
               </div>
-              <div className="text-2xl font-bold text-gray-600">
+              <div className="text-xl sm:text-2xl font-bold text-gray-600">
                 {deletedUsers.length}
               </div>
             </CardContent>
@@ -719,42 +721,42 @@ const AdminTenants: React.FC = () => {
 
         {/* Tenants Table */}
         <Card>
-          <CardHeader>
-            <CardTitle>רשימת משפחות ({filteredTenants.length})</CardTitle>
+          <CardHeader className="p-3 sm:p-4 md:p-6">
+            <CardTitle className="text-base sm:text-lg">רשימת משפחות ({filteredTenants.length})</CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-0 sm:p-4 md:p-6 sm:pt-0 md:pt-0">
             <div className="overflow-x-auto">
-              <table className="w-full">
+              <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b">
-                    <th className="text-right p-4">שם המשפחה</th>
-                    <th className="text-right p-4">בעלים</th>
-                    <th className="text-right p-4">סטטוס</th>
-                    <th className="text-right p-4">מחיר חודשי</th>
-                    <th className="text-right p-4">חברים</th>
-                    <th className="text-right p-4">כניסה אחרונה</th>
-                    <th className="text-right p-4">פעילות חודשית</th>
-                    <th className="text-right p-4">גודל נתונים</th>
-                    <th className="text-right p-4">נרשם</th>
-                    <th className="text-right p-4">פעולות</th>
+                    <th className="text-right p-2 sm:p-3 md:p-4">שם המשפחה</th>
+                    <th className="text-right p-2 sm:p-3 md:p-4">בעלים</th>
+                    <th className="text-right p-2 sm:p-3 md:p-4">סטטוס</th>
+                    <th className="text-right p-2 sm:p-3 md:p-4 hidden md:table-cell">מחיר חודשי</th>
+                    <th className="text-right p-2 sm:p-3 md:p-4 hidden sm:table-cell">חברים</th>
+                    <th className="text-right p-2 sm:p-3 md:p-4 hidden lg:table-cell">כניסה אחרונה</th>
+                    <th className="text-right p-2 sm:p-3 md:p-4 hidden lg:table-cell">פעילות חודשית</th>
+                    <th className="text-right p-2 sm:p-3 md:p-4 hidden xl:table-cell">גודל נתונים</th>
+                    <th className="text-right p-2 sm:p-3 md:p-4 hidden md:table-cell">נרשם</th>
+                    <th className="text-right p-2 sm:p-3 md:p-4">פעולות</th>
                   </tr>
                 </thead>
                 <tbody>
                   {filteredTenants.map((tenant) => (
                     <tr key={tenant.id} className="border-b hover:bg-muted/50">
-                      <td className="p-4 font-medium">{tenant.name}</td>
-                      <td className="p-4">
+                      <td className="p-2 sm:p-3 md:p-4 font-medium">{tenant.name}</td>
+                      <td className="p-2 sm:p-3 md:p-4">
                         <div>
-                          <div className="font-medium">{tenant.owner_name}</div>
+                          <div className="font-medium text-xs sm:text-sm">{tenant.owner_name}</div>
                           <div className="text-xs text-muted-foreground">
                             {tenant.total_members} חברים במשפחה
                           </div>
                         </div>
                       </td>
-                      <td className="p-4">
+                      <td className="p-2 sm:p-3 md:p-4">
                         {getStatusBadge(tenant.subscription_status, tenant.trial_ends_at)}
                       </td>
-                      <td className="p-4">
+                      <td className="p-2 sm:p-3 md:p-4 hidden md:table-cell">
                         <div className="font-semibold">
                           {tenant.monthly_price > 0 ? `₪${tenant.monthly_price}` : 'חינם'}
                         </div>
@@ -763,13 +765,13 @@ const AdminTenants: React.FC = () => {
                            tenant.subscription_status === 'active' ? 'משלם' : 'לא פעיל'}
                         </div>
                       </td>
-                      <td className="p-4">
+                      <td className="p-2 sm:p-3 md:p-4 hidden sm:table-cell">
                         <div className="flex items-center gap-1">
                           <Users className="h-3 w-3" />
                           <span className="font-medium">{tenant.total_members}</span>
                         </div>
                       </td>
-                      <td className="p-4">
+                      <td className="p-2 sm:p-3 md:p-4 hidden lg:table-cell">
                         {tenant.owner_last_login ? (
                           <div>
                             <div className="text-sm">
@@ -783,23 +785,23 @@ const AdminTenants: React.FC = () => {
                           <span className="text-muted-foreground text-sm">מעולם לא נכנס</span>
                         )}
                       </td>
-                      <td className="p-4">
+                      <td className="p-2 sm:p-3 md:p-4 hidden lg:table-cell">
                         <div className="flex items-center gap-1">
                           <Activity className="h-3 w-3" />
                           <span className="font-medium">{tenant.monthly_expenses_count}</span>
                           <span className="text-xs text-muted-foreground">הוצאות</span>
                         </div>
                       </td>
-                      <td className="p-4">
+                      <td className="p-2 sm:p-3 md:p-4 hidden xl:table-cell">
                         <div className="flex items-center gap-1">
                           <Database className="h-3 w-3" />
                           <span className="text-sm">{tenant.data_size_mb}MB</span>
                         </div>
                       </td>
-                      <td className="p-4">
+                      <td className="p-2 sm:p-3 md:p-4 hidden md:table-cell">
                         {new Date(tenant.created_at).toLocaleDateString('he-IL')}
                       </td>
-                      <td className="p-4">
+                      <td className="p-2 sm:p-3 md:p-4">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <Button
@@ -880,33 +882,33 @@ const AdminTenants: React.FC = () => {
         {/* Deleted Users Section */}
         {deletedUsers.length > 0 && (
           <Card>
-            <CardHeader>
-              <CardTitle>משתמשים שנמחקו על ידי אדמין ({deletedUsers.length})</CardTitle>
+            <CardHeader className="p-3 sm:p-4 md:p-6">
+              <CardTitle className="text-base sm:text-lg">משתמשים שנמחקו על ידי אדמין ({deletedUsers.length})</CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-0 sm:p-4 md:p-6 sm:pt-0 md:pt-0">
               <div className="overflow-x-auto">
-                <table className="w-full">
+                <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b">
-                      <th className="text-right p-4">שם</th>
-                      <th className="text-right p-4">אימייל</th>
-                      <th className="text-right p-4">נמחק על ידי</th>
-                      <th className="text-right p-4">תאריך מחיקה</th>
-                      <th className="text-right p-4">משפחות שנמחקו</th>
+                      <th className="text-right p-2 sm:p-3 md:p-4">שם</th>
+                      <th className="text-right p-2 sm:p-3 md:p-4">אימייל</th>
+                      <th className="text-right p-2 sm:p-3 md:p-4 hidden sm:table-cell">נמחק על ידי</th>
+                      <th className="text-right p-2 sm:p-3 md:p-4 hidden md:table-cell">תאריך מחיקה</th>
+                      <th className="text-right p-2 sm:p-3 md:p-4 hidden lg:table-cell">משפחות שנמחקו</th>
                     </tr>
                   </thead>
                   <tbody>
                     {deletedUsers.map((deletedUser) => (
                       <tr key={deletedUser.id} className="border-b hover:bg-muted/50">
-                        <td className="p-4">
-                          <div className="font-medium">{deletedUser.name || 'לא ידוע'}</div>
-                          <div className="text-xs text-muted-foreground">ID: {deletedUser.original_user_id}</div>
+                        <td className="p-2 sm:p-3 md:p-4">
+                          <div className="font-medium text-xs sm:text-sm">{deletedUser.name || 'לא ידוע'}</div>
+                          <div className="text-xs text-muted-foreground truncate max-w-[120px] sm:max-w-none">ID: {deletedUser.original_user_id}</div>
                         </td>
-                        <td className="p-4">{deletedUser.email}</td>
-                        <td className="p-4">
+                        <td className="p-2 sm:p-3 md:p-4 text-xs sm:text-sm break-all">{deletedUser.email}</td>
+                        <td className="p-2 sm:p-3 md:p-4 hidden sm:table-cell">
                           {deletedUser.deleted_by_profile?.name || 'לא ידוע'}
                         </td>
-                        <td className="p-4">
+                        <td className="p-2 sm:p-3 md:p-4 hidden md:table-cell">
                           {new Date(deletedUser.deleted_at).toLocaleDateString('he-IL', {
                             year: 'numeric',
                             month: '2-digit',
@@ -915,7 +917,7 @@ const AdminTenants: React.FC = () => {
                             minute: '2-digit'
                           })}
                         </td>
-                        <td className="p-4">
+                        <td className="p-2 sm:p-3 md:p-4 hidden lg:table-cell">
                           {deletedUser.accounts_deleted && deletedUser.accounts_deleted.length > 0 ? (
                             <div className="text-sm">
                               {deletedUser.accounts_deleted.map((accountName: string, index: number) => (
@@ -1174,40 +1176,40 @@ const AdminTenants: React.FC = () => {
 
         {/* View Details Dialog */}
         <AlertDialog open={viewDetailsDialog.open} onOpenChange={(open) => setViewDetailsDialog({ open, tenant: null })}>
-          <AlertDialogContent className="max-w-4xl">
+          <AlertDialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
             <AlertDialogHeader>
-              <AlertDialogTitle>פרטי משפחת {viewDetailsDialog.tenant?.name}</AlertDialogTitle>
-              <AlertDialogDescription>
+              <AlertDialogTitle className="text-base sm:text-lg">פרטי משפחת {viewDetailsDialog.tenant?.name}</AlertDialogTitle>
+              <AlertDialogDescription className="text-xs sm:text-sm">
                 מידע מפורט על המשפחה, חברים, הוצאות ופעילות.
               </AlertDialogDescription>
             </AlertDialogHeader>
             
             {viewDetailsDialog.tenant && (
-              <div className="space-y-6">
+              <div className="space-y-4 sm:space-y-6">
                 {/* סטטיסטיקות כלליות */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <div className="text-center p-3 bg-muted rounded-lg">
-                    <div className="text-2xl font-bold">{viewDetailsDialog.tenant.total_members}</div>
-                    <div className="text-sm text-muted-foreground">חברים</div>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-4">
+                  <div className="text-center p-2 sm:p-3 bg-muted rounded-lg">
+                    <div className="text-lg sm:text-2xl font-bold">{viewDetailsDialog.tenant.total_members}</div>
+                    <div className="text-xs sm:text-sm text-muted-foreground">חברים</div>
                   </div>
-                  <div className="text-center p-3 bg-muted rounded-lg">
-                    <div className="text-2xl font-bold">₪{viewDetailsDialog.tenant.monthly_price}</div>
-                    <div className="text-sm text-muted-foreground">מחיר חודשי</div>
+                  <div className="text-center p-2 sm:p-3 bg-muted rounded-lg">
+                    <div className="text-lg sm:text-2xl font-bold">₪{viewDetailsDialog.tenant.monthly_price}</div>
+                    <div className="text-xs sm:text-sm text-muted-foreground">מחיר חודשי</div>
                   </div>
-                  <div className="text-center p-3 bg-muted rounded-lg">
-                    <div className="text-2xl font-bold">{viewDetailsDialog.tenant.monthly_expenses_count}</div>
-                    <div className="text-sm text-muted-foreground">הוצאות חודש זה</div>
+                  <div className="text-center p-2 sm:p-3 bg-muted rounded-lg">
+                    <div className="text-lg sm:text-2xl font-bold">{viewDetailsDialog.tenant.monthly_expenses_count}</div>
+                    <div className="text-xs sm:text-sm text-muted-foreground">הוצאות חודש זה</div>
                   </div>
-                  <div className="text-center p-3 bg-muted rounded-lg">
-                    <div className="text-2xl font-bold">{viewDetailsDialog.tenant.data_size_mb}MB</div>
-                    <div className="text-sm text-muted-foreground">גודל נתונים</div>
+                  <div className="text-center p-2 sm:p-3 bg-muted rounded-lg">
+                    <div className="text-lg sm:text-2xl font-bold">{viewDetailsDialog.tenant.data_size_mb}MB</div>
+                    <div className="text-xs sm:text-sm text-muted-foreground">גודל נתונים</div>
                   </div>
                 </div>
 
                 {/* רשימת חברים */}
                 <div>
                   <div className="flex items-center justify-between mb-3">
-                    <h3 className="text-lg font-semibold">חברי המשפחה</h3>
+                    <h3 className="text-sm sm:text-lg font-semibold">חברי המשפחה</h3>
                     <Button
                       size="sm"
                       onClick={() => {
@@ -1215,36 +1217,36 @@ const AdminTenants: React.FC = () => {
                         setNewMemberEmail('');
                         setNewMemberRole('member');
                       }}
-                      className="gap-2"
+                      className="gap-1 sm:gap-2 text-xs sm:text-sm"
                     >
-                      <UserPlus className="h-4 w-4" />
+                      <UserPlus className="h-3 w-3 sm:h-4 sm:w-4" />
                       הוסף חבר
                     </Button>
                   </div>
-                  <div className="border rounded-lg">
-                    <table className="w-full">
+                  <div className="border rounded-lg overflow-x-auto">
+                    <table className="w-full text-sm">
                        <thead>
                          <tr className="border-b bg-muted/50">
-                           <th className="text-right p-3">שם</th>
-                           <th className="text-right p-3">תפקיד</th>
-                           <th className="text-right p-3">כניסה אחרונה</th>
-                           <th className="text-right p-3">הצטרף</th>
-                           <th className="text-right p-3">פעולות</th>
+                           <th className="text-right p-2 sm:p-3">שם</th>
+                           <th className="text-right p-2 sm:p-3">תפקיד</th>
+                           <th className="text-right p-2 sm:p-3 hidden sm:table-cell">כניסה אחרונה</th>
+                           <th className="text-right p-2 sm:p-3 hidden md:table-cell">הצטרף</th>
+                           <th className="text-right p-2 sm:p-3">פעולות</th>
                          </tr>
                        </thead>
                       <tbody>
                         {viewDetailsDialog.tenant.member_details.map((member, index) => (
                           <tr key={index} className="border-b last:border-b-0">
-                            <td className="p-3">
-                              <div className="font-medium">{member.name}</div>
-                              <div className="text-sm text-muted-foreground">{member.email}</div>
+                            <td className="p-2 sm:p-3">
+                              <div className="font-medium text-xs sm:text-sm">{member.name}</div>
+                              <div className="text-xs text-muted-foreground truncate max-w-[120px] sm:max-w-none">{member.email}</div>
                             </td>
-                            <td className="p-3">
-                              <Badge variant={member.role === 'admin' ? 'default' : 'secondary'}>
+                            <td className="p-2 sm:p-3">
+                              <Badge variant={member.role === 'admin' ? 'default' : 'secondary'} className="text-xs">
                                 {member.role === 'admin' ? 'מנהל' : 'חבר'}
                               </Badge>
                             </td>
-                            <td className="p-3">
+                            <td className="p-2 sm:p-3 hidden sm:table-cell">
                               {member.last_login ? (
                                 <div>
                                   <div className="text-sm">
@@ -1258,15 +1260,15 @@ const AdminTenants: React.FC = () => {
                                 <span className="text-muted-foreground text-sm">מעולם לא נכנס</span>
                               )}
                             </td>
-                             <td className="p-3">
+                             <td className="p-2 sm:p-3 hidden md:table-cell">
                                {new Date(member.joined_at).toLocaleDateString('he-IL')}
                              </td>
-                             <td className="p-3">
+                             <td className="p-2 sm:p-3">
                                <div className="flex gap-1">
                                  <Button
                                    variant="ghost"
                                    size="sm"
-                                   className="text-destructive hover:text-destructive"
+                                   className="text-destructive hover:text-destructive h-7 w-7 sm:h-8 sm:w-8 p-0"
                                    disabled={actionLoading === `${viewDetailsDialog.tenant.id}-${member.user_id}`}
                                    onClick={() => {
                                      setDeleteMemberDialog({ 
@@ -1276,16 +1278,16 @@ const AdminTenants: React.FC = () => {
                                      });
                                    }}
                                  >
-                                   <UserMinus className="h-4 w-4" />
+                                   <UserMinus className="h-3 w-3 sm:h-4 sm:w-4" />
                                  </Button>
                                  <Button
                                    variant="ghost"
                                    size="sm"
-                                   className="text-destructive hover:text-destructive"
+                                   className="text-destructive hover:text-destructive h-7 w-7 sm:h-8 sm:w-8 p-0"
                                    disabled={actionLoading === `delete-user-${member.user_id}`}
                                    onClick={() => handleDeleteUser(member.user_id || '')}
                                  >
-                                   <Trash2 className="h-4 w-4" />
+                                   <Trash2 className="h-3 w-3 sm:h-4 sm:w-4" />
                                  </Button>
                                </div>
                              </td>
@@ -1297,10 +1299,10 @@ const AdminTenants: React.FC = () => {
                 </div>
 
                 {/* מידע נוסף */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                   <div>
-                    <h4 className="font-medium mb-2">מידע כללי</h4>
-                    <div className="space-y-2 text-sm">
+                    <h4 className="font-medium mb-2 text-sm sm:text-base">מידע כללי</h4>
+                    <div className="space-y-2 text-xs sm:text-sm">
                       <div>תאריך הקמה: {new Date(viewDetailsDialog.tenant.created_at).toLocaleDateString('he-IL')}</div>
                       <div>סטטוס: {getStatusBadge(viewDetailsDialog.tenant.subscription_status, viewDetailsDialog.tenant.trial_ends_at)}</div>
                       {viewDetailsDialog.tenant.trial_ends_at && (
@@ -1309,8 +1311,8 @@ const AdminTenants: React.FC = () => {
                     </div>
                   </div>
                   <div>
-                    <h4 className="font-medium mb-2">פעילות</h4>
-                    <div className="space-y-2 text-sm">
+                    <h4 className="font-medium mb-2 text-sm sm:text-base">פעילות</h4>
+                    <div className="space-y-2 text-xs sm:text-sm">
                       <div>סה"כ הוצאות: {viewDetailsDialog.tenant.total_expenses}</div>
                       <div>הוצאות חודש זה: {viewDetailsDialog.tenant.monthly_expenses_count}</div>
                       {viewDetailsDialog.tenant.last_activity && (
@@ -1322,14 +1324,14 @@ const AdminTenants: React.FC = () => {
 
                 {/* הגדרות SMS */}
                 <div className="border-t pt-4">
-                  <h4 className="font-medium mb-3 flex items-center gap-2">
+                  <h4 className="font-medium mb-3 flex items-center gap-2 text-sm sm:text-base">
                     <MessageSquare className="h-4 w-4" />
                     הגדרות SMS
                   </h4>
-                  <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-3 bg-muted rounded-lg gap-3">
                     <div>
-                      <div className="font-medium">התראות SMS על הוצאות</div>
-                      <div className="text-sm text-muted-foreground">
+                      <div className="font-medium text-sm sm:text-base">התראות SMS על הוצאות</div>
+                      <div className="text-xs sm:text-sm text-muted-foreground">
                         שליחת SMS לצד השני כשנוצרת הוצאה לאישור
                       </div>
                     </div>

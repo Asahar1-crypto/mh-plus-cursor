@@ -53,21 +53,21 @@ const AddChildForm: React.FC<AddChildFormProps> = ({ open, setOpen }) => {
   };
 
   return (
-    <DialogContent className="sm:max-w-[425px]">
+    <DialogContent className="w-[95vw] sm:max-w-[425px] p-4 sm:p-6">
       <DialogHeader>
-        <DialogTitle>הוספת ילד/ה חדש/ה</DialogTitle>
-        <DialogDescription>
+        <DialogTitle className="text-base sm:text-lg">הוספת ילד/ה חדש/ה</DialogTitle>
+        <DialogDescription className="text-xs sm:text-sm">
           הוסף פרטים אודות הילד/ה
         </DialogDescription>
       </DialogHeader>
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-3 sm:space-y-4">
           <FormField
             control={form.control}
             name="name"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>שם</FormLabel>
+                <FormLabel className="text-sm">שם</FormLabel>
                 <FormControl>
                   <Input placeholder="ישראל/ה" {...field} />
                 </FormControl>
@@ -79,7 +79,7 @@ const AddChildForm: React.FC<AddChildFormProps> = ({ open, setOpen }) => {
           {/* Gender selector */}
           <div className="space-y-2">
             <Label className="text-sm font-medium">בן / בת</Label>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-2 sm:gap-3">
               {([
                 { value: 'son' as const, label: 'בן', image: '/avatars/roles/son.png' },
                 { value: 'daughter' as const, label: 'בת', image: '/avatars/roles/daughter.png' },
@@ -88,13 +88,13 @@ const AddChildForm: React.FC<AddChildFormProps> = ({ open, setOpen }) => {
                   key={option.value}
                   type="button"
                   onClick={() => form.setValue('gender', option.value)}
-                  className={`flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 transition-all duration-200 text-sm font-medium ${
+                  className={`flex flex-col items-center gap-1 sm:gap-1.5 p-2 sm:p-3 rounded-xl border-2 transition-all duration-200 text-xs sm:text-sm font-medium ${
                     form.watch('gender') === option.value
                       ? 'border-primary bg-primary/10 text-primary shadow-sm'
                       : 'border-border/50 bg-background/50 hover:border-primary/40 hover:bg-primary/5 text-muted-foreground'
                   }`}
                 >
-                  <img src={option.image} alt={option.label} className="w-12 h-12 sm:w-14 sm:h-14 object-contain rounded-full" />
+                  <img src={option.image} alt={option.label} className="w-10 h-10 sm:w-14 sm:h-14 object-contain rounded-full" />
                   <span>{option.label}</span>
                 </button>
               ))}
@@ -109,7 +109,7 @@ const AddChildForm: React.FC<AddChildFormProps> = ({ open, setOpen }) => {
             name="birthDate"
             render={({ field }) => (
               <FormItem className="flex flex-col">
-                <FormLabel>תאריך לידה</FormLabel>
+                <FormLabel className="text-sm">תאריך לידה</FormLabel>
                 <FormControl>
                   <BirthDatePicker
                     value={field.value}
@@ -119,7 +119,7 @@ const AddChildForm: React.FC<AddChildFormProps> = ({ open, setOpen }) => {
                     maxYear={new Date().getFullYear()}
                   />
                 </FormControl>
-                <FormDescription>
+                <FormDescription className="text-xs sm:text-sm">
                   תאריך הלידה של הילד/ה
                 </FormDescription>
                 <FormMessage />
@@ -127,8 +127,8 @@ const AddChildForm: React.FC<AddChildFormProps> = ({ open, setOpen }) => {
             )}
           />
 
-          <DialogFooter>
-            <Button type="submit" disabled={isPending}>
+          <DialogFooter className="sm:justify-end">
+            <Button type="submit" disabled={isPending} className="w-full sm:w-auto">
               {isPending ? (
                 <span className="flex items-center gap-2">
                   <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-r-transparent" />

@@ -242,24 +242,24 @@ export const ReceiptUpload: React.FC<ReceiptUploadProps> = ({ onScanComplete, on
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3 sm:space-y-4">
       {!selectedFile ? (
-        <div className="space-y-4">
+        <div className="space-y-3 sm:space-y-4">
           <Card
             className="border-dashed border-2 border-muted-foreground/25 hover:border-muted-foreground/50 transition-colors"
             onDrop={handleDrop}
             onDragOver={(e) => e.preventDefault()}
           >
-            <CardContent className="flex flex-col items-center justify-center p-8 text-center">
-              <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4">
-                <Upload className="h-8 w-8 text-muted-foreground" />
+            <CardContent className="flex flex-col items-center justify-center p-4 sm:p-6 md:p-8 text-center">
+              <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-muted flex items-center justify-center mb-3 sm:mb-4">
+                <Upload className="h-6 w-6 sm:h-8 sm:w-8 text-muted-foreground" />
               </div>
-              <h3 className="text-lg font-semibold mb-2">העלה חשבונית לסריקה</h3>
-              <p className="text-muted-foreground mb-4">
+              <h3 className="text-base sm:text-lg font-semibold mb-1.5 sm:mb-2">העלה חשבונית לסריקה</h3>
+              <p className="text-xs sm:text-sm text-muted-foreground mb-3 sm:mb-4">
                 גרור קובץ לכאן או בחר קובץ למטה
               </p>
-              <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
-                <FileImage className="h-4 w-4" />
+              <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground mb-3 sm:mb-4">
+                <FileImage className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                 <span>JPG, PNG</span>
                 <span>•</span>
                 <span>עד 5MB</span>
@@ -269,17 +269,17 @@ export const ReceiptUpload: React.FC<ReceiptUploadProps> = ({ onScanComplete, on
                   <Button 
                     onClick={handleCameraCapture}
                     variant="outline"
-                    className="w-full"
+                    className="w-full text-xs sm:text-sm"
                   >
-                    <Camera className="mr-2 h-4 w-4" />
+                    <Camera className="mr-1.5 sm:mr-2 h-3.5 w-3.5 sm:h-4 sm:w-4" />
                     צלם חשבונית
                   </Button>
                   <Button 
                     onClick={handleGallerySelect}
                     variant="outline"
-                    className="w-full"
+                    className="w-full text-xs sm:text-sm"
                   >
-                    <FileImage className="mr-2 h-4 w-4" />
+                    <FileImage className="mr-1.5 sm:mr-2 h-3.5 w-3.5 sm:h-4 sm:w-4" />
                     בחר מהגלריה
                   </Button>
                 </div>
@@ -288,7 +288,7 @@ export const ReceiptUpload: React.FC<ReceiptUploadProps> = ({ onScanComplete, on
                   type="file"
                   accept=".jpg,.jpeg,.png"
                   onChange={handleFileInput}
-                  className="w-full p-3 border border-dashed border-muted-foreground/50 rounded-lg cursor-pointer file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-primary-foreground hover:file:bg-primary/90"
+                  className="w-full p-2 sm:p-3 text-xs sm:text-sm border border-dashed border-muted-foreground/50 rounded-lg cursor-pointer file:mr-2 sm:file:mr-4 file:py-1.5 sm:file:py-2 file:px-3 sm:file:px-4 file:rounded-full file:border-0 file:text-xs sm:file:text-sm file:font-semibold file:bg-primary file:text-primary-foreground hover:file:bg-primary/90"
                 />
               )}
             </CardContent>
@@ -296,17 +296,17 @@ export const ReceiptUpload: React.FC<ReceiptUploadProps> = ({ onScanComplete, on
         </div>
       ) : (
         <Card>
-          <CardContent className="p-6">
-            <div className="flex items-start justify-between mb-4">
-              <div className="flex items-center gap-3">
+          <CardContent className="p-3 sm:p-4 md:p-6">
+            <div className="flex items-start justify-between mb-3 sm:mb-4">
+              <div className="flex items-center gap-2 sm:gap-3 min-w-0">
                 {selectedFile.type.startsWith('image/') ? (
-                  <FileImage className="h-8 w-8 text-blue-500" />
+                  <FileImage className="h-6 w-6 sm:h-8 sm:w-8 text-blue-500 shrink-0" />
                 ) : (
-                  <FileText className="h-8 w-8 text-red-500" />
+                  <FileText className="h-6 w-6 sm:h-8 sm:w-8 text-red-500 shrink-0" />
                 )}
-                <div>
-                  <h3 className="font-medium">{selectedFile.name}</h3>
-                  <p className="text-sm text-muted-foreground">
+                <div className="min-w-0">
+                  <h3 className="font-medium text-sm sm:text-base truncate">{selectedFile.name}</h3>
+                  <p className="text-xs sm:text-sm text-muted-foreground">
                     {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
                   </p>
                 </div>
@@ -316,40 +316,41 @@ export const ReceiptUpload: React.FC<ReceiptUploadProps> = ({ onScanComplete, on
                 size="sm"
                 onClick={clearSelection}
                 disabled={isUploading}
+                className="shrink-0"
               >
                 <X className="h-4 w-4" />
               </Button>
             </div>
 
             {previewUrl && (
-              <div className="mb-4">
+              <div className="mb-3 sm:mb-4">
                 <img
                   src={previewUrl}
                   alt="תצוגה מקדימה"
-                  className="max-w-full h-auto max-h-64 rounded-lg border"
+                  className="max-w-full h-auto max-h-48 sm:max-h-64 rounded-lg border"
                 />
               </div>
             )}
 
-            <div className="flex gap-2">
+            <div className="flex flex-col sm:flex-row gap-2">
               <Button
                 onClick={scanReceipt}
                 disabled={isUploading}
-                className="flex-1"
+                className="flex-1 text-xs sm:text-sm"
               >
                 {isScanning ? (
                   <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    <Loader2 className="mr-1.5 sm:mr-2 h-3.5 w-3.5 sm:h-4 sm:w-4 animate-spin" />
                     סורק עם AI...
                   </>
                 ) : (
                   <>
-                    <Camera className="mr-2 h-4 w-4" />
+                    <Camera className="mr-1.5 sm:mr-2 h-3.5 w-3.5 sm:h-4 sm:w-4" />
                     סרוק עם AI
                   </>
                 )}
               </Button>
-              <Button variant="outline" onClick={onCancel} disabled={isUploading}>
+              <Button variant="outline" onClick={onCancel} disabled={isUploading} className="w-full sm:w-auto text-xs sm:text-sm">
                 ביטול
               </Button>
             </div>

@@ -147,7 +147,7 @@ const FamilyPhoneRegister = () => {
     return (
       <>
         <AnimatedBackground />
-        <div className="container mx-auto py-10 px-4 flex flex-col items-center justify-center min-h-[calc(100vh-4rem)]">
+        <div className="container mx-auto py-6 sm:py-10 px-3 sm:px-4 flex flex-col items-center justify-center min-h-[calc(100vh-4rem)]">
           <LoadingState />
         </div>
       </>
@@ -158,7 +158,7 @@ const FamilyPhoneRegister = () => {
     return (
       <>
         <AnimatedBackground />
-        <div className="container mx-auto py-10 px-4 flex flex-col items-center justify-center min-h-[calc(100vh-4rem)]">
+        <div className="container mx-auto py-6 sm:py-10 px-3 sm:px-4 flex flex-col items-center justify-center min-h-[calc(100vh-4rem)]">
           <ErrorState message={errorMessage || 'ההזמנה לא נמצאה או שפגה תוקפה'} />
         </div>
       </>
@@ -169,7 +169,7 @@ const FamilyPhoneRegister = () => {
     return (
       <>
         <AnimatedBackground />
-        <div className="container mx-auto py-10 px-4 flex items-center justify-center min-h-[calc(100vh-4rem)]" dir="rtl">
+        <div className="container mx-auto py-6 sm:py-10 px-3 sm:px-4 flex items-center justify-center min-h-[calc(100vh-4rem)]" dir="rtl">
           <div className="w-full max-w-md">
             <FamilyOtpVerification
               phoneNumber={familyInfo.phone}
@@ -192,9 +192,9 @@ const FamilyPhoneRegister = () => {
   return (
     <>
       <AnimatedBackground />
-      <div className="container mx-auto py-10 px-4 flex flex-col items-center justify-center min-h-[calc(100vh-4rem)]" dir="rtl">
+      <div className="container mx-auto py-6 sm:py-10 px-3 sm:px-4 flex flex-col items-center justify-center min-h-[calc(100vh-4rem)]" dir="rtl">
         <div className="w-full max-w-7xl">
-          <div className="grid lg:grid-cols-5 gap-8 items-center" dir="ltr">
+          <div className="grid lg:grid-cols-5 gap-4 sm:gap-8 items-center" dir="ltr">
             {/* Left Wallet Character - Green */}
             <div className="hidden lg:flex flex-col items-center justify-center p-8 animate-fade-in">
               <div className="relative">
@@ -209,52 +209,52 @@ const FamilyPhoneRegister = () => {
 
             {/* Registration Card - Center (3 columns) */}
             <div className="w-full max-w-xl mx-auto lg:mx-0 lg:col-span-3" dir="rtl">
-              <Card className="border-border shadow-xl animate-fade-in glass shadow-card p-2">
-                <CardHeader className="text-center pb-8 pt-8">
+              <Card className="border-border shadow-xl animate-fade-in glass shadow-card p-1 sm:p-2">
+                <CardHeader className="text-center pb-4 sm:pb-8 pt-4 sm:pt-8 px-4 sm:px-6">
                   {/* Mobile wallet characters */}
-                  <div className="lg:hidden flex justify-center gap-4 mb-4">
+                  <div className="lg:hidden flex justify-center gap-3 sm:gap-4 mb-3 sm:mb-4">
                     <img 
                       src="/lovable-uploads/3a973532-2477-462a-9a84-0390b7045844.png" 
                       alt="Red Wallet Character" 
-                      className="w-28 h-28 object-contain animate-bounce [animation-duration:2s]"
+                      className="w-20 h-20 sm:w-28 sm:h-28 object-contain animate-bounce [animation-duration:2s]"
                     />
                     <img 
                       src="/lovable-uploads/3d7094a5-211e-416b-a8c4-8fd864c98499.png" 
                       alt="Green Wallet Character" 
-                      className="w-28 h-28 object-contain animate-bounce [animation-duration:2s] [animation-delay:0.3s]"
+                      className="w-20 h-20 sm:w-28 sm:h-28 object-contain animate-bounce [animation-duration:2s] [animation-delay:0.3s]"
                     />
                   </div>
-                  <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <Users className="w-8 h-8 text-primary" />
+                  <div className="w-12 h-12 sm:w-16 sm:h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
+                    <Users className="w-6 h-6 sm:w-8 sm:h-8 text-primary" />
                   </div>
-                  <CardTitle className="text-2xl font-bold bg-gradient-to-r from-primary to-primary-glow bg-clip-text text-transparent">
+                  <CardTitle className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-primary to-primary-glow bg-clip-text text-transparent">
                     הצטרפות למשפחה
                   </CardTitle>
-                  <CardDescription>
+                  <CardDescription className="text-xs sm:text-sm">
                     הצטרפות לחשבון "{invitationDetails.accountName}"
                   </CardDescription>
                 </CardHeader>
                 
-                <CardContent className="space-y-6 px-8 pb-8">
-                  <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+                <CardContent className="space-y-4 sm:space-y-6 px-4 sm:px-8 pb-4 sm:pb-8">
+                  <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 sm:space-y-6">
                     {/* Name field */}
-                    <div className="space-y-3">
-                      <Label htmlFor="name" className="text-base font-medium">שם מלא *</Label>
+                    <div className="space-y-2 sm:space-y-3">
+                      <Label htmlFor="name" className="text-sm sm:text-base font-medium">שם מלא *</Label>
                       <Input
                         id="name"
                         type="text"
                         placeholder="הזן את שמך המלא"
                         {...register('name')}
-                        className={`h-12 text-base ${errors.name ? 'border-destructive' : ''}`}
+                        className={`h-10 sm:h-12 text-sm sm:text-base ${errors.name ? 'border-destructive' : ''}`}
                       />
                       {errors.name && (
-                        <p className="text-sm text-destructive">{errors.name.message}</p>
+                        <p className="text-xs sm:text-sm text-destructive">{errors.name.message}</p>
                       )}
                     </div>
 
                     {/* Email field */}
-                    <div className="space-y-3">
-                      <Label htmlFor="email" className="text-base font-medium flex items-center gap-2">
+                    <div className="space-y-2 sm:space-y-3">
+                      <Label htmlFor="email" className="text-sm sm:text-base font-medium flex items-center gap-2">
                         <Mail className="w-4 h-4" />
                         כתובת אימייל *
                       </Label>
@@ -263,11 +263,11 @@ const FamilyPhoneRegister = () => {
                         type="email"
                         placeholder="example@email.com"
                         {...register('email')}
-                        className={`h-12 text-base ${errors.email ? 'border-destructive' : ''}`}
+                        className={`h-10 sm:h-12 text-sm sm:text-base ${errors.email ? 'border-destructive' : ''}`}
                         dir="ltr"
                       />
                       {errors.email && (
-                        <p className="text-sm text-destructive">{errors.email.message}</p>
+                        <p className="text-xs sm:text-sm text-destructive">{errors.email.message}</p>
                       )}
                       <p className="text-xs text-muted-foreground">
                         האימייל ישמש לאיפוס סיסמה ולקבלת התראות
@@ -275,8 +275,8 @@ const FamilyPhoneRegister = () => {
                     </div>
 
                     {/* Phone field */}
-                    <div className="space-y-3">
-                      <Label htmlFor="phoneNumber" className="text-base font-medium flex items-center gap-2">
+                    <div className="space-y-2 sm:space-y-3">
+                      <Label htmlFor="phoneNumber" className="text-sm sm:text-base font-medium flex items-center gap-2">
                         <Smartphone className="w-4 h-4" />
                         מספר טלפון *
                       </Label>
@@ -287,7 +287,7 @@ const FamilyPhoneRegister = () => {
                             type="tel"
                             value={watch('phoneNumber') || invitationPhone}
                             readOnly
-                            className="bg-muted cursor-not-allowed h-12 text-base"
+                            className="bg-muted cursor-not-allowed h-10 sm:h-12 text-sm sm:text-base"
                             dir="ltr"
                           />
                           <p className="text-xs text-muted-foreground">
@@ -313,15 +313,15 @@ const FamilyPhoneRegister = () => {
                     </div>
 
                     {/* Password field */}
-                    <div className="space-y-3">
-                      <Label htmlFor="password" className="text-base font-medium">סיסמה *</Label>
+                    <div className="space-y-2 sm:space-y-3">
+                      <Label htmlFor="password" className="text-sm sm:text-base font-medium">סיסמה *</Label>
                       <div className="relative">
                         <Input
                           id="password"
                           type={showPassword ? 'text' : 'password'}
                           placeholder="הזן סיסמה"
                           {...register('password')}
-                          className={`h-12 text-base pr-10 ${errors.password ? 'border-destructive' : ''}`}
+                          className={`h-10 sm:h-12 text-sm sm:text-base pr-10 ${errors.password ? 'border-destructive' : ''}`}
                         />
                         <Button
                           type="button"
@@ -338,20 +338,20 @@ const FamilyPhoneRegister = () => {
                         </Button>
                       </div>
                       {errors.password && (
-                        <p className="text-sm text-destructive">{errors.password.message}</p>
+                        <p className="text-xs sm:text-sm text-destructive">{errors.password.message}</p>
                       )}
                     </div>
 
                     {/* Confirm Password field */}
-                    <div className="space-y-3">
-                      <Label htmlFor="confirmPassword" className="text-base font-medium">אישור סיסמה *</Label>
+                    <div className="space-y-2 sm:space-y-3">
+                      <Label htmlFor="confirmPassword" className="text-sm sm:text-base font-medium">אישור סיסמה *</Label>
                       <div className="relative">
                         <Input
                           id="confirmPassword"
                           type={showConfirmPassword ? 'text' : 'password'}
                           placeholder="הזן שוב את הסיסמה"
                           {...register('confirmPassword')}
-                          className={`h-12 text-base pr-10 ${errors.confirmPassword ? 'border-destructive' : ''}`}
+                          className={`h-10 sm:h-12 text-sm sm:text-base pr-10 ${errors.confirmPassword ? 'border-destructive' : ''}`}
                         />
                         <Button
                           type="button"
@@ -368,14 +368,14 @@ const FamilyPhoneRegister = () => {
                         </Button>
                       </div>
                       {errors.confirmPassword && (
-                        <p className="text-sm text-destructive">{errors.confirmPassword.message}</p>
+                        <p className="text-xs sm:text-sm text-destructive">{errors.confirmPassword.message}</p>
                       )}
                     </div>
 
                     {/* Submit button */}
                     <Button 
                       type="submit" 
-                      className="w-full bg-gradient-to-r from-primary to-primary-glow hover:from-primary-glow hover:to-primary text-white font-semibold py-3 text-lg shadow-lg transform transition-all duration-200 hover:scale-105 disabled:transform-none h-12" 
+                      className="w-full bg-gradient-to-r from-primary to-primary-glow hover:from-primary-glow hover:to-primary text-white font-semibold py-2 sm:py-3 text-base sm:text-lg shadow-lg transform transition-all duration-200 hover:scale-105 disabled:transform-none h-10 sm:h-12" 
                       size="lg"
                       disabled={isSubmitting}
                     >

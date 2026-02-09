@@ -97,14 +97,14 @@ export const PreviousMonthsCard: React.FC<PreviousMonthsCardProps> = ({
       
       <CardHeader className="pb-3 p-4 sm:p-6 relative z-10">
         <div className="flex items-center justify-between">
-          <CardDescription className="text-sm font-semibold text-amber-700 dark:text-amber-300 bg-amber-100/50 dark:bg-amber-900/30 px-3 py-1 rounded-full">
+          <CardDescription className="text-xs sm:text-sm font-semibold text-amber-700 dark:text-amber-300 bg-amber-100/50 dark:bg-amber-900/30 px-2 sm:px-3 py-1 rounded-full">
             הוצאות מחודשים קודמים
           </CardDescription>
           <div className="p-2 bg-amber-500/20 rounded-full group-hover:bg-amber-500/30 transition-colors duration-300">
             <Calendar className="h-5 w-5 text-amber-600 dark:text-amber-400 animate-pulse group-hover:animate-ping transition-all duration-300" />
           </div>
         </div>
-        <CardTitle className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-amber-600 to-orange-600 bg-clip-text text-transparent group-hover:scale-110 transition-transform duration-300 origin-left">
+        <CardTitle className="text-2xl sm:text-3xl md:text-4xl font-bold bg-gradient-to-r from-amber-600 to-orange-600 bg-clip-text text-transparent group-hover:scale-110 transition-transform duration-300 origin-left">
           ₪{totalAmount.toFixed(0)}
         </CardTitle>
       </CardHeader>

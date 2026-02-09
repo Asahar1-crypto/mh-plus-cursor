@@ -134,14 +134,14 @@ export const NetCalculationCard: React.FC<NetCalculationCardProps> = ({
       
       <CardHeader className="pb-3 p-4 sm:p-6 relative z-10">
         <div className="flex items-center justify-between">
-          <CardDescription className="text-sm font-semibold text-orange-700 dark:text-orange-300 bg-orange-100/50 dark:bg-orange-900/30 px-3 py-1 rounded-full">
+          <CardDescription className="text-xs sm:text-sm font-semibold text-orange-700 dark:text-orange-300 bg-orange-100/50 dark:bg-orange-900/30 px-2 sm:px-3 py-1 rounded-full">
             חישוב נטו החודש
           </CardDescription>
           <div className="p-2 bg-orange-500/20 rounded-full group-hover:bg-orange-500/30 transition-colors duration-300">
             <ArrowRightLeft className="h-5 w-5 text-orange-600 dark:text-orange-400 animate-pulse group-hover:animate-ping transition-all duration-300" />
           </div>
         </div>
-        <CardTitle className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent group-hover:scale-110 transition-transform duration-300 origin-left">
+        <CardTitle className="text-xl sm:text-2xl md:text-3xl font-bold bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent group-hover:scale-110 transition-transform duration-300 origin-left">
           {netResult.type === 'transfer' ? `₪${netResult.amount}` : netResult.type === 'balanced' ? '₪0' : '---'}
         </CardTitle>
       </CardHeader>

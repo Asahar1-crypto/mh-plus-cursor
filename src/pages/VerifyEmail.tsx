@@ -84,32 +84,32 @@ const VerifyEmail = () => {
   
   
   return (
-    <div className="container mx-auto py-10 px-4 flex items-center justify-center min-h-[calc(100vh-4rem)]">
+    <div className="container mx-auto py-6 sm:py-10 px-3 sm:px-4 flex items-center justify-center min-h-[calc(100vh-4rem)]">
       <Card className="w-full max-w-md border-border shadow-lg animate-fade-in">
-        <CardHeader className="text-center">
+        <CardHeader className="text-center px-4 sm:px-6">
           {token ? (
             <>
               {verificationStatus === 'pending' && (
-                <div className="mx-auto mb-4 h-12 w-12 rounded-full bg-muted flex items-center justify-center">
-                  <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                <div className="mx-auto mb-3 sm:mb-4 h-10 w-10 sm:h-12 sm:w-12 rounded-full bg-muted flex items-center justify-center">
+                  <Loader2 className="h-5 w-5 sm:h-6 sm:w-6 animate-spin text-primary" />
                 </div>
               )}
               {verificationStatus === 'success' && (
-                <div className="mx-auto mb-4 h-12 w-12 rounded-full bg-green-100 flex items-center justify-center">
-                  <CheckCircle className="h-6 w-6 text-green-500" />
+                <div className="mx-auto mb-3 sm:mb-4 h-10 w-10 sm:h-12 sm:w-12 rounded-full bg-green-100 flex items-center justify-center">
+                  <CheckCircle className="h-5 w-5 sm:h-6 sm:w-6 text-green-500" />
                 </div>
               )}
               {verificationStatus === 'error' && (
-                <div className="mx-auto mb-4 h-12 w-12 rounded-full bg-red-100 flex items-center justify-center">
-                  <AlertCircle className="h-6 w-6 text-red-500" />
+                <div className="mx-auto mb-3 sm:mb-4 h-10 w-10 sm:h-12 sm:w-12 rounded-full bg-red-100 flex items-center justify-center">
+                  <AlertCircle className="h-5 w-5 sm:h-6 sm:w-6 text-red-500" />
                 </div>
               )}
-              <CardTitle className="text-2xl font-bold">
+              <CardTitle className="text-xl sm:text-2xl font-bold">
                 {verificationStatus === 'pending' && 'מאמת את האימייל...'}
                 {verificationStatus === 'success' && 'האימייל אומת בהצלחה'}
                 {verificationStatus === 'error' && 'אימות האימייל נכשל'}
               </CardTitle>
-              <CardDescription>
+              <CardDescription className="text-xs sm:text-sm">
                 {verificationStatus === 'pending' && 'אנא המתן בזמן שאנו מאמתים את האימייל שלך.'}
                 {verificationStatus === 'success' && 'תודה על אימות האימייל. מעביר אותך למסך ההתחברות...'}
                 {verificationStatus === 'error' && 'לא הצלחנו לאמת את האימייל שלך. אנא נסה שוב או צור קשר עם התמיכה.'}
@@ -117,11 +117,11 @@ const VerifyEmail = () => {
             </>
           ) : (
             <>
-              <div className="mx-auto mb-4 h-12 w-12 rounded-full bg-blue-100 flex items-center justify-center">
-                <CheckCircle className="h-6 w-6 text-blue-500" />
+              <div className="mx-auto mb-3 sm:mb-4 h-10 w-10 sm:h-12 sm:w-12 rounded-full bg-blue-100 flex items-center justify-center">
+                <CheckCircle className="h-5 w-5 sm:h-6 sm:w-6 text-blue-500" />
               </div>
-              <CardTitle className="text-2xl font-bold">בדוק את האימייל שלך</CardTitle>
-              <CardDescription>
+              <CardTitle className="text-xl sm:text-2xl font-bold">בדוק את האימייל שלך</CardTitle>
+              <CardDescription className="text-xs sm:text-sm">
                 שלחנו הוראות לאימות חשבונך אל {email || 'האימייל שסיפקת'}
               </CardDescription>
             </>

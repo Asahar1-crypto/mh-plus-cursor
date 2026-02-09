@@ -93,8 +93,8 @@ const EmailChangeHistory: React.FC<EmailChangeHistoryProps> = ({ className }) =>
   if (loading) {
     return (
       <Card className={className}>
-        <CardContent className="p-6">
-          <div className="flex items-center justify-center">
+        <CardContent className="p-4 sm:p-6">
+          <div className="flex items-center justify-center text-sm">
             <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent mr-2"></div>
             טוען היסטוריה...
           </div>
@@ -105,32 +105,32 @@ const EmailChangeHistory: React.FC<EmailChangeHistoryProps> = ({ className }) =>
 
   return (
     <Card className={className}>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2">
-            <History className="h-5 w-5" />
+      <CardHeader className="p-3 sm:p-4 md:p-6">
+        <div className="flex items-center justify-between gap-2">
+          <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+            <History className="h-4 w-4 sm:h-5 sm:w-5" />
             היסטוריית שינויי מייל
           </CardTitle>
           <Button
             onClick={loadEmailChangeHistory}
             variant="outline"
             size="sm"
-            className="gap-2"
+            className="gap-1 sm:gap-2 shrink-0"
           >
-            <RefreshCw className="h-4 w-4" />
-            רענן
+            <RefreshCw className="h-3 w-3 sm:h-4 sm:w-4" />
+            <span className="hidden sm:inline">רענן</span>
           </Button>
         </div>
-        <p className="text-sm text-muted-foreground">
+        <p className="text-xs sm:text-sm text-muted-foreground">
           רשימת כל שינויי המייל שבוצעו ע"י סופר אדמינים
         </p>
       </CardHeader>
-      <CardContent>
+      <CardContent className="p-0 sm:p-4 md:p-6 sm:pt-0 md:pt-0">
         {emailChangeLogs.length === 0 ? (
-          <div className="text-center py-8">
-            <History className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-            <h3 className="text-lg font-semibold mb-2">אין שינויי מייל</h3>
-            <p className="text-muted-foreground">
+          <div className="text-center py-8 px-3">
+            <History className="h-10 w-10 sm:h-12 sm:w-12 text-muted-foreground mx-auto mb-4" />
+            <h3 className="text-base sm:text-lg font-semibold mb-2">אין שינויי מייל</h3>
+            <p className="text-xs sm:text-sm text-muted-foreground">
               עדיין לא בוצעו שינויי מייל במערכת
             </p>
           </div>
@@ -139,53 +139,53 @@ const EmailChangeHistory: React.FC<EmailChangeHistoryProps> = ({ className }) =>
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>תאריך ושעה</TableHead>
-                  <TableHead>סופר אדמין</TableHead>
-                  <TableHead>מייל ישן</TableHead>
-                  <TableHead>מייל חדש</TableHead>
-                  <TableHead>משתמש מושפע</TableHead>
-                  <TableHead>IP</TableHead>
-                  <TableHead>זמן שעבר</TableHead>
+                  <TableHead className="text-xs sm:text-sm">תאריך ושעה</TableHead>
+                  <TableHead className="text-xs sm:text-sm hidden sm:table-cell">סופר אדמין</TableHead>
+                  <TableHead className="text-xs sm:text-sm">מייל ישן</TableHead>
+                  <TableHead className="text-xs sm:text-sm">מייל חדש</TableHead>
+                  <TableHead className="text-xs sm:text-sm hidden lg:table-cell">משתמש מושפע</TableHead>
+                  <TableHead className="text-xs sm:text-sm hidden xl:table-cell">IP</TableHead>
+                  <TableHead className="text-xs sm:text-sm hidden md:table-cell">זמן שעבר</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {emailChangeLogs.map((log) => (
                   <TableRow key={log.id}>
-                    <TableCell>
+                    <TableCell className="text-xs sm:text-sm">
                       <div className="flex items-center gap-1">
-                        <Calendar className="h-3 w-3 text-muted-foreground" />
+                        <Calendar className="h-3 w-3 text-muted-foreground hidden sm:block" />
                         {format(new Date(log.created_at), 'dd/MM/yyyy HH:mm', { locale: he })}
                       </div>
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="hidden sm:table-cell">
                       <div className="flex items-center gap-1">
                         <User className="h-3 w-3 text-muted-foreground" />
-                        <Badge variant="secondary">
+                        <Badge variant="secondary" className="text-xs">
                           {getAdminName(log.user_id)}
                         </Badge>
                       </div>
                     </TableCell>
-                    <TableCell className="font-mono text-sm">
+                    <TableCell className="font-mono text-xs sm:text-sm">
                       <div className="flex items-center gap-1">
-                        <Mail className="h-3 w-3 text-red-500" />
-                        {log.old_data?.email}
+                        <Mail className="h-3 w-3 text-red-500 shrink-0" />
+                        <span className="truncate max-w-[100px] sm:max-w-none">{log.old_data?.email}</span>
                       </div>
                     </TableCell>
-                    <TableCell className="font-mono text-sm">
+                    <TableCell className="font-mono text-xs sm:text-sm">
                       <div className="flex items-center gap-1">
-                        <Mail className="h-3 w-3 text-green-500" />
-                        {log.new_data?.email}
+                        <Mail className="h-3 w-3 text-green-500 shrink-0" />
+                        <span className="truncate max-w-[100px] sm:max-w-none">{log.new_data?.email}</span>
                       </div>
                     </TableCell>
-                    <TableCell>
-                      <Badge variant="outline">
+                    <TableCell className="hidden lg:table-cell">
+                      <Badge variant="outline" className="text-xs truncate max-w-[120px]">
                         {log.record_id}
                       </Badge>
                     </TableCell>
-                    <TableCell className="font-mono text-xs text-muted-foreground">
+                    <TableCell className="font-mono text-xs text-muted-foreground hidden xl:table-cell">
                       {log.ip_address || 'לא ידוע'}
                     </TableCell>
-                    <TableCell className="text-sm text-muted-foreground">
+                    <TableCell className="text-xs sm:text-sm text-muted-foreground hidden md:table-cell">
                       {getTimeAgo(log.created_at)}
                     </TableCell>
                   </TableRow>

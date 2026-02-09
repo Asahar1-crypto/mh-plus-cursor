@@ -94,27 +94,30 @@ const AccountSettings = () => {
         {/* Tabs Navigation */}
         <div className="animate-fade-in [animation-delay:400ms]">
           <Tabs defaultValue="profile" dir="rtl" className="w-full">
-            <TabsList className="w-full h-auto flex-wrap gap-1 bg-card/80 backdrop-blur-sm border border-border/50 rounded-xl p-1.5 shadow-sm">
+            <TabsList className="w-full h-auto flex-wrap gap-1 bg-card/80 backdrop-blur-sm border border-border/50 rounded-xl p-1 sm:p-1.5 shadow-sm">
               <TabsTrigger 
                 value="profile" 
-                className="flex-1 min-w-[100px] gap-2 rounded-lg py-2.5 px-3 text-xs sm:text-sm font-medium transition-all data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md"
+                className="flex-1 min-w-[80px] gap-1.5 sm:gap-2 rounded-lg py-2 sm:py-2.5 px-2 sm:px-3 text-[11px] sm:text-sm font-medium transition-all data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md"
               >
-                <User className="h-4 w-4" />
-                <span>פרופיל אישי</span>
+                <User className="h-3.5 w-3.5 sm:h-4 sm:w-4 flex-shrink-0" />
+                <span className="hidden xs:inline">פרופיל אישי</span>
+                <span className="xs:hidden">פרופיל</span>
               </TabsTrigger>
               <TabsTrigger 
                 value="account" 
-                className="flex-1 min-w-[100px] gap-2 rounded-lg py-2.5 px-3 text-xs sm:text-sm font-medium transition-all data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md"
+                className="flex-1 min-w-[80px] gap-1.5 sm:gap-2 rounded-lg py-2 sm:py-2.5 px-2 sm:px-3 text-[11px] sm:text-sm font-medium transition-all data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md"
               >
-                <Settings className="h-4 w-4" />
-                <span>הגדרות חשבון</span>
+                <Settings className="h-3.5 w-3.5 sm:h-4 sm:w-4 flex-shrink-0" />
+                <span className="hidden xs:inline">הגדרות חשבון</span>
+                <span className="xs:hidden">הגדרות</span>
               </TabsTrigger>
               <TabsTrigger 
                 value="family" 
-                className="flex-1 min-w-[100px] gap-2 rounded-lg py-2.5 px-3 text-xs sm:text-sm font-medium transition-all data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md"
+                className="flex-1 min-w-[80px] gap-1.5 sm:gap-2 rounded-lg py-2 sm:py-2.5 px-2 sm:px-3 text-[11px] sm:text-sm font-medium transition-all data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md"
               >
-                <Users className="h-4 w-4" />
-                <span>חברי משפחה</span>
+                <Users className="h-3.5 w-3.5 sm:h-4 sm:w-4 flex-shrink-0" />
+                <span className="hidden xs:inline">חברי משפחה</span>
+                <span className="xs:hidden">משפחה</span>
               </TabsTrigger>
             </TabsList>
 

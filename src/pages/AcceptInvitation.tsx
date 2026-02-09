@@ -22,7 +22,7 @@ const AcceptInvitation = () => {
   const { status, invitationDetails, errorMessage } = useInvitationDetails(invitationId);
   
   return (
-    <div className="container mx-auto py-10 px-4 flex flex-col items-center justify-center min-h-[calc(100vh-4rem)]">
+    <div className="container mx-auto py-6 sm:py-10 px-3 sm:px-4 flex flex-col items-center justify-center min-h-[calc(100vh-4rem)]">
       {status === 'loading' && <LoadingState />}
       
       {status === 'error' && (

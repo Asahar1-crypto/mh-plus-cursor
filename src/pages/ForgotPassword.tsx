@@ -52,12 +52,12 @@ const ForgotPassword = () => {
   };
   
   return (
-    <div className="container mx-auto py-10 px-4 flex items-center justify-center min-h-[calc(100vh-4rem)]">
+    <div className="container mx-auto py-6 sm:py-10 px-3 sm:px-4 flex items-center justify-center min-h-[calc(100vh-4rem)]">
       <div className="w-full max-w-md">
         <Card className="border-border shadow-lg animate-fade-in">
-          <CardHeader className="text-center">
-            <CardTitle className="text-2xl font-bold">שחזור סיסמה</CardTitle>
-            <CardDescription>
+          <CardHeader className="text-center px-4 sm:px-6">
+            <CardTitle className="text-xl sm:text-2xl font-bold">שחזור סיסמה</CardTitle>
+            <CardDescription className="text-xs sm:text-sm">
               הזן את כתובת האימייל שלך ואנו נשלח לך קישור לאיפוס הסיסמה
             </CardDescription>
           </CardHeader>

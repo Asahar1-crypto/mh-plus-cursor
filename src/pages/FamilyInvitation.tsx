@@ -14,7 +14,7 @@ const FamilyInvitation = () => {
 
   if (status === 'loading') {
     return (
-      <div className="container mx-auto py-10 px-4 flex flex-col items-center justify-center min-h-[calc(100vh-4rem)]">
+      <div className="container mx-auto py-6 sm:py-10 px-3 sm:px-4 flex flex-col items-center justify-center min-h-[calc(100vh-4rem)]">
         <LoadingState />
       </div>
     );
@@ -22,9 +22,9 @@ const FamilyInvitation = () => {
 
   if (status === 'error' || !invitationDetails) {
     return (
-      <div className="container mx-auto py-10 px-4 flex flex-col items-center justify-center min-h-[calc(100vh-4rem)]">
+      <div className="container mx-auto py-6 sm:py-10 px-3 sm:px-4 flex flex-col items-center justify-center min-h-[calc(100vh-4rem)]">
         <ErrorState message={errorMessage || 'ההזמנה לא נמצאה או שפגה תוקפה'} />
-        <div className="mt-6">
+        <div className="mt-4 sm:mt-6">
           <Link to="/">
             <Button variant="outline">חזרה לעמוד הבית</Button>
           </Link>
@@ -44,14 +44,14 @@ const FamilyInvitation = () => {
   const registerPath = `/family-register?invitationId=${invitationId}`;
 
   return (
-    <div className="container mx-auto py-10 px-4 flex flex-col items-center justify-center min-h-[calc(100vh-4rem)]" dir="rtl">
+    <div className="container mx-auto py-6 sm:py-10 px-3 sm:px-4 flex flex-col items-center justify-center min-h-[calc(100vh-4rem)]" dir="rtl">
       <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
-            <Users className="w-8 h-8 text-primary" />
+        <CardHeader className="text-center px-4 sm:px-6">
+          <div className="w-12 h-12 sm:w-16 sm:h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
+            <Users className="w-6 h-6 sm:w-8 sm:h-8 text-primary" />
           </div>
-          <CardTitle className="text-2xl">הזמנה לחשבון משפחתי</CardTitle>
-          <CardDescription>
+          <CardTitle className="text-xl sm:text-2xl">הזמנה לחשבון משפחתי</CardTitle>
+          <CardDescription className="text-xs sm:text-sm">
             הוזמנת להצטרף לחשבון משותף במחציות פלוס
           </CardDescription>
         </CardHeader>
