@@ -2,9 +2,12 @@
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
+import { AppRouter } from "@/lib/capacitor-router";
 import { AuthProvider } from "@/contexts/auth";
 import { ExpenseProvider } from "@/contexts/ExpenseContext";
+import { NotificationProvider } from "@/contexts/NotificationContext";
+import { NotificationPermissionPrompt } from "@/components/notifications";
 
 import Home from "./pages/Home";
 import Login from "./pages/Login";
@@ -47,10 +50,12 @@ const queryClient = new QueryClient();
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
-      <ExpenseProvider>
-        <Toaster />
-        <Sonner position="top-center" closeButton />
-          <BrowserRouter>
+      <NotificationProvider>
+        <ExpenseProvider>
+          <Toaster />
+          <Sonner position="top-center" closeButton />
+          <NotificationPermissionPrompt />
+            <AppRouter>
             <Routes>
               {/* Public routes */}
               <Route element={<AuthLayout />}>
@@ -104,8 +109,9 @@ const App = () => (
               {/* Catch all */}
               <Route path="*" element={<NotFound />} />
             </Routes>
-          </BrowserRouter>
-        </ExpenseProvider>
+          </AppRouter>
+          </ExpenseProvider>
+        </NotificationProvider>
       </AuthProvider>
   </QueryClientProvider>
 );

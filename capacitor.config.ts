@@ -1,14 +1,16 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'app.lovable.e01ecbfb5c0d44e9b8181374636e60ff',
-  appName: 'family-finance-plus',
+  appId: 'com.mhplus.familyfinance',
+  appName: 'מחציות פלוס',
   webDir: 'dist',
-  // Server config removed for production APK - uncomment for development hot reload
+  
+  // Server config - uncomment for development hot reload
   // server: {
-  //   url: "https://e01ecbfb-5c0d-44e9-b818-1374636e60ff.lovableproject.com?forceHideBadge=true",
-  //   cleartext: true
+  //   url: 'http://YOUR_LOCAL_IP:8080',
+  //   cleartext: true,
   // },
+
   plugins: {
     SplashScreen: {
       launchShowDuration: 2000,
@@ -17,9 +19,39 @@ const config: CapacitorConfig = {
       androidScaleType: 'CENTER_CROP',
       showSpinner: false,
       splashFullScreen: true,
-      splashImmersive: true
-    }
-  }
+      splashImmersive: true,
+    },
+    PushNotifications: {
+      presentationOptions: ['badge', 'sound', 'alert'],
+    },
+    Keyboard: {
+      resize: 'body',
+      resizeOnFullScreen: true,
+    },
+    StatusBar: {
+      style: 'dark',
+      backgroundColor: '#0F172A',
+    },
+    CapacitorHttp: {
+      enabled: true,
+    },
+  },
+
+  android: {
+    allowMixedContent: true,
+    backgroundColor: '#0F172A',
+    buildOptions: {
+      keystorePath: undefined,
+      keystoreAlias: undefined,
+    },
+  },
+
+  ios: {
+    backgroundColor: '#0F172A',
+    contentInset: 'automatic',
+    preferredContentMode: 'mobile',
+    scheme: 'מחציות פלוס',
+  },
 };
 
 export default config;

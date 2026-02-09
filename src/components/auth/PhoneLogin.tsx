@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { ModernButton } from '@/components/ui/modern-button';
 import { Smartphone, ArrowLeft } from 'lucide-react';
 import { useAuth } from '@/contexts/auth';
 import { Link } from 'react-router-dom';
@@ -17,36 +18,27 @@ interface PhoneLoginProps {
 const PhoneLogin: React.FC<PhoneLoginProps> = ({ onBack, hideHeader = false }) => {
   const { sendPhoneOtp, isLoading } = useAuth();
   const [phoneNumber, setPhoneNumber] = useState(() => {
-    const stored = sessionStorage.getItem('phoneLogin_phoneNumber') || '';
-    console.log('PhoneLogin: Loading phoneNumber from sessionStorage:', stored);
-    return stored;
+    return sessionStorage.getItem('phoneLogin_phoneNumber') || '';
   });
   const [selectedCountry, setSelectedCountry] = useState<CountryCode>(() => {
-    const stored = sessionStorage.getItem('phoneLogin_country') as CountryCode || 'IL';
-    return stored;
+    return (sessionStorage.getItem('phoneLogin_country') as CountryCode) || 'IL';
   });
   const [showOtpVerification, setShowOtpVerification] = useState(() => {
-    const stored = sessionStorage.getItem('phoneLogin_showOtp') === 'true';
-    console.log('PhoneLogin: Loading showOtpVerification from sessionStorage:', stored);
-    return stored;
+    return sessionStorage.getItem('phoneLogin_showOtp') === 'true';
   });
   const [userInfo, setUserInfo] = useState<{ userId?: string; userName?: string }>(() => {
     const stored = sessionStorage.getItem('phoneLogin_userInfo');
-    const parsed = stored ? JSON.parse(stored) : {};
-    console.log('PhoneLogin: Loading userInfo from sessionStorage:', parsed);
-    return parsed;
+    return stored ? JSON.parse(stored) : {};
   });
   const [phoneError, setPhoneError] = useState('');
 
   // Save state to sessionStorage whenever it changes
   React.useEffect(() => {
     sessionStorage.setItem('phoneLogin_showOtp', showOtpVerification.toString());
-    console.log('PhoneLogin state changed - showOtpVerification:', showOtpVerification);
   }, [showOtpVerification]);
 
   React.useEffect(() => {
     sessionStorage.setItem('phoneLogin_userInfo', JSON.stringify(userInfo));
-    console.log('PhoneLogin userInfo changed:', userInfo);
   }, [userInfo]);
 
   React.useEffect(() => {
@@ -68,7 +60,6 @@ const PhoneLogin: React.FC<PhoneLoginProps> = ({ onBack, hideHeader = false }) =
   };
 
   const handleSendOtp = async (e?: React.FormEvent) => {
-    // Prevent form submission from refreshing the page
     if (e) {
       e.preventDefault();
       e.stopPropagation();
@@ -79,7 +70,6 @@ const PhoneLogin: React.FC<PhoneLoginProps> = ({ onBack, hideHeader = false }) =
       return;
     }
 
-    // Validate using the international phone utils
     const validationResult = normalizePhoneNumber(phoneNumber, selectedCountry);
     if (!validationResult.success) {
       setPhoneError(validationResult.error || 'מספר טלפון לא תקין');
@@ -88,10 +78,7 @@ const PhoneLogin: React.FC<PhoneLoginProps> = ({ onBack, hideHeader = false }) =
 
     try {
       const normalizedPhone = validationResult.data!.e164;
-      console.log('Sending OTP to:', normalizedPhone);
-      
       const result = await sendPhoneOtp(normalizedPhone);
-      console.log('OTP sent successfully, result:', result);
       
       if (result && result.userId) {
         const newUserInfo = {
@@ -99,19 +86,15 @@ const PhoneLogin: React.FC<PhoneLoginProps> = ({ onBack, hideHeader = false }) =
           userName: result.userName
         };
         
-        // Save immediately to sessionStorage BEFORE setting state
         sessionStorage.setItem('phoneLogin_userInfo', JSON.stringify(newUserInfo));
         sessionStorage.setItem('phoneLogin_showOtp', 'true');
         
         setUserInfo(newUserInfo);
         setShowOtpVerification(true);
-        
-        console.log('Moving to OTP verification screen');
       } else {
         setPhoneError('שגיאה בשליחת קוד האימות');
       }
     } catch (error: any) {
-      console.error('Failed to send OTP:', error);
       
       // Handle specific errors from the backend
       if (error.message?.includes('Phone number not registered')) {
@@ -139,12 +122,6 @@ const PhoneLogin: React.FC<PhoneLoginProps> = ({ onBack, hideHeader = false }) =
   };
 
   if (showOtpVerification) {
-    console.log('PhoneLogin: Rendering OTP verification with:', {
-      phoneNumber,
-      displayNumber: phoneNumber,
-      userInfo,
-      showOtpVerification
-    });
     const validationResult = normalizePhoneNumber(phoneNumber, selectedCountry);
     const normalizedPhone = validationResult.success ? validationResult.data!.e164 : phoneNumber;
     
@@ -156,21 +133,14 @@ const PhoneLogin: React.FC<PhoneLoginProps> = ({ onBack, hideHeader = false }) =
         onBack={handleBackToPhoneInput}
         onSuccess={() => {
           // Handle successful login
-          console.log('Phone login successful');
         }}
       />
     );
   }
 
-  console.log('PhoneLogin: Rendering phone input form with:', {
-    phoneNumber,
-    showOtpVerification,
-    userInfo
-  });
-
   if (hideHeader) {
     return (
-      <div className="space-y-6">
+      <div className="space-y-4">
         <InternationalPhoneInput
           label="מספר טלפון"
           value={phoneNumber}
@@ -199,40 +169,28 @@ const PhoneLogin: React.FC<PhoneLoginProps> = ({ onBack, hideHeader = false }) =
           </div>
         )}
 
-        <div className="space-y-3">
-          <Button 
-            type="button"
-            onClick={handleSendOtp}
-            disabled={isLoading || !phoneNumber.trim()}
-            className="w-full bg-gradient-to-r from-primary to-primary-glow hover:from-primary-glow hover:to-primary text-white font-semibold py-3 text-lg shadow-lg transform transition-all duration-200 hover:scale-105 disabled:transform-none"
-          >
-            {isLoading ? (
-              <span className="flex items-center gap-2">
-                <span className="h-5 w-5 animate-spin rounded-full border-2 border-current border-r-transparent" />
-                שולח קוד...
-              </span>
-            ) : (
-              <span className="flex items-center gap-2">
-                <Smartphone className="w-5 h-5" />
-                שלח קוד אימות
-              </span>
-            )}
-          </Button>
+        <ModernButton 
+          type="button"
+          onClick={handleSendOtp}
+          disabled={isLoading || !phoneNumber.trim()}
+          className="w-full h-12 text-base font-semibold rounded-xl shadow-lg hover:shadow-glow transition-all duration-300"
+          size="lg"
+          loading={isLoading}
+          variant="primary"
+        >
+          {isLoading ? 'שולח קוד...' : (
+            <span className="flex items-center gap-2">
+              <Smartphone className="w-4 h-4" />
+              שלח קוד אימות
+            </span>
+          )}
+        </ModernButton>
 
-          <Button
-            variant="ghost"
-            onClick={onBack}
-            className="w-full flex items-center gap-2 hover:bg-muted/50 transition-colors"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            חזור לאימייל וסיסמה
-          </Button>
-        </div>
-
-        <div className="text-center text-xs text-muted-foreground">
-          <p>קוד האימות יישלח בהודעת SMS למספר שלך</p>
-          <p>הקוד תקף למשך 10 דקות בלבד</p>
-        </div>
+        <p className="text-center text-xs text-muted-foreground/70 leading-relaxed">
+          קוד אימות יישלח ב-SMS למספר שלך
+          <br />
+          הקוד תקף למשך 10 דקות
+        </p>
       </div>
     );
   }

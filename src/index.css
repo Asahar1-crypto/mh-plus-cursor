@@ -214,6 +214,39 @@
   }
 }
 
+/* Native app specific styles */
+body.native-app {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior: none;
+}
+
+/* Allow text selection in input fields on native */
+body.native-app input,
+body.native-app textarea,
+body.native-app [contenteditable] {
+  -webkit-user-select: auto;
+  user-select: auto;
+}
+
+/* iOS safe area padding for native app */
+body.platform-ios.native-app {
+  padding-top: env(safe-area-inset-top);
+}
+
+/* Keyboard open adjustments */
+body.keyboard-open {
+  /* Reduce bottom padding when keyboard is open */
+  padding-bottom: 0 !important;
+}
+
+/* Fix position:fixed elements on iOS when keyboard opens */
+body.platform-ios.keyboard-open .fixed-bottom {
+  position: absolute;
+}
+
 /* Prevent horizontal overflow on mobile */
 html, body {
   overflow-x: hidden;

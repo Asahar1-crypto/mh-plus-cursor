@@ -219,6 +219,7 @@ serve(async (req) => {
     const recipientName = recipientProfile.name || 'משתמש';
     const amount = expense.amount.toLocaleString('he-IL');
     const description = expense.description || 'הוצאה';
+    let smsResult: { success: boolean; messageId?: string; error?: string } = { success: false };
 
     const smsMessage = `היי ${recipientName},
 הוצאה חדשה לאישור: ${amount} ₪
@@ -258,13 +259,7 @@ ${description}
       });
 
       console.log('SMS sent successfully');
-      return new Response(
-        JSON.stringify({ 
-          success: true, 
-          messageId: vonageResult.messages[0]['message-id']
-        }),
-        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      smsResult = { success: true, messageId: vonageResult.messages[0]['message-id'] };
     } else {
       // Failed - log the error
       const errorText = vonageResult.messages?.[0]?.['error-text'] || 'Unknown error';
@@ -278,11 +273,49 @@ ${description}
       });
 
       console.error('Vonage error:', errorText);
-      return new Response(
-        JSON.stringify({ error: 'Failed to send SMS', details: errorText }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      smsResult = { success: false, error: errorText };
     }
+
+    // ---- Send Push Notification (in addition to SMS) ----
+    let pushResult = { success: false, reason: 'not_attempted' };
+    try {
+      const pushPayload = {
+        userId: otherMemberId,
+        accountId: account_id,
+        type: 'expense_pending_approval',
+        title: `הוצאה חדשה לאישור`,
+        body: `${amount} ₪ - ${description}`,
+        data: {
+          expenseId: expense_id,
+        },
+        actionUrl: `${appUrl}/expenses`,
+      };
+
+      console.log('Sending push notification to:', otherMemberId);
+      const pushResponse = await supabase.functions.invoke('send-push-notification', {
+        body: pushPayload,
+      });
+
+      if (pushResponse.error) {
+        console.error('Push notification error:', pushResponse.error);
+        pushResult = { success: false, reason: pushResponse.error.message };
+      } else {
+        pushResult = pushResponse.data || { success: true };
+        console.log('Push notification result:', pushResult);
+      }
+    } catch (pushError) {
+      console.error('Push notification exception:', pushError);
+      pushResult = { success: false, reason: 'exception' };
+    }
+
+    return new Response(
+      JSON.stringify({ 
+        success: true, 
+        sms: smsResult,
+        push: pushResult,
+      }),
+      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
 
   } catch (error) {
     console.error('Notify expense approval error:', error);

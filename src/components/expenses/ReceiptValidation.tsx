@@ -12,6 +12,8 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
 import { useExpense } from '@/contexts/expense/useExpense';
 import { useAuth } from '@/contexts/auth';
+import { useQuery } from '@tanstack/react-query';
+import { memberService } from '@/contexts/auth/services/account/memberService';
 
 interface ScanResult {
   date: string;
@@ -62,7 +64,20 @@ export const ReceiptValidation: React.FC<ReceiptValidationProps> = ({
   
   const { toast } = useToast();
   const { addExpense, childrenList } = useExpense();
-  const { user } = useAuth();
+  const { user, account } = useAuth();
+
+  // Load account members for the partner name
+  const { data: accountMembers } = useQuery({
+    queryKey: ['accountMembers', account?.id],
+    queryFn: async () => {
+      if (!account?.id) return [];
+      return memberService.getAccountMembers(account.id);
+    },
+    enabled: !!account?.id
+  });
+
+  const otherUserName = accountMembers?.find(m => m.user_id !== user?.id)?.user_name || 'השותף/ה';
+  const otherUserId = accountMembers?.find(m => m.user_id !== user?.id)?.user_id || '';
 
   // Determine most common category from items
   useEffect(() => {
@@ -109,6 +124,37 @@ export const ReceiptValidation: React.FC<ReceiptValidationProps> = ({
     setIsSubmitting(true);
 
     try {
+      // Determine paidById based on payment type (who owes)
+      let paidById: string;
+      let splitEqually = false;
+
+      switch (paymentType) {
+        case 'i_paid_shared':
+          // אני שילמתי - יש לחלוק
+          paidById = otherUserId;
+          splitEqually = true;
+          break;
+        case 'i_paid_theirs':
+          // שילמתי - על השותף להחזיר
+          paidById = otherUserId;
+          splitEqually = false;
+          break;
+        case 'they_paid_shared':
+          // השותף שילם - יש לחלוק
+          paidById = user.id;
+          splitEqually = true;
+          break;
+        case 'they_paid_mine':
+          // השותף שילם - עליי להחזיר
+          paidById = user.id;
+          splitEqually = false;
+          break;
+        default:
+          paidById = user.id;
+      }
+
+      const paidByMember = accountMembers?.find(m => m.user_id === paidById);
+
       // Create ONE expense for the entire receipt
       await addExpense({
         amount: editedTotal,
@@ -116,10 +162,10 @@ export const ReceiptValidation: React.FC<ReceiptValidationProps> = ({
         date: editedDate,
         category: selectedCategory,
         childId: selectedChild || undefined,
-        paidById: user.id,
-        paidByName: user.name || 'משתמש',
+        paidById: paidById,
+        paidByName: paidByMember?.user_name || user.name || 'משתמש',
         includeInMonthlyBalance: true,
-        splitEqually: paymentType === 'i_paid_shared' || paymentType === 'they_paid_shared',
+        splitEqually: splitEqually,
         isRecurring: false,
         receiptId: scanResult.receipt_id
       });
@@ -230,6 +276,7 @@ export const ReceiptValidation: React.FC<ReceiptValidationProps> = ({
               <PaymentTypeDropdown
                 value={paymentType}
                 onValueChange={setPaymentType}
+                otherUserName={otherUserName}
               />
             </div>
           </div>

@@ -7,7 +7,6 @@ import { ModernInput } from '@/components/ui/modern-input';
 import { ModernButton } from '@/components/ui/modern-button';
 import { InternationalPhoneInput } from '@/components/ui/international-phone-input';
 import { Label } from '@/components/ui/label';
-import AnimatedBackground from '@/components/ui/animated-background';
 import { useAuth } from '@/contexts/auth';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useEffect, useState } from 'react';
@@ -15,6 +14,7 @@ import SmsVerification from '@/components/auth/SmsVerification';
 import PhoneExistsAlert from '@/components/auth/PhoneExistsAlert';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import { ArrowRight, ShieldCheck } from 'lucide-react';
 
 const registerSchema = z.object({
   name: z.string().min(2, { message: 'שם חייב להיות לפחות 2 תווים' }),
@@ -231,10 +231,14 @@ const Register = () => {
   // Show phone exists alert
   if (showPhoneExists && registrationData) {
     return (
-      <>
-        <AnimatedBackground />
-        <div className="container mx-auto py-10 px-4 flex items-center justify-center min-h-[calc(100vh-4rem)] relative z-10">
-          <div className="w-full max-w-md">
+      <div className="relative min-h-screen overflow-hidden">
+        <div className="fixed inset-0 -z-10">
+          <div className="absolute inset-0 bg-gradient-to-br from-background via-background to-primary/10" />
+          <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-gradient-to-r from-primary/20 to-primary-glow/20 rounded-full blur-[100px] animate-float" />
+          <div className="absolute bottom-0 right-1/4 w-[400px] h-[400px] bg-gradient-to-r from-secondary/15 to-primary/15 rounded-full blur-[80px] animate-pulse-slow" />
+        </div>
+        <div className="container mx-auto py-6 sm:py-10 px-4 flex items-center justify-center min-h-screen">
+          <div className="w-full max-w-md" dir="rtl">
             <PhoneExistsAlert
               phoneNumber={registrationData.phoneNumber}
               userName={existingUserName}
@@ -242,75 +246,109 @@ const Register = () => {
             />
           </div>
         </div>
-      </>
+      </div>
     );
   }
   
   // Show SMS verification
   if (showSmsVerification && registrationData) {
     return (
-      <div className="container mx-auto py-10 px-4 flex items-center justify-center min-h-[calc(100vh-4rem)]">
-        <div className="w-full max-w-md">
-          <SmsVerification
-            phoneNumber={registrationData.phoneNumber}
-            onVerificationComplete={handleSmsVerificationComplete}
-            onBack={handleBackToForm}
-          />
+      <div className="relative min-h-screen overflow-hidden">
+        <div className="fixed inset-0 -z-10">
+          <div className="absolute inset-0 bg-gradient-to-br from-background via-background to-primary/10" />
+          <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-gradient-to-r from-primary/20 to-primary-glow/20 rounded-full blur-[100px] animate-float" />
+          <div className="absolute bottom-0 right-1/4 w-[400px] h-[400px] bg-gradient-to-r from-secondary/15 to-primary/15 rounded-full blur-[80px] animate-pulse-slow" />
+        </div>
+        <div className="container mx-auto py-6 sm:py-10 px-4 flex items-center justify-center min-h-screen">
+          <div className="w-full max-w-md" dir="rtl">
+            <SmsVerification
+              phoneNumber={registrationData.phoneNumber}
+              onVerificationComplete={handleSmsVerificationComplete}
+              onBack={handleBackToForm}
+            />
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <>
-      <AnimatedBackground />
-      <div className="container mx-auto py-4 sm:py-8 px-3 sm:px-4 flex items-center justify-center min-h-[calc(100vh-4rem)] relative z-10">
-        <div className="w-full max-w-6xl">
-          <div className="grid lg:grid-cols-3 gap-4 lg:gap-8 items-center" dir="ltr">
-            {/* Empty column for centering */}
-            <div className="hidden lg:block"></div>
+    <div className="relative min-h-screen overflow-hidden">
+      {/* Enhanced Animated Background - identical to Login */}
+      <div className="fixed inset-0 -z-10">
+        <div className="absolute inset-0 bg-gradient-to-br from-background via-background to-primary/10" />
+        <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-gradient-to-r from-primary/20 to-primary-glow/20 rounded-full blur-[100px] animate-float" />
+        <div className="absolute bottom-0 right-1/4 w-[400px] h-[400px] bg-gradient-to-r from-secondary/15 to-primary/15 rounded-full blur-[80px] animate-pulse-slow" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-gradient-radial from-primary/5 to-transparent rounded-full" />
+        
+        <div 
+          className="absolute inset-0 opacity-[0.02]"
+          style={{
+            backgroundImage: `linear-gradient(hsl(var(--primary)) 1px, transparent 1px), linear-gradient(90deg, hsl(var(--primary)) 1px, transparent 1px)`,
+            backgroundSize: '50px 50px'
+          }}
+        />
+        
+        <div className="absolute top-20 right-20 w-2 h-2 bg-primary/30 rounded-full animate-float" style={{ animationDelay: '0s' }} />
+        <div className="absolute top-40 left-32 w-1.5 h-1.5 bg-primary-glow/40 rounded-full animate-float" style={{ animationDelay: '1s' }} />
+        <div className="absolute bottom-32 right-40 w-3 h-3 bg-secondary/20 rounded-full animate-float" style={{ animationDelay: '2s' }} />
+        <div className="absolute bottom-20 left-20 w-1.5 h-1.5 bg-primary/30 rounded-full animate-pulse-slow" style={{ animationDelay: '0.5s' }} />
+      </div>
 
-            {/* Registration Card - Center */}
-            <div className="w-full" dir="rtl">
-          <Card className="border-border shadow-xl animate-fade-in glass shadow-card">
-            <CardHeader className="text-center p-4 sm:p-6 lg:p-8">
-              {/* Mobile wallet characters */}
-              <div className="flex justify-center gap-3 sm:gap-4 mb-4 sm:mb-6">
-                <img 
-                  src="/lovable-uploads/3a973532-2477-462a-9a84-0390b7045844.png" 
-                  alt="Red Wallet Character" 
-                  className="w-32 h-32 sm:w-40 sm:h-40 object-contain animate-bounce [animation-duration:2s]"
-                />
-                <img 
-                  src="/lovable-uploads/3d7094a5-211e-416b-a8c4-8fd864c98499.png" 
-                  alt="Green Wallet Character" 
-                  className="w-32 h-32 sm:w-40 sm:h-40 object-contain animate-bounce [animation-duration:2s] [animation-delay:0.3s]"
-                />
+      <div className="container mx-auto py-6 sm:py-10 px-4 flex items-center justify-center min-h-screen">
+        <div className="w-full max-w-md" dir="rtl">
+          {/* Main Registration Card - identical style to Login */}
+          <Card className="relative border-0 shadow-2xl bg-card/85 backdrop-blur-xl overflow-hidden animate-scale-in">
+            {/* Decorative top gradient bar */}
+            <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-primary via-primary-glow to-secondary" />
+            
+            {/* Glowing border effect */}
+            <div className="absolute inset-0 rounded-lg bg-gradient-to-r from-primary/10 via-transparent to-primary-glow/10 opacity-0 hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
+            
+            <CardHeader className="text-center pt-8 pb-2 px-6 sm:px-8">
+              {/* Compact wallet mascots with glow - identical to Login */}
+              <div className="flex justify-center gap-3 mb-4">
+                <div className="relative group">
+                  <div className="absolute inset-0 bg-primary/15 rounded-full blur-lg group-hover:blur-xl transition-all duration-300" />
+                  <img 
+                    src="/lovable-uploads/3a973532-2477-462a-9a84-0390b7045844.png" 
+                    alt="Red Wallet Character" 
+                    className="relative w-20 h-20 sm:w-24 sm:h-24 object-contain animate-float hover:scale-110 transition-transform duration-300"
+                  />
+                </div>
+                <div className="relative group">
+                  <div className="absolute inset-0 bg-secondary/15 rounded-full blur-lg group-hover:blur-xl transition-all duration-300" />
+                  <img 
+                    src="/lovable-uploads/3d7094a5-211e-416b-a8c4-8fd864c98499.png" 
+                    alt="Green Wallet Character" 
+                    className="relative w-20 h-20 sm:w-24 sm:h-24 object-contain animate-float [animation-delay:1s] hover:scale-110 transition-transform duration-300"
+                  />
+                </div>
               </div>
-              <div className="flex flex-col items-center justify-center gap-2 mb-2">
-                <CardTitle className="text-2xl sm:text-3xl font-extrabold tracking-tight text-primary animate-in fade-in slide-in-from-top duration-500">
-                  הרשמה למערכת
-                </CardTitle>
-                <div className="h-1 w-16 bg-gradient-to-r from-primary to-accent rounded-full animate-in fade-in duration-700 delay-200" />
-              </div>
-              <CardDescription className="text-sm sm:text-base">
-                צור חשבון חדש במערכת מחציות פלוס
+              
+              {/* Title */}
+              <CardTitle className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-primary via-primary-glow to-secondary bg-clip-text text-transparent mb-2">
+                יצירת חשבון חדש
+              </CardTitle>
+              <CardDescription className="text-sm sm:text-base text-muted-foreground">
+                הירשם כדי להתחיל לנהל את ההוצאות המשפחתיות
                 {emailFromInvitation && (
-                  <div className="mt-2 sm:mt-3 p-2 sm:p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
-                    <div className="text-xs sm:text-sm text-blue-800 dark:text-blue-200 font-medium">
-                      הזמנה: {emailFromInvitation}
+                  <div className="mt-3 p-2.5 bg-primary/5 rounded-xl border border-primary/20">
+                    <div className="text-xs sm:text-sm text-primary font-medium">
+                      הוזמנת דרך: {emailFromInvitation}
                     </div>
                     {invitationId && (
-                      <div className="mt-1 text-[10px] sm:text-xs text-green-700 dark:text-green-300">
-                        ✓ חיבור אוטומטי אחרי אימות
+                      <div className="mt-1 text-[10px] sm:text-xs text-green-600 dark:text-green-400">
+                        חיבור אוטומטי אחרי אימות
                       </div>
                     )}
                   </div>
                 )}
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4 sm:space-y-6 p-4 sm:p-6 lg:p-8">
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 sm:space-y-5">
+
+            <CardContent className="space-y-4 px-6 sm:px-8 pb-6 pt-4">
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                 <ModernInput
                   label="שם מלא"
                   icon="user"
@@ -334,18 +372,18 @@ const Register = () => {
                         key={option.value}
                         type="button"
                         onClick={() => form.setValue('familyRole', option.value)}
-                        className={`flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 transition-all duration-200 text-sm font-medium ${
+                        className={`flex flex-col items-center gap-1.5 p-2.5 sm:p-3 rounded-xl border-2 transition-all duration-200 text-sm font-medium ${
                           form.watch('familyRole') === option.value
                             ? 'border-primary bg-primary/10 text-primary shadow-sm'
                             : 'border-border/50 bg-background/50 hover:border-primary/40 hover:bg-primary/5 text-muted-foreground'
                         }`}
                       >
                         {'image' in option && option.image ? (
-                          <img src={option.image} alt={option.label} className="w-12 h-12 sm:w-14 sm:h-14 object-contain rounded-full" />
+                          <img src={option.image} alt={option.label} className="w-10 h-10 sm:w-12 sm:h-12 object-contain rounded-full" />
                         ) : (
-                          <span className="text-2xl sm:text-3xl">{'emoji' in option ? option.emoji : '👤'}</span>
+                          <span className="text-xl sm:text-2xl">{'emoji' in option ? option.emoji : '👤'}</span>
                         )}
-                        <span>{option.label}</span>
+                        <span className="text-xs sm:text-sm">{option.label}</span>
                       </button>
                     ))}
                   </div>
@@ -398,33 +436,44 @@ const Register = () => {
                 
                 <ModernButton 
                   type="submit" 
-                  className="w-full mt-6 sm:mt-8 h-11 sm:h-12" 
+                  className="w-full h-12 text-base font-semibold rounded-xl shadow-lg hover:shadow-glow transition-all duration-300 mt-2" 
                   size="lg"
                   loading={isLoading}
-                  variant="gradient"
+                  variant="primary"
                 >
                   {isLoading ? 'מתקדם לאימות SMS...' : 'המשך לאימות SMS'}
                 </ModernButton>
               </form>
             </CardContent>
-            <CardFooter className="flex justify-center p-4 sm:p-6 lg:p-8">
+
+            {/* Footer with login link */}
+            <CardFooter className="flex flex-col items-center gap-4 pb-8 px-6 sm:px-8 border-t border-border/40 pt-6">
               <p className="text-sm sm:text-base text-muted-foreground">
                 כבר יש לך חשבון?{' '}
-                <Link to="/login" className="text-primary hover:text-primary-glow transition-colors duration-300 font-medium">
+                <Link 
+                  to="/login" 
+                  className="inline-flex items-center gap-1 text-primary hover:text-primary-glow transition-colors duration-200 font-semibold hover:underline underline-offset-4"
+                >
                   התחבר כאן
+                  <ArrowRight className="w-3.5 h-3.5" />
                 </Link>
               </p>
+              
+              {/* Trust indicator */}
+              <div className="flex items-center gap-1.5 text-xs text-muted-foreground/50">
+                <ShieldCheck className="w-3.5 h-3.5" />
+                <span>הנתונים שלך מאובטחים ומוצפנים</span>
+              </div>
             </CardFooter>
           </Card>
+          
+          {/* Bottom decorative text */}
+          <p className="text-center text-xs text-muted-foreground/50 mt-5 animate-fade-in" style={{ animationDelay: '0.3s' }}>
+            ניהול הוצאות משפחתי חכם ופשוט
+          </p>
         </div>
-
-        {/* Empty column for centering */}
-        <div className="hidden lg:block"></div>
       </div>
     </div>
-  </div>
-
-    </>
   );
 };
 

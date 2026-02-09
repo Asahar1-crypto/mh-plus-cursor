@@ -13,9 +13,10 @@ import ChangePasswordCard from '@/components/account/ChangePasswordCard';
 import BillingCycleCard from '@/components/account/BillingCycleCard';
 import AvatarSetCard from '@/components/account/AvatarSetCard';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { User, Settings, Users } from 'lucide-react';
+import { User, Settings, Users, Bell } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import NotificationsCard from '@/components/account/NotificationsCard';
 
 const AccountSettings = () => {
   const { user, account, isLoading, sendInvitation, removeInvitation } = useAuth();
@@ -119,6 +120,14 @@ const AccountSettings = () => {
                 <span className="hidden xs:inline">חברי משפחה</span>
                 <span className="xs:hidden">משפחה</span>
               </TabsTrigger>
+              <TabsTrigger 
+                value="notifications" 
+                className="flex-1 min-w-[80px] gap-1.5 sm:gap-2 rounded-lg py-2 sm:py-2.5 px-2 sm:px-3 text-[11px] sm:text-sm font-medium transition-all data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md"
+              >
+                <Bell className="h-3.5 w-3.5 sm:h-4 sm:w-4 flex-shrink-0" />
+                <span className="hidden xs:inline">התראות</span>
+                <span className="xs:hidden">התראות</span>
+              </TabsTrigger>
             </TabsList>
 
             {/* Tab 1: Profile */}
@@ -159,6 +168,13 @@ const AccountSettings = () => {
                 />
                 <InviteUserForm account={account} onInvite={handleInvite} />
                 <SentInvitationsCard account={account} />
+              </div>
+            </TabsContent>
+
+            {/* Tab 4: Notifications */}
+            <TabsContent value="notifications" className="mt-4 sm:mt-6">
+              <div className="max-w-2xl mx-auto animate-fade-in">
+                <NotificationsCard account={account} />
               </div>
             </TabsContent>
           </Tabs>

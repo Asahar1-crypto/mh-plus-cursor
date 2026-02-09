@@ -1,24 +1,25 @@
 import { CustomDropdown } from "@/components/ui/custom-dropdown"
 
-const PAYMENT_TYPES = [
-  { value: "i_paid_shared", label: "אני שילמתי - הוצאה משותפת" },
-  { value: "i_paid_theirs", label: "אני שילמתי - הוצאה של השותף" },
-  { value: "they_paid_shared", label: "השותף שילם/ה - הוצאה משותפת" },
-  { value: "they_paid_mine", label: "השותף שילם/ה - הוצאה שלי" },
-  { value: "i_owe_them", label: "אני צריך לשלם לשותף" },
-  { value: "they_owe_me", label: "השותף צריך/צריכה לשלם לי" }
+const getPaymentTypes = (otherUserName: string) => [
+  { value: "i_paid_shared", label: "אני שילמתי - יש לחלוק" },
+  { value: "i_paid_theirs", label: `שילמתי - על ${otherUserName} להחזיר` },
+  { value: "they_paid_shared", label: `${otherUserName} שילם/ה - יש לחלוק` },
+  { value: "they_paid_mine", label: `${otherUserName} שילם/ה - עליי להחזיר` }
 ]
 
 interface PaymentTypeDropdownProps {
   value?: string
   onValueChange: (value: string) => void
+  otherUserName?: string
   className?: string
 }
 
-export function PaymentTypeDropdown({ value, onValueChange, className }: PaymentTypeDropdownProps) {
+export function PaymentTypeDropdown({ value, onValueChange, otherUserName, className }: PaymentTypeDropdownProps) {
+  const paymentTypes = getPaymentTypes(otherUserName || 'השותף/ה')
+
   return (
     <CustomDropdown
-      options={PAYMENT_TYPES}
+      options={paymentTypes}
       value={value}
       onValueChange={onValueChange}
       placeholder="בחר סוג תשלום"

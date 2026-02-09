@@ -13,7 +13,7 @@ import { Switch } from '@/components/ui/switch';
 import { Child } from '@/contexts/expense/types';
 import { useToast } from '@/hooks/use-toast';
 import { toast } from 'sonner';
-import { Plus, Repeat, Users, User, ArrowLeftRight } from 'lucide-react';
+import { Plus, Repeat, Users, User } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/auth';
 import { memberService } from '@/contexts/auth/services/account/memberService';
@@ -28,9 +28,7 @@ const addRecurringExpenseSchema = z.object({
     'i_paid_shared', 
     'i_paid_theirs', 
     'they_paid_shared', 
-    'they_paid_mine', 
-    'i_owe_them', 
-    'they_owe_me'
+    'they_paid_mine'
   ], {
     message: 'יש לבחור את סוג התשלום'
   }),
@@ -97,36 +95,28 @@ export const AddRecurringExpenseModal: React.FC<AddRecurringExpenseModalProps> =
       let includeInMonthlyBalance = true;
       let splitEqually = false;
       
-      const currentUser = accountMembers?.find(m => m.role === 'admin')?.user_id || accountMembers?.[0]?.user_id || '';
-      const otherUser = accountMembers?.find(m => m.user_id !== currentUser)?.user_id || '';
+      const currentUserId = user?.id || '';
+      const otherUserId = accountMembers?.find(m => m.user_id !== currentUserId)?.user_id || '';
       
       switch (data.paymentType) {
         case 'i_paid_shared':
-          paidById = otherUser;
+          paidById = otherUserId;
           splitEqually = true;
           break;
         case 'i_paid_theirs':
-          paidById = otherUser;
+          paidById = otherUserId;
           splitEqually = false;
           break;
         case 'they_paid_shared':
-          paidById = currentUser;
+          paidById = currentUserId;
           splitEqually = true;
           break;
         case 'they_paid_mine':
-          paidById = currentUser;
-          splitEqually = false;
-          break;
-        case 'i_owe_them':
-          paidById = currentUser;
-          splitEqually = false;
-          break;
-        case 'they_owe_me':
-          paidById = otherUser;
+          paidById = currentUserId;
           splitEqually = false;
           break;
         default:
-          paidById = currentUser;
+          paidById = currentUserId;
       }
 
       const expenseData: any = {
@@ -293,51 +283,36 @@ export const AddRecurringExpenseModal: React.FC<AddRecurringExpenseModalProps> =
               control={form.control}
               name="paymentType"
               render={({ field }) => {
-                const currentUserName = accountMembers?.find(m => m.role === 'admin')?.user_name || 'אני';
-                const otherUserName = accountMembers?.find(m => m.user_id !== (accountMembers?.find(m => m.role === 'admin')?.user_id || accountMembers?.[0]?.user_id))?.user_name || 'השותף';
+                const otherUserName = accountMembers?.find(m => m.user_id !== user?.id)?.user_name || 'השותף/ה';
                 
                 const paymentOptions = [
                   {
                     value: 'i_paid_shared',
-                    label: `אני אשלם - הוצאה משותפת`,
-                    description: `${otherUserName} יחזיר לי חצי מהסכום`,
+                    label: `אני שילמתי - יש לחלוק`,
+                    description: `הסכום יחולק שווה בשווה ביני לבין ${otherUserName}`,
                     icon: <Users className="h-4 w-4" />,
                     color: 'text-blue-600 dark:text-blue-400'
                   },
                   {
                     value: 'i_paid_theirs',
-                    label: `אני אשלם - הוצאה של ${otherUserName}`,
-                    description: `${otherUserName} יחזיר לי את מלוא הסכום`,
+                    label: `שילמתי - על ${otherUserName} להחזיר`,
+                    description: `${otherUserName} צריך/ה להחזיר לי את מלוא הסכום`,
                     icon: <User className="h-4 w-4" />,
                     color: 'text-green-600 dark:text-green-400'
                   },
                   {
                     value: 'they_paid_shared',
-                    label: `${otherUserName} ישלם - הוצאה משותפת`,
-                    description: `אני אחזיר ל${otherUserName} חצי מהסכום`,
+                    label: `${otherUserName} שילם/ה - יש לחלוק`,
+                    description: `הסכום יחולק שווה בשווה ביני לבין ${otherUserName}`,
                     icon: <Users className="h-4 w-4" />,
                     color: 'text-blue-600 dark:text-blue-400'
                   },
                   {
                     value: 'they_paid_mine',
-                    label: `${otherUserName} ישלם - הוצאה שלי`,
-                    description: `אני אחזיר ל${otherUserName} את מלוא הסכום`,
+                    label: `${otherUserName} שילם/ה - עליי להחזיר`,
+                    description: `אני צריך/ה להחזיר ל${otherUserName} את מלוא הסכום`,
                     icon: <User className="h-4 w-4" />,
                     color: 'text-red-600 dark:text-red-400'
-                  },
-                  {
-                    value: 'i_owe_them',
-                    label: `אני צריך לשלם ל${otherUserName}`,
-                    description: 'חוב ללא תשלום מוקדם (כמו מזונות, דמי ילדים)',
-                    icon: <ArrowLeftRight className="h-4 w-4" />,
-                    color: 'text-orange-600 dark:text-orange-400'
-                  },
-                  {
-                    value: 'they_owe_me',
-                    label: `${otherUserName} צריך לשלם לי`,
-                    description: 'חוב ללא תשלום מוקדם (כמו מזונות, השתתפות)',
-                    icon: <ArrowLeftRight className="h-4 w-4" />,
-                    color: 'text-purple-600 dark:text-purple-400'
                   }
                 ];
 

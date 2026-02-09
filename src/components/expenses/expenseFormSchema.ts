@@ -12,9 +12,7 @@ export const expenseSchema = z.object({
     'i_paid_shared', 
     'i_paid_theirs', 
     'they_paid_shared', 
-    'they_paid_mine', 
-    'i_owe_them', 
-    'they_owe_me'
+    'they_paid_mine'
   ], {
     message: 'יש לבחור את סוג התשלום'
   }),
