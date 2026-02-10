@@ -97,21 +97,16 @@ export async function getFCMToken(accountId: string): Promise<string | null> {
 
   try {
     // Register service worker
-    console.log('[FCM] Registering service worker...');
     const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
-    console.log('[FCM] Service worker registered, waiting for ready...');
     await navigator.serviceWorker.ready;
-    console.log('[FCM] Service worker ready');
 
     // Send Firebase config to the service worker
-    // Wait a moment for the SW to activate if it's new
     const sw = registration.active || registration.installing || registration.waiting;
     if (sw) {
       sw.postMessage({
         type: 'FIREBASE_CONFIG',
         config: firebaseConfig,
       });
-      console.log('[FCM] Config sent to service worker');
     }
 
     const vapidKey = import.meta.env.VITE_FIREBASE_VAPID_KEY;
@@ -119,7 +114,6 @@ export async function getFCMToken(accountId: string): Promise<string | null> {
       console.warn('[FCM] VITE_FIREBASE_VAPID_KEY not set');
       return null;
     }
-    console.log('[FCM] Requesting FCM token with VAPID key...');
 
     const token = await getToken(msg, {
       vapidKey,
@@ -127,10 +121,8 @@ export async function getFCMToken(accountId: string): Promise<string | null> {
     });
 
     if (token) {
-      console.log('[FCM] Token received:', token.substring(0, 20) + '...');
+      console.log('[FCM] Token received, saving to backend...');
       
-      // Save token to backend
-      console.log('[FCM] Saving token to backend...');
       const { data, error } = await supabase.functions.invoke('register-device-token', {
         body: {
           token,
@@ -147,7 +139,7 @@ export async function getFCMToken(accountId: string): Promise<string | null> {
       if (error) {
         console.error('[FCM] Error registering device token:', error);
       } else {
-        console.log('[FCM] Token registered successfully:', data);
+        console.log('[FCM] Token registered successfully');
       }
 
       return token;

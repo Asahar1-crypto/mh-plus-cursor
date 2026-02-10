@@ -75,13 +75,18 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
         // Check current permission status for web
         if (platform === 'web') {
           const status = getPermissionStatus();
+          console.log('[Notifications] Init - permission:', status);
           setHasPermission(status === 'granted');
 
           if (status === 'granted') {
+            console.log('[Notifications] Permission granted, initializing push...');
             const result = await initializePush(account.id);
+            console.log('[Notifications] Push init result:', result.success);
             if (result.success) {
               setupForegroundListener();
             }
+          } else {
+            console.log('[Notifications] Permission not granted:', status);
           }
         } else if (platform === 'android' || platform === 'ios') {
           const result = await initializePush(account.id);
@@ -138,7 +143,8 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
   }, []);
 
   /**
-   * Load notification preferences from database
+   * Load notification preferences from database.
+   * If none exist yet, create default preferences.
    */
   const loadPreferences = useCallback(async () => {
     if (!user || !account?.id) return;
@@ -151,9 +157,36 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
         .eq('account_id', account.id)
         .single();
 
-      if (error && error.code !== 'PGRST116') {
-        // PGRST116 = no rows returned, which is fine
+      if (error && error.code === 'PGRST116') {
+        // No preferences found - create defaults
+        console.log('[Notifications] No preferences found, creating defaults...');
+        const { data: newData, error: insertError } = await supabase
+          .from('notification_preferences')
+          .insert({
+            user_id: user.id,
+            account_id: account.id,
+            push_enabled: true,
+            sms_enabled: true,
+            email_enabled: true,
+            quiet_hours_enabled: false,
+            quiet_hours_start: '22:00',
+            quiet_hours_end: '07:00',
+          })
+          .select()
+          .single();
+
+        if (insertError) {
+          console.error('[Notifications] Error creating default preferences:', insertError);
+        } else if (newData) {
+          console.log('[Notifications] Default preferences created');
+          setPreferences(newData as NotificationPreferences);
+        }
+        return;
+      }
+
+      if (error) {
         console.error('Error loading notification preferences:', error);
+        return;
       }
 
       if (data) {
@@ -199,22 +232,34 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
       if (!user || !account?.id) return;
 
       try {
-        const { error } = await supabase.functions.invoke('update-notification-preferences', {
-          body: {
-            accountId: account.id,
-            ...prefs,
-          },
-        });
+        console.log('[Notifications] Updating preferences:', prefs);
+
+        // Update directly via Supabase (faster, avoids edge function overhead)
+        const { data, error } = await supabase
+          .from('notification_preferences')
+          .upsert(
+            {
+              user_id: user.id,
+              account_id: account.id,
+              ...prefs,
+            },
+            { onConflict: 'user_id,account_id' }
+          )
+          .select()
+          .single();
 
         if (error) {
-          console.error('Error updating preferences:', error);
+          console.error('[Notifications] Error updating preferences:', error);
           return;
         }
 
-        // Update local state
-        setPreferences((prev) => (prev ? { ...prev, ...prefs } : null));
+        // Update local state with the full returned data
+        if (data) {
+          setPreferences(data as NotificationPreferences);
+          console.log('[Notifications] Preferences updated successfully');
+        }
       } catch (error) {
-        console.error('Error updating preferences:', error);
+        console.error('[Notifications] Error updating preferences:', error);
       }
     },
     [user?.id, account?.id]

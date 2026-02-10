@@ -51,7 +51,7 @@ serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseServiceRoleKey);
 
     const { expense_id, account_id } = await req.json();
-    console.log(`Notify expense approval request: expense_id=${expense_id}, account_id=${account_id}`);
+    console.log(`📩 Notify expense approval: expense_id=${expense_id}, account_id=${account_id}`);
 
     if (!expense_id || !account_id) {
       return new Response(
@@ -61,31 +61,20 @@ serve(async (req) => {
     }
 
     // 🔒 SECURITY: Verify user is a member of the requested account
-    console.log('🔐 Verifying account membership...');
     const { data: isMember, error: memberError } = await supabase.rpc(
       'is_account_member',
       { user_uuid: userId, account_uuid: account_id }
     );
 
-    if (memberError) {
-      console.error('❌ Membership check error:', memberError);
+    if (memberError || !isMember) {
+      console.error('❌ Access denied or membership check error');
       return new Response(
-        JSON.stringify({ error: 'Failed to verify account membership' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    if (!isMember) {
-      console.error('❌ Access denied: User', userId, 'is not a member of account', account_id);
-      return new Response(
-        JSON.stringify({ error: 'Access denied: Not a member of this account' }),
+        JSON.stringify({ error: 'Access denied' }),
         { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    console.log('✅ Account membership verified');
-
-    // Check if SMS notifications are enabled for this account
+    // Get account details
     const { data: account, error: accountError } = await supabase
       .from('accounts')
       .select('sms_notifications_enabled, name')
@@ -93,41 +82,19 @@ serve(async (req) => {
       .single();
 
     if (accountError || !account) {
-      console.log('Account not found or error:', accountError);
+      console.error('Account not found:', accountError);
       return new Response(
-        JSON.stringify({ error: 'Account not found', skipped: true }),
-        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({ error: 'Account not found' }),
+        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    if (!account.sms_notifications_enabled) {
-      console.log('SMS notifications disabled for account:', account_id);
-      return new Response(
-        JSON.stringify({ message: 'SMS notifications disabled for this account', skipped: true }),
-        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    // Check if notification already sent for this expense
-    const { data: existingNotification } = await supabase
-      .from('expense_notifications')
-      .select('id')
-      .eq('expense_id', expense_id)
-      .eq('notification_type', 'sms')
-      .single();
-
-    if (existingNotification) {
-      console.log('Notification already sent for expense:', expense_id);
-      return new Response(
-        JSON.stringify({ message: 'Notification already sent', skipped: true }),
-        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
+    console.log(`📋 Account: "${account.name}", SMS enabled: ${account.sms_notifications_enabled}`);
 
     // Get expense details
     const { data: expense, error: expenseError } = await supabase
       .from('expenses')
-      .select('id, amount, description, paid_by_id, status')
+      .select('id, amount, description, paid_by_id, status, created_by_id')
       .eq('id', expense_id)
       .single();
 
@@ -139,186 +106,202 @@ serve(async (req) => {
       );
     }
 
+    console.log(`📋 Expense: status=${expense.status}, amount=${expense.amount}, paid_by=${expense.paid_by_id}, created_by=${expense.created_by_id}`);
+
     // Only send notification for pending expenses
     if (expense.status !== 'pending') {
-      console.log('Expense is not pending, skipping notification');
+      console.log(`⚠️ Expense is "${expense.status}" not "pending" - skipping`);
       return new Response(
-        JSON.stringify({ message: 'Expense is not pending', skipped: true }),
+        JSON.stringify({ message: `Expense is ${expense.status}`, skipped: true }),
         { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    // Get all account members except the one who paid
+    // Find the person who should be notified:
+    // The expense was created by one person but paid_by is someone else.
+    // We want to notify the person who DIDN'T create the expense - i.e., the one who needs to approve.
+    // In the current logic, paid_by_id is the person who "owes" - so we notify all members except the creator.
     const { data: members, error: membersError } = await supabase
       .from('account_members')
       .select('user_id')
       .eq('account_id', account_id)
-      .neq('user_id', expense.paid_by_id);
+      .neq('user_id', expense.created_by_id);
 
     if (membersError || !members || members.length === 0) {
-      console.log('No other members found in account');
+      console.log('⚠️ No other members to notify');
       return new Response(
         JSON.stringify({ message: 'No other members to notify', skipped: true }),
         { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    // Get the other member's profile (phone and name)
-    const otherMemberId = members[0].user_id;
+    const recipientUserId = members[0].user_id;
+    console.log(`📤 Recipient: ${recipientUserId}`);
+
+    // Get recipient's profile
     const { data: recipientProfile, error: profileError } = await supabase
       .from('profiles')
       .select('name, phone_e164, phone_number')
-      .eq('id', otherMemberId)
+      .eq('id', recipientUserId)
       .single();
 
     if (profileError || !recipientProfile) {
       console.error('Recipient profile not found:', profileError);
       return new Response(
-        JSON.stringify({ error: 'Recipient profile not found' }),
+        JSON.stringify({ error: 'Recipient not found' }),
         { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    const recipientPhone = recipientProfile.phone_e164 || recipientProfile.phone_number;
-    if (!recipientPhone) {
-      console.log('Recipient has no phone number');
-      // Log the failed notification
-      await supabase.from('expense_notifications').insert({
-        expense_id,
-        notification_type: 'sms',
-        recipient_user_id: otherMemberId,
-        status: 'failed',
-        error_message: 'No phone number'
-      });
-      return new Response(
-        JSON.stringify({ message: 'Recipient has no phone number', skipped: true }),
-        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
+    // Get the creator's name for the notification message
+    const { data: creatorProfile } = await supabase
+      .from('profiles')
+      .select('name')
+      .eq('id', expense.created_by_id)
+      .single();
 
-    // Check Vonage credentials
-    if (!vonageApiKey || !vonageApiSecret || !vonageFromNumber) {
-      console.error('Vonage credentials not configured');
-      await supabase.from('expense_notifications').insert({
-        expense_id,
-        notification_type: 'sms',
-        recipient_user_id: otherMemberId,
-        recipient_phone: recipientPhone,
-        status: 'failed',
-        error_message: 'SMS service not configured'
-      });
-      return new Response(
-        JSON.stringify({ error: 'SMS service not configured' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    // Build the SMS message
-    const appUrl = 'https://hchmfsilgfrzhenafbzi.lovableproject.com';
-    const dashboardLink = `${appUrl}/dashboard`;
+    const creatorName = creatorProfile?.name || 'משתמש';
     const recipientName = recipientProfile.name || 'משתמש';
     const amount = expense.amount.toLocaleString('he-IL');
     const description = expense.description || 'הוצאה';
-    let smsResult: { success: boolean; messageId?: string; error?: string } = { success: false };
+    const appUrl = 'https://hchmfsilgfrzhenafbzi.lovableproject.com';
 
-    const smsMessage = `היי ${recipientName},
-הוצאה חדשה לאישור: ${amount} ₪
-${description}
-לאישור: ${dashboardLink}`;
-
-    console.log(`Sending SMS to ${recipientPhone}: ${smsMessage}`);
-
-    // Remove '+' from phone number for Vonage
-    const cleanPhoneNumber = recipientPhone.replace(/^\+/, '');
-
-    // Send SMS using Vonage
-    const vonageResponse = await fetch('https://rest.nexmo.com/sms/json', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        api_key: vonageApiKey,
-        api_secret: vonageApiSecret,
-        from: vonageFromNumber,
-        to: cleanPhoneNumber,
-        text: smsMessage,
-        type: 'unicode'
-      }),
-    });
-
-    const vonageResult = await vonageResponse.json();
-    console.log('Vonage response:', JSON.stringify(vonageResult));
-
-    if (vonageResult.messages && vonageResult.messages[0]?.status === '0') {
-      // Success - log the notification
-      await supabase.from('expense_notifications').insert({
-        expense_id,
-        notification_type: 'sms',
-        recipient_user_id: otherMemberId,
-        recipient_phone: recipientPhone,
-        status: 'sent'
-      });
-
-      console.log('SMS sent successfully');
-      smsResult = { success: true, messageId: vonageResult.messages[0]['message-id'] };
-    } else {
-      // Failed - log the error
-      const errorText = vonageResult.messages?.[0]?.['error-text'] || 'Unknown error';
-      await supabase.from('expense_notifications').insert({
-        expense_id,
-        notification_type: 'sms',
-        recipient_user_id: otherMemberId,
-        recipient_phone: recipientPhone,
-        status: 'failed',
-        error_message: errorText
-      });
-
-      console.error('Vonage error:', errorText);
-      smsResult = { success: false, error: errorText };
-    }
-
-    // ---- Send Push Notification (in addition to SMS) ----
-    let pushResult = { success: false, reason: 'not_attempted' };
+    // ============================================================
+    // 1. PUSH NOTIFICATION
+    // ============================================================
+    let pushResult: { success: boolean; reason?: string; fallback?: string } = { success: false, reason: 'not_attempted' };
     try {
       const pushPayload = {
-        userId: otherMemberId,
+        userId: recipientUserId,
         accountId: account_id,
         type: 'expense_pending_approval',
         title: `הוצאה חדשה לאישור`,
-        body: `${amount} ₪ - ${description}`,
-        data: {
-          expenseId: expense_id,
-        },
+        body: `${creatorName} הוסיף/ה הוצאה: ${amount} ₪ - ${description}`,
+        data: { expenseId: expense_id },
         actionUrl: `${appUrl}/expenses`,
       };
 
-      console.log('Sending push notification to:', otherMemberId);
+      console.log('📲 Sending push notification...');
       const pushResponse = await supabase.functions.invoke('send-push-notification', {
         body: pushPayload,
       });
 
       if (pushResponse.error) {
-        console.error('Push notification error:', pushResponse.error);
+        console.error('❌ Push error:', pushResponse.error);
         pushResult = { success: false, reason: pushResponse.error.message };
       } else {
         pushResult = pushResponse.data || { success: true };
-        console.log('Push notification result:', pushResult);
+        console.log('📲 Push result:', JSON.stringify(pushResult));
       }
     } catch (pushError) {
-      console.error('Push notification exception:', pushError);
+      console.error('❌ Push exception:', pushError);
       pushResult = { success: false, reason: 'exception' };
     }
 
+    // ============================================================
+    // 2. SMS NOTIFICATION
+    // Send SMS if:
+    // - SMS is enabled for the account, OR
+    // - Push notification failed (fallback)
+    // ============================================================
+    const pushFailed = !pushResult.success || pushResult.fallback === 'sms';
+    const shouldSendSMS = account.sms_notifications_enabled || pushFailed;
+
+    let smsResult: { success: boolean; messageId?: string; error?: string; reason?: string } = { success: false, reason: 'not_attempted' };
+
+    if (!shouldSendSMS) {
+      console.log('📵 SMS not needed (push succeeded and SMS disabled)');
+      smsResult = { success: false, reason: 'not_needed' };
+    } else {
+      console.log(`📱 Will send SMS (sms_enabled=${account.sms_notifications_enabled}, push_failed=${pushFailed})`);
+
+      // Check if SMS already sent
+      const { data: existingNotification } = await supabase
+        .from('expense_notifications')
+        .select('id')
+        .eq('expense_id', expense_id)
+        .eq('notification_type', 'sms')
+        .single();
+
+      if (existingNotification) {
+        console.log('📱 SMS already sent for this expense');
+        smsResult = { success: false, reason: 'already_sent' };
+      } else {
+        const recipientPhone = recipientProfile.phone_e164 || recipientProfile.phone_number;
+
+        if (!recipientPhone) {
+          console.log('📱 No phone number for recipient');
+          smsResult = { success: false, error: 'No phone number' };
+        } else if (!vonageApiKey || !vonageApiSecret || !vonageFromNumber) {
+          console.error('📱 Vonage not configured');
+          smsResult = { success: false, error: 'SMS service not configured' };
+        } else {
+          const smsMessage = `היי ${recipientName},\n${creatorName} הוסיף/ה הוצאה חדשה לאישור: ${amount} ₪\n${description}\nלאישור: ${appUrl}/expenses`;
+
+          console.log(`📱 Sending SMS to ${recipientPhone}...`);
+          const cleanPhone = recipientPhone.replace(/^\+/, '');
+
+          try {
+            const vonageResponse = await fetch('https://rest.nexmo.com/sms/json', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                api_key: vonageApiKey,
+                api_secret: vonageApiSecret,
+                from: vonageFromNumber,
+                to: cleanPhone,
+                text: smsMessage,
+                type: 'unicode'
+              }),
+            });
+
+            const vonageResult = await vonageResponse.json();
+            console.log('📱 Vonage response:', JSON.stringify(vonageResult));
+
+            if (vonageResult.messages?.[0]?.status === '0') {
+              await supabase.from('expense_notifications').insert({
+                expense_id,
+                notification_type: 'sms',
+                recipient_user_id: recipientUserId,
+                recipient_phone: recipientPhone,
+                status: 'sent'
+              });
+              console.log('✅ SMS sent successfully');
+              smsResult = { success: true, messageId: vonageResult.messages[0]['message-id'] };
+            } else {
+              const errorText = vonageResult.messages?.[0]?.['error-text'] || 'Unknown error';
+              await supabase.from('expense_notifications').insert({
+                expense_id,
+                notification_type: 'sms',
+                recipient_user_id: recipientUserId,
+                recipient_phone: recipientPhone,
+                status: 'failed',
+                error_message: errorText
+              });
+              console.error('❌ SMS error:', errorText);
+              smsResult = { success: false, error: errorText };
+            }
+          } catch (smsError) {
+            console.error('❌ SMS exception:', smsError);
+            smsResult = { success: false, error: 'Exception sending SMS' };
+          }
+        }
+      }
+    }
+
+    console.log(`📊 Final: push=${JSON.stringify(pushResult)}, sms=${JSON.stringify(smsResult)}`);
+
     return new Response(
       JSON.stringify({ 
-        success: true, 
-        sms: smsResult,
+        success: pushResult.success || smsResult.success,
         push: pushResult,
+        sms: smsResult,
       }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
   } catch (error) {
-    console.error('Notify expense approval error:', error);
+    console.error('❌ Notify expense error:', error);
     return new Response(
       JSON.stringify({ error: 'Internal server error' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

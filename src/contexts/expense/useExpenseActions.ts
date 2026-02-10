@@ -20,21 +20,23 @@ export interface ExpenseActions {
 }
 
 // Helper function to send SMS notification for pending expenses
-const sendExpenseNotification = async (expenseId: string, accountId: string) => {
+const sendExpenseNotification = async (expenseId: string, accountId: string): Promise<string> => {
   try {
-    console.log('Sending expense notification SMS for expense:', expenseId);
+    console.log('📩 Sending expense notification for expense:', expenseId, 'account:', accountId);
     const { data, error } = await supabase.functions.invoke('notify-expense-approval', {
       body: { expense_id: expenseId, account_id: accountId }
     });
     
     if (error) {
-      console.error('Error sending expense notification:', error);
+      console.error('❌ Error sending expense notification:', error);
+      return `ERROR: ${JSON.stringify(error)}`;
     } else {
-      console.log('Expense notification result:', data);
+      console.log('✅ Expense notification result:', data);
+      return `SUCCESS: ${JSON.stringify(data)}`;
     }
   } catch (error) {
-    console.error('Failed to send expense notification:', error);
-    // Don't throw - notification failure shouldn't block expense creation
+    console.error('❌ Failed to send expense notification (exception):', error);
+    return `EXCEPTION: ${error}`;
   }
 };
 
@@ -63,11 +65,20 @@ export const useExpenseActions = (
     setIsSubmitting(true);
     try {
       const result = await expenseService.addExpense(user, account, newExpense);
-      console.log('Expense added successfully, refreshing data...');
+      console.log('🔍 Expense added result:', { 
+        id: result.id, 
+        isPending: result.isPending,
+        userId: user.id,
+        paidById: newExpense.paidById,
+      });
       
-      // Send SMS notification if expense is pending (needs approval)
+      // Send notification if expense is pending (needs approval)
       if (result.isPending) {
-        sendExpenseNotification(result.id, account.id);
+        console.log('📩 Expense is PENDING - sending notification...');
+        const notifResult = await sendExpenseNotification(result.id, account.id);
+        console.log('📩 Notification result:', notifResult);
+      } else {
+        console.log('⚠️ Expense auto-approved - no notification sent');
       }
       
       await refreshData(); // Refresh data to show new expense

@@ -219,20 +219,25 @@ serve(async (req) => {
       }
     }
 
-    // 2. Check quiet hours
-    if (prefs?.quiet_hours_enabled) {
-      // Israel is UTC+2 (or UTC+3 in summer, but we default to +2)
+    // 2. Check quiet hours (skip for urgent notification types)
+    const urgentTypes = ['expense_pending_approval', 'invitation_received', 'budget_exceeded'];
+    const isUrgent = urgentTypes.includes(payload.type);
+
+    if (prefs?.quiet_hours_enabled && !isUrgent) {
+      // Israel is UTC+2 (or UTC+3 in summer - we use +2 as default)
       const now = new Date();
       const israelTime = new Date(now.getTime() + 2 * 3600000 + now.getTimezoneOffset() * 60000);
       const currentTime = israelTime.toTimeString().slice(0, 5);
 
       if (isInQuietHours(currentTime, prefs.quiet_hours_start, prefs.quiet_hours_end)) {
-        console.log('Quiet hours active, skipping push');
+        console.log(`Quiet hours active (${currentTime}), skipping non-urgent push`);
         return new Response(
           JSON.stringify({ success: false, reason: 'Quiet hours active' }),
           { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
+    } else if (isUrgent) {
+      console.log(`📩 Urgent notification type "${payload.type}" - bypassing quiet hours`);
     }
 
     // 3. Get active device tokens

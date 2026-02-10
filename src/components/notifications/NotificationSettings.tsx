@@ -65,18 +65,33 @@ export function NotificationSettings() {
                 <p className="text-sm font-medium text-amber-800 dark:text-amber-200 mb-2">
                   התראות Push לא מופעלות
                 </p>
-                <p className="text-xs text-amber-700 dark:text-amber-300 mb-3">
-                  אפשר התראות כדי לקבל עדכונים בזמן אמת על חיובים, אישורים ועוד
-                </p>
-                <Button
-                  onClick={requestPermission}
-                  size="sm"
-                  variant="outline"
-                  className="border-amber-300 hover:bg-amber-100 dark:border-amber-700 dark:hover:bg-amber-900/30"
-                >
-                  <Bell className="h-4 w-4 ml-2" />
-                  אפשר התראות
-                </Button>
+                {typeof Notification !== 'undefined' && Notification.permission === 'denied' ? (
+                  <div>
+                    <p className="text-xs text-amber-700 dark:text-amber-300 mb-2">
+                      ההתראות חסומות בדפדפן. כדי לאפשר:
+                    </p>
+                    <ol className="text-xs text-amber-700 dark:text-amber-300 mb-3 list-decimal list-inside space-y-1">
+                      <li>לחץ על אייקון המנעול בשורת הכתובת</li>
+                      <li>מצא "Notifications" ושנה ל-"Allow"</li>
+                      <li>רענן את הדף</li>
+                    </ol>
+                  </div>
+                ) : (
+                  <>
+                    <p className="text-xs text-amber-700 dark:text-amber-300 mb-3">
+                      אפשר התראות כדי לקבל עדכונים בזמן אמת על חיובים, אישורים ועוד
+                    </p>
+                    <Button
+                      onClick={requestPermission}
+                      size="sm"
+                      variant="outline"
+                      className="border-amber-300 hover:bg-amber-100 dark:border-amber-700 dark:hover:bg-amber-900/30"
+                    >
+                      <Bell className="h-4 w-4 ml-2" />
+                      אפשר התראות
+                    </Button>
+                  </>
+                )}
               </div>
             </div>
           </CardContent>
@@ -106,8 +121,14 @@ export function NotificationSettings() {
             <Switch
               id="push-enabled"
               checked={(preferences?.push_enabled ?? true) && hasPermission}
-              onCheckedChange={(checked) => updatePreferences({ push_enabled: checked } as any)}
-              disabled={!hasPermission}
+              onCheckedChange={async (checked) => {
+                if (checked && !hasPermission) {
+                  // Request browser permission first
+                  const granted = await requestPermission();
+                  if (!granted) return;
+                }
+                updatePreferences({ push_enabled: checked } as any);
+              }}
             />
           </div>
 
