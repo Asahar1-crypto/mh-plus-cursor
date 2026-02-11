@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Navigate, Outlet } from 'react-router-dom';
+import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/auth';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -50,6 +50,20 @@ const AppLayout = () => {
   // Show no account screen if user is authenticated but has no account
   if (isAuthenticated && user && !account) {
     return <NoAccountScreen />;
+  }
+
+  // Redirect expired accounts to choose-plan (except admin pages and choose-plan itself)
+  const location = useLocation();
+  const isExpiredOrTrialEnded = account && (
+    account.subscription_status === 'expired' ||
+    (account.subscription_status === 'trial' && account.trial_ends_at && new Date(account.trial_ends_at) < new Date())
+  );
+  const allowedPaths = ['/choose-plan', '/account-settings', '/account-management'];
+  const isAdminPath = location.pathname.startsWith('/admin');
+  const isAllowedPath = allowedPaths.includes(location.pathname) || isAdminPath;
+
+  if (isExpiredOrTrialEnded && !isAllowedPath) {
+    return <Navigate to="/choose-plan" replace />;
   }
 
   return (

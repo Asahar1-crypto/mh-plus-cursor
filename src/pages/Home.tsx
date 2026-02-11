@@ -26,6 +26,11 @@ const Home = () => {
               כניסה למשתמשים קיימים
             </Button>
           </div>
+          <div className="mt-4">
+            <Button variant="link" onClick={() => navigate('/pricing')} className="text-sm text-muted-foreground hover:text-primary">
+              צפה בתוכניות ומחירים →
+            </Button>
+          </div>
         </div>
       </section>
       
@@ -119,6 +124,7 @@ const Home = () => {
               <p className="text-xs sm:text-sm text-muted-foreground mt-1">© 2025 כל הזכויות שמורות</p>
             </div>
             <div className="flex gap-4 sm:gap-6">
+              <a href="/pricing" className="text-xs sm:text-sm text-muted-foreground hover:text-foreground">מחירים</a>
               <a href="/terms" className="text-xs sm:text-sm text-muted-foreground hover:text-foreground">תנאי שימוש</a>
               <a href="/privacy" className="text-xs sm:text-sm text-muted-foreground hover:text-foreground">פרטיות</a>
               <a href="#" className="text-xs sm:text-sm text-muted-foreground hover:text-foreground">צור קשר</a>

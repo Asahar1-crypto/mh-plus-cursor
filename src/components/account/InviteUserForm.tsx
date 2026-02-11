@@ -5,7 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { UserPlus, Loader2, AlertCircle, Smartphone } from 'lucide-react';
+import { UserPlus, Loader2, AlertCircle, Smartphone, Crown } from 'lucide-react';
 import { Account } from '@/contexts/auth/types';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { InternationalPhoneInput } from '@/components/ui/international-phone-input';
@@ -13,6 +13,7 @@ import { normalizePhoneNumber } from '@/utils/phoneUtils';
 import { CountryCode } from 'libphonenumber-js';
 import confetti from 'canvas-confetti';
 import { toast } from 'sonner';
+import { useNavigate } from 'react-router-dom';
 
 const inviteSchema = z.object({
   phoneNumber: z.string().min(10, { message: 'מספר טלפון לא תקין' }),
@@ -24,6 +25,7 @@ interface InviteUserFormProps {
 }
 
 const InviteUserForm: React.FC<InviteUserFormProps> = ({ account, onInvite }) => {
+  const navigate = useNavigate();
   const [isInviting, setIsInviting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedCountry, setSelectedCountry] = useState<CountryCode>('IL');
@@ -162,6 +164,36 @@ const InviteUserForm: React.FC<InviteUserFormProps> = ({ account, onInvite }) =>
               רק מנהלי החשבון יכולים לשלוח הזמנות למשתמשים חדשים.
             </AlertDescription>
           </Alert>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // Block invitation for Personal plan (only allows 1 member)
+  if (account.subscription_status === 'active' && account.plan_slug === 'personal') {
+    return (
+      <Card>
+        <CardHeader className="p-4 sm:p-6">
+          <CardTitle className="text-lg sm:text-xl flex items-center gap-2">
+            <Smartphone className="h-5 w-5" />
+            הזמנת משתמש לחשבון
+          </CardTitle>
+          <CardDescription className="text-xs sm:text-sm">
+            הזמן משתמש נוסף באמצעות SMS לצפייה וניהול החשבון
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="p-4 sm:p-6">
+          <div className="text-center py-4">
+            <Crown className="h-10 w-10 mx-auto mb-3 text-amber-500" />
+            <h3 className="font-semibold mb-2">שדרג לתוכנית Family</h3>
+            <p className="text-sm text-muted-foreground mb-4">
+              תוכנית Personal מיועדת למשתמש יחיד. כדי לשתף עם בן/בת הזוג, שדרג לתוכנית Family.
+            </p>
+            <Button onClick={() => navigate('/choose-plan')} className="gap-2">
+              <Crown className="h-4 w-4" />
+              שדרג לתוכנית Family
+            </Button>
+          </div>
         </CardContent>
       </Card>
     );

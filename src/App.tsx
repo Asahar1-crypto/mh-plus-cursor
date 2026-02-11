@@ -32,6 +32,8 @@ import MonthlySettlement from "./pages/MonthlySettlement";
 import IndexPage from "./pages/Index";
 import Privacy from "./pages/Privacy";
 import Terms from "./pages/Terms";
+import Pricing from "./pages/Pricing";
+import ChoosePlan from "./pages/ChoosePlan";
 
 // Admin pages
 import AdminDashboard from "./pages/admin/AdminDashboard";
@@ -41,6 +43,9 @@ import AdminEmailSettings from "./pages/admin/AdminEmailSettings";
 import AdminUnverifiedUsers from "./pages/admin/AdminUnverifiedUsers";
 import AdminSmsLogs from "./pages/admin/AdminSmsLogs";
 import AdminEmailManagement from "./pages/admin/AdminEmailManagement";
+import AdminCoupons from "./pages/admin/AdminCoupons";
+import AdminSuperAdmins from "./pages/admin/AdminSuperAdmins";
+import AdminSystemHealth from "./pages/admin/AdminSystemHealth";
 
 import AuthLayout from "./components/AuthLayout";
 import AppLayout from "./components/AppLayout";
@@ -64,6 +69,11 @@ const App = () => (
                 <Route path="/index" element={<Navigate to="/" replace />} />
               </Route>
               
+              {/* Public pricing page */}
+              <Route element={<AuthLayout requiresAuth={false} />}>
+                <Route path="/pricing" element={<Pricing />} />
+              </Route>
+
               {/* Auth routes */}
               <Route element={<AuthLayout requiresAuth={false} />}>
                 <Route path="/login" element={<Login />} />
@@ -88,6 +98,7 @@ const App = () => (
                 <Route path="/expenses" element={<Expenses />} />
                 <Route path="/reports" element={<Reports />} />
                 <Route path="/monthly-settlement" element={<MonthlySettlement />} />
+                <Route path="/choose-plan" element={<ChoosePlan />} />
                 <Route path="/test-email" element={<IndexPage />} />
                 
                 {/* Admin routes */}
@@ -98,6 +109,9 @@ const App = () => (
                 <Route path="/admin/unverified-users" element={<AdminUnverifiedUsers />} />
                 <Route path="/admin/sms-logs" element={<AdminSmsLogs />} />
                 <Route path="/admin/email-management" element={<AdminEmailManagement />} />
+                <Route path="/admin/coupons" element={<AdminCoupons />} />
+                <Route path="/admin/super-admins" element={<AdminSuperAdmins />} />
+                <Route path="/admin/system-health" element={<AdminSystemHealth />} />
               </Route>
               
               {/* Special routes - wrapped in AuthLayout for proper auth context */}

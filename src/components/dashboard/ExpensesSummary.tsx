@@ -80,9 +80,12 @@ export const ExpensesSummary: React.FC<ExpensesSummaryProps> = ({
     };
   }, [pendingExpenses, approvedExpenses, paidExpenses, accountMembers]);
 
+  const isPersonalPlan = account?.plan_slug === 'personal';
+
   return (
-    <div className="grid grid-cols-1 xs:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3 sm:gap-4 md:gap-6 mb-6 sm:mb-8">
-      {/* כרטיס הוצאות ממתינות */}
+    <div className={`grid grid-cols-1 xs:grid-cols-2 lg:grid-cols-3 ${isPersonalPlan ? 'xl:grid-cols-4' : 'xl:grid-cols-5'} gap-3 sm:gap-4 md:gap-6 mb-6 sm:mb-8`}>
+      {/* כרטיס הוצאות ממתינות - מוסתר בתוכנית אישית */}
+      {!isPersonalPlan && (
       <Card className="bg-gradient-to-br from-card/90 to-card/95 backdrop-blur-lg border border-border/50 shadow-xl hover:shadow-2xl overflow-hidden relative group hover:scale-105 transition-all duration-500">
         <div className="absolute inset-0 bg-gradient-to-br from-amber-500/10 to-orange-500/15 opacity-60 group-hover:opacity-90 transition-opacity duration-300"></div>
         <div className="absolute -top-20 -right-20 w-40 h-40 bg-amber-400/20 rounded-full blur-3xl group-hover:scale-150 transition-transform duration-700"></div>
@@ -121,6 +124,7 @@ export const ExpensesSummary: React.FC<ExpensesSummaryProps> = ({
           )}
         </CardContent>
       </Card>
+      )}
       
       {/* כרטיס הוצאות מאושרות */}
       <Card className="bg-gradient-to-br from-card/90 to-card/95 backdrop-blur-lg border border-border/50 shadow-xl hover:shadow-2xl overflow-hidden relative group hover:scale-105 transition-all duration-500">

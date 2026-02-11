@@ -9,7 +9,7 @@ export const ownedAccountService = {
     
     const { data: ownedAccounts, error: ownedError } = await supabase
       .from('accounts')
-      .select('*, subscription_status, trial_ends_at, billing_cycle_start_day')
+      .select('*, subscription_status, trial_ends_at, plan_slug, billing_period, billing_cycle_start_day')
       .eq('owner_id', userId)
       .limit(1);
       
@@ -41,6 +41,8 @@ export const ownedAccountService = {
           name: ownedAccounts[0].name,
           subscription_status: ownedAccounts[0].subscription_status,
           trial_ends_at: ownedAccounts[0].trial_ends_at,
+          plan_slug: ownedAccounts[0].plan_slug,
+          billing_period: ownedAccounts[0].billing_period,
           billing_cycle_start_day: ownedAccounts[0].billing_cycle_start_day,
           avatar_set: ownedAccounts[0].avatar_set,
           ownerId: ownedAccounts[0].owner_id,
@@ -55,6 +57,8 @@ export const ownedAccountService = {
         name: ownedAccounts[0].name,
         subscription_status: ownedAccounts[0].subscription_status,
         trial_ends_at: ownedAccounts[0].trial_ends_at,
+        plan_slug: ownedAccounts[0].plan_slug,
+        billing_period: ownedAccounts[0].billing_period,
         billing_cycle_start_day: ownedAccounts[0].billing_cycle_start_day,
         avatar_set: ownedAccounts[0].avatar_set,
         ownerId: ownedAccounts[0].owner_id,
@@ -75,6 +79,8 @@ export const ownedAccountService = {
         *,
         subscription_status,
         trial_ends_at,
+        plan_slug,
+        billing_period,
         billing_cycle_start_day,
         shared_profile:profiles!accounts_shared_with_id_fkey(name)
       `)
@@ -92,6 +98,8 @@ export const ownedAccountService = {
         name: account.name,
         subscription_status: account.subscription_status,
         trial_ends_at: account.trial_ends_at,
+        plan_slug: account.plan_slug,
+        billing_period: account.billing_period,
         billing_cycle_start_day: account.billing_cycle_start_day,
         avatar_set: account.avatar_set,
         ownerId: account.owner_id,

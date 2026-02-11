@@ -3,6 +3,7 @@ import React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ExpenseCard } from './ExpenseCard';
 import { Clock, CheckCircle, CreditCard, FileText } from 'lucide-react';
+import { useAuth } from '@/contexts/auth';
 
 interface ExpensesTabsProps {
   pendingExpenses: any[];
@@ -21,24 +22,29 @@ export const ExpensesTabs: React.FC<ExpensesTabsProps> = ({
   onReject,
   onMarkPaid
 }) => {
+  const { account } = useAuth();
+  const isPersonalPlan = account?.plan_slug === 'personal';
+
   return (
     <div className="bg-gradient-to-br from-card/90 to-card/95 backdrop-blur-lg border border-border/50 shadow-xl hover:shadow-2xl rounded-xl p-4 sm:p-6 transition-all duration-500 group overflow-hidden animate-fade-in">
       <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-accent/10 opacity-60 group-hover:opacity-90 transition-opacity duration-500"></div>
       <div className="absolute -bottom-24 -left-24 w-48 h-48 bg-accent/10 rounded-full blur-3xl group-hover:scale-150 transition-transform duration-700"></div>
       
-      <Tabs defaultValue="pending" className="w-full relative z-10" dir="rtl">
-        <TabsList className="w-full mb-4 sm:mb-6 grid grid-cols-3 h-auto bg-gradient-to-r from-background/80 to-background/60 backdrop-blur-sm border border-border/50 rounded-xl p-1">
-          <TabsTrigger 
-            value="pending" 
-            className="flex-1 text-xs sm:text-sm px-1.5 xs:px-2 sm:px-4 py-2 sm:py-3 data-[state=active]:bg-gradient-to-r data-[state=active]:from-amber-500/20 data-[state=active]:to-orange-500/20 data-[state=active]:text-amber-700 dark:data-[state=active]:text-amber-300 data-[state=active]:border data-[state=active]:border-amber-200 dark:data-[state=active]:border-amber-800 rounded-lg transition-all duration-300 hover:bg-amber-50 dark:hover:bg-amber-950/30 font-semibold"
-          >
-            <div className="flex items-center gap-1 sm:gap-2 justify-center">
-              <Clock className="h-3.5 w-3.5 sm:h-4 sm:w-4 animate-pulse flex-shrink-0" />
-              <span className="hidden xs:inline">ממתינות</span>
-              <span className="xs:hidden">ממתין</span>
-              <span>({pendingExpenses.length})</span>
-            </div>
-          </TabsTrigger>
+      <Tabs defaultValue={isPersonalPlan ? "approved" : "pending"} className="w-full relative z-10" dir="rtl">
+        <TabsList className={`w-full mb-4 sm:mb-6 grid ${isPersonalPlan ? 'grid-cols-2' : 'grid-cols-3'} h-auto bg-gradient-to-r from-background/80 to-background/60 backdrop-blur-sm border border-border/50 rounded-xl p-1`}>
+          {!isPersonalPlan && (
+            <TabsTrigger 
+              value="pending" 
+              className="flex-1 text-xs sm:text-sm px-1.5 xs:px-2 sm:px-4 py-2 sm:py-3 data-[state=active]:bg-gradient-to-r data-[state=active]:from-amber-500/20 data-[state=active]:to-orange-500/20 data-[state=active]:text-amber-700 dark:data-[state=active]:text-amber-300 data-[state=active]:border data-[state=active]:border-amber-200 dark:data-[state=active]:border-amber-800 rounded-lg transition-all duration-300 hover:bg-amber-50 dark:hover:bg-amber-950/30 font-semibold"
+            >
+              <div className="flex items-center gap-1 sm:gap-2 justify-center">
+                <Clock className="h-3.5 w-3.5 sm:h-4 sm:w-4 animate-pulse flex-shrink-0" />
+                <span className="hidden xs:inline">ממתינות</span>
+                <span className="xs:hidden">ממתין</span>
+                <span>({pendingExpenses.length})</span>
+              </div>
+            </TabsTrigger>
+          )}
           <TabsTrigger 
             value="approved" 
             className="flex-1 text-xs sm:text-sm px-1.5 xs:px-2 sm:px-4 py-2 sm:py-3 data-[state=active]:bg-gradient-to-r data-[state=active]:from-green-500/20 data-[state=active]:to-emerald-500/20 data-[state=active]:text-green-700 dark:data-[state=active]:text-green-300 data-[state=active]:border data-[state=active]:border-green-200 dark:data-[state=active]:border-green-800 rounded-lg transition-all duration-300 hover:bg-green-50 dark:hover:bg-green-950/30 font-semibold"
@@ -63,6 +69,7 @@ export const ExpensesTabs: React.FC<ExpensesTabsProps> = ({
           </TabsTrigger>
         </TabsList>
       
+        {!isPersonalPlan && (
         <TabsContent value="pending" className="mt-6 space-y-4" dir="rtl">
           {pendingExpenses.length > 0 ? (
             <div className="space-y-4">
@@ -95,6 +102,7 @@ export const ExpensesTabs: React.FC<ExpensesTabsProps> = ({
             </div>
           )}
         </TabsContent>
+        )}
         
         <TabsContent value="approved" className="mt-6 space-y-4" dir="rtl">
           {approvedExpenses.length > 0 ? (

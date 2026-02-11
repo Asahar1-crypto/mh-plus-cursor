@@ -93,6 +93,7 @@ export const ExpensesTable: React.FC<ExpensesTableProps> = ({
     );
   }, [expenses, searchQuery]);
 
+  const isPersonalPlan = account?.plan_slug === 'personal';
   const pendingExpenses = filteredExpenses.filter(expense => expense.status === 'pending');
   const approvedExpenses = filteredExpenses.filter(expense => expense.status === 'approved');
 
@@ -368,7 +369,7 @@ export const ExpensesTable: React.FC<ExpensesTableProps> = ({
                 <span className="text-base sm:text-xl">הוצאות ({filteredExpenses.length}{searchQuery && ` מתוך ${expenses.length}`})</span>
               </CardTitle>
               <CardDescription className="mt-1 text-xs sm:text-sm">
-                ניהול ואישור הוצאות משותפות
+                {isPersonalPlan ? 'ניהול הוצאות' : 'ניהול ואישור הוצאות משותפות'}
               </CardDescription>
             </div>
             <div className="relative w-full sm:w-64">
@@ -384,7 +385,7 @@ export const ExpensesTable: React.FC<ExpensesTableProps> = ({
 
           {/* Bulk Actions */}
           <div className="flex flex-col sm:flex-row gap-2">
-            {pendingExpenses.length > 0 && (
+            {!isPersonalPlan && pendingExpenses.length > 0 && (
               <div className="flex items-center gap-2 flex-wrap">
                 <Button
                   variant={allPendingSelected ? "default" : "outline"}
@@ -480,6 +481,7 @@ export const ExpensesTable: React.FC<ExpensesTableProps> = ({
                     creatorName={creatorName}
                     paidByName={paidByName}
                     isSelected={isSelected}
+                    isPersonalPlan={isPersonalPlan}
                     onSelect={(checked) => {
                       if (expense.status === 'pending') {
                         if (checked) {
@@ -553,7 +555,7 @@ export const ExpensesTable: React.FC<ExpensesTableProps> = ({
 
                         {/* Checkbox */}
                         <TableCell className="w-10 p-2">
-                          {expense.status === 'pending' && (
+                          {!isPersonalPlan && expense.status === 'pending' && (
                             <Checkbox
                               checked={selectedPendingExpenses.includes(expense.id)}
                               onCheckedChange={(checked) => {
@@ -615,7 +617,7 @@ export const ExpensesTable: React.FC<ExpensesTableProps> = ({
                                 <Eye className="h-3.5 w-3.5" />
                               </Button>
                             )}
-                            {expense.status === 'pending' && (
+                            {!isPersonalPlan && expense.status === 'pending' && (
                               <>
                                 <Button
                                   size="sm"

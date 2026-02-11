@@ -65,11 +65,13 @@ export type Database = {
           billing_cycle_end_day: number | null
           billing_cycle_start_day: number | null
           billing_cycle_type: string | null
+          billing_period: string | null
           created_at: string
           id: string
           invitation_id: string | null
           name: string
           owner_id: string
+          plan_slug: string | null
           shared_with_email: string | null
           shared_with_id: string | null
           sms_notifications_enabled: boolean | null
@@ -82,11 +84,13 @@ export type Database = {
           billing_cycle_end_day?: number | null
           billing_cycle_start_day?: number | null
           billing_cycle_type?: string | null
+          billing_period?: string | null
           created_at?: string
           id?: string
           invitation_id?: string | null
           name: string
           owner_id: string
+          plan_slug?: string | null
           shared_with_email?: string | null
           shared_with_id?: string | null
           sms_notifications_enabled?: boolean | null
@@ -99,11 +103,13 @@ export type Database = {
           billing_cycle_end_day?: number | null
           billing_cycle_start_day?: number | null
           billing_cycle_type?: string | null
+          billing_period?: string | null
           created_at?: string
           id?: string
           invitation_id?: string | null
           name?: string
           owner_id?: string
+          plan_slug?: string | null
           shared_with_email?: string | null
           shared_with_id?: string | null
           sms_notifications_enabled?: boolean | null
@@ -124,6 +130,153 @@ export type Database = {
             columns: ["shared_with_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pricing_plans: {
+        Row: {
+          id: string
+          slug: string
+          name: string
+          description: string | null
+          monthly_price: number
+          yearly_price: number
+          max_members: number
+          features: Json
+          is_active: boolean
+          sort_order: number
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          slug: string
+          name: string
+          description?: string | null
+          monthly_price: number
+          yearly_price: number
+          max_members?: number
+          features?: Json
+          is_active?: boolean
+          sort_order?: number
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          slug?: string
+          name?: string
+          description?: string | null
+          monthly_price?: number
+          yearly_price?: number
+          max_members?: number
+          features?: Json
+          is_active?: boolean
+          sort_order?: number
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      coupons: {
+        Row: {
+          id: string
+          code: string
+          description: string | null
+          discount_type: string
+          discount_value: number
+          applicable_plans: string
+          applicable_billing: string
+          max_redemptions: number | null
+          current_redemptions: number
+          valid_from: string
+          valid_until: string | null
+          is_active: boolean
+          created_by: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          code: string
+          description?: string | null
+          discount_type: string
+          discount_value: number
+          applicable_plans?: string
+          applicable_billing?: string
+          max_redemptions?: number | null
+          current_redemptions?: number
+          valid_from?: string
+          valid_until?: string | null
+          is_active?: boolean
+          created_by?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          code?: string
+          description?: string | null
+          discount_type?: string
+          discount_value?: number
+          applicable_plans?: string
+          applicable_billing?: string
+          max_redemptions?: number | null
+          current_redemptions?: number
+          valid_from?: string
+          valid_until?: string | null
+          is_active?: boolean
+          created_by?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      coupon_redemptions: {
+        Row: {
+          id: string
+          coupon_id: string
+          account_id: string
+          redeemed_by: string
+          plan_slug: string
+          billing_period: string
+          discount_applied: number
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          coupon_id: string
+          account_id: string
+          redeemed_by: string
+          plan_slug: string
+          billing_period: string
+          discount_applied: number
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          coupon_id?: string
+          account_id?: string
+          redeemed_by?: string
+          plan_slug?: string
+          billing_period?: string
+          discount_applied?: number
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coupon_redemptions_coupon_id_fkey"
+            columns: ["coupon_id"]
+            isOneToOne: false
+            referencedRelation: "coupons"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "coupon_redemptions_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
             referencedColumns: ["id"]
           },
         ]
@@ -1018,6 +1171,29 @@ export type Database = {
         Returns: boolean
       }
       update_expired_trials: { Args: never; Returns: undefined }
+      validate_coupon: {
+        Args: {
+          p_code: string
+          p_plan_slug: string
+          p_billing_period: string
+          p_account_id: string
+        }
+        Returns: {
+          is_valid: boolean
+          coupon_id: string | null
+          discount_type: string | null
+          discount_value: number | null
+          error_message: string | null
+        }[]
+      }
+      can_add_member: {
+        Args: { p_account_id: string }
+        Returns: boolean
+      }
+      get_plan_max_members: {
+        Args: { p_plan_slug: string }
+        Returns: number
+      }
       upsert_subscription_secure: {
         Args: {
           p_canceled_at?: string

@@ -2,7 +2,7 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
-import { Home, CreditCard, Settings, Users, BarChart3, X, Shield, UserCog, Calculator, ChevronRight, ChevronLeft } from 'lucide-react';
+import { Home, CreditCard, Settings, Users, BarChart3, X, Shield, UserCog, Calculator, ChevronRight, ChevronLeft, Tag, Mail, MessageSquare, DollarSign, Activity, Crown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useAuth } from '@/contexts/auth';
@@ -93,9 +93,16 @@ const AppSidebar: React.FC<AppSidebarProps> = ({
   ];
 
   const adminItems = [
-    { icon: Shield, label: 'ניהול מערכת', path: '/admin/dashboard' },
+    { icon: Shield, label: 'לוח בקרה', path: '/admin/dashboard' },
+    { icon: Users, label: 'ניהול משפחות', path: '/admin/tenants' },
+    { icon: Crown, label: 'סופר אדמינים', path: '/admin/super-admins' },
     { icon: UserCog, label: 'משתמשים לא מאומתים', path: '/admin/unverified-users' },
-    { icon: Users, label: 'יומני SMS', path: '/admin/sms-logs' },
+    { icon: DollarSign, label: 'תמחור', path: '/admin/pricing' },
+    { icon: Tag, label: 'קופונים', path: '/admin/coupons' },
+    { icon: Mail, label: 'הגדרות מייל', path: '/admin/email-settings' },
+    { icon: Mail, label: 'ניהול מיילים', path: '/admin/email-management' },
+    { icon: MessageSquare, label: 'יומני SMS', path: '/admin/sms-logs' },
+    { icon: Activity, label: 'בריאות מערכת', path: '/admin/system-health' },
   ];
 
   const sidebarItems = profile?.is_super_admin 
@@ -165,7 +172,7 @@ const AppSidebar: React.FC<AppSidebarProps> = ({
           collapsed && !isMobile ? "px-2 py-6" : "p-6 pt-8"
         )}>
           <nav className="space-y-1">
-            {sidebarItems.map((item) => (
+            {regularItems.map((item) => (
               <SidebarItem
                 key={item.path}
                 icon={item.icon}
@@ -177,6 +184,31 @@ const AppSidebar: React.FC<AppSidebarProps> = ({
                 isMobile={isMobile}
               />
             ))}
+            {profile?.is_super_admin && (
+              <>
+                <div className={cn(
+                  "border-t border-border my-3",
+                  collapsed && !isMobile ? "mx-1" : "mx-2"
+                )} />
+                {(!collapsed || isMobile) && (
+                  <div className="px-4 py-1 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                    ניהול מערכת
+                  </div>
+                )}
+                {adminItems.map((item) => (
+                  <SidebarItem
+                    key={item.path}
+                    icon={item.icon}
+                    label={item.label}
+                    path={item.path}
+                    isActive={location.pathname === item.path}
+                    onClick={isMobile ? onClose : undefined}
+                    collapsed={collapsed}
+                    isMobile={isMobile}
+                  />
+                ))}
+              </>
+            )}
           </nav>
         </div>
         

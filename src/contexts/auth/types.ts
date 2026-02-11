@@ -24,6 +24,8 @@ export interface Account {
   name: string;
   subscription_status?: string;
   trial_ends_at?: string;
+  plan_slug?: string | null;
+  billing_period?: string | null;
   billing_cycle_start_day?: number | null;
   avatar_set?: string | null;
   // Legacy fields (will be removed in future)

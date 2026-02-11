@@ -11,11 +11,14 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { RefreshCw, Plus, TrendingUp, CreditCard, Clock } from 'lucide-react';
+import { useAuth } from '@/contexts/auth';
 
 
 const ExpensesPage = () => {
   const location = useLocation();
   const modalRef = useRef<any>(null);
+  const { account } = useAuth();
+  const isPersonalPlan = account?.plan_slug === 'personal';
   
   const { 
     expenses, 
@@ -136,9 +139,11 @@ const ExpensesPage = () => {
                 </div>
                 <div>
                   <h1 className="text-xl sm:text-2xl lg:text-3xl xl:text-4xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
-                    ניהול הוצאות משותפות
+                    {isPersonalPlan ? 'ניהול הוצאות' : 'ניהול הוצאות משותפות'}
                   </h1>
-                  <p className="text-sm sm:text-base text-muted-foreground mt-1 hidden sm:block">צפייה, הוספה ואישור של הוצאות משותפות</p>
+                  <p className="text-sm sm:text-base text-muted-foreground mt-1 hidden sm:block">
+                    {isPersonalPlan ? 'צפייה והוספת הוצאות' : 'צפייה, הוספה ואישור של הוצאות משותפות'}
+                  </p>
                 </div>
               </div>
             </div>
@@ -163,7 +168,7 @@ const ExpensesPage = () => {
         </div>
 
         {/* Quick Stats Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4 mb-6 sm:mb-8 animate-fade-in [animation-delay:200ms]">
+        <div className={`grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 ${isPersonalPlan ? 'lg:grid-cols-4' : 'lg:grid-cols-5'} gap-3 sm:gap-4 mb-6 sm:mb-8 animate-fade-in [animation-delay:200ms]`}>
           <Card className="bg-gradient-to-br from-card/80 to-card/60 backdrop-blur-sm border border-border/50 hover:border-primary/30 transition-all duration-300 group">
             <CardContent className="p-3 sm:p-4">
               <div className="flex items-center gap-2 sm:gap-3">
@@ -178,6 +183,7 @@ const ExpensesPage = () => {
             </CardContent>
           </Card>
 
+          {!isPersonalPlan && (
           <Card className="bg-gradient-to-br from-card/80 to-card/60 backdrop-blur-sm border border-border/50 hover:border-primary/30 transition-all duration-300 group">
             <CardContent className="p-3 sm:p-4">
               <div className="flex items-center gap-2 sm:gap-3">
@@ -191,6 +197,7 @@ const ExpensesPage = () => {
               </div>
             </CardContent>
           </Card>
+          )}
 
           <Card className="bg-gradient-to-br from-card/80 to-card/60 backdrop-blur-sm border border-border/50 hover:border-primary/30 transition-all duration-300 group">
             <CardContent className="p-3 sm:p-4">

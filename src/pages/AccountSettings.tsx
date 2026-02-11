@@ -12,6 +12,7 @@ import UserProfileCard from '@/components/account/UserProfileCard';
 import ChangePasswordCard from '@/components/account/ChangePasswordCard';
 import BillingCycleCard from '@/components/account/BillingCycleCard';
 import AvatarSetCard from '@/components/account/AvatarSetCard';
+import SubscriptionCard from '@/components/account/SubscriptionCard';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { User, Settings, Users, Bell } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
@@ -141,6 +142,7 @@ const AccountSettings = () => {
             {/* Tab 2: Account Settings */}
             <TabsContent value="account" className="mt-4 sm:mt-6">
               <div className="max-w-2xl mx-auto space-y-4 sm:space-y-6 animate-fade-in">
+                <SubscriptionCard account={account} />
                 <AccountDetailsCard account={account} />
                 <BillingCycleCard 
                   accountId={account?.id}

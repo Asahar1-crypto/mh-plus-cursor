@@ -18,6 +18,7 @@ import confetti from 'canvas-confetti';
 
 const MonthlySettlement = () => {
   const { user, account, isLoading } = useAuth();
+  const isPersonalPlan = account?.plan_slug === 'personal';
   const { expenses, isLoading: expensesLoading, refreshData, approveExpense, markAsPaid } = useExpense();
   const { toast } = useToast();
   
@@ -398,8 +399,9 @@ const MonthlySettlement = () => {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4 mb-4 sm:mb-6">
-          {/* Pending Expenses */}
+        <div className={`grid grid-cols-2 ${isPersonalPlan ? 'lg:grid-cols-3' : 'lg:grid-cols-4'} gap-2 sm:gap-4 mb-4 sm:mb-6`}>
+          {/* Pending Expenses - hidden for Personal plan */}
+          {!isPersonalPlan && (
           <Card className="bg-gradient-to-br from-yellow-50 to-yellow-100 dark:from-yellow-900/20 dark:to-yellow-800/20 border-yellow-200 dark:border-yellow-800">
             <CardContent className="p-3 sm:p-4">
               <div className="flex items-center gap-2 sm:gap-3">
@@ -414,6 +416,7 @@ const MonthlySettlement = () => {
               </div>
             </CardContent>
           </Card>
+          )}
 
           {/* Approved Expenses */}
           <Card className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 border-green-200 dark:border-green-800">
@@ -494,8 +497,8 @@ const MonthlySettlement = () => {
                   
                   {/* Action Buttons */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-4">
-                    {/* Approve All Button */}
-                    {monthlyData.pending.count > 0 && (
+                    {/* Approve All Button - hidden for Personal plan */}
+                    {!isPersonalPlan && monthlyData.pending.count > 0 && (
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
                           <Button className="w-full bg-yellow-600 hover:bg-yellow-700 text-white">

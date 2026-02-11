@@ -13,6 +13,8 @@ export const sharedAccountService = {
         *,
         subscription_status,
         trial_ends_at,
+        plan_slug,
+        billing_period,
         billing_cycle_start_day,
         owner_profile:profiles!accounts_owner_id_fkey(name)
       `)
@@ -36,6 +38,8 @@ export const sharedAccountService = {
         name: sharedAccounts[0].name,
         subscription_status: sharedAccounts[0].subscription_status,
         trial_ends_at: sharedAccounts[0].trial_ends_at,
+        plan_slug: sharedAccounts[0].plan_slug,
+        billing_period: sharedAccounts[0].billing_period,
         billing_cycle_start_day: sharedAccounts[0].billing_cycle_start_day,
         ownerId: sharedAccounts[0].owner_id,
         ownerName: ownerName, 
@@ -58,6 +62,8 @@ export const sharedAccountService = {
         *,
         subscription_status,
         trial_ends_at,
+        plan_slug,
+        billing_period,
         billing_cycle_start_day,
         owner_profile:profiles!accounts_owner_id_fkey(name)
       `)
@@ -75,6 +81,8 @@ export const sharedAccountService = {
         name: account.name,
         subscription_status: account.subscription_status,
         trial_ends_at: account.trial_ends_at,
+        plan_slug: account.plan_slug,
+        billing_period: account.billing_period,
         billing_cycle_start_day: account.billing_cycle_start_day,
         ownerId: account.owner_id,
         ownerName: account.owner_profile?.name,

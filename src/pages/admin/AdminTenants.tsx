@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { ArrowLeft, Search, Users, Calendar, DollarSign, MoreHorizontal, RefreshCw, Eye, Activity, Database, Trash2, UserMinus, UserPlus, MessageSquare } from 'lucide-react';
+import { ArrowLeft, Search, Users, Calendar, DollarSign, MoreHorizontal, RefreshCw, Eye, Activity, Database, Trash2, UserMinus, UserPlus, MessageSquare, Crown, CreditCard } from 'lucide-react';
 import { InvitationsSection } from '@/components/admin/InvitationsSection';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -42,6 +42,8 @@ interface Tenant {
   monthly_expenses_count: number;
   data_size_mb: number;
   sms_notifications_enabled: boolean;
+  plan_slug: string | null;
+  billing_period: string | null;
   member_details: Array<{
     name: string;
     email: string;
@@ -99,7 +101,22 @@ const AdminTenants: React.FC = () => {
     open: false,
     tenant: null
   });
+  const [trialDialog, setTrialDialog] = useState<{ open: boolean; tenant: Tenant | null }>({
+    open: false,
+    tenant: null
+  });
+  const [customTrialDays, setCustomTrialDays] = useState<string>('30');
+  const [subscriptionDialog, setSubscriptionDialog] = useState<{ open: boolean; tenant: Tenant | null }>({
+    open: false,
+    tenant: null
+  });
+  const [subscriptionForm, setSubscriptionForm] = useState<{
+    plan_slug: string;
+    billing_period: string;
+    status: string;
+  }>({ plan_slug: '', billing_period: 'monthly', status: 'active' });
   const [userEmails, setUserEmails] = useState<Record<string, string>>({});
+  const [availablePlans, setAvailablePlans] = useState<{ slug: string; name: string; monthly_price: number; yearly_price: number; max_members: number }[]>([]);
 
   // בדיקת הרשאות Super Admin
   if (!profile?.is_super_admin) {
@@ -116,14 +133,27 @@ const AdminTenants: React.FC = () => {
     try {
       setLoading(true);
 
-      // קבלת מחיר חודשי מההגדרות
-      const { data: priceData } = await supabase
-        .from('system_settings')
-        .select('setting_value')
-        .eq('setting_key', 'monthly_price')
-        .single();
+      // קבלת מחירים מטבלת תוכניות
+      const { data: pricingPlansData } = await supabase
+        .from('pricing_plans')
+        .select('slug, name, monthly_price, yearly_price, max_members')
+        .eq('is_active', true)
+        .order('sort_order');
 
-      const monthlyPrice = parseFloat(priceData?.setting_value || '50');
+      const planPriceMap: Record<string, { monthly: number; yearly: number }> = {};
+      (pricingPlansData || []).forEach((p) => {
+        planPriceMap[p.slug] = { monthly: p.monthly_price, yearly: p.yearly_price };
+      });
+
+      setAvailablePlans(
+        (pricingPlansData || []).map((p: any) => ({
+          slug: p.slug,
+          name: p.slug === 'personal' ? 'אישי' : p.slug === 'family' ? 'משפחתי' : p.slug,
+          monthly_price: p.monthly_price,
+          yearly_price: p.yearly_price,
+          max_members: p.max_members || 1,
+        }))
+      );
 
       // שאילתה מורכבת לקבלת כל הנתונים הנדרשים
       const { data, error } = await supabase
@@ -136,6 +166,8 @@ const AdminTenants: React.FC = () => {
           created_at,
           owner_id,
           sms_notifications_enabled,
+          plan_slug,
+          billing_period,
           profiles!accounts_owner_id_fkey(name, last_login),
           account_members(
             user_id,
@@ -231,11 +263,17 @@ const AdminTenants: React.FC = () => {
             owner_last_login: (tenant.profiles as any)?.last_login,
             total_members: (tenant.account_members as any)?.length || 0,
             total_expenses: expenseCount,
-            monthly_price: tenant.subscription_status === 'active' ? monthlyPrice : 0,
+            monthly_price: tenant.subscription_status === 'active' && (tenant as any).plan_slug
+              ? ((tenant as any).billing_period === 'yearly'
+                ? (planPriceMap[(tenant as any).plan_slug]?.yearly || 0) / 12
+                : (planPriceMap[(tenant as any).plan_slug]?.monthly || 0))
+              : 0,
             last_activity: lastActivity?.[0]?.created_at || null,
             monthly_expenses_count: monthlyExpenses?.length || 0,
             data_size_mb: parseFloat(estimatedDataSize.toFixed(2)),
             sms_notifications_enabled: (tenant as any).sms_notifications_enabled || false,
+            plan_slug: (tenant as any).plan_slug || null,
+            billing_period: (tenant as any).billing_period || null,
             member_details: memberDetails
           };
         })
@@ -371,12 +409,86 @@ const AdminTenants: React.FC = () => {
     }
   };
 
-  const extendTrial = async (tenantId: string) => {
+  const getPlanBadge = (planSlug: string | null, billingPeriod: string | null) => {
+    if (!planSlug) {
+      return <Badge variant="outline" className="text-xs">ללא תוכנית</Badge>;
+    }
+    const planName = planSlug === 'personal' ? 'אישי' : planSlug === 'family' ? 'משפחתי' : planSlug;
+    const billingLabel = billingPeriod === 'yearly' ? 'שנתי' : 'חודשי';
+    const variant = planSlug === 'family' ? 'default' : 'secondary';
+    return (
+      <Badge variant={variant} className="text-xs gap-1">
+        {planSlug === 'family' && <Crown className="h-3 w-3" />}
+        {planName} ({billingLabel})
+      </Badge>
+    );
+  };
+
+  const updateTenantSubscription = async (tenantId: string, planSlug: string, billingPeriod: string, status: string) => {
+    try {
+      setActionLoading(`sub-${tenantId}`);
+
+      const updateData: any = {
+        subscription_status: status,
+        plan_slug: planSlug || null,
+        billing_period: billingPeriod || null,
+      };
+
+      // If activating, clear trial_ends_at
+      if (status === 'active') {
+        updateData.trial_ends_at = null;
+      }
+
+      const { error } = await supabase
+        .from('accounts')
+        .update(updateData)
+        .eq('id', tenantId);
+
+      if (error) throw error;
+
+      // Also create/update subscription record
+      const { error: subError } = await supabase
+        .from('subscriptions')
+        .upsert({
+          account_id: tenantId,
+          status: status,
+          plan_slug: planSlug || null,
+          billing_period: billingPeriod || null,
+          payment_provider: 'manual',
+          started_at: new Date().toISOString(),
+        }, {
+          onConflict: 'account_id'
+        });
+
+      if (subError) {
+        console.warn('Warning: Could not update subscription record:', subError);
+      }
+
+      toast({
+        title: 'הצלחה',
+        description: `מנוי המשפחה עודכן בהצלחה`,
+      });
+
+      await loadTenants();
+      setSubscriptionDialog({ open: false, tenant: null });
+    } catch (error) {
+      console.error('Error updating subscription:', error);
+      toast({
+        title: 'שגיאה',
+        description: 'שגיאה בעדכון מנוי המשפחה',
+        variant: 'destructive'
+      });
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const extendTrial = async (tenantId: string, days: number = 30) => {
     try {
       setActionLoading(tenantId);
 
       const newTrialEnd = new Date();
-      newTrialEnd.setDate(newTrialEnd.getDate() + 14);
+      newTrialEnd.setDate(newTrialEnd.getDate() + days);
 
       const { error } = await supabase
         .from('accounts')
@@ -390,15 +502,16 @@ const AdminTenants: React.FC = () => {
 
       toast({
         title: 'הצלחה',
-        description: 'תקופת הניסיון הוארכה ב-14 ימים',
+        description: `תקופת הניסיון הוגדרה ל-${days} ימים מהיום`,
       });
 
       await loadTenants();
+      setTrialDialog({ open: false, tenant: null });
     } catch (error) {
       console.error('Error extending trial:', error);
       toast({
         title: 'שגיאה',
-        description: 'שגיאה בהארכת תקופת הניסיון',
+        description: 'שגיאה בעדכון תקופת הניסיון',
         variant: 'destructive'
       });
     } finally {
@@ -732,7 +845,7 @@ const AdminTenants: React.FC = () => {
                     <th className="text-right p-2 sm:p-3 md:p-4">שם המשפחה</th>
                     <th className="text-right p-2 sm:p-3 md:p-4">בעלים</th>
                     <th className="text-right p-2 sm:p-3 md:p-4">סטטוס</th>
-                    <th className="text-right p-2 sm:p-3 md:p-4 hidden md:table-cell">מחיר חודשי</th>
+                    <th className="text-right p-2 sm:p-3 md:p-4 hidden sm:table-cell">תוכנית</th>
                     <th className="text-right p-2 sm:p-3 md:p-4 hidden sm:table-cell">חברים</th>
                     <th className="text-right p-2 sm:p-3 md:p-4 hidden lg:table-cell">כניסה אחרונה</th>
                     <th className="text-right p-2 sm:p-3 md:p-4 hidden lg:table-cell">פעילות חודשית</th>
@@ -756,14 +869,8 @@ const AdminTenants: React.FC = () => {
                       <td className="p-2 sm:p-3 md:p-4">
                         {getStatusBadge(tenant.subscription_status, tenant.trial_ends_at)}
                       </td>
-                      <td className="p-2 sm:p-3 md:p-4 hidden md:table-cell">
-                        <div className="font-semibold">
-                          {tenant.monthly_price > 0 ? `₪${tenant.monthly_price}` : 'חינם'}
-                        </div>
-                        <div className="text-xs text-muted-foreground">
-                          {tenant.subscription_status === 'trial' ? 'תקופת ניסיון' : 
-                           tenant.subscription_status === 'active' ? 'משלם' : 'לא פעיל'}
-                        </div>
+                      <td className="p-2 sm:p-3 md:p-4 hidden sm:table-cell">
+                        {getPlanBadge(tenant.plan_slug, tenant.billing_period)}
                       </td>
                       <td className="p-2 sm:p-3 md:p-4 hidden sm:table-cell">
                         <div className="flex items-center gap-1">
@@ -821,11 +928,28 @@ const AdminTenants: React.FC = () => {
                               <Eye className="h-4 w-4 ml-2" />
                               פרטי משפחה
                             </DropdownMenuItem>
-                            {tenant.subscription_status === 'trial' && (
+                            <DropdownMenuItem
+                              onClick={() => {
+                                setSubscriptionForm({
+                                  plan_slug: tenant.plan_slug || '',
+                                  billing_period: tenant.billing_period || 'monthly',
+                                  status: tenant.subscription_status || 'trial',
+                                });
+                                setSubscriptionDialog({ open: true, tenant });
+                              }}
+                            >
+                              <CreditCard className="h-4 w-4 ml-2" />
+                              ניהול מנוי
+                            </DropdownMenuItem>
+                            {(tenant.subscription_status === 'trial' || tenant.subscription_status === 'expired') && (
                               <DropdownMenuItem
-                                onClick={() => extendTrial(tenant.id)}
+                                onClick={() => {
+                                  setCustomTrialDays('30');
+                                  setTrialDialog({ open: true, tenant });
+                                }}
                               >
-                                הארך ניסיון (+14 ימים)
+                                <Calendar className="h-4 w-4 ml-2" />
+                                {tenant.subscription_status === 'trial' ? 'שנה תקופת ניסיון' : 'חדש תקופת ניסיון'}
                               </DropdownMenuItem>
                             )}
                             
@@ -1174,6 +1298,193 @@ const AdminTenants: React.FC = () => {
           </AlertDialogContent>
         </AlertDialog>
 
+        {/* Trial Period Dialog */}
+        <AlertDialog open={trialDialog.open} onOpenChange={(open) => {
+          setTrialDialog({ open, tenant: null });
+          setCustomTrialDays('30');
+        }}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>הגדרת תקופת ניסיון</AlertDialogTitle>
+              <AlertDialogDescription>
+                הגדר תקופת ניסיון מותאמת אישית למשפחת "{trialDialog.tenant?.name}"
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">מספר ימים מהיום</label>
+                <div className="flex items-center gap-2">
+                  <Input
+                    type="number"
+                    min="1"
+                    max="365"
+                    value={customTrialDays}
+                    onChange={(e) => setCustomTrialDays(e.target.value)}
+                    className="flex-1"
+                  />
+                  <span className="text-sm text-muted-foreground">ימים</span>
+                </div>
+              </div>
+              
+              <div className="flex flex-wrap gap-2">
+                {[7, 14, 30, 60, 90].map((days) => (
+                  <Button
+                    key={days}
+                    variant={customTrialDays === String(days) ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setCustomTrialDays(String(days))}
+                  >
+                    {days} ימים
+                  </Button>
+                ))}
+              </div>
+
+              {trialDialog.tenant?.trial_ends_at && (
+                <div className="bg-muted p-3 rounded-lg text-sm">
+                  <div className="font-medium mb-1">מצב נוכחי:</div>
+                  <div>סטטוס: {trialDialog.tenant.subscription_status === 'trial' ? 'תקופת ניסיון' : 'פג תוקף'}</div>
+                  <div>תאריך תפוגה נוכחי: {new Date(trialDialog.tenant.trial_ends_at).toLocaleDateString('he-IL')}</div>
+                  {customTrialDays && (
+                    <div className="mt-2 text-primary font-medium">
+                      תאריך תפוגה חדש: {(() => {
+                        const d = new Date();
+                        d.setDate(d.getDate() + parseInt(customTrialDays || '0'));
+                        return d.toLocaleDateString('he-IL');
+                      })()}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            <AlertDialogFooter>
+              <AlertDialogCancel>ביטול</AlertDialogCancel>
+              <AlertDialogAction
+                disabled={!customTrialDays || parseInt(customTrialDays) < 1 || actionLoading === trialDialog.tenant?.id}
+                onClick={() => {
+                  if (trialDialog.tenant && customTrialDays) {
+                    extendTrial(trialDialog.tenant.id, parseInt(customTrialDays));
+                  }
+                }}
+              >
+                {actionLoading === trialDialog.tenant?.id ? 'מעדכן...' : 'עדכן תקופת ניסיון'}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        {/* Subscription Management Dialog */}
+        <AlertDialog open={subscriptionDialog.open} onOpenChange={(open) => {
+          setSubscriptionDialog({ open, tenant: null });
+        }}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle className="flex items-center gap-2">
+                <CreditCard className="h-5 w-5" />
+                ניהול מנוי - {subscriptionDialog.tenant?.name}
+              </AlertDialogTitle>
+              <AlertDialogDescription>
+                עדכן את תוכנית המנוי, תקופת החיוב וסטטוס המשפחה
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            
+            <div className="space-y-4">
+              {/* Plan Selection */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium">תוכנית</label>
+                <select
+                  value={subscriptionForm.plan_slug}
+                  onChange={(e) => setSubscriptionForm(prev => ({ ...prev, plan_slug: e.target.value }))}
+                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring"
+                >
+                  <option value="">ללא תוכנית</option>
+                  {availablePlans.map((plan) => (
+                    <option key={plan.slug} value={plan.slug}>
+                      {plan.name} - {plan.max_members} משתמשים (₪{plan.monthly_price}/חודש, ₪{plan.yearly_price}/שנה)
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Billing Period */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium">תקופת חיוב</label>
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    variant={subscriptionForm.billing_period === 'monthly' ? 'default' : 'outline'}
+                    size="sm"
+                    className="flex-1"
+                    onClick={() => setSubscriptionForm(prev => ({ ...prev, billing_period: 'monthly' }))}
+                  >
+                    חודשי
+                  </Button>
+                  <Button
+                    type="button"
+                    variant={subscriptionForm.billing_period === 'yearly' ? 'default' : 'outline'}
+                    size="sm"
+                    className="flex-1"
+                    onClick={() => setSubscriptionForm(prev => ({ ...prev, billing_period: 'yearly' }))}
+                  >
+                    שנתי
+                  </Button>
+                </div>
+              </div>
+
+              {/* Status */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium">סטטוס מנוי</label>
+                <select
+                  value={subscriptionForm.status}
+                  onChange={(e) => setSubscriptionForm(prev => ({ ...prev, status: e.target.value }))}
+                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring"
+                >
+                  <option value="trial">תקופת ניסיון</option>
+                  <option value="active">פעיל</option>
+                  <option value="expired">פג תוקף</option>
+                  <option value="canceled">בוטל</option>
+                </select>
+              </div>
+
+              {/* Current state info */}
+              {subscriptionDialog.tenant && (
+                <div className="bg-muted p-3 rounded-lg text-sm space-y-1">
+                  <div className="font-medium mb-2">מצב נוכחי:</div>
+                  <div>סטטוס: <Badge variant="secondary" className="text-xs">{subscriptionDialog.tenant.subscription_status}</Badge></div>
+                  <div>תוכנית: {getPlanBadge(subscriptionDialog.tenant.plan_slug, subscriptionDialog.tenant.billing_period)}</div>
+                  <div>חברים: {subscriptionDialog.tenant.total_members}</div>
+                  {subscriptionForm.plan_slug === 'personal' && subscriptionDialog.tenant.total_members > 1 && (
+                    <div className="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded text-yellow-800 text-xs">
+                      <strong>שים לב:</strong> למשפחה זו יש {subscriptionDialog.tenant.total_members} חברים. 
+                      תוכנית אישית מאפשרת רק משתמש אחד.
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            <AlertDialogFooter>
+              <AlertDialogCancel>ביטול</AlertDialogCancel>
+              <AlertDialogAction
+                disabled={actionLoading === `sub-${subscriptionDialog.tenant?.id}`}
+                onClick={() => {
+                  if (subscriptionDialog.tenant) {
+                    updateTenantSubscription(
+                      subscriptionDialog.tenant.id,
+                      subscriptionForm.plan_slug,
+                      subscriptionForm.billing_period,
+                      subscriptionForm.status
+                    );
+                  }
+                }}
+              >
+                {actionLoading === `sub-${subscriptionDialog.tenant?.id}` ? 'מעדכן...' : 'עדכן מנוי'}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
         {/* View Details Dialog */}
         <AlertDialog open={viewDetailsDialog.open} onOpenChange={(open) => setViewDetailsDialog({ open, tenant: null })}>
           <AlertDialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
@@ -1318,6 +1629,80 @@ const AdminTenants: React.FC = () => {
                       {viewDetailsDialog.tenant.last_activity && (
                         <div>פעילות אחרונה: {new Date(viewDetailsDialog.tenant.last_activity).toLocaleDateString('he-IL')}</div>
                       )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* הגדרת תקופת ניסיון */}
+                {(viewDetailsDialog.tenant.subscription_status === 'trial' || viewDetailsDialog.tenant.subscription_status === 'expired') && (
+                  <div className="border-t pt-4">
+                    <h4 className="font-medium mb-3 flex items-center gap-2 text-sm sm:text-base">
+                      <Calendar className="h-4 w-4" />
+                      ניהול תקופת ניסיון
+                    </h4>
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-3 bg-muted rounded-lg gap-3">
+                      <div>
+                        <div className="font-medium text-sm sm:text-base">
+                          {viewDetailsDialog.tenant.subscription_status === 'trial' ? 'תקופת ניסיון פעילה' : 'תקופת ניסיון פגה'}
+                        </div>
+                        <div className="text-xs sm:text-sm text-muted-foreground">
+                          {viewDetailsDialog.tenant.trial_ends_at 
+                            ? `תוקף: ${new Date(viewDetailsDialog.tenant.trial_ends_at).toLocaleDateString('he-IL')} (${getTrialStatus(viewDetailsDialog.tenant.trial_ends_at)})`
+                            : 'לא הוגדר'}
+                        </div>
+                      </div>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          setCustomTrialDays('30');
+                          setTrialDialog({ open: true, tenant: viewDetailsDialog.tenant });
+                        }}
+                        className="gap-1 sm:gap-2"
+                      >
+                        <Calendar className="h-3 w-3 sm:h-4 sm:w-4" />
+                        שנה תקופה
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
+                {/* ניהול מנוי */}
+                <div className="border-t pt-4">
+                  <h4 className="font-medium mb-3 flex items-center gap-2 text-sm sm:text-base">
+                    <CreditCard className="h-4 w-4" />
+                    ניהול מנוי
+                  </h4>
+                  <div className="p-3 bg-muted rounded-lg space-y-3">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                      <div>
+                        <div className="font-medium text-sm sm:text-base">תוכנית נוכחית</div>
+                        <div className="flex items-center gap-2 mt-1">
+                          {getPlanBadge(viewDetailsDialog.tenant.plan_slug, viewDetailsDialog.tenant.billing_period)}
+                          <span className="text-xs text-muted-foreground">
+                            | סטטוס: {viewDetailsDialog.tenant.subscription_status === 'active' ? 'פעיל' :
+                              viewDetailsDialog.tenant.subscription_status === 'trial' ? 'ניסיון' :
+                              viewDetailsDialog.tenant.subscription_status === 'expired' ? 'פג תוקף' :
+                              viewDetailsDialog.tenant.subscription_status === 'canceled' ? 'בוטל' : viewDetailsDialog.tenant.subscription_status}
+                          </span>
+                        </div>
+                      </div>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          setSubscriptionForm({
+                            plan_slug: viewDetailsDialog.tenant!.plan_slug || '',
+                            billing_period: viewDetailsDialog.tenant!.billing_period || 'monthly',
+                            status: viewDetailsDialog.tenant!.subscription_status || 'trial',
+                          });
+                          setSubscriptionDialog({ open: true, tenant: viewDetailsDialog.tenant });
+                        }}
+                        className="gap-1 sm:gap-2"
+                      >
+                        <CreditCard className="h-3 w-3 sm:h-4 sm:w-4" />
+                        שנה מנוי
+                      </Button>
                     </div>
                   </div>
                 </div>

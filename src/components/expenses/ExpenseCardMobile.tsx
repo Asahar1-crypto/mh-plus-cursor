@@ -30,6 +30,7 @@ interface ExpenseCardMobileProps {
   onMarkAsPaid: () => void;
   onPreviewReceipt?: () => void;
   showCheckbox: boolean;
+  isPersonalPlan?: boolean;
 }
 
 export const ExpenseCardMobile: React.FC<ExpenseCardMobileProps> = ({
@@ -43,7 +44,8 @@ export const ExpenseCardMobile: React.FC<ExpenseCardMobileProps> = ({
   onReject,
   onMarkAsPaid,
   onPreviewReceipt,
-  showCheckbox
+  showCheckbox,
+  isPersonalPlan = false
 }) => {
   return (
     <Card className="bg-card/80 backdrop-blur-sm border border-border/50 hover:shadow-md transition-all duration-200">
@@ -131,7 +133,7 @@ export const ExpenseCardMobile: React.FC<ExpenseCardMobileProps> = ({
 
           {/* Status Actions */}
           <div className="flex gap-1">
-            {expense.status === 'pending' && (
+            {!isPersonalPlan && expense.status === 'pending' && (
               <>
                 <Button
                   size="sm"

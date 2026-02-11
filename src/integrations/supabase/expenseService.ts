@@ -118,8 +118,11 @@ export const expenseService = {
     console.log(`Adding expense to account ${account.id} (${account.name})`);
     console.log('Expense data:', expense);
     
-    // Auto-approve if user is adding expense for themselves
-    const isAutoApproved = user.id === expense.paidById;
+    // Auto-approve if:
+    // 1. User is adding expense for themselves, OR
+    // 2. Account is on Personal plan (single user, no partner to approve)
+    const isPersonalPlan = account.plan_slug === 'personal';
+    const isAutoApproved = isPersonalPlan || user.id === expense.paidById;
     
     const expenseData = {
       amount: expense.amount,

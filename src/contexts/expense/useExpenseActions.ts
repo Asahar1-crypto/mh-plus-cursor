@@ -208,7 +208,9 @@ export const useExpenseActions = (
       return;
     }
     
-    if (user && expenseToApprove.createdBy === user.id) {
+    // Personal plan: single user, allow self-approval
+    const isPersonalPlan = account?.plan_slug === 'personal';
+    if (!isPersonalPlan && user && expenseToApprove.createdBy === user.id) {
       toast.error('לא ניתן לאשר הוצאה שהוספת בעצמך');
       return;
     }
@@ -224,7 +226,9 @@ export const useExpenseActions = (
       return;
     }
     
-    if (user && expenseToApprove.createdBy === user.id) {
+    // Personal plan: single user, allow self-approval
+    const isPersonalPlan = account?.plan_slug === 'personal';
+    if (!isPersonalPlan && user && expenseToApprove.createdBy === user.id) {
       toast.error('לא ניתן לאשר הוצאה שהוספת בעצמך');
       return;
     }
@@ -260,7 +264,9 @@ export const useExpenseActions = (
       return;
     }
     
-    if (user && expenseToReject.createdBy === user.id) {
+    // Personal plan: single user, allow self-rejection
+    const isPersonalPlan = account?.plan_slug === 'personal';
+    if (!isPersonalPlan && user && expenseToReject.createdBy === user.id) {
       toast.error('לא ניתן לדחות הוצאה שהוספת בעצמך');
       return;
     }
