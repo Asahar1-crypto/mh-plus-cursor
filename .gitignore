@@ -12,8 +12,7 @@ dist
 dist-ssr
 *.local
 
-# Environment variables
-.env
+# Environment variables (keep .env for public VITE_ keys, protect secrets in .env.local)
 .env.local
 .env.production
 .env.*.local
