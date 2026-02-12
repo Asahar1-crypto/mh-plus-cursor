@@ -56,7 +56,6 @@ const SentInvitationsCard: React.FC<SentInvitationsCardProps> = ({ account }) =>
 
     try {
       setLoading(true);
-      console.log('Loading sent invitations for account:', account.id);
       
       const { data, error } = await supabase
         .from('invitations')
@@ -70,7 +69,6 @@ const SentInvitationsCard: React.FC<SentInvitationsCardProps> = ({ account }) =>
         return;
       }
 
-      console.log('Loaded sent invitations:', data);
       setSentInvitations(data || []);
     } catch (error) {
       console.error('Failed to load sent invitations:', error);
@@ -85,7 +83,6 @@ const SentInvitationsCard: React.FC<SentInvitationsCardProps> = ({ account }) =>
 
     try {
       setDeleting(invitationId);
-      console.log('Deleting invitation:', invitationId);
 
       const { error } = await supabase
         .from('invitations')

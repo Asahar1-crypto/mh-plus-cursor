@@ -13,7 +13,6 @@ export const checkInvitationById = async (invitationId: string): Promise<boolean
   if (!invitationId) return false;
   
   try {
-    console.log(`Checking if invitation exists with ID: ${invitationId}`);
     
     // Fetch invitation without joins first
     const { data: invitationData, error: invitationError } = await supabase
@@ -31,8 +30,6 @@ export const checkInvitationById = async (invitationId: string): Promise<boolean
     // Convert to array and check length
     const invitationArray = Array.isArray(invitationData) ? invitationData : [];
     const exists = invitationArray.length > 0;
-    
-    console.log(`Invitation ${invitationId} exists in database: ${exists}`);
     
     if (exists && invitationArray[0]) {
       const invitation = invitationArray[0];
@@ -63,9 +60,7 @@ export const shouldCheckInvitations = (): boolean => {
   const now = Date.now();
   const shouldCheck = now - lastCheckTime >= CHECK_THROTTLE_MS;
   
-  if (!shouldCheck) {
-    console.log('Skipping invitation check - checked too recently');
-  }
+  // Throttled - skip if checked too recently
   
   return shouldCheck;
 };

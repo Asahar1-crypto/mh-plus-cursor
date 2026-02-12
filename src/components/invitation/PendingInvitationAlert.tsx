@@ -37,8 +37,6 @@ const PendingInvitationAlert = () => {
     if (!user?.email) return;
     
     try {
-      console.log("PendingInvitationAlert: Checking for pending invitations for", user.email);
-      
       // Get user's phone from profile
       let userPhone: string | null = null;
       if (user?.id) {
@@ -74,12 +72,9 @@ const PendingInvitationAlert = () => {
       }
       
       if (!rawInvitations || rawInvitations.length === 0) {
-        console.log('PendingInvitationAlert: No pending invitations found');
         setInvitations([]);
         return;
       }
-
-      console.log('PendingInvitationAlert: Found raw invitations:', rawInvitations);
 
       // For each invitation, try to get account data but don't filter out if missing
       const enrichedInvitations = await Promise.all(
@@ -108,7 +103,6 @@ const PendingInvitationAlert = () => {
               }
             };
           } catch (err) {
-            console.warn(`PendingInvitationAlert: Could not fetch account for invitation ${invitation.invitation_id}:`, err);
             // Return invitation with fallback data instead of filtering out
             return {
               ...invitation,
@@ -123,7 +117,6 @@ const PendingInvitationAlert = () => {
         })
       );
 
-      console.log('PendingInvitationAlert: Enriched invitations:', enrichedInvitations);
       setInvitations(enrichedInvitations);
       
       if (dismissed && enrichedInvitations.length > 0) {
@@ -149,11 +142,7 @@ const PendingInvitationAlert = () => {
   const accountName = firstInvitation.accounts?.name || 'חשבון משותף';
   
   const handleViewInvitation = () => {
-    console.log('PendingInvitationAlert: handleViewInvitation clicked');
-    console.log('PendingInvitationAlert: invitation data:', firstInvitation);
-    
     if (!firstInvitation.invitation_id) {
-      console.error('PendingInvitationAlert: No invitation_id found');
       return;
     }
     
@@ -163,7 +152,6 @@ const PendingInvitationAlert = () => {
       ? `/family-invitation?invitationId=${firstInvitation.invitation_id}`
       : `/invitation/${firstInvitation.invitation_id}`;
     
-    console.log('PendingInvitationAlert: Navigating to:', path);
     setDismissed(true);
     navigate(path);
   };

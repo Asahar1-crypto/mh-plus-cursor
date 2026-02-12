@@ -53,7 +53,6 @@ export class ManualPaymentProvider implements PaymentProvider {
 
   async cancelSubscription(_subscriptionId: string, _immediate?: boolean): Promise<void> {
     // In manual mode, cancellation is done via admin dashboard
-    console.log('Manual subscription cancellation - update via admin dashboard');
   }
 
   async handleWebhook(_payload: unknown, _signature: string): Promise<WebhookEvent> {

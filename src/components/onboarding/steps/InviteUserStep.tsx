@@ -96,7 +96,7 @@ export const InviteUserStep: React.FC<OnboardingStepProps> = ({ onNext, onBack, 
           }
         });
       } catch (smsError) {
-        console.warn('SMS sending failed, invitation still created:', smsError);
+        // SMS sending failed, but invitation was still created
       }
 
       setIsInvited(true);

@@ -12,6 +12,17 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
 import { useExpense } from '@/contexts/expense/useExpense';
 import { useAuth } from '@/contexts/auth';
+import { checkBudgetBeforeExpense, type BudgetCheckResult } from '@/utils/budgetCheckService';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { useQuery } from '@tanstack/react-query';
 import { memberService } from '@/contexts/auth/services/account/memberService';
 
@@ -63,8 +74,14 @@ export const ReceiptValidation: React.FC<ReceiptValidationProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   
   const { toast } = useToast();
-  const { addExpense, childrenList } = useExpense();
+  const { addExpense, childrenList, categoriesList } = useExpense();
+  const categories = categoriesList.length > 0 ? categoriesList.map(c => c.name) : undefined;
   const { user, account } = useAuth();
+  const [budgetAlert, setBudgetAlert] = useState<{
+    open: boolean;
+    result: BudgetCheckResult;
+    payload: Parameters<typeof addExpense>[0];
+  } | null>(null);
 
   // Load account members for the partner name
   const { data: accountMembers } = useQuery({
@@ -154,9 +171,7 @@ export const ReceiptValidation: React.FC<ReceiptValidationProps> = ({
       }
 
       const paidByMember = accountMembers?.find(m => m.user_id === paidById);
-
-      // Create ONE expense for the entire receipt
-      await addExpense({
+      const payload = {
         amount: editedTotal,
         description: editedVendor,
         date: editedDate,
@@ -168,7 +183,27 @@ export const ReceiptValidation: React.FC<ReceiptValidationProps> = ({
         splitEqually: splitEqually,
         isRecurring: false,
         receiptId: scanResult.receipt_id
-      });
+      };
+
+      if (account?.id) {
+        try {
+          const checkResult = await checkBudgetBeforeExpense(
+            account.id,
+            selectedCategory,
+            editedTotal,
+            typeof editedDate === 'string' ? editedDate : (editedDate as Date)?.toISOString?.()?.slice(0, 10)
+          );
+          if (checkResult.status === 'warning_90' || checkResult.status === 'exceeded') {
+            setBudgetAlert({ open: true, result: checkResult, payload });
+            setIsSubmitting(false);
+            return;
+          }
+        } catch {
+          // Budget check failed - proceed
+        }
+      }
+
+      await addExpense(payload);
 
       toast({
         title: "ההוצאה נוספה בהצלחה!",
@@ -177,6 +212,29 @@ export const ReceiptValidation: React.FC<ReceiptValidationProps> = ({
 
       onApprove();
 
+    } catch (error) {
+      console.error('Error creating expense:', error);
+      toast({
+        variant: "destructive",
+        title: "שגיאה ביצירת הוצאה",
+        description: "אירעה שגיאה בעת יצירת ההוצאה"
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleBudgetAlertConfirm = async () => {
+    if (!budgetAlert) return;
+    setIsSubmitting(true);
+    setBudgetAlert(null);
+    try {
+      await addExpense(budgetAlert.payload);
+      toast({
+        title: "ההוצאה נוספה בהצלחה!",
+        description: `נוצרה הוצאה חדשה: ${editedVendor} - ₪${editedTotal}`
+      });
+      onApprove();
     } catch (error) {
       console.error('Error creating expense:', error);
       toast({
@@ -261,6 +319,7 @@ export const ReceiptValidation: React.FC<ReceiptValidationProps> = ({
               <CategoryDropdown
                 value={selectedCategory}
                 onValueChange={setSelectedCategory}
+                categories={categories}
               />
             </div>
             <div>
@@ -325,6 +384,31 @@ export const ReceiptValidation: React.FC<ReceiptValidationProps> = ({
           ביטול
         </Button>
       </div>
+
+      <AlertDialog open={!!budgetAlert} onOpenChange={(open) => !open && setBudgetAlert(null)}>
+        <AlertDialogContent dir="rtl">
+          <AlertDialogHeader>
+            <AlertDialogTitle className={budgetAlert?.result.status === 'exceeded' ? 'text-destructive' : 'text-amber-600'}>
+              {budgetAlert?.result.status === 'exceeded' ? 'חרגת מהתקציב' : 'התקציב הגיע ל-90%'}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {budgetAlert && (
+                <>
+                  קטגוריה &quot;{budgetAlert.payload.category}&quot;: התקציב ₪{budgetAlert.result.budget.toFixed(0)},
+                  הוצא עד כה ₪{budgetAlert.result.spent.toFixed(0)}. עם הוספת הוצאה זו: ₪{budgetAlert.result.newSpent.toFixed(0)}.
+                  האם להמשיך בכל זאת?
+                </>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="flex-row-reverse gap-2">
+            <AlertDialogCancel>ביטול</AlertDialogCancel>
+            <AlertDialogAction onClick={handleBudgetAlertConfirm}>
+              המשך בכל זאת
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

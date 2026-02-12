@@ -11,7 +11,6 @@ export const phoneAuthService = {
    */
   sendPhoneLoginOtp: async (phoneNumber: string): Promise<{ success: boolean; userId?: string; userName?: string }> => {
     try {
-      console.log(`Sending login OTP to: ${phoneNumber}`);
       
       // Normalize phone number before sending
       const normalizationResult = normalizeILPhoneNumber(phoneNumber);
@@ -32,7 +31,6 @@ export const phoneAuthService = {
         throw new Error(data.error || 'Failed to send OTP');
       }
 
-      console.log('Login OTP sent successfully');
       return {
         success: true,
         userId: data.userId,
@@ -59,7 +57,6 @@ export const phoneAuthService = {
    */
   verifyPhoneLoginOtp: async (phoneNumber: string, code: string): Promise<{ success: boolean; magicLink?: string }> => {
     try {
-      console.log(`Verifying login OTP for: ${phoneNumber}`);
       
       // Normalize phone number before verifying
       const normalizationResult = normalizeILPhoneNumber(phoneNumber);
@@ -69,7 +66,6 @@ export const phoneAuthService = {
       
       // Get current origin for redirect
       const redirectUrl = window.location.origin;
-      console.log('Using redirect URL:', redirectUrl);
       
       const { data, error } = await supabase.functions.invoke('verify-sms-code', {
         body: { 
@@ -89,7 +85,6 @@ export const phoneAuthService = {
         throw new Error(data.error || 'Invalid verification code');
       }
 
-      console.log('Login OTP verified successfully');
       return {
         success: true,
         magicLink: data.magicLink
@@ -112,7 +107,6 @@ export const phoneAuthService = {
 
   phoneLogin: async (phoneNumber: string, otp: string): Promise<{ userId: string; email: string }> => {
     try {
-      console.log(`Completing phone login for: ${phoneNumber}`);
       
       const result = await phoneAuthService.verifyPhoneLoginOtp(phoneNumber, otp);
       
@@ -122,7 +116,6 @@ export const phoneAuthService = {
 
       // If we got a magic link, navigate to it securely
       if (result.magicLink) {
-        console.log('Navigating to secure magic link');
         
         // Navigate to the magic link which will establish the session securely
         window.location.href = result.magicLink;

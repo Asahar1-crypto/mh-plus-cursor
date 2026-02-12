@@ -20,17 +20,36 @@ import { useExpense } from '@/contexts/ExpenseContext';
 import { ExpenseFormValues, expenseSchema } from './expenseFormSchema';
 import { useAuth } from '@/contexts/auth';
 import { memberService } from '@/contexts/auth/services/account/memberService';
+import { checkBudgetBeforeExpense, type BudgetCheckResult } from '@/utils/budgetCheckService';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 interface ExpenseFormProps {
   onSubmitSuccess?: () => void;
   onCancel?: () => void;
 }
 
+const DEFAULT_CATEGORIES = ['חינוך', 'רפואה', 'פנאי', 'ביגוד', 'מזון', 'מזונות', 'קייטנות', 'אחר'];
+
 export const ExpenseForm: React.FC<ExpenseFormProps> = ({ onSubmitSuccess, onCancel }) => {
-  const { addExpense, childrenList } = useExpense();
+  const { addExpense, childrenList, categoriesList } = useExpense();
+  const categories = categoriesList.length > 0 ? categoriesList.map(c => c.name) : DEFAULT_CATEGORIES;
   const { user, account } = useAuth();
   const navigate = useNavigate();
   const [isPending, setIsPending] = React.useState(false);
+  const [budgetAlert, setBudgetAlert] = React.useState<{
+    open: boolean;
+    result: BudgetCheckResult;
+    payload: Parameters<typeof addExpense>[0];
+  } | null>(null);
 
   // Load account members for the payer selection
   const { data: accountMembers } = useQuery({
@@ -109,8 +128,7 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({ onSubmitSuccess, onCan
       }
       
       const paidByMember = accountMembers?.find(m => m.user_id === paidById);
-      
-      await addExpense({
+      const payload = {
         amount: Number(data.amount),
         description: data.description,
         category: data.category,
@@ -126,7 +144,27 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({ onSubmitSuccess, onCan
         includeInMonthlyBalance: includeInMonthlyBalance,
         splitEqually: splitEqually,
         receipt: data.receipt,
-      });
+      };
+
+      if (account?.id) {
+        try {
+          const checkResult = await checkBudgetBeforeExpense(
+            account.id,
+            data.category,
+            payload.amount,
+            payload.date
+          );
+          if (checkResult.status === 'warning_90' || checkResult.status === 'exceeded') {
+            setBudgetAlert({ open: true, result: checkResult, payload });
+            setIsPending(false);
+            return;
+          }
+        } catch {
+          // Budget check failed - proceed with add
+        }
+      }
+
+      await addExpense(payload);
       
       if (onSubmitSuccess) {
         onSubmitSuccess();
@@ -139,17 +177,21 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({ onSubmitSuccess, onCan
       setIsPending(false);
     }
   };
-  
-  const categories = [
-    'חינוך',
-    'רפואה',
-    'פנאי',
-    'ביגוד',
-    'מזון',
-    'מזונות',
-    'קייטנות',
-    'אחר',
-  ];
+
+  const handleBudgetAlertConfirm = async () => {
+    if (!budgetAlert) return;
+    setIsPending(true);
+    setBudgetAlert(null);
+    try {
+      await addExpense(budgetAlert.payload);
+      if (onSubmitSuccess) onSubmitSuccess();
+      else navigate('/expenses');
+    } catch (error) {
+      console.error('Error adding expense:', error);
+    } finally {
+      setIsPending(false);
+    }
+  };
   
   return (
     <div dir="rtl" className="w-full">
@@ -534,6 +576,31 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({ onSubmitSuccess, onCan
         </div>
       </form>
     </Form>
+
+    <AlertDialog open={!!budgetAlert} onOpenChange={(open) => !open && setBudgetAlert(null)}>
+      <AlertDialogContent dir="rtl">
+        <AlertDialogHeader>
+          <AlertDialogTitle className={budgetAlert?.result.status === 'exceeded' ? 'text-destructive' : 'text-amber-600'}>
+            {budgetAlert?.result.status === 'exceeded' ? 'חרגת מהתקציב' : 'התקציב הגיע ל-90%'}
+          </AlertDialogTitle>
+          <AlertDialogDescription>
+            {budgetAlert && (
+              <>
+                קטגוריה &quot;{budgetAlert.payload.category}&quot;: התקציב ₪{budgetAlert.result.budget.toFixed(0)},
+                הוצא עד כה ₪{budgetAlert.result.spent.toFixed(0)}. עם הוספת הוצאה זו: ₪{budgetAlert.result.newSpent.toFixed(0)}.
+                האם להמשיך בכל זאת?
+              </>
+            )}
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter className="flex-row-reverse gap-2">
+          <AlertDialogCancel>ביטול</AlertDialogCancel>
+          <AlertDialogAction onClick={handleBudgetAlertConfirm}>
+            המשך בכל זאת
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
     </div>
   );
 };

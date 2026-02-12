@@ -15,7 +15,6 @@ export const accountVerificationService = {
   // Verify email function using Supabase built-in verification
   verifyEmail: async (token: string): Promise<boolean> => {
     try {
-      console.log("Attempting to verify email with Supabase");
       
       const { data, error } = await supabase.auth.verifyOtp({
         token_hash: token,
@@ -28,7 +27,6 @@ export const accountVerificationService = {
         return false;
       }
       
-      console.log("Email verification successful");
       toast.success(EMAIL_VERIFICATION_SUCCESS_MESSAGE);
       return true;
     } catch (error) {
@@ -39,10 +37,7 @@ export const accountVerificationService = {
   },
 
   resetPassword: async (email: string): Promise<void> => {
-    console.log('🚀 accountVerificationService.resetPassword called with:', email);
-    console.log('🚀 Stack trace:', new Error().stack);
     try {
-      console.log(`Attempting password reset for ${email}`);
       
       // Check reset attempt limit
       const { data: canReset, error: limitError } = await supabase.rpc('check_reset_attempt_limit', {
@@ -74,27 +69,19 @@ export const accountVerificationService = {
         // Continue anyway - logging shouldn't block the process
       }
       
-      // Use Supabase built-in password reset instead of custom edge function
-      console.log('🔧 Using Supabase built-in password reset...');
-      console.log('🔧 Current origin:', window.location.origin);
-      console.log('🔧 Current hostname:', window.location.hostname);
-      
+      // Use Supabase built-in password reset
       // Use the current domain for redirects - this ensures it works on any domain
       const redirectUrl = `${window.location.origin}/reset-password`;
-      console.log('🔧 Redirect URL:', redirectUrl);
       
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: redirectUrl,
       });
-      
-      console.log('🔧 Supabase resetPasswordForEmail response:', { error });
       
       if (error) {
         console.error("Password reset error from Supabase:", error);
         throw error;
       }
       
-      console.log("🎯 Password reset email sent via Supabase");
       toast.success(PASSWORD_RESET_SUCCESS_MESSAGE);
     } catch (error: any) {
       console.error('Failed to reset password:', error);

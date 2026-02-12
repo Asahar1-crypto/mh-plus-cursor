@@ -50,3 +50,6 @@ verify_jwt = false
 
 [functions.notify-expense-approval]
 verify_jwt = true
+
+[functions.check-budget-before-expense]
+verify_jwt = true

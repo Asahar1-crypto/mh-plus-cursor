@@ -16,6 +16,7 @@ import { toast } from 'sonner';
 import { Users, User } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/auth';
+import { useExpense } from '@/contexts/ExpenseContext';
 import { memberService } from '@/contexts/auth/services/account/memberService';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -55,7 +56,10 @@ export const EditRecurringExpenseModal: React.FC<EditRecurringExpenseModalProps>
   childrenList
 }) => {
   const { user, account } = useAuth();
+  const { categoriesList } = useExpense();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const DEFAULT_CATEGORIES = ['חינוך', 'רפואה', 'פנאי', 'ביגוד', 'מזון', 'מזונות', 'קייטנות', 'אחר'];
+  const categories = categoriesList.length > 0 ? categoriesList.map(c => c.name) : DEFAULT_CATEGORIES;
 
   // Get account members
   const { data: accountMembers } = useQuery({
@@ -116,17 +120,6 @@ export const EditRecurringExpenseModal: React.FC<EditRecurringExpenseModalProps>
       });
     }
   }, [expense, accountMembers, form]);
-
-  const categories = [
-    'חינוך',
-    'רפואה', 
-    'פנאי',
-    'ביגוד',
-    'מזון',
-    'מזונות',
-    'קייטנות',
-    'אחר',
-  ];
 
   const onSubmit = async (data: EditRecurringExpenseFormData) => {
     if (!user || !account || !expense) return;

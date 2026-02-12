@@ -12,7 +12,6 @@ async function loadPushPlugin() {
   if (PushNotifications) return PushNotifications;
   
   if (!Capacitor.isNativePlatform()) {
-    console.log('Not a native platform, push notifications plugin not loaded');
     return null;
   }
 
@@ -31,7 +30,6 @@ async function loadPushPlugin() {
  */
 export async function initializePushNotifications(accountId: string): Promise<boolean> {
   if (!Capacitor.isNativePlatform()) {
-    console.log('Not a native platform, skipping mobile push init');
     return false;
   }
 
@@ -43,7 +41,6 @@ export async function initializePushNotifications(accountId: string): Promise<bo
     const permission = await Push.requestPermissions();
 
     if (permission.receive !== 'granted') {
-      console.log('Push notification permission not granted');
       return false;
     }
 
@@ -52,7 +49,6 @@ export async function initializePushNotifications(accountId: string): Promise<bo
 
     // Token received
     Push.addListener('registration', async (token) => {
-      console.log('Push registration success, token:', token.value);
 
       const { error } = await supabase.functions.invoke('register-device-token', {
         body: {
@@ -78,7 +74,6 @@ export async function initializePushNotifications(accountId: string): Promise<bo
 
     // Notification received in foreground
     Push.addListener('pushNotificationReceived', (notification) => {
-      console.log('Push received in foreground:', notification);
 
       // Dispatch custom event for the app to handle
       const type = notification.data?.type;
@@ -112,7 +107,6 @@ export async function initializePushNotifications(accountId: string): Promise<bo
 
     // Notification tapped (action performed)
     Push.addListener('pushNotificationActionPerformed', async (action) => {
-      console.log('Push action performed:', action);
 
       const data = action.notification.data;
       if (data?.actionUrl) {
@@ -121,7 +115,6 @@ export async function initializePushNotifications(accountId: string): Promise<bo
       }
     });
 
-    console.log('Mobile push notifications initialized');
     return true;
   } catch (error) {
     console.error('Error initializing mobile push:', error);

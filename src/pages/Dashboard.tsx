@@ -6,11 +6,11 @@ import { ExpensesSummary } from '@/components/dashboard/ExpensesSummary';
 import { ExpensesTabs } from '@/components/dashboard/ExpensesTabs';
 import { MonthlyFoodPaymentCard } from '@/components/dashboard/MonthlyFoodPaymentCard';
 import PendingInvitationAlert from '@/components/invitation/PendingInvitationAlert';
-import AccountDebugInfo from '@/components/debug/AccountDebugInfo';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent } from '@/components/ui/card';
 import { CalendarIcon } from 'lucide-react';
 import { OnboardingModal } from '@/components/onboarding/OnboardingModal';
+import { DashboardSkeleton } from '@/components/dashboard/DashboardSkeleton';
 import confetti from 'canvas-confetti';
 import { toast } from '@/hooks/use-toast';
 
@@ -141,25 +141,11 @@ const Dashboard = () => {
   };
 
   if (!user || !account) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent mx-auto mb-4"></div>
-          <p>טוען נתוני המשתמש...</p>
-        </div>
-      </div>
-    );
+    return <DashboardSkeleton />;
   }
 
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent mx-auto mb-4"></div>
-          <p>טוען נתונים עבור {account.name}...</p>
-        </div>
-      </div>
-    );
+    return <DashboardSkeleton />;
   }
 
   
@@ -234,9 +220,6 @@ const Dashboard = () => {
           />
         </div>
         
-        <div className="animate-fade-in [animation-delay:1200ms]">
-          <AccountDebugInfo />
-        </div>
       </div>
     </div>
   );

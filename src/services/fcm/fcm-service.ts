@@ -44,7 +44,6 @@ export async function initializePush(accountId: string): Promise<{
   const platform = detectPlatform();
 
   if (platform === 'unsupported') {
-    console.log('Push notifications not supported on this platform');
     return { success: false, platform };
   }
 
@@ -67,18 +66,12 @@ export async function initializePush(accountId: string): Promise<{
  */
 export async function requestPermission(accountId: string): Promise<boolean> {
   const platform = detectPlatform();
-  console.log('[FCM Service] requestPermission called, platform:', platform);
-
   if (platform === 'unsupported') return false;
 
   if (platform === 'web') {
-    console.log('[FCM Service] Requesting web notification permission...');
     const granted = await webRequestPermission();
-    console.log('[FCM Service] Browser permission granted:', granted);
     if (granted) {
-      console.log('[FCM Service] Getting FCM token...');
-      const token = await getFCMToken(accountId);
-      console.log('[FCM Service] FCM token result:', token ? 'received' : 'null');
+      await getFCMToken(accountId);
     }
     return granted;
   }

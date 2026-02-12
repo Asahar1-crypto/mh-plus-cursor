@@ -5,15 +5,12 @@ import { toast } from 'sonner';
 
 export async function sendInvitation(phoneNumber: string, user: User, account: Account): Promise<void> {
   try {
-    console.log(`sendInvitation: User ${user.id} (${user.email}) sending invitation to phone ${phoneNumber} for account ${account.id}`);
-    
     if (!phoneNumber || !user || !account) {
       console.error("sendInvitation: Missing required parameters", { phoneNumber, user: user?.id, account: account?.id });
       throw new Error('נתונים חסרים לשליחת ההזמנה');
     }
 
     // Verify the account exists and user is admin (member-based architecture)
-    console.log(`sendInvitation: Verifying user ${user.id} is admin of account ${account.id}`);
     const { data: membershipData, error: membershipError } = await supabase
       .from('account_members')
       .select('role')
@@ -27,10 +24,7 @@ export async function sendInvitation(phoneNumber: string, user: User, account: A
       throw new Error('רק מנהלי החשבון יכולים לשלוח הזמנות');
     }
     
-    console.log("sendInvitation: Admin verification successful");
-
     // Check if there's already an active invitation for this phone and account
-    console.log("sendInvitation: Checking for existing invitations");
     const { data: existingInvitation, error: existingError } = await supabase
       .from('invitations')
       .select('*')
@@ -45,16 +39,13 @@ export async function sendInvitation(phoneNumber: string, user: User, account: A
     }
 
     if (existingInvitation && existingInvitation.length > 0) {
-      console.log("sendInvitation: Active invitation already exists");
       throw new Error('כבר נשלחה הזמנה פעילה למספר הטלפון הזה');
     }
 
     // Generate unique invitation ID
     const invitationId = uuidv4();
-    console.log(`sendInvitation: Generated invitation ID: ${invitationId}`);
 
     // Create invitation record with phone_number instead of email
-    console.log("sendInvitation: Creating invitation record");
     const { error: invitationError } = await supabase
       .from('invitations')
       .insert({
@@ -69,8 +60,6 @@ export async function sendInvitation(phoneNumber: string, user: User, account: A
       console.error("sendInvitation: Error creating invitation:", invitationError);
       throw new Error('שגיאה ביצירת ההזמנה: ' + invitationError.message);
     }
-
-    console.log("sendInvitation: Invitation created successfully");
 
     // Send SMS with invitation link - always use production URL
     const productionUrl = 'https://mhplus.online';
@@ -87,19 +76,11 @@ export async function sendInvitation(phoneNumber: string, user: User, account: A
       });
 
       if (error) {
-        console.warn("sendInvitation: SMS sending failed:", error);
-        console.log("sendInvitation: Invitation created but SMS not sent. Link:", `${window.location.origin}/family-invitation?invitationId=${invitationId}`);
         toast.warning('ההזמנה נוצרה אך לא הצלחנו לשלוח SMS. אפשר לשתף את הלינק ידנית.');
-      } else {
-        console.log("sendInvitation: SMS sent successfully");
       }
     } catch (smsError) {
-      console.warn("sendInvitation: SMS service error:", smsError);
-      console.log("sendInvitation: Invitation created but SMS not sent.");
       toast.warning('ההזמנה נוצרה אך לא הצלחנו לשלוח SMS. אפשר לשתף את הלינק ידנית.');
     }
-
-    console.log("sendInvitation: Invitation process completed successfully");
     
   } catch (error: any) {
     console.error('sendInvitation: Failed to send invitation:', error);

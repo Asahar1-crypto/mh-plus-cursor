@@ -6,8 +6,6 @@ import { toast } from 'sonner';
  */
 export const clearAllPendingInvitations = () => {
   try {
-    console.log('Cleaning up all pending invitation data from sessionStorage');
-    
     // Clear invitation-related data
     sessionStorage.removeItem('pendingInvitationId');
     sessionStorage.removeItem('pendingInvitationAccountId');
@@ -16,7 +14,6 @@ export const clearAllPendingInvitations = () => {
     sessionStorage.removeItem('currentInvitationDetails');
     localStorage.removeItem('pendingInvitationsAfterRegistration');
     
-    console.log('All invitation data cleared from sessionStorage');
     toast.success('נתוני ההזמנות נוקו בהצלחה');
   } catch (error) {
     console.error('Error clearing invitation data:', error);

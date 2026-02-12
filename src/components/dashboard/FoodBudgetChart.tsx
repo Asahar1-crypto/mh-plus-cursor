@@ -2,6 +2,9 @@ import React, { useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { useExpense } from '@/contexts/ExpenseContext';
+import { useAuth } from '@/contexts/auth';
+import { useQuery } from '@tanstack/react-query';
+import { budgetService } from '@/integrations/supabase/budgetService';
 
 interface FoodBudgetData {
   name: string;
@@ -10,25 +13,42 @@ interface FoodBudgetData {
   תחזית: number;
 }
 
+const FOOD_CATEGORIES = ['מזון', 'מזונות'];
+
 export const FoodBudgetChart: React.FC = () => {
   const { expenses } = useExpense();
+  const { account } = useAuth();
+  const currentDate = new Date();
+  const currentMonth = currentDate.getMonth() + 1; // 1-12 for DB
+  const currentYear = currentDate.getFullYear();
+
+  const { data: budgets = [] } = useQuery({
+    queryKey: ['budgets', account?.id, currentMonth, currentYear],
+    queryFn: () => budgetService.getBudgets(account!, currentMonth, currentYear),
+    enabled: !!account?.id,
+  });
+
+  const monthlyBudget = useMemo(() => {
+    const foodBudgets = budgets.filter(b => {
+      if (b.categories?.length) return b.categories.some(c => FOOD_CATEGORIES.includes(c));
+      return b.category && FOOD_CATEGORIES.includes(b.category);
+    });
+    return foodBudgets.reduce((sum, b) => sum + b.monthly_amount, 0) || 1200;
+  }, [budgets]);
   
   const foodBudgetData = useMemo(() => {
-    const currentDate = new Date();
-    const currentMonth = currentDate.getMonth();
-    const currentYear = currentDate.getFullYear();
-    const previousMonth = currentMonth === 0 ? 11 : currentMonth - 1;
-    const previousYear = currentMonth === 0 ? currentYear - 1 : currentYear;
-    
-    // הגדרת תקציב חודשי (לעת עתה קבוע, אפשר לשנות למשתנה)
-    const monthlyBudget = 1200;
+    const now = new Date();
+    const currentMonthJs = now.getMonth(); // 0-11
+    const currentYearJs = now.getFullYear();
+    const previousMonth = currentMonthJs === 0 ? 11 : currentMonthJs - 1;
+    const previousYear = currentMonthJs === 0 ? currentYearJs - 1 : currentYearJs;
     
     // סינון הוצאות מזון לחודש הנוכחי
     const currentMonthFoodExpenses = expenses.filter(expense => {
       const expenseDate = new Date(expense.date);
       return (
-        expenseDate.getMonth() === currentMonth &&
-        expenseDate.getFullYear() === currentYear &&
+        expenseDate.getMonth() === currentMonthJs &&
+        expenseDate.getFullYear() === currentYearJs &&
         (expense.category === 'מזון' || expense.category === 'מזונות') &&
         expense.status !== 'rejected'
       );
@@ -50,8 +70,8 @@ export const FoodBudgetChart: React.FC = () => {
     const previousMonthSpent = previousMonthFoodExpenses.reduce((sum, expense) => sum + expense.amount, 0);
     
     // חישוב תחזית לסוף החודש
-    const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
-    const daysPassed = currentDate.getDate();
+    const daysInMonth = new Date(currentYearJs, currentMonthJs + 1, 0).getDate();
+    const daysPassed = Math.max(1, now.getDate());
     const averageDaily = currentMonthSpent / daysPassed;
     const forecasted = averageDaily * daysInMonth;
     
@@ -71,7 +91,7 @@ export const FoodBudgetChart: React.FC = () => {
     ];
     
     return data;
-  }, [expenses]);
+  }, [expenses, monthlyBudget]);
   
   const getBarColor = (spent: number, budget: number, forecast: number) => {
     if (forecast > budget) return '#ef4444'; // אדום - חריגה מהתקציב

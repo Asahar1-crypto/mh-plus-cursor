@@ -25,10 +25,6 @@ export const usePasswordActions = (
   };
 
   const resetPassword = async (email: string): Promise<void> => {
-    console.log('🔥 usePasswordActions resetPassword called with:', email);
-    console.log('🔥 authService.resetPassword function exists:', !!authService.resetPassword);
-    console.log('🔥 Current domain:', window.location.origin);
-    console.log('🔥 Redirect URL will be:', `${window.location.origin}/reset-password`);
     setIsLoading(true);
     try {
       await authService.resetPassword(email);

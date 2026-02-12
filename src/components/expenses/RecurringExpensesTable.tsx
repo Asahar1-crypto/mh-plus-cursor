@@ -13,6 +13,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { Switch } from '@/components/ui/switch';
 import { Expense, Child } from '@/contexts/expense/types';
 import { toast } from 'sonner';
 import { 
@@ -42,16 +43,19 @@ interface RecurringExpensesTableProps {
   expenses: Expense[];
   childrenList: Child[];
   refreshData: () => Promise<void>;
+  updateRecurringActive?: (id: string, active: boolean) => Promise<void>;
 }
 
 export const RecurringExpensesTable: React.FC<RecurringExpensesTableProps> = ({ 
   expenses, 
   childrenList,
-  refreshData 
+  refreshData,
+  updateRecurringActive
 }) => {
   const { account, user } = useAuth();
   const isMobile = useIsMobile();
   const [isDeletingExpense, setIsDeletingExpense] = useState<string | null>(null);
+  const [isTogglingActive, setIsTogglingActive] = useState<string | null>(null);
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
   const [expandedRows, setExpandedRows] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -99,6 +103,30 @@ export const RecurringExpensesTable: React.FC<RecurringExpensesTableProps> = ({
       case 'weekly': return 'שבועי';
       case 'yearly': return 'שנתי';
       default: return 'לא הוגדר';
+    }
+  };
+
+  const isEndDatePassed = (exp: Expense) => {
+    if (!exp.hasEndDate || !exp.endDate) return false;
+    const end = new Date(exp.endDate);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return end < today;
+  };
+
+  const isEffectivelyActive = (exp: Expense) => {
+    if (isEndDatePassed(exp)) return false;
+    return exp.recurringActive ?? true;
+  };
+
+  const handleToggleActive = async (expenseId: string, currentActive: boolean) => {
+    if (!updateRecurringActive) return;
+    setIsTogglingActive(expenseId);
+    try {
+      await updateRecurringActive(expenseId, !currentActive);
+      await refreshData();
+    } finally {
+      setIsTogglingActive(null);
     }
   };
 
@@ -221,10 +249,26 @@ export const RecurringExpensesTable: React.FC<RecurringExpensesTableProps> = ({
                 <div className="flex items-start justify-between">
                   <div className="flex-1 min-w-0">
                     <h3 className="font-medium text-right truncate">{expense.description}</h3>
-                    <Badge variant="secondary" className="mt-1 text-xs bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300">
-                      <Clock className="h-3 w-3 mr-1" />
-                      {getFrequencyLabel(expense.frequency)}
-                    </Badge>
+                    <div className="flex flex-wrap gap-1 mt-1 items-center">
+                      <Badge variant="secondary" className="text-xs bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300">
+                        <Clock className="h-3 w-3 mr-1" />
+                        {getFrequencyLabel(expense.frequency)}
+                      </Badge>
+                      <Badge
+                        variant="secondary"
+                        className={`text-xs ${isEffectivelyActive(expense) ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300' : 'bg-muted text-muted-foreground'}`}
+                      >
+                        {isEffectivelyActive(expense) ? 'פעיל' : 'לא פעיל'}
+                      </Badge>
+                      {updateRecurringActive && !isEndDatePassed(expense) && (
+                        <Switch
+                          checked={isEffectivelyActive(expense)}
+                          onCheckedChange={() => handleToggleActive(expense.id, expense.recurringActive ?? true)}
+                          disabled={isTogglingActive === expense.id}
+                          className="scale-75"
+                        />
+                      )}
+                    </div>
                   </div>
                   <div className="mr-3 text-left">
                     <p className="font-bold text-lg">₪{expense.amount.toFixed(0)}</p>
@@ -307,6 +351,7 @@ export const RecurringExpensesTable: React.FC<RecurringExpensesTableProps> = ({
                   <TableHead className="text-right font-semibold p-2">תיאור</TableHead>
                   <TableHead className="text-right font-semibold w-24 p-2">סכום</TableHead>
                   <TableHead className="text-right font-semibold w-24 p-2">תדירות</TableHead>
+                  <TableHead className="text-right font-semibold w-20 p-2">סטטוס</TableHead>
                   <TableHead className="text-right font-semibold w-32 p-2">פעולות</TableHead>
                 </TableRow>
               </TableHeader>
@@ -351,6 +396,26 @@ export const RecurringExpensesTable: React.FC<RecurringExpensesTableProps> = ({
                           <Badge variant="secondary" className="text-xs bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300">
                             {getFrequencyLabel(expense.frequency)}
                           </Badge>
+                        </TableCell>
+                        
+                        {/* Status (active/inactive) */}
+                        <TableCell className="w-20 p-2">
+                          <div className="flex items-center gap-2 justify-end">
+                            <Badge
+                              variant="secondary"
+                              className={`text-xs ${isEffectivelyActive(expense) ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300' : 'bg-muted text-muted-foreground'}`}
+                            >
+                              {isEffectivelyActive(expense) ? 'פעיל' : 'לא פעיל'}
+                            </Badge>
+                            {updateRecurringActive && !isEndDatePassed(expense) && (
+                              <Switch
+                                checked={isEffectivelyActive(expense)}
+                                onCheckedChange={() => handleToggleActive(expense.id, expense.recurringActive ?? true)}
+                                disabled={isTogglingActive === expense.id}
+                                className="scale-75"
+                              />
+                            )}
+                          </div>
                         </TableCell>
                         
                         {/* Actions */}
@@ -404,7 +469,7 @@ export const RecurringExpensesTable: React.FC<RecurringExpensesTableProps> = ({
                       {/* Expanded Details Row */}
                       {isExpanded && (
                         <TableRow className="bg-muted/10 border-b border-border/30">
-                          <TableCell colSpan={5} className="p-3">
+                          <TableCell colSpan={6} className="p-3">
                             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                               <div className="flex items-center gap-2">
                                 <Tag className="h-4 w-4 text-muted-foreground" />

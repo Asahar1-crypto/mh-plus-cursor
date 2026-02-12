@@ -4,7 +4,9 @@ import { useExpense } from '@/contexts/ExpenseContext';
 import { Card, CardContent } from '@/components/ui/card';
 import { CategoryExpensesChart } from '@/components/reports/CategoryExpensesChart';
 import { ChildrenExpensesChart } from '@/components/reports/ChildrenExpensesChart';
+import FoodBudgetChart from '@/components/reports/FoodBudgetChart';
 import { BarChart3, TrendingUp, Wallet, Users, Tag, ArrowUpRight, ArrowDownRight } from 'lucide-react';
+import { ReportsSkeleton } from '@/components/reports/ReportsSkeleton';
 
 const Reports = () => {
   const { user, account, isLoading } = useAuth();
@@ -41,14 +43,7 @@ const Reports = () => {
   }, [expenses]);
 
   if (isLoading || !user) {
-    return (
-      <div className="flex h-screen items-center justify-center">
-        <div className="text-center">
-          <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent mx-auto mb-4"></div>
-          <p className="text-muted-foreground">טוען נתונים...</p>
-        </div>
-      </div>
-    );
+    return <ReportsSkeleton />;
   }
 
   if (!account) {
@@ -206,6 +201,10 @@ const Reports = () => {
 
         {/* Charts Section */}
         <div className="space-y-4 sm:space-y-6 lg:space-y-8">
+          {/* Food Budget Chart */}
+          <div className="animate-fade-in [animation-delay:300ms]">
+            <FoodBudgetChart />
+          </div>
           {/* Category Expenses Chart */}
           <div className="animate-fade-in [animation-delay:400ms]">
             <CategoryExpensesChart />

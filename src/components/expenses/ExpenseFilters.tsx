@@ -5,6 +5,8 @@ import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Expense, Child } from '@/contexts/expense/types';
+
+const DEFAULT_CATEGORIES = ['חינוך', 'רפואה', 'פנאי', 'ביגוד', 'מזון', 'מזונות', 'קייטנות', 'אחר'];
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/auth';
 import { memberService } from '@/contexts/auth/services/account/memberService';
@@ -23,6 +25,7 @@ interface ExpenseFiltersProps {
   selectedPayer: string | null;
   setSelectedPayer: (payer: string | null) => void;
   childrenList: Child[];
+  categoriesList?: { name: string }[];
 }
 
 export const ExpenseFilters: React.FC<ExpenseFiltersProps> = ({
@@ -38,7 +41,8 @@ export const ExpenseFilters: React.FC<ExpenseFiltersProps> = ({
   setSelectedYear,
   selectedPayer,
   setSelectedPayer,
-  childrenList
+  childrenList,
+  categoriesList = []
 }) => {
   const { account } = useAuth();
   
@@ -49,17 +53,7 @@ export const ExpenseFilters: React.FC<ExpenseFiltersProps> = ({
     enabled: !!account?.id
   });
 
-  // Categories for filtering
-  const categories = [
-    'חינוך',
-    'רפואה', 
-    'פנאי',
-    'ביגוד',
-    'מזון',
-    'מזונות',
-    'קייטנות',
-    'אחר',
-  ];
+  const categories = categoriesList.length > 0 ? categoriesList.map(c => c.name) : DEFAULT_CATEGORIES;
 
   // Generate months for dropdown
   const months = [

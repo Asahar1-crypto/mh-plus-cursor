@@ -4,12 +4,15 @@ import { Expense, Child } from './types';
 import { User } from '@/contexts/AuthContext';
 import { Account } from '@/contexts/auth/types';
 import { expenseService } from '@/integrations/supabase/expenseService';
+import { categoryService, Category } from '@/integrations/supabase/categoryService';
 
 export interface ExpenseStorage {
   expenses: Expense[];
   setExpenses: React.Dispatch<React.SetStateAction<Expense[]>>;
   childrenList: Child[];
   setChildrenList: React.Dispatch<React.SetStateAction<Child[]>>;
+  categoriesList: Category[];
+  setCategoriesList: React.Dispatch<React.SetStateAction<Category[]>>;
   isLoading: boolean;
   refreshData: () => Promise<void>;
 }
@@ -17,6 +20,7 @@ export interface ExpenseStorage {
 export const useExpenseStorage = (user: User | null, account: Account | null): ExpenseStorage => {
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [childrenList, setChildrenList] = useState<Child[]>([]);
+  const [categoriesList, setCategoriesList] = useState<Category[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const currentAccountRef = useRef<string | null>(null);
 
@@ -24,12 +28,13 @@ export const useExpenseStorage = (user: User | null, account: Account | null): E
     if (!user || !account) {
       setExpenses([]);
       setChildrenList([]);
+      setCategoriesList([]);
       setIsLoading(false);
       return;
     }
     
     setIsLoading(true);
-    console.log(`🔄 Starting data refresh for account: ${account.name} (${account.id})`);
+    // Refreshing data for current account
     
     // Add timeout to prevent infinite loading
     const timeoutId = setTimeout(() => {
@@ -39,25 +44,28 @@ export const useExpenseStorage = (user: User | null, account: Account | null): E
     
     try {
       // Load expenses from Supabase for the current account
-      console.log('📊 Loading expenses...');
       const fetchedExpenses = await expenseService.getExpenses(user, account);
-      console.log(`✅ Loaded ${fetchedExpenses.length} expenses`);
       setExpenses(fetchedExpenses);
       
       // Load children from Supabase for the current account
-      console.log('👶 Loading children...');
       const fetchedChildren = await expenseService.getChildren(user, account);
-      console.log(`✅ Loaded ${fetchedChildren.length} children`);
       setChildrenList(fetchedChildren);
+      
+      // Load categories
+      try {
+        const fetchedCategories = await categoryService.getCategories(account);
+        setCategoriesList(fetchedCategories);
+      } catch {
+        setCategoriesList([]);
+      }
       
       // Update the current account reference
       currentAccountRef.current = account.id;
-      console.log('✅ Data refresh completed successfully');
     } catch (error) {
-      console.error('❌ Failed to load data:', error);
-      // Clear data on error
+      console.error('Failed to load data:', error);
       setExpenses([]);
       setChildrenList([]);
+      setCategoriesList([]);
     } finally {
       clearTimeout(timeoutId);
       setIsLoading(false);
@@ -71,15 +79,15 @@ export const useExpenseStorage = (user: User | null, account: Account | null): E
     
     if (user && account) {
       if (accountChanged || currentAccountRef.current === null) {
-        // Clear data immediately when switching accounts
         setExpenses([]);
         setChildrenList([]);
+        setCategoriesList([]);
         refreshData();
       }
     } else {
-      // Clear data if no user or account
       setExpenses([]);
       setChildrenList([]);
+      setCategoriesList([]);
       currentAccountRef.current = null;
     }
   }, [user?.id, account?.id]);
@@ -127,6 +135,8 @@ export const useExpenseStorage = (user: User | null, account: Account | null): E
     setExpenses,
     childrenList,
     setChildrenList,
+    categoriesList,
+    setCategoriesList,
     isLoading,
     refreshData
   };

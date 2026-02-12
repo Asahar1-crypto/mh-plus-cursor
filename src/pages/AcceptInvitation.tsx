@@ -8,7 +8,6 @@ import { useInvitationDetails } from '@/hooks/useInvitationDetails';
 import LoadingState from '@/components/invitation/LoadingState';
 import ErrorState from '@/components/invitation/ErrorState';
 import SuccessState from '@/components/invitation/SuccessState';
-import DebugButtons from '@/components/invitation/DebugButtons';
 
 const AcceptInvitation = () => {
   const { invitationId: urlInvitationId } = useParams();
@@ -26,10 +25,7 @@ const AcceptInvitation = () => {
       {status === 'loading' && <LoadingState />}
       
       {status === 'error' && (
-        <>
-          <ErrorState message={errorMessage} />
-          <DebugButtons show={true} />
-        </>
+        <ErrorState message={errorMessage} />
       )}
       
       {status === 'success' && invitationDetails && (

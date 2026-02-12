@@ -25,7 +25,7 @@ export function useInvitationDetails(invitationId: string | undefined) {
     const fetchInvitationDetails = async () => {
       try {
         setFetchAttempted(true);
-        console.log(`Fetching invitation details for ID: ${invitationId}`);
+        // Fetching invitation details
         
         // Use secure RPC function that doesn't expose email addresses
         const { data: publicData, error: publicError } = await supabase
@@ -37,12 +37,10 @@ export function useInvitationDetails(invitationId: string | undefined) {
         }
         
         if (!publicData || publicData.length === 0) {
-          console.log("No active invitation found");
           throw new Error("הזמנה לא נמצאה או שפג תוקפה");
         }
         
         const invitation = publicData[0];
-        console.log("Found invitation via secure RPC:", invitation);
         
         // Store account_id for acceptance flow
         if (invitation.account_id) {

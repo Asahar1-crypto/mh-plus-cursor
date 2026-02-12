@@ -46,12 +46,6 @@ const FamilyOtpVerification: React.FC<FamilyOtpVerificationProps> = ({
   const sendVerificationCode = async () => {
     setIsResending(true);
     try {
-      console.log('FamilyOtp: Sending SMS with params:', {
-        phoneNumber,
-        verificationType: 'family_registration',
-        type: 'verification'
-      });
-      
       const { data, error } = await supabase.functions.invoke('send-sms', {
         body: {
           phoneNumber,
@@ -60,13 +54,10 @@ const FamilyOtpVerification: React.FC<FamilyOtpVerificationProps> = ({
         }
       });
 
-      console.log('FamilyOtp: SMS response:', { data, error });
-
       if (error) {
         console.error('Error sending SMS:', error);
         toast.error(`שגיאה בשליחת קוד האימות: ${error.message}`);
       } else {
-        console.log('SMS sent successfully:', data);
         toast.success('קוד האימות נשלח בהצלחה');
         setCountdown(60); // Start 60 second countdown
       }
@@ -91,8 +82,6 @@ const FamilyOtpVerification: React.FC<FamilyOtpVerificationProps> = ({
 
     setIsVerifying(true);
     try {
-      console.log('FamilyOtp: Verifying code:', { phoneNumber, code, verificationType: 'family_registration' });
-      
       // Verify code through edge function
       const { data, error } = await supabase.functions.invoke('verify-sms-code', {
         body: {
@@ -101,8 +90,6 @@ const FamilyOtpVerification: React.FC<FamilyOtpVerificationProps> = ({
           verificationType: 'family_registration'
         }
       });
-
-      console.log('FamilyOtp: Verification response:', { data, error });
 
       if (error || !data?.verified) {
         toast.error('קוד אימות שגוי או פג תוקף');
@@ -125,8 +112,6 @@ const FamilyOtpVerification: React.FC<FamilyOtpVerificationProps> = ({
     setShowCelebration(false);
     
     try {
-      console.log('FamilyOtp: Completing family registration with data:', familyInfo);
-
       // Call edge function to complete family registration
       const { data: registrationData, error } = await supabase.functions.invoke('complete-family-registration', {
         body: {
@@ -150,8 +135,6 @@ const FamilyOtpVerification: React.FC<FamilyOtpVerificationProps> = ({
         return;
       }
 
-      console.log('Family registration completed successfully:', registrationData);
-      
       toast.success('הרישום הושלם בהצלחה! אתה כעת חבר בחשבון המשפחתי');
       
       // If we got a magic link, redirect to it for auto-login

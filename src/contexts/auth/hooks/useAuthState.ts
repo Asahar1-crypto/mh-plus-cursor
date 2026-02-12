@@ -41,23 +41,15 @@ export const useAuthState = () => {
     // Avoid multiple simultaneous checks with stronger protection
     const now = Date.now();
     if (!forceRefresh && (now - lastCheck < 2000 || isCheckingAuth)) {
-      console.log('Skipping auth check - too soon since last check or already checking');
       return;
     }
     
     setLastCheck(now);
     setIsCheckingAuth(true);
-    console.log('Checking auth state...');
     setIsLoading(true);
     
     try {
       const authResult = await authService.checkAuth();
-      console.log('Auth check result:', { 
-        user: authResult.user ? `${authResult.user.id} (${authResult.user.email})` : null, 
-        account: authResult.account ? `${authResult.account.id} (${authResult.account.name})` : null,
-        userAccounts: authResult.userAccounts ? 
-          `${authResult.userAccounts.ownedAccounts.length} owned, ${authResult.userAccounts.sharedAccounts.length} shared` : null
-      });
       
       setUser(authResult.user);
       setAccount(authResult.account);

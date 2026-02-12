@@ -1,9 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useMemo } from 'react';
 import { useAuth } from '@/contexts/auth';
-import { supabase } from '@/integrations/supabase/client';
+import { useExpense } from '@/contexts/ExpenseContext';
+import { useQuery } from '@tanstack/react-query';
+import { budgetService } from '@/integrations/supabase/budgetService';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Cell } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer } from 'recharts';
 import { format, startOfMonth, endOfMonth, subMonths } from 'date-fns';
 import { he } from 'date-fns/locale';
 
@@ -15,94 +17,77 @@ interface BudgetData {
   difference: number;
 }
 
+const FOOD_CATEGORIES = ['מזון', 'מזונות'];
+
 const FoodBudgetChart = () => {
   const { account } = useAuth();
-  const [data, setData] = useState<BudgetData[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { expenses } = useExpense();
+  const currentDate = new Date();
+  const currentMonth = currentDate.getMonth() + 1;
+  const currentYear = currentDate.getFullYear();
+  const lastMonth = subMonths(currentDate, 1);
+  const lastMonthNum = lastMonth.getMonth() + 1;
+  const lastMonthYear = lastMonth.getFullYear();
 
-  useEffect(() => {
-    if (account?.id) {
-      fetchBudgetData();
-    }
-  }, [account]);
+  const { data: currentBudgets = [] } = useQuery({
+    queryKey: ['budgets', account?.id, currentMonth, currentYear],
+    queryFn: () => budgetService.getBudgets(account!, currentMonth, currentYear),
+    enabled: !!account?.id,
+  });
 
-  const fetchBudgetData = async () => {
-    if (!account?.id) return;
+  const { data: lastBudgets = [] } = useQuery({
+    queryKey: ['budgets', account?.id, lastMonthNum, lastMonthYear],
+    queryFn: () => budgetService.getBudgets(account!, lastMonthNum, lastMonthYear),
+    enabled: !!account?.id,
+  });
 
-    try {
-      const currentDate = new Date();
-      const currentMonth = currentDate.getMonth() + 1;
-      const currentYear = currentDate.getFullYear();
-      
-      const lastMonth = subMonths(currentDate, 1);
-      const lastMonthNum = lastMonth.getMonth() + 1;
-      const lastMonthYear = lastMonth.getFullYear();
+  const data = useMemo(() => {
+    const foodFilter = (b: { category?: string | null; categories?: string[] | null }) => {
+      if (b.categories?.length) return b.categories.some(c => FOOD_CATEGORIES.includes(c));
+      return b.category && FOOD_CATEGORIES.includes(b.category);
+    };
+    const currentBudget = currentBudgets
+      .filter(foodFilter)
+      .reduce((sum, b) => sum + b.monthly_amount, 0) || 3000;
+    const lastBudget = lastBudgets
+      .filter(foodFilter)
+      .reduce((sum, b) => sum + b.monthly_amount, 0) || 3000;
 
-      // For now, we'll create mock data since the budgets table is new
-      // In a real app, you'd fetch from supabase like this:
-      // const { data: budgets } = await supabase.from('budgets').select('*')...
-      
-      // Fetch expenses for current and last month
-      const { data: currentExpenses } = await supabase
-        .from('expenses')
-        .select('amount, date')
-        .eq('account_id', account.id)
-        .eq('category', 'food')
-        .gte('date', format(startOfMonth(currentDate), 'yyyy-MM-dd'))
-        .lte('date', format(endOfMonth(currentDate), 'yyyy-MM-dd'));
+    const currentMonthExpenses = expenses.filter(exp => {
+      const d = new Date(exp.date);
+      return d.getMonth() === currentDate.getMonth() && d.getFullYear() === currentYear &&
+        FOOD_CATEGORIES.includes(exp.category) && exp.status !== 'rejected';
+    });
+    const lastMonthExpenses = expenses.filter(exp => {
+      const d = new Date(exp.date);
+      return d.getMonth() === lastMonth.getMonth() && d.getFullYear() === lastMonthYear &&
+        FOOD_CATEGORIES.includes(exp.category) && exp.status !== 'rejected';
+    });
 
-      const { data: lastExpenses } = await supabase
-        .from('expenses')
-        .select('amount')
-        .eq('account_id', account.id)
-        .eq('category', 'food')
-        .gte('date', format(startOfMonth(lastMonth), 'yyyy-MM-dd'))
-        .lte('date', format(endOfMonth(lastMonth), 'yyyy-MM-dd'));
+    const currentSpent = currentMonthExpenses.reduce((sum, exp) => sum + exp.amount, 0);
+    const lastSpent = lastMonthExpenses.reduce((sum, exp) => sum + exp.amount, 0);
 
-      // Mock budget data - in production, fetch from budgets table
-      const currentBudget = 3000; // Default budget
-      const lastBudget = 3000;
+    const daysInMonth = endOfMonth(currentDate).getDate();
+    const daysPassed = Math.max(1, currentDate.getDate());
+    const currentProjection = (currentSpent / daysPassed) * daysInMonth;
 
-      const currentSpent = currentExpenses?.reduce((sum, exp) => sum + Number(exp.amount), 0) || 0;
-      const lastSpent = lastExpenses?.reduce((sum, exp) => sum + Number(exp.amount), 0) || 0;
-
-      // Calculate projection based on current spending rate
-      const daysInMonth = endOfMonth(currentDate).getDate();
-      const daysPassed = currentDate.getDate();
-      const currentProjection = daysPassed > 0 ? (currentSpent / daysPassed) * daysInMonth : 0;
-
-      const chartData: BudgetData[] = [
-        {
-          month: format(lastMonth, 'MMMM yyyy', { locale: he }),
-          budget: lastBudget,
-          spent: lastSpent,
-          projection: lastSpent,
-          difference: lastBudget - lastSpent
-        },
-        {
-          month: format(currentDate, 'MMMM yyyy', { locale: he }),
-          budget: currentBudget,
-          spent: currentSpent,
-          projection: currentProjection,
-          difference: currentBudget - currentProjection
-        }
-      ];
-
-      setData(chartData);
-    } catch (error) {
-      console.error('Error fetching budget data:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
-      </div>
-    );
-  }
+    return [
+      {
+        month: format(lastMonth, 'MMMM yyyy', { locale: he }),
+        budget: lastBudget,
+        spent: lastSpent,
+        projection: lastSpent,
+        difference: lastBudget - lastSpent
+      },
+      {
+        month: format(currentDate, 'MMMM yyyy', { locale: he }),
+        budget: currentBudget,
+        spent: currentSpent,
+        projection: currentProjection,
+        difference: currentBudget - currentProjection
+      }
+    ] as BudgetData[];
+  }, [expenses, currentBudgets, lastBudgets, currentDate, lastMonth, currentYear, lastMonthYear]);
 
   const chartConfig = {
     budget: {

@@ -18,6 +18,7 @@ import { User, Settings, Users, Bell } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import NotificationsCard from '@/components/account/NotificationsCard';
+import { CategoriesCard } from '@/components/account/CategoriesCard';
 
 const AccountSettings = () => {
   const { user, account, isLoading, sendInvitation, removeInvitation } = useAuth();
@@ -154,6 +155,7 @@ const AccountSettings = () => {
                   currentAvatarSet={account?.avatar_set}
                   isAdmin={isAdmin || false}
                 />
+                <CategoriesCard isAdmin={isAdmin || false} />
                 <UserAccountsCard />
               </div>
             </TabsContent>

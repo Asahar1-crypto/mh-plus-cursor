@@ -10,8 +10,6 @@ export const fetchAccountData = async (accountId: string): Promise<any | null> =
     return null;
   }
   
-  console.log(`fetchAccountData: Looking for account with ID: ${accountId}`);
-  
   // First verify the account exists
   const { data: accountExists, error: accountCheckError } = await supabase
     .from('accounts')
@@ -20,15 +18,6 @@ export const fetchAccountData = async (accountId: string): Promise<any | null> =
     .single();
     
   if (accountCheckError || !accountExists) {
-    console.warn(`fetchAccountData: No account found for ID ${accountId}. Error:`, accountCheckError);
-    
-    // Debug: Let's see what accounts DO exist
-    const { data: debugAccounts } = await supabase
-      .from('accounts')
-      .select('id, name, owner_id')
-      .limit(10);
-    console.log('fetchAccountData: Debug - existing accounts:', debugAccounts);
-    
     return null;
   }
   
@@ -44,6 +33,5 @@ export const fetchAccountData = async (accountId: string): Promise<any | null> =
     return null;
   }
   
-  console.log('fetchAccountData: Successfully fetched account:', accountData);
   return accountData;
 };

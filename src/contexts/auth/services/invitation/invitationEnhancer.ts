@@ -8,7 +8,6 @@ import { fetchOwnerProfile } from './profileFetcher';
  */
 export const enhanceInvitation = async (invitation: any): Promise<InvitationData | null> => {
   if (!invitation || !invitation.account_id || !invitation.invitation_id) {
-    console.warn('Invalid invitation data:', invitation);
     return null;
   }
   
@@ -22,7 +21,6 @@ export const enhanceInvitation = async (invitation: any): Promise<InvitationData
     
     // Check if owner ID exists
     if (!accountData.owner_id) {
-      console.warn('Invalid account data - missing owner_id:', accountData);
       return null;
     }
     

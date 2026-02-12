@@ -14,7 +14,6 @@ export const checkAuth = async (): Promise<{
   userAccounts: UserAccounts | null;
 }> => {
   try {
-    console.log('Getting current session...');
     const { data: { session }, error: sessionError } = await supabase.auth.getSession();
     
     if (sessionError) {
@@ -23,11 +22,8 @@ export const checkAuth = async (): Promise<{
     }
     
     if (!session?.user) {
-      console.log('No active session found');
       return { user: null, account: null, userAccounts: null };
     }
-    
-    console.log('Session found for user:', session.user.id);
     
     // Get user profile
     const { data: profile, error: profileError } = await supabase
@@ -47,14 +43,10 @@ export const checkAuth = async (): Promise<{
       name: profile?.name || session.user.email!.split('@')[0]
     };
     
-    console.log('User profile loaded:', user);
-    
     // Check for pending invitations from registration and auto-accept them
     if (hasPendingRegistrationInvitations()) {
-      console.log('Found pending registration invitations, auto-accepting...');
       try {
         await autoAcceptRegistrationInvitations(user);
-        console.log('Auto-acceptance completed, refreshing account data...');
       } catch (error) {
         console.error('Error during auto-acceptance:', error);
       }
@@ -62,11 +54,9 @@ export const checkAuth = async (): Promise<{
     
     // Get all user accounts (this will be refreshed after auto-acceptance)
     const userAccounts = await getUserAccounts(user.id);
-    console.log('User accounts loaded:', userAccounts);
     
     // Determine active account with improved logic
     const activeAccount = await determineActiveAccount(user.id, userAccounts);
-    console.log('Active account determined:', activeAccount);
     
     return {
       user,
@@ -83,8 +73,6 @@ export const checkAuth = async (): Promise<{
  * Get all accounts for a user (owned and shared)
  */
 export const getUserAccounts = async (userId: string): Promise<UserAccounts> => {
-  console.log('Getting accounts for user', userId);
-  
   // Use the new member-based account service
   return await accountService.getUserAccounts(userId);
 };
@@ -102,7 +90,6 @@ export const determineActiveAccount = async (userId: string, userAccounts: UserA
       const allAccounts = [...userAccounts.ownedAccounts, ...userAccounts.sharedAccounts];
       const selectedAccount = allAccounts.find(acc => acc.id === selectedAccountId);
       if (selectedAccount) {
-        console.log('Found selected account from preference:', selectedAccount.name);
         return selectedAccount;
       }
     }
@@ -112,17 +99,14 @@ export const determineActiveAccount = async (userId: string, userAccounts: UserA
   
   // Priority 2: If user has shared accounts, use the most recent one ONLY if no preference is set
   if (userAccounts.sharedAccounts.length > 0) {
-    console.log('User has shared accounts, using the first shared account');
     return userAccounts.sharedAccounts[0];
   }
   
   // Priority 3: Use first owned account
   if (userAccounts.ownedAccounts.length > 0) {
-    console.log('Using first owned account as default');
     return userAccounts.ownedAccounts[0];
   }
   
   // Priority 4: No accounts found - return null to show NoAccountScreen
-  console.log('No accounts found for user - user will see account creation options');
   return null;
 };

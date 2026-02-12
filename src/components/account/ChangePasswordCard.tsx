@@ -19,8 +19,6 @@ const ChangePasswordCard: React.FC = () => {
   const handleChangePassword = async () => {
     setIsLoading(true);
     try {
-      console.log('🔐 Starting password change process...');
-      
       // שינוי סיסמה דרך Supabase
       const { error } = await supabase.auth.updateUser({
         password: newPassword
@@ -28,7 +26,6 @@ const ChangePasswordCard: React.FC = () => {
 
       if (error) throw error;
 
-      console.log('✅ Password changed successfully');
       toast.success('הסיסמה שונתה בהצלחה!');
       
       // נקה את השדות

@@ -10,29 +10,66 @@ import { RecurringExpensesTable } from '@/components/expenses/RecurringExpensesT
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { RefreshCw, Plus, TrendingUp, CreditCard, Clock } from 'lucide-react';
+import { RefreshCw, Plus, TrendingUp, CreditCard, Clock, Download } from 'lucide-react';
+import { exportExpensesToCSV, exportExpensesToPDF } from '@/utils/exportUtils';
 import { useAuth } from '@/contexts/auth';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { BudgetModal } from '@/components/expenses/BudgetModal';
+import { ExpensesPageSkeleton } from '@/components/expenses/ExpensesPageSkeleton';
 
 
 const ExpensesPage = () => {
   const location = useLocation();
   const modalRef = useRef<any>(null);
-  const { account } = useAuth();
+  const { user, account, profile } = useAuth();
   const isPersonalPlan = account?.plan_slug === 'personal';
+
+  const { data: isAdmin } = useQuery({
+    queryKey: ['is-admin', account?.id, user?.id],
+    queryFn: async () => {
+      if (!account?.id || !user?.id) return false;
+      const { data, error } = await supabase.rpc('is_account_admin', {
+        account_uuid: account.id,
+        user_uuid: user.id
+      });
+      if (error) return false;
+      return data || false;
+    },
+    enabled: !!account?.id && !!user?.id
+  });
+  
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [selectedChild, setSelectedChild] = useState<string | null>(null);
+  const [selectedStatus, setSelectedStatus] = useState<Expense['status'] | null>(null);
+  const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth());
+  const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
+  const [selectedPayer, setSelectedPayer] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<'regular' | 'recurring'>('regular');
   
   const { 
     expenses, 
     childrenList, 
+    categoriesList,
     approveExpense,
     approveAllRecurring,
     rejectExpense, 
     markAsPaid,
+    updateExpense,
+    updateExpenseStatus: updateStatusFromContext,
+    deleteExpense,
+    updateRecurringActive,
     isLoading,
     refreshData
   } = useExpense();
 
-  // Create a status update function that uses existing functions
+  const isSuperAdmin = !!profile?.is_super_admin;
+
+  // Create a status update function - super admins can set any status directly
   const updateExpenseStatus = async (id: string, status: Expense['status']) => {
+    if (isSuperAdmin) {
+      return await updateStatusFromContext(id, status);
+    }
     switch (status) {
       case 'approved':
         return await approveExpense(id);
@@ -41,11 +78,9 @@ const ExpensesPage = () => {
       case 'paid':
         return await markAsPaid(id);
       case 'pending':
-        // For now, we'll handle pending status separately if needed
-        console.log('Pending status change not implemented yet');
-        break;
+        return await updateStatusFromContext(id, 'pending');
       default:
-        console.warn('Unknown status:', status);
+        break;
     }
   };
 
@@ -56,7 +91,6 @@ const ExpensesPage = () => {
   // Check if we should auto-open the modal
   useEffect(() => {
     if (location.state?.openModal) {
-      // Small delay to ensure modal is rendered
       setTimeout(() => {
         const modalButton = document.querySelector('[data-modal-trigger="add-expense"]');
         if (modalButton) {
@@ -65,13 +99,11 @@ const ExpensesPage = () => {
       }, 100);
     }
   }, [location.state]);
-  
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const [selectedChild, setSelectedChild] = useState<string | null>(null);
-  const [selectedStatus, setSelectedStatus] = useState<Expense['status'] | null>(null);
-  const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth());
-  const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
-  const [selectedPayer, setSelectedPayer] = useState<string | null>(null);
+
+  // Loading state
+  if (isLoading) {
+    return <ExpensesPageSkeleton />;
+  }
 
   // Filter regular expenses (non-recurring) based on selected criteria
   const filteredExpenses = expenses
@@ -152,6 +184,26 @@ const ExpensesPage = () => {
             <div className="flex gap-2 sm:gap-3 w-full sm:w-auto">
               <Button
                 variant="outline"
+                onClick={() => exportExpensesToCSV(filteredExpenses)}
+                disabled={filteredExpenses.length === 0}
+                size="sm"
+                className="flex items-center gap-1 sm:gap-2 bg-background/80 backdrop-blur-sm border-border/50 hover:bg-background hover:border-primary/30 transition-all duration-300 flex-1 sm:flex-none"
+              >
+                <Download className="h-4 w-4" />
+                <span className="hidden sm:inline">CSV</span>
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => exportExpensesToPDF(filteredExpenses)}
+                disabled={filteredExpenses.length === 0}
+                size="sm"
+                className="flex items-center gap-1 sm:gap-2 bg-background/80 backdrop-blur-sm border-border/50 hover:bg-background hover:border-primary/30 transition-all duration-300 flex-1 sm:flex-none"
+              >
+                <Download className="h-4 w-4" />
+                <span className="hidden sm:inline">PDF</span>
+              </Button>
+              <Button
+                variant="outline"
                 onClick={handleRefresh}
                 disabled={isLoading}
                 size="sm"
@@ -160,6 +212,7 @@ const ExpensesPage = () => {
                 <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
                 <span className="hidden sm:inline">רענון</span>
               </Button>
+              <BudgetModal isAdmin={isAdmin || false} />
               <div className="flex-1 sm:flex-none">
                 <AddExpenseModal onSubmitSuccess={refreshData} />
               </div>
@@ -245,7 +298,7 @@ const ExpensesPage = () => {
         {/* Main Content with Tabs */}
         <Card className="bg-gradient-to-br from-card/90 to-card/80 backdrop-blur-lg border border-border/50 shadow-2xl animate-fade-in [animation-delay:400ms]">
           <CardContent className="p-4 sm:p-6">
-            <Tabs defaultValue="regular" className="space-y-4 sm:space-y-6">
+            <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'regular' | 'recurring')} className="space-y-4 sm:space-y-6">
               <TabsList className="grid w-full grid-cols-2 bg-muted/50 backdrop-blur-sm">
                 <TabsTrigger 
                   value="regular" 
@@ -281,6 +334,7 @@ const ExpensesPage = () => {
                   selectedPayer={selectedPayer}
                   setSelectedPayer={setSelectedPayer}
                   childrenList={childrenList}
+                  categoriesList={categoriesList}
                 />
 
                 {/* Expenses Table */}
@@ -290,7 +344,11 @@ const ExpensesPage = () => {
                   approveAllRecurring={approveAllRecurring}
                   rejectExpense={rejectExpense}
                   markAsPaid={markAsPaid}
+                  updateExpense={updateExpense}
                   updateExpenseStatus={updateExpenseStatus}
+                  deleteExpense={deleteExpense}
+                  refreshData={refreshData}
+                  isSuperAdmin={isSuperAdmin}
                 />
               </TabsContent>
 
@@ -299,6 +357,7 @@ const ExpensesPage = () => {
                   expenses={recurringExpenses}
                   childrenList={childrenList}
                   refreshData={refreshData}
+                  updateRecurringActive={updateRecurringActive}
                 />
               </TabsContent>
             </Tabs>

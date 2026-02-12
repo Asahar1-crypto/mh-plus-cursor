@@ -104,12 +104,6 @@ const FamilyPhoneRegister = () => {
     try {
       const normalizedPhone = validationResult.data!.e164;
       
-      console.log('Family registration data:', {
-        ...data,
-        invitationId,
-        normalizedPhone
-      });
-      
       // Set family info and move to OTP verification
       const newFamilyInfo = {
         name: data.name,
@@ -140,7 +134,6 @@ const FamilyPhoneRegister = () => {
 
   const handleSuccess = () => {
     // This will be handled by FamilyOtpVerification
-    console.log('Family registration successful');
   };
 
   if (status === 'loading') {

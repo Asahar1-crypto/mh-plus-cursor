@@ -34,8 +34,6 @@ export const useAuthActions = (
     setIsLoading
   );
   
-  console.log('useAuthActions: received from useAccountActions', { accountActions });
-  
   const { switchAccount, updateAccountName } = accountActions;
 
   const { verifyEmail, resetPassword } = usePasswordActions(
@@ -91,20 +89,15 @@ export const useAuthActions = (
 
     setIsSubmitting(true);
     try {
-      console.log('useAuthActions: Starting invitation acceptance for:', invitationId);
-      
       const sharedAccount = await authService.acceptInvitation(invitationId, user);
-      console.log('useAuthActions: Invitation accepted, shared account:', sharedAccount);
       
       // Refresh all user data to include the new shared account
       await checkAndSetUserData(true);
-      console.log('useAuthActions: User data refreshed after accepting invitation');
       
       toast.success('הצטרפת לחשבון בהצלחה!');
       
       // Give a moment for the UI to update, then reload the page to ensure fresh state
       setTimeout(() => {
-        console.log('useAuthActions: Reloading page to show shared account');
         window.location.reload();
       }, 1500);
       

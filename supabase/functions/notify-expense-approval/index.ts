@@ -164,7 +164,7 @@ serve(async (req) => {
     const recipientName = recipientProfile.name || 'משתמש';
     const amount = expense.amount.toLocaleString('he-IL');
     const description = expense.description || 'הוצאה';
-    const appUrl = 'https://hchmfsilgfrzhenafbzi.lovableproject.com';
+    const appUrl = Deno.env.get('APP_URL') || 'https://mhplus.online';
 
     // ============================================================
     // 1. PUSH NOTIFICATION
@@ -178,7 +178,7 @@ serve(async (req) => {
         title: `הוצאה חדשה לאישור`,
         body: `${creatorName} הוסיף/ה הוצאה: ${amount} ₪ - ${description}`,
         data: { expenseId: expense_id },
-        actionUrl: `${appUrl}/expenses`,
+        actionUrl: `${appUrl}/dashboard`,
       };
 
       console.log('📲 Sending push notification...');
@@ -200,20 +200,17 @@ serve(async (req) => {
 
     // ============================================================
     // 2. SMS NOTIFICATION
-    // Send SMS if:
-    // - SMS is enabled for the account, OR
-    // - Push notification failed (fallback)
+    // Always send SMS for pending expenses as a reliable channel
     // ============================================================
-    const pushFailed = !pushResult.success || pushResult.fallback === 'sms';
-    const shouldSendSMS = account.sms_notifications_enabled || pushFailed;
+    const shouldSendSMS = true; // Always send SMS for expense approvals
 
     let smsResult: { success: boolean; messageId?: string; error?: string; reason?: string } = { success: false, reason: 'not_attempted' };
 
     if (!shouldSendSMS) {
-      console.log('📵 SMS not needed (push succeeded and SMS disabled)');
+      console.log('📵 SMS not needed');
       smsResult = { success: false, reason: 'not_needed' };
     } else {
-      console.log(`📱 Will send SMS (sms_enabled=${account.sms_notifications_enabled}, push_failed=${pushFailed})`);
+      console.log(`📱 Will send SMS for pending expense`);
 
       // Check if SMS already sent
       const { data: existingNotification } = await supabase
@@ -236,7 +233,7 @@ serve(async (req) => {
           console.error('📱 Vonage not configured');
           smsResult = { success: false, error: 'SMS service not configured' };
         } else {
-          const smsMessage = `היי ${recipientName},\n${creatorName} הוסיף/ה הוצאה חדשה לאישור: ${amount} ₪\n${description}\nלאישור: ${appUrl}/expenses`;
+          const smsMessage = `היי ${recipientName},\n${creatorName} הוסיף/ה הוצאה חדשה לאישור: ${amount} ₪\n${description}\nלאישור: ${appUrl}/dashboard`;
 
           console.log(`📱 Sending SMS to ${recipientPhone}...`);
           const cleanPhone = recipientPhone.replace(/^\+/, '');

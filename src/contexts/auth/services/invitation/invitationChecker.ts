@@ -7,7 +7,6 @@ import { cleanupOrphanedInvitations } from './invitationCleaner';
  */
 export const checkPendingInvitations = async (userEmail: string): Promise<any[]> => {
   try {
-    console.log(`checkPendingInvitations: Checking for invitations for ${userEmail}`);
     
     // First, cleanup any orphaned invitations
     await cleanupOrphanedInvitations();
@@ -37,11 +36,7 @@ export const checkPendingInvitations = async (userEmail: string): Promise<any[]>
     // Filter out invitations where the account doesn't exist (shouldn't happen after cleanup, but just in case)
     const validInvitations = (invitations || []).filter(invitation => invitation.accounts);
     
-    if (validInvitations.length !== (invitations || []).length) {
-      console.warn(`checkPendingInvitations: Filtered out ${(invitations || []).length - validInvitations.length} invitations with missing accounts`);
-    }
-    
-    console.log(`checkPendingInvitations: Found ${validInvitations.length} valid pending invitations`);
+    // Filtered out invitations with missing accounts if any
     
     return validInvitations;
   } catch (error) {

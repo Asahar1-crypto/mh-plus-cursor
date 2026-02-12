@@ -3,8 +3,6 @@ import { Account } from '../../types';
 
 export async function removeInvitation(account: Account): Promise<void> {
   try {
-    console.log(`removeInvitation: Removing invitation for account ${account.id}`);
-    
     if (!account || !account.id) {
       console.error("removeInvitation: No account provided");
       throw new Error('נתונים חסרים להסרת ההזמנה');
@@ -22,8 +20,6 @@ export async function removeInvitation(account: Account): Promise<void> {
       throw new Error('שגיאה בהסרת ההזמנה: ' + deleteError.message);
     }
 
-    console.log("removeInvitation: Pending invitations deleted successfully");
-
     // Clear the shared_with_email and invitation_id from the account
     const { error: updateError } = await supabase
       .from('accounts')
@@ -39,8 +35,6 @@ export async function removeInvitation(account: Account): Promise<void> {
       throw new Error('שגיאה בעדכון החשבון: ' + updateError.message);
     }
 
-    console.log("removeInvitation: Account updated - sharing information cleared");
-    
   } catch (error: any) {
     console.error('removeInvitation: Failed to remove invitation:', error);
     throw error;

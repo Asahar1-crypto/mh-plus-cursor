@@ -39,17 +39,14 @@ const AdminSmsLogs: React.FC = () => {
   const fetchSmsLogs = async () => {
     try {
       setLoading(true);
-      console.log('AdminSmsLogs: Fetching SMS logs...');
       const { data, error } = await supabase
         .from('sms_verification_codes')
         .select('*')
         .order('created_at', { ascending: false })
         .limit(100);
 
-      console.log('AdminSmsLogs: SMS logs fetched:', { data, error });
       if (error) throw error;
       setSmsLogs(data || []);
-      console.log('AdminSmsLogs: SMS logs set:', data?.length || 0, 'records');
     } catch (error: any) {
       console.error('Error fetching SMS logs:', error);
       toast({

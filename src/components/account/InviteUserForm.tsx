@@ -71,16 +71,12 @@ const InviteUserForm: React.FC<InviteUserFormProps> = ({ account, onInvite }) =>
     setError(null);
     
     try {
-      console.log('Starting invitation process for phone:', validationResult.data?.e164);
-      console.log('Current account:', account);
-      
       if (!account) {
         setError('אין חשבון פעיל. אנא רענן את הדף ונסה שוב.');
         return;
       }
       
       await onInvite(validationResult.data!.e164);
-      console.log('Invitation sent successfully');
       
       // Celebration confetti
       const duration = 2000;

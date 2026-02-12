@@ -129,7 +129,6 @@ const AdminTenants: React.FC = () => {
   }, []);
 
   const loadTenants = async () => {
-    console.log('🚀 loadTenants function called');
     try {
       setLoading(true);
 
@@ -181,26 +180,21 @@ const AdminTenants: React.FC = () => {
       if (error) throw error;
 
       // קבלת רשימת כל המשתמשים עם האימיילים שלהם
-      console.log('Attempting to fetch user emails...');
       const { data: emailData, error: emailError } = await supabase.functions.invoke('get-user-emails', {
         headers: {
           'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`
         }
       });
       let userEmailMap = new Map<string, string>();
-      
-      console.log('Email fetch result:', { emailData, emailError });
-      
+
       if (!emailError && emailData?.success) {
         Object.entries(emailData.userEmails).forEach(([userId, email]) => {
           userEmailMap.set(userId, email as string);
         });
         setUserEmails(emailData.userEmails);
-        console.log('Successfully loaded user emails:', Object.keys(emailData.userEmails).length);
       } else {
         console.error('Failed to fetch user emails:', emailError);
-        console.log('Using fallback: getting current user email from session');
-        
+
         // Fallback: לפחות לאפשר את המייל של המשתמש הנוכחי
         const currentSession = await supabase.auth.getSession();
         if (currentSession.data.session?.user?.email) {
@@ -208,7 +202,6 @@ const AdminTenants: React.FC = () => {
             currentSession.data.session.user.id, 
             currentSession.data.session.user.email
           );
-          console.log('Added current user email:', currentSession.data.session.user.email);
         }
       }
 
@@ -236,7 +229,6 @@ const AdminTenants: React.FC = () => {
           // הכנת רשימת חברים מפורטת עם האימיילים הנכונים
           const memberDetails = (tenant.account_members || []).map((member: any) => {
             const email = userEmailMap.get(member.user_id) || 'לא ידוע';
-            console.log(`Member ${member.user_id}: name=${member.profiles?.name}, email=${email}`);
             return {
               name: member.profiles?.name || 'לא ידוע',
               email: email,
@@ -446,8 +438,8 @@ const AdminTenants: React.FC = () => {
 
       if (error) throw error;
 
-      // Also create/update subscription record
-      const { error: subError } = await supabase
+      // Also create/update subscription record (best-effort)
+      await supabase
         .from('subscriptions')
         .upsert({
           account_id: tenantId,
@@ -456,13 +448,7 @@ const AdminTenants: React.FC = () => {
           billing_period: billingPeriod || null,
           payment_provider: 'manual',
           started_at: new Date().toISOString(),
-        }, {
-          onConflict: 'account_id'
-        });
-
-      if (subError) {
-        console.warn('Warning: Could not update subscription record:', subError);
-      }
+        }, { onConflict: 'account_id' });
 
       toast({
         title: 'הצלחה',

@@ -8,11 +8,14 @@ import { supabase } from '@/integrations/supabase/client';
 
 export interface ExpenseActions {
   addExpense: (expense: Omit<Expense, 'id' | 'createdBy' | 'creatorName' | 'status' | 'approvedBy' | 'approvedAt'>) => Promise<void>;
+  updateExpense: (id: string, updates: Partial<Pick<Expense, 'amount' | 'description' | 'date' | 'category' | 'childId' | 'paidById' | 'splitEqually'>>) => Promise<void>;
   approveExpense: (id: string) => Promise<void>;
   approveAllRecurring: (id: string) => Promise<void>;
   rejectExpense: (id: string) => Promise<void>;
   markAsPaid: (id: string) => Promise<void>;
   updateExpenseStatus: (id: string, status: 'pending' | 'approved' | 'rejected' | 'paid') => Promise<void>;
+  deleteExpense: (id: string) => Promise<void>;
+  updateRecurringActive: (id: string, active: boolean) => Promise<void>;
   addChild: (child: Omit<Child, 'id'>) => Promise<void>;
   updateChild: (id: string, updates: Partial<Omit<Child, 'id'>>) => Promise<void>;
   uploadReceipt: (expenseId: string, receiptUrl: string) => Promise<void>;
@@ -22,20 +25,18 @@ export interface ExpenseActions {
 // Helper function to send SMS notification for pending expenses
 const sendExpenseNotification = async (expenseId: string, accountId: string): Promise<string> => {
   try {
-    console.log('📩 Sending expense notification for expense:', expenseId, 'account:', accountId);
     const { data, error } = await supabase.functions.invoke('notify-expense-approval', {
       body: { expense_id: expenseId, account_id: accountId }
     });
     
     if (error) {
-      console.error('❌ Error sending expense notification:', error);
+      console.error('Error sending expense notification:', error);
       return `ERROR: ${JSON.stringify(error)}`;
     } else {
-      console.log('✅ Expense notification result:', data);
       return `SUCCESS: ${JSON.stringify(data)}`;
     }
   } catch (error) {
-    console.error('❌ Failed to send expense notification (exception):', error);
+    console.error('Failed to send expense notification:', error);
     return `EXCEPTION: ${error}`;
   }
 };
@@ -65,20 +66,10 @@ export const useExpenseActions = (
     setIsSubmitting(true);
     try {
       const result = await expenseService.addExpense(user, account, newExpense);
-      console.log('🔍 Expense added result:', { 
-        id: result.id, 
-        isPending: result.isPending,
-        userId: user.id,
-        paidById: newExpense.paidById,
-      });
       
       // Send notification if expense is pending (needs approval)
       if (result.isPending) {
-        console.log('📩 Expense is PENDING - sending notification...');
-        const notifResult = await sendExpenseNotification(result.id, account.id);
-        console.log('📩 Notification result:', notifResult);
-      } else {
-        console.log('⚠️ Expense auto-approved - no notification sent');
+        await sendExpenseNotification(result.id, account.id);
       }
       
       await refreshData(); // Refresh data to show new expense
@@ -86,6 +77,24 @@ export const useExpenseActions = (
     } catch (error) {
       console.error('Failed to add expense:', error);
       toast.error('שגיאה בהוספת ההוצאה');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const updateExpense = async (id: string, updates: Partial<Pick<Expense, 'amount' | 'description' | 'date' | 'category' | 'childId' | 'paidById' | 'splitEqually'>>) => {
+    if (!user || !account) {
+      toast.error('יש להתחבר כדי לערוך הוצאה');
+      return;
+    }
+    setIsSubmitting(true);
+    try {
+      await expenseService.updateExpense(user, account, id, updates);
+      await refreshData();
+      toast.success('ההוצאה עודכנה בהצלחה');
+    } catch (error) {
+      console.error('Failed to update expense:', error);
+      toast.error('שגיאה בעדכון ההוצאה');
     } finally {
       setIsSubmitting(false);
     }
@@ -161,27 +170,19 @@ export const useExpenseActions = (
   };
 
   const updateExpenseStatus = async (id: string, status: 'pending' | 'approved' | 'rejected' | 'paid'): Promise<void> => {
-    console.log(`Starting updateExpenseStatus: id=${id}, status=${status}`);
-    console.log(`User:`, user);
-    console.log(`Account:`, account);
-    
     if (!user) {
-      console.error('User is null');
       toast.error('יש להתחבר כדי לעדכן סטטוס הוצאה');
       return;
     }
 
     if (!account) {
-      console.error('Account is null');
       toast.error('לא נמצא חשבון פעיל');
       return;
     }
     
     setIsSubmitting(true);
     try {
-      console.log(`Calling expenseService.updateExpenseStatus with:`, { user: user.id, account: account.id, id, status });
       await expenseService.updateExpenseStatus(user, account, id, status);
-      console.log('updateExpenseStatus completed, calling refreshData...');
       await refreshData(); // Refresh data to show updated status
       
       let statusText = '';
@@ -191,7 +192,6 @@ export const useExpenseActions = (
         case 'paid': statusText = 'סומנה כשולמה'; break;
       }
       toast.success(`ההוצאה ${statusText} בהצלחה`);
-      console.log(`Status update successful: ${statusText}`);
     } catch (error) {
       console.error(`Failed to ${status} expense:`, error);
       toast.error(`שגיאה ב${status === 'approved' ? 'אישור' : status === 'rejected' ? 'דחיית' : 'סימון'} ההוצאה`);
@@ -290,13 +290,52 @@ export const useExpenseActions = (
     await updateExpenseStatus(id, 'paid');
   };
 
+  const deleteExpense = async (id: string): Promise<void> => {
+    if (!user || !account) {
+      toast.error('יש להתחבר כדי למחוק הוצאה');
+      return;
+    }
+    setIsSubmitting(true);
+    try {
+      await expenseService.deleteExpense(user, account, id);
+      await refreshData();
+      toast.success('ההוצאה נמחקה בהצלחה');
+    } catch (error) {
+      console.error('Failed to delete expense:', error);
+      toast.error('שגיאה במחיקת ההוצאה');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const updateRecurringActive = async (id: string, active: boolean): Promise<void> => {
+    if (!user || !account) {
+      toast.error('יש להתחבר כדי לעדכן הוצאה חוזרת');
+      return;
+    }
+    setIsSubmitting(true);
+    try {
+      await expenseService.updateRecurringActive(user, account, id, active);
+      await refreshData();
+      toast.success(active ? 'ההוצאה החוזרת הופעלה' : 'ההוצאה החוזרת הושהתה');
+    } catch (error) {
+      console.error('Failed to update recurring active:', error);
+      toast.error('שגיאה בעדכון סטטוס ההוצאה החוזרת');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return {
     addExpense,
+    updateExpense,
     approveExpense,
     approveAllRecurring,
     rejectExpense,
     markAsPaid,
     updateExpenseStatus,
+    deleteExpense,
+    updateRecurringActive,
     addChild,
     updateChild,
     uploadReceipt,

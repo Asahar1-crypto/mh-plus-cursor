@@ -264,7 +264,6 @@ const UserProfileCard: React.FC = () => {
                   </Button>
                   <Button 
                     onClick={() => {
-                      console.log('שינוי מייל ל:', newEmail);
                       // כאן נוסיף את הלוגיקה בשלב הבא
                     }}
                     disabled={!newEmail.trim() || newEmail === user.email}

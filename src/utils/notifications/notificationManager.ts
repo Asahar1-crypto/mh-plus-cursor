@@ -8,12 +8,10 @@ import { showInvitationNotification } from './invitationNotifier';
  */
 export async function checkForNewInvitations(userEmail?: string): Promise<boolean> {
   if (!userEmail) {
-    console.log('No user email provided for invitation check');
     return false;
   }
   
   try {
-    console.log(`Checking for new invitations for user ${userEmail}`);
     
     // Get invitations from database that haven't been accepted yet and haven't expired
     const { data: invitations, error } = await supabase
@@ -37,11 +35,8 @@ export async function checkForNewInvitations(userEmail?: string): Promise<boolea
     }
     
     if (!invitations || invitations.length === 0) {
-      console.log('No pending invitations found');
       return false;
     }
-    
-    console.log(`Found ${invitations.length} pending invitations for ${userEmail}`);
     
     // Check if we've already shown notifications for these invitations
     const notifiedInvitationsStr = sessionStorage.getItem('notifiedInvitations') || '[]';

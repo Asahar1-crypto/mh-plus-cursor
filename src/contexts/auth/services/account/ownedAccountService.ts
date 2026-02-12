@@ -5,7 +5,6 @@ import { Account } from '../../types';
 export const ownedAccountService = {
   // Get owned accounts where user is owner_id
   getOwnedAccounts: async (userId: string): Promise<Account | null> => {
-    console.log(`Getting owned accounts for user ${userId}`);
     
     const { data: ownedAccounts, error: ownedError } = await supabase
       .from('accounts')
@@ -20,7 +19,6 @@ export const ownedAccountService = {
     
     // If user has an owned account, return it
     if (ownedAccounts && ownedAccounts.length > 0) {
-      console.log('Found existing owned account:', ownedAccounts[0]);
       
       // Get shared user information if exists
       let sharedWithEmail = ownedAccounts[0].shared_with_email;
@@ -34,8 +32,6 @@ export const ownedAccountService = {
           .eq('id', sharedWithId)
           .single();
           
-        console.log('Shared user profile:', sharedUserProfile);
-        
         return {
           id: ownedAccounts[0].id,
           name: ownedAccounts[0].name,
@@ -71,7 +67,6 @@ export const ownedAccountService = {
 
   // Get all accounts owned by the user
   getAllOwnedAccounts: async (userId: string) => {
-    console.log(`Getting all owned accounts for user ${userId}`);
     
     const { data: ownedAccounts, error: ownedError } = await supabase
       .from('accounts')

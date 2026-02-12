@@ -11,6 +11,7 @@ import NoAccountScreen from './NoAccountScreen';
 const AppLayout = () => {
   const { isAuthenticated, isLoading, account, user } = useAuth();
   const isMobile = useIsMobile();
+  const location = useLocation();
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
@@ -53,7 +54,6 @@ const AppLayout = () => {
   }
 
   // Redirect expired accounts to choose-plan (except admin pages and choose-plan itself)
-  const location = useLocation();
   const isExpiredOrTrialEnded = account && (
     account.subscription_status === 'expired' ||
     (account.subscription_status === 'trial' && account.trial_ends_at && new Date(account.trial_ends_at) < new Date())

@@ -4,29 +4,39 @@
 /**
  * Firebase Cloud Messaging Service Worker
  * Handles background push notifications for web platform
- * 
- * NOTE: Replace the firebaseConfig values with your actual Firebase project config.
- * These are loaded from environment at build time (see .env).
  */
 importScripts('https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js');
 importScripts('https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging-compat.js');
 
-// Firebase config - will be populated by the main app via postMessage
-let firebaseConfig = null;
+// Fallback Firebase config (used if postMessage config is not received)
+const DEFAULT_FIREBASE_CONFIG = {
+  apiKey: "AIzaSyBcPHGwMs2feVqkskIxuReytW3e0HG7WQE",
+  authDomain: "mh-plus-abba1.firebaseapp.com",
+  projectId: "mh-plus-abba1",
+  storageBucket: "mh-plus-abba1.firebasestorage.app",
+  messagingSenderId: "876019710984",
+  appId: "1:876019710984:web:d5d9e2a98f278b633425bd",
+};
 
-// Listen for config from main app
+let isInitialized = false;
+
+// Initialize immediately with default config
+initializeFirebase(DEFAULT_FIREBASE_CONFIG);
+
+// Also listen for config from main app (in case it sends updated config)
 self.addEventListener('message', (event) => {
   if (event.data && event.data.type === 'FIREBASE_CONFIG') {
-    firebaseConfig = event.data.config;
-    initializeFirebase();
+    if (!isInitialized) {
+      initializeFirebase(event.data.config);
+    }
   }
 });
 
-function initializeFirebase() {
-  if (!firebaseConfig) return;
+function initializeFirebase(config) {
+  if (isInitialized || !config) return;
   
   try {
-    firebase.initializeApp(firebaseConfig);
+    firebase.initializeApp(config);
     const messaging = firebase.messaging();
 
     // Background message handler
@@ -49,6 +59,7 @@ function initializeFirebase() {
       return self.registration.showNotification(notificationTitle, notificationOptions);
     });
 
+    isInitialized = true;
     console.log('[SW] Firebase messaging initialized successfully');
   } catch (error) {
     console.error('[SW] Error initializing Firebase:', error);

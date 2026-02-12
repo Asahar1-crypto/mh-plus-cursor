@@ -5,7 +5,6 @@ import { Account } from '../../types';
 export const sharedAccountService = {
   // Get shared accounts where user is shared_with_id
   getSharedAccounts: async (userId: string): Promise<Account | null> => {
-    console.log(`Getting shared accounts for user ${userId}`);
     
     const { data: sharedAccounts, error: sharedError } = await supabase
       .from('accounts')
@@ -28,7 +27,6 @@ export const sharedAccountService = {
     
     // If user has a shared account, prioritize it (this is likely the most recent action)
     if (sharedAccounts && sharedAccounts.length > 0) {
-      console.log('Found existing shared account:', sharedAccounts[0]);
       
       // Get owner name from joined profile data
       const ownerName = sharedAccounts[0]?.owner_profile?.name;
@@ -54,7 +52,6 @@ export const sharedAccountService = {
 
   // Get all accounts shared with the user
   getAllSharedAccounts: async (userId: string) => {
-    console.log(`Getting all shared accounts for user ${userId}`);
     
     const { data: sharedAccounts, error: sharedError } = await supabase
       .from('accounts')

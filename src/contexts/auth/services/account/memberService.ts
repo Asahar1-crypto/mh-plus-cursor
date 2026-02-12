@@ -8,7 +8,6 @@ export const memberService = {
   // Get all members of an account
   getAccountMembers: async (accountId: string): Promise<AccountMember[]> => {
     try {
-      console.log(`Getting members for account ${accountId}`);
       
       const { data, error } = await supabase.rpc(
         'get_account_members_with_details',
@@ -30,7 +29,6 @@ export const memberService = {
   // Add a member to an account
   addMember: async (accountId: string, userId: string, role: 'admin' | 'member' = 'member'): Promise<boolean> => {
     try {
-      console.log(`Adding member ${userId} to account ${accountId} with role ${role}`);
       
       const { data, error } = await supabase.rpc(
         'add_account_member',
@@ -56,7 +54,6 @@ export const memberService = {
   // Remove a member from an account
   removeMember: async (accountId: string, userId: string): Promise<boolean> => {
     try {
-      console.log(`Removing member ${userId} from account ${accountId}`);
       
       const { data, error } = await supabase.rpc(
         'remove_account_member',

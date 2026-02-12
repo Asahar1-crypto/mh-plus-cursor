@@ -1,24 +1,16 @@
 import { CustomDropdown } from "@/components/ui/custom-dropdown"
 
-const CATEGORIES = [
-  'חינוך',
-  'רפואה',
-  'פנאי',
-  'ביגוד',
-  'מזון',
-  'מזונות',
-  'קייטנות',
-  'אחר'
-]
+const DEFAULT_CATEGORIES = ['חינוך', 'רפואה', 'פנאי', 'ביגוד', 'מזון', 'מזונות', 'קייטנות', 'אחר'];
 
 interface CategoryDropdownProps {
   value?: string
   onValueChange: (value: string) => void
   className?: string
+  categories?: string[]
 }
 
-export function CategoryDropdown({ value, onValueChange, className }: CategoryDropdownProps) {
-  const options = CATEGORIES.map(category => ({
+export function CategoryDropdown({ value, onValueChange, className, categories = DEFAULT_CATEGORIES }: CategoryDropdownProps) {
+  const options = categories.map(category => ({
     value: category,
     label: category
   }))

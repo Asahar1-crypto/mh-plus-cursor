@@ -10,7 +10,7 @@ export const showInvitationNotification = (invitationId: string) => {
   // Get invitation details from Supabase
   const checkDatabaseInvitation = async () => {
     try {
-      console.log(`Showing notification for invitation ID: ${invitationId}`);
+      // Showing notification for invitation
       
       // Make sure this is still a valid invitation before showing notification
       const { data, error } = await supabase
@@ -92,7 +92,6 @@ export const hasPendingInvitations = async (currentUserEmail?: string, currentUs
     const { data, error } = await query;
     
     if (!error && data && data.length > 0) {
-      console.log(`Found ${data.length} pending invitations in database for ${currentUserEmail || currentUserPhone}`);
       return true;
     }
     

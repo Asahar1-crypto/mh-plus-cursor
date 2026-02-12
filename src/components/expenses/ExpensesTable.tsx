@@ -22,6 +22,8 @@ import { toast } from 'sonner';
 import { 
   Check, 
   X, 
+  Pencil,
+  Trash2,
   Calendar, 
   User, 
   Tag, 
@@ -41,6 +43,19 @@ import { useAuth } from '@/contexts/auth';
 import { memberService } from '@/contexts/auth/services/account/memberService';
 import confetti from 'canvas-confetti';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { EditExpenseModal } from './EditExpenseModal';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { ChevronRight, ChevronLeft } from 'lucide-react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 interface ExpensesTableProps {
   expenses: Expense[];
@@ -48,7 +63,11 @@ interface ExpensesTableProps {
   approveAllRecurring: (id: string) => Promise<void>;
   rejectExpense: (id: string) => Promise<void>;
   markAsPaid: (id: string) => Promise<void>;
+  updateExpense: (id: string, updates: Partial<Pick<Expense, 'amount' | 'description' | 'date' | 'category' | 'childId' | 'paidById' | 'splitEqually'>>) => Promise<void>;
   updateExpenseStatus: (id: string, status: Expense['status']) => Promise<void>;
+  deleteExpense: (id: string) => Promise<void>;
+  refreshData: () => Promise<void>;
+  isSuperAdmin?: boolean;
 }
 
 export const ExpensesTable: React.FC<ExpensesTableProps> = ({ 
@@ -57,7 +76,11 @@ export const ExpensesTable: React.FC<ExpensesTableProps> = ({
   approveAllRecurring,
   rejectExpense, 
   markAsPaid,
-  updateExpenseStatus
+  updateExpense,
+  updateExpenseStatus,
+  deleteExpense,
+  refreshData,
+  isSuperAdmin = false
 }) => {
   const { account } = useAuth();
   const isMobile = useIsMobile();
@@ -67,6 +90,12 @@ export const ExpensesTable: React.FC<ExpensesTableProps> = ({
   const [previewReceiptId, setPreviewReceiptId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedRows, setExpandedRows] = useState<string[]>([]);
+  const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [expenseToDelete, setExpenseToDelete] = useState<Expense | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
 
   // Get account members
   const { data: accountMembers } = useQuery({
@@ -92,6 +121,20 @@ export const ExpensesTable: React.FC<ExpensesTableProps> = ({
       expense.amount.toString().includes(query)
     );
   }, [expenses, searchQuery]);
+
+  // Pagination: reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filteredExpenses.length, searchQuery]);
+
+  const totalPages = Math.ceil(filteredExpenses.length / pageSize) || 1;
+  const paginatedExpenses = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return filteredExpenses.slice(start, start + pageSize);
+  }, [filteredExpenses, currentPage, pageSize]);
+
+  const startItem = filteredExpenses.length === 0 ? 0 : (currentPage - 1) * pageSize + 1;
+  const endItem = Math.min(currentPage * pageSize, filteredExpenses.length);
 
   const isPersonalPlan = account?.plan_slug === 'personal';
   const pendingExpenses = filteredExpenses.filter(expense => expense.status === 'pending');
@@ -461,7 +504,7 @@ export const ExpensesTable: React.FC<ExpensesTableProps> = ({
         {/* Mobile: Card Layout */}
         {isMobile && filteredExpenses.length > 0 && (
           <div className="p-3 space-y-3">
-            {filteredExpenses.map((expense, index) => {
+            {paginatedExpenses.map((expense, index) => {
               const creatorName = accountMembers?.find(m => m.user_id === expense.createdBy)?.user_name || 'לא ידוע';
               const paidByName = accountMembers?.find(m => m.user_id === expense.paidById)?.user_name || 'לא ידוע';
               const isSelected = expense.status === 'pending' 
@@ -502,7 +545,11 @@ export const ExpensesTable: React.FC<ExpensesTableProps> = ({
                     onReject={() => handleReject(expense.id)}
                     onMarkAsPaid={() => handleMarkAsPaid(expense.id)}
                     onPreviewReceipt={expense.receiptId ? () => setPreviewReceiptId(expense.receiptId!) : undefined}
+                    onEdit={!expense.isRecurring ? () => { setEditingExpense(expense); setEditModalOpen(true); } : undefined}
+                    onDelete={isSuperAdmin ? () => { setExpenseToDelete(expense); setDeleteDialogOpen(true); } : undefined}
+                    onUpdateStatus={isSuperAdmin ? (status) => updateExpenseStatus(expense.id, status) : undefined}
                     showCheckbox={expense.status === 'pending' || expense.status === 'approved'}
+                    isSuperAdmin={isSuperAdmin}
                   />
                 </div>
               );
@@ -526,7 +573,7 @@ export const ExpensesTable: React.FC<ExpensesTableProps> = ({
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredExpenses.map((expense, index) => {
+                {paginatedExpenses.map((expense, index) => {
                   const creatorName = accountMembers?.find(m => m.user_id === expense.createdBy)?.user_name || 'לא ידוע';
                   const paidByName = accountMembers?.find(m => m.user_id === expense.paidById)?.user_name || 'לא ידוע';
                   const isExpanded = expandedRows.includes(expense.id);
@@ -600,12 +647,43 @@ export const ExpensesTable: React.FC<ExpensesTableProps> = ({
                         
                         {/* Status */}
                         <TableCell className="w-24 p-2">
-                          <StatusBadge status={expense.status} />
+                          {isSuperAdmin ? (
+                            <Select
+                              value={expense.status}
+                              onValueChange={(v) => updateExpenseStatus(expense.id, v as Expense['status'])}
+                            >
+                              <SelectTrigger className="h-7 text-xs w-20">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="pending">ממתין</SelectItem>
+                                <SelectItem value="approved">מאושר</SelectItem>
+                                <SelectItem value="rejected">נדחה</SelectItem>
+                                <SelectItem value="paid">שולם</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          ) : (
+                            <StatusBadge status={expense.status} />
+                          )}
                         </TableCell>
                         
                         {/* Actions */}
                         <TableCell className="w-32 p-2">
                           <div className="flex gap-1 justify-end">
+                            {!expense.isRecurring && (expense.status === 'pending' || expense.status === 'approved') && (
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => {
+                                  setEditingExpense(expense);
+                                  setEditModalOpen(true);
+                                }}
+                                className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground"
+                                title="ערוך"
+                              >
+                                <Pencil className="h-3.5 w-3.5" />
+                              </Button>
+                            )}
                             {expense.receiptId && (
                               <Button
                                 size="sm"
@@ -658,6 +736,17 @@ export const ExpensesTable: React.FC<ExpensesTableProps> = ({
                                 className="h-7 px-2 text-xs text-blue-600 hover:text-blue-700 hover:bg-blue-50"
                               >
                                 שולם
+                              </Button>
+                            )}
+                            {isSuperAdmin && (
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => { setExpenseToDelete(expense); setDeleteDialogOpen(true); }}
+                                className="h-7 w-7 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+                                title="מחק הוצאה"
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
                               </Button>
                             )}
                           </div>
@@ -715,6 +804,60 @@ export const ExpensesTable: React.FC<ExpensesTableProps> = ({
             </Table>
           </div>
         )}
+
+        {/* Pagination */}
+        {filteredExpenses.length > 0 && (
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-4 border-t border-border/50 bg-muted/10">
+            <div className="flex items-center gap-3">
+              <span className="text-sm text-muted-foreground">
+                מציג {startItem}-{endItem} מתוך {filteredExpenses.length}
+              </span>
+              <Select
+                value={pageSize.toString()}
+                onValueChange={(v) => {
+                  setPageSize(Number(v));
+                  setCurrentPage(1);
+                }}
+              >
+                <SelectTrigger className="w-20 h-8 text-xs">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="10">10</SelectItem>
+                  <SelectItem value="20">20</SelectItem>
+                  <SelectItem value="50">50</SelectItem>
+                  <SelectItem value="100">100</SelectItem>
+                </SelectContent>
+              </Select>
+              <span className="text-xs text-muted-foreground">לעמוד</span>
+            </div>
+            {totalPages > 1 && (
+              <div className="flex items-center gap-1">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                  className="h-8 w-8 p-0"
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+                <span className="text-sm px-2 min-w-[60px] text-center">
+                  {currentPage} / {totalPages}
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                  disabled={currentPage === totalPages}
+                  className="h-8 w-8 p-0"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+              </div>
+            )}
+          </div>
+        )}
       </CardContent>
     </Card>
 
@@ -723,6 +866,44 @@ export const ExpensesTable: React.FC<ExpensesTableProps> = ({
       onClose={() => setPreviewReceiptId(null)}
       receiptId={previewReceiptId || ''}
     />
+
+    <EditExpenseModal
+      expense={editingExpense}
+      open={editModalOpen}
+      onOpenChange={(open) => {
+        setEditModalOpen(open);
+        if (!open) setEditingExpense(null);
+      }}
+      onSuccess={refreshData}
+    />
+
+    <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>מחיקת הוצאה</AlertDialogTitle>
+          <AlertDialogDescription>
+            {expenseToDelete && (
+              <>האם למחוק את ההוצאה &quot;{expenseToDelete.description}&quot; (₪{expenseToDelete.amount})? פעולה זו לא ניתנת לביטול.</>
+            )}
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>ביטול</AlertDialogCancel>
+          <AlertDialogAction
+            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            onClick={async () => {
+              if (expenseToDelete) {
+                await deleteExpense(expenseToDelete.id);
+                setDeleteDialogOpen(false);
+                setExpenseToDelete(null);
+              }
+            }}
+          >
+            מחק
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
     </>
   );
 };

@@ -23,20 +23,17 @@ const VerifyEmail = () => {
     const handleVerification = async () => {
       // Handle email verification from link
       if (token && type === 'signup') {
-        console.log('Email verification token detected:', token);
         await verifyEmailWithToken(token);
         return;
       }
       
       // If user is already authenticated (came from email link), handle immediately
       if (isAuthenticated) {
-        console.log("User is authenticated, processing pending invitations");
         setVerificationStatus('success');
         
         // Check if we have pending invitations from registration
         const pendingInvitationsData = localStorage.getItem('pendingInvitationsAfterRegistration');
         if (pendingInvitationsData) {
-          console.log("Found pending invitations, redirecting to dashboard");
           setTimeout(() => {
             navigate('/dashboard');
           }, 1500);
@@ -67,7 +64,6 @@ const VerifyEmail = () => {
       if (result) {
         const pendingInvitationsData = localStorage.getItem('pendingInvitationsAfterRegistration');
         if (pendingInvitationsData) {
-          console.log("Email verified, redirecting to dashboard to handle invitations");
           setTimeout(() => {
             navigate('/dashboard');
           }, 1500);

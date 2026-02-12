@@ -6,12 +6,10 @@ import { supabase } from "@/integrations/supabase/client";
  */
 export const cleanupInvalidInvitation = async (invitationId: string): Promise<void> => {
   try {
-    console.log(`cleanupInvalidInvitation: Removing invitation ${invitationId}`);
     await supabase
       .from('invitations')
       .delete()
       .eq('invitation_id', invitationId);
-    console.log(`cleanupInvalidInvitation: Successfully removed invitation ${invitationId}`);
   } catch (error) {
     console.error('cleanupInvalidInvitation: Error cleaning up invalid invitation:', error);
   }
@@ -22,8 +20,6 @@ export const cleanupInvalidInvitation = async (invitationId: string): Promise<vo
  */
 export const cleanupOrphanedInvitations = async (): Promise<void> => {
   try {
-    console.log('cleanupOrphanedInvitations: Starting cleanup of orphaned invitations');
-    
     // Get all pending invitations
     const { data: invitations, error: invitationsError } = await supabase
       .from('invitations')
@@ -36,11 +32,8 @@ export const cleanupOrphanedInvitations = async (): Promise<void> => {
     }
     
     if (!invitations || invitations.length === 0) {
-      console.log('cleanupOrphanedInvitations: No pending invitations found');
       return;
     }
-    
-    console.log(`cleanupOrphanedInvitations: Found ${invitations.length} pending invitations to check`);
     
     // Check each invitation's account
     const orphanedInvitations = [];
@@ -53,15 +46,12 @@ export const cleanupOrphanedInvitations = async (): Promise<void> => {
         .single();
         
       if (!accountExists) {
-        console.log(`cleanupOrphanedInvitations: Found orphaned invitation ${invitation.invitation_id} for non-existent account ${invitation.account_id}`);
         orphanedInvitations.push(invitation.invitation_id);
       }
     }
     
     // Remove orphaned invitations
     if (orphanedInvitations.length > 0) {
-      console.log(`cleanupOrphanedInvitations: Removing ${orphanedInvitations.length} orphaned invitations`);
-      
       const { error: deleteError } = await supabase
         .from('invitations')
         .delete()
@@ -69,11 +59,7 @@ export const cleanupOrphanedInvitations = async (): Promise<void> => {
         
       if (deleteError) {
         console.error('cleanupOrphanedInvitations: Error deleting orphaned invitations:', deleteError);
-      } else {
-        console.log('cleanupOrphanedInvitations: Successfully removed orphaned invitations');
       }
-    } else {
-      console.log('cleanupOrphanedInvitations: No orphaned invitations found');
     }
     
   } catch (error) {

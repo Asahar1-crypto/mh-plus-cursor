@@ -611,6 +611,7 @@ export type Database = {
           receipt_url: string | null
           recurring_approved_by: string | null
           recurring_auto_approved: boolean | null
+          recurring_active: boolean | null
           recurring_parent_id: string | null
           split_equally: boolean
           status: string
@@ -636,6 +637,7 @@ export type Database = {
           receipt_url?: string | null
           recurring_approved_by?: string | null
           recurring_auto_approved?: boolean | null
+          recurring_active?: boolean | null
           recurring_parent_id?: string | null
           split_equally?: boolean
           status?: string
@@ -661,6 +663,7 @@ export type Database = {
           receipt_url?: string | null
           recurring_approved_by?: string | null
           recurring_auto_approved?: boolean | null
+          recurring_active?: boolean | null
           recurring_parent_id?: string | null
           split_equally?: boolean
           status?: string

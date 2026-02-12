@@ -63,9 +63,9 @@ export const OnboardingModal: React.FC = () => {
     handleNext();
   };
 
-  const handleClose = async () => {
-    // Mark onboarding as completed even if closed
-    await completeOnboarding();
+  const handleClose = () => {
+    // Do NOT mark as completed - user must finish onboarding to complete it
+    setIsOpen(false);
   };
 
   const completeOnboarding = async () => {
@@ -124,9 +124,7 @@ export const OnboardingModal: React.FC = () => {
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => {
-      if (!open) {
-        handleClose();
-      }
+      if (!open) handleClose();
     }}>
       <DialogContent
         className="w-[95vw] max-w-3xl max-h-[90vh] overflow-y-auto p-0"

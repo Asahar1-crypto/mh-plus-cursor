@@ -16,7 +16,6 @@ export const usePendingInvitations = () => {
 
     try {
       setLoading(true);
-      console.log('Fetching pending invitations for:', user.email);
 
       // First get all pending invitations for this user
       const { data: rawInvitations, error } = await supabase
@@ -32,8 +31,6 @@ export const usePendingInvitations = () => {
         return;
       }
 
-      console.log('Raw invitations found:', rawInvitations);
-      
       if (!rawInvitations || rawInvitations.length === 0) {
         setInvitations([]);
         return;
@@ -64,7 +61,6 @@ export const usePendingInvitations = () => {
               };
             } else {
               // If account data is missing, create a fallback
-              console.warn(`Account data missing for invitation ${invitation.invitation_id}, creating fallback`);
               return {
                 ...invitation,
                 accounts: {
@@ -95,7 +91,6 @@ export const usePendingInvitations = () => {
         })
       );
 
-      console.log('Enriched invitations:', enrichedInvitations);
       setInvitations(enrichedInvitations);
     } catch (error) {
       console.error('Error in fetchPendingInvitations:', error);
@@ -110,7 +105,6 @@ export const usePendingInvitations = () => {
 
     try {
       setProcessing(invitationId);
-      console.log('Accepting invitation:', invitationId);
       
       await acceptInvitation(invitationId);
       
@@ -134,7 +128,6 @@ export const usePendingInvitations = () => {
 
     try {
       setProcessing(invitationId);
-      console.log('Declining invitation:', invitationId);
 
       const { error } = await supabase
         .from('invitations')

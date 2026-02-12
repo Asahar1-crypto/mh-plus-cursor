@@ -4,6 +4,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ExpenseCard } from './ExpenseCard';
 import { Clock, CheckCircle, CreditCard, FileText } from 'lucide-react';
 import { useAuth } from '@/contexts/auth';
+import { useQuery } from '@tanstack/react-query';
+import { memberService } from '@/contexts/auth/services/account/memberService';
 
 interface ExpensesTabsProps {
   pendingExpenses: any[];
@@ -24,6 +26,12 @@ export const ExpensesTabs: React.FC<ExpensesTabsProps> = ({
 }) => {
   const { account } = useAuth();
   const isPersonalPlan = account?.plan_slug === 'personal';
+
+  const { data: accountMembers } = useQuery({
+    queryKey: ['account-members', account?.id],
+    queryFn: () => memberService.getAccountMembers(account!.id),
+    enabled: !!account?.id
+  });
 
   return (
     <div className="bg-gradient-to-br from-card/90 to-card/95 backdrop-blur-lg border border-border/50 shadow-xl hover:shadow-2xl rounded-xl p-4 sm:p-6 transition-all duration-500 group overflow-hidden animate-fade-in">
@@ -81,6 +89,7 @@ export const ExpensesTabs: React.FC<ExpensesTabsProps> = ({
                 >
                   <ExpenseCard 
                     expense={expense} 
+                    accountMembers={accountMembers || []}
                     onApprove={() => onApprove(expense.id)}
                     onReject={() => onReject(expense.id)}
                     onMarkPaid={() => {}}
@@ -115,6 +124,7 @@ export const ExpensesTabs: React.FC<ExpensesTabsProps> = ({
                 >
                   <ExpenseCard 
                     expense={expense}
+                    accountMembers={accountMembers || []}
                     onApprove={() => {}} 
                     onReject={() => {}}
                     onMarkPaid={() => onMarkPaid(expense.id)}
@@ -148,6 +158,7 @@ export const ExpensesTabs: React.FC<ExpensesTabsProps> = ({
                 >
                   <ExpenseCard 
                     expense={expense}
+                    accountMembers={accountMembers || []}
                     onApprove={() => {}} 
                     onReject={() => {}} 
                     onMarkPaid={() => {}}

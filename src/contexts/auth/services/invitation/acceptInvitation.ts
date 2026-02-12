@@ -7,9 +7,6 @@ import { memberService } from '../account/memberService';
 
 export async function acceptInvitation(invitationId: string, user: User): Promise<Account> {
   try {
-    console.log(`acceptInvitation: Starting invitation acceptance process`);
-    console.log(`acceptInvitation: User ${user.id} (${user.email}) attempting to accept invitation ${invitationId}`);
-    
     if (!invitationId) {
       console.error("acceptInvitation: No invitation ID provided");
       throw new Error('מזהה הזמנה חסר');
@@ -21,7 +18,6 @@ export async function acceptInvitation(invitationId: string, user: User): Promis
     }
     
     // Get the invitation from the database
-    console.log("acceptInvitation: Querying database for invitation:", invitationId);
     const { data: invitationData, error: findError } = await supabase
       .from('invitations')
       .select('*')
@@ -42,7 +38,6 @@ export async function acceptInvitation(invitationId: string, user: User): Promis
     }
     
     const invitation = invitationArray[0];
-    console.log("acceptInvitation: Processing invitation from database:", invitation);
     
     // Case insensitive comparison for email
     if (invitation.email && invitation.email.toLowerCase() !== user.email.toLowerCase()) {
@@ -51,18 +46,11 @@ export async function acceptInvitation(invitationId: string, user: User): Promis
     }
     
     const accountId = invitation.account_id;
-    console.log(`acceptInvitation: Looking for account with ID: ${accountId}`);
-    
-    // Debug: List all accounts first
-    await debugListAllAccounts();
     
     // Validate account exists first
     const accountExists = await validateAccountExists(accountId);
     if (!accountExists) {
-      console.error(`acceptInvitation: Account validation failed for ID: ${accountId}`);
-      
       // Clean up the invalid invitation
-      console.log("acceptInvitation: Cleaning up invalid invitation - account doesn't exist");
       await supabase
         .from('invitations')
         .delete()
@@ -82,32 +70,20 @@ export async function acceptInvitation(invitationId: string, user: User): Promis
     // Get detailed account information
     const accountData = await getAccountDetails(accountId);
     if (!accountData) {
-      console.error(`acceptInvitation: Failed to get account details for ID: ${accountId}`);
       throw new Error('שגיאה בטעינת פרטי החשבון');
     }
     
-    console.log("acceptInvitation: Found account:", accountData);
-    
-    // Use the new invitation acceptance function that handles membership automatically
-    // This function checks if user is already a member and handles all cases properly
-    console.log("acceptInvitation: Using new accept_invitation_and_add_member function");
-    console.log("acceptInvitation: invitationId:", invitationId, "userId:", user.id);
-    
     try {
-      console.log("acceptInvitation: Calling supabase.rpc('accept_invitation_and_add_member')");
       const { data, error: acceptError } = await supabase.rpc('accept_invitation_and_add_member', {
         invitation_uuid: invitationId,
         user_uuid: user.id
       });
-      
-      console.log("acceptInvitation: RPC result:", { data, error: acceptError });
       
       if (acceptError) {
         console.error("acceptInvitation: Error in accept_invitation_and_add_member:", acceptError);
         throw new Error('שגיאה בקבלת ההזמנה: ' + acceptError.message);
       }
       
-      console.log("acceptInvitation: Successfully called accept_invitation_and_add_member");
     } catch (memberError: any) {
       console.error("acceptInvitation: Error accepting invitation and adding member:", memberError);
       throw new Error('שגיאה בקבלת ההזמנה: ' + memberError.message);
@@ -132,7 +108,6 @@ export async function acceptInvitation(invitationId: string, user: User): Promis
     };
     
     // Clear sessionStorage and localStorage invitation data
-    console.log("acceptInvitation: Clearing temporary invitation data");
     sessionStorage.removeItem('pendingInvitationId');
     sessionStorage.removeItem('pendingInvitationAccountId');
     sessionStorage.removeItem('pendingInvitationOwnerId');
@@ -142,9 +117,7 @@ export async function acceptInvitation(invitationId: string, user: User): Promis
     
     // Clear pending invitations from registration to allow future account creation
     localStorage.removeItem('pendingInvitationsAfterRegistration');
-    console.log("acceptInvitation: Cleared pending invitations from registration");
     
-    console.log("acceptInvitation: Invitation accepted successfully, returning shared account:", sharedAccount);
     return sharedAccount;
   } catch (error: any) {
     console.error('acceptInvitation: Failed to accept invitation:', error);

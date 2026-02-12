@@ -33,31 +33,20 @@ export const PreviousMonthsCard: React.FC<PreviousMonthsCardProps> = ({
   // Filter approved expenses from previous months
   const previousMonthsExpenses = useMemo(() => {
     if (!selectedMonth || !approvedExpenses) {
-      console.log('🔍 PreviousMonthsCard: Missing selectedMonth or approvedExpenses');
       return [];
     }
     
     const [year, month] = selectedMonth.split('-').map(Number);
     const selectedDate = new Date(year, month - 1, 1); // First day of selected month
     
-    console.log('🔍 PreviousMonthsCard Debug:');
-    console.log('Selected month:', selectedMonth);
-    console.log('Selected date (first day):', selectedDate.toISOString().split('T')[0]);
-    console.log('Current date:', new Date().toISOString().split('T')[0]);
-    console.log('Total approved expenses:', approvedExpenses.length);
-    
     const filtered = approvedExpenses.filter(expense => {
       const expenseDate = new Date(expense.date);
       const isBeforeSelectedMonth = expenseDate < selectedDate;
       const isApproved = expense.status === 'approved';
       
-      console.log(`Expense: "${expense.description}" (${expense.date}) - Expense Date: ${expenseDate.toISOString().split('T')[0]}, Before ${selectedDate.toISOString().split('T')[0]}: ${isBeforeSelectedMonth}, Status: ${expense.status}, Included: ${isBeforeSelectedMonth && isApproved}`);
-      
       return isBeforeSelectedMonth && isApproved;
     });
     
-    console.log('Filtered previous months expenses:', filtered.length);
-    console.log('Filtered expenses:', filtered.map(e => `${e.description} (${e.date})`));
     return filtered;
   }, [approvedExpenses, selectedMonth]);
 

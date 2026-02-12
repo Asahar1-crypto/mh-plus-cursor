@@ -42,14 +42,11 @@ const AccountSwitcher = () => {
 
   const handleAccountChange = async (accountId: string) => {
     if (accountId !== account?.id) {
-      console.log(`AccountSwitcher: Switching from ${account?.id} (${account?.name}) to ${accountId}`);
       try {
         await switchAccount(accountId);
       } catch (error) {
         console.error('AccountSwitcher: Failed to switch account:', error);
       }
-    } else {
-      console.log('AccountSwitcher: Same account selected, no change needed');
     }
   };
 

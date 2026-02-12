@@ -21,10 +21,6 @@ const FamilyOtp: React.FC = () => {
     }
 
     try {
-      console.log('FamilyOtp: Completing family registration with data:', {
-        name, email, phone, invitationId
-      });
-
       // Call edge function to complete family registration
       const { data: registrationData, error } = await supabase.functions.invoke('complete-family-registration', {
         body: {
@@ -47,8 +43,6 @@ const FamilyOtp: React.FC = () => {
         return;
       }
 
-      console.log('Family registration completed successfully:', registrationData);
-      
       toast.success('הרישום הושלם בהצלחה! אתה כעת חבר בחשבון המשפחתי');
       
       // If we got a magic link, redirect to it for auto-login

@@ -29,7 +29,6 @@ import Children from "./pages/Children";
 import Expenses from "./pages/Expenses";
 import Reports from "./pages/Reports";
 import MonthlySettlement from "./pages/MonthlySettlement";
-import IndexPage from "./pages/Index";
 import Privacy from "./pages/Privacy";
 import Terms from "./pages/Terms";
 import Pricing from "./pages/Pricing";
@@ -49,17 +48,19 @@ import AdminSystemHealth from "./pages/admin/AdminSystemHealth";
 
 import AuthLayout from "./components/AuthLayout";
 import AppLayout from "./components/AppLayout";
+import { ErrorBoundary } from "./components/ErrorBoundary";
 
 const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <AuthProvider>
-      <NotificationProvider>
-        <ExpenseProvider>
-          <Toaster />
-          <Sonner position="top-center" closeButton />
-          <NotificationPermissionPrompt />
+    <ErrorBoundary>
+      <AuthProvider>
+        <NotificationProvider>
+          <ExpenseProvider>
+            <Toaster />
+            <Sonner position="top-center" closeButton />
+            <NotificationPermissionPrompt />
             <AppRouter>
             <Routes>
               {/* Public routes */}
@@ -99,7 +100,6 @@ const App = () => (
                 <Route path="/reports" element={<Reports />} />
                 <Route path="/monthly-settlement" element={<MonthlySettlement />} />
                 <Route path="/choose-plan" element={<ChoosePlan />} />
-                <Route path="/test-email" element={<IndexPage />} />
                 
                 {/* Admin routes */}
                 <Route path="/admin/dashboard" element={<AdminDashboard />} />
@@ -123,10 +123,11 @@ const App = () => (
               {/* Catch all */}
               <Route path="*" element={<NotFound />} />
             </Routes>
-          </AppRouter>
+            </AppRouter>
           </ExpenseProvider>
         </NotificationProvider>
       </AuthProvider>
+    </ErrorBoundary>
   </QueryClientProvider>
 );
 

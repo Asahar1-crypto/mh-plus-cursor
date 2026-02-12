@@ -7,7 +7,6 @@ import { supabase } from "@/integrations/supabase/client";
 export const selectedAccountService = {
   // Get user's selected account ID from their profile
   getSelectedAccountId: async (userId: string): Promise<string | null> => {
-    console.log(`Getting selected account ID for user ${userId}`);
     
     const { data: profile, error } = await supabase
       .from('profiles')
@@ -25,7 +24,6 @@ export const selectedAccountService = {
 
   // Set user's selected account ID in their profile
   setSelectedAccountId: async (userId: string, accountId: string): Promise<void> => {
-    console.log(`Setting selected account ID for user ${userId} to ${accountId}`);
     
     const { error } = await supabase
       .from('profiles')
@@ -37,6 +35,5 @@ export const selectedAccountService = {
       throw error;
     }
     
-    console.log('Selected account ID updated successfully');
   }
 };

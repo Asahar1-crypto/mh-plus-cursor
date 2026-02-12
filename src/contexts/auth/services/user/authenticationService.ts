@@ -18,7 +18,6 @@ export const authenticationService = {
   // Login function
   login: async (email: string, password: string): Promise<User> => {
     try {
-      console.log(`Attempting login for ${email}`);
       
       // Sign in with Supabase
       const { data, error } = await supabase.auth.signInWithPassword({
@@ -43,7 +42,6 @@ export const authenticationService = {
         name: data.user.user_metadata?.name || data.user.email?.split('@')[0] || 'User'
       };
       
-      console.log("Login successful:", user);
       toast.success(LOGIN_SUCCESS_MESSAGE);
       return user;
     } catch (error: any) {
@@ -65,7 +63,6 @@ export const authenticationService = {
   // Logout function
   logout: async (): Promise<void> => {
     try {
-      console.log("Attempting logout");
       
       // Clear session storage and localStorage before signOut
       sessionStorage.clear();
@@ -78,10 +75,8 @@ export const authenticationService = {
       if (error) {
         console.error("Logout error from Supabase:", error);
         // Even if there's an error, we want to clear local state
-        console.log("Clearing local state despite error");
       }
       
-      console.log("Logout completed");
       toast.info(LOGOUT_SUCCESS_MESSAGE);
     } catch (error) {
       console.error('Logout failed:', error);

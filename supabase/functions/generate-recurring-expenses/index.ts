@@ -35,6 +35,7 @@ interface Database {
           updated_at: string
           recurring_auto_approved: boolean | null
           recurring_approved_by: string | null
+          recurring_active: boolean | null
         }
         Insert: {
           id?: string
@@ -184,12 +185,13 @@ Deno.serve(async (req) => {
 
         console.log(`\n💳 Processing account ${account.id} (billing day: ${billingDay}, expense date: ${expenseDateStr})`)
 
-        // Get all recurring expenses for this account
+        // Get all recurring expense templates for this account (parent templates only)
         const { data: recurringExpenses, error: fetchError } = await supabase
           .from('expenses')
           .select('*')
           .eq('account_id', account.id)
           .eq('is_recurring', true)
+          .is('recurring_parent_id', null)
           .or(`end_date.is.null,end_date.gte.${now.toISOString().split('T')[0]}`)
 
         if (fetchError) {
@@ -208,6 +210,10 @@ Deno.serve(async (req) => {
         let accountSkipped = 0
 
         for (const expense of recurringExpenses) {
+          if (expense.recurring_active === false) {
+            console.log(`⏭️ Skipping inactive recurring expense: ${expense.description}`)
+            continue
+          }
           if (expense.frequency !== 'monthly') {
             console.log(`⏭️ Skipping non-monthly expense: ${expense.description} (frequency: ${expense.frequency})`)
             continue

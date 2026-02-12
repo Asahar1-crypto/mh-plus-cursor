@@ -48,15 +48,12 @@ const Register = () => {
     const urlInvitationId = searchParams.get('invitationId');
     const email = searchParams.get('email');
     
-    console.log("URL params:", { urlInvitationId, email });
-    
     if (email) {
       setEmailFromInvitation(email);
     }
     
     if (urlInvitationId) {
       setInvitationId(urlInvitationId);
-      console.log(`Detected invitationId ${urlInvitationId} for processing after registration`);
     }
   }, [searchParams]);
   
@@ -81,8 +78,6 @@ const Register = () => {
   
   const onSubmit = async (data: z.infer<typeof registerSchema>) => {
     try {
-      console.log("Checking if phone exists before SMS verification...");
-      
       // Pre-check if phone exists before proceeding to SMS
       const { data: checkData, error: checkError } = await supabase.functions.invoke('send-sms', {
         body: {
@@ -94,8 +89,6 @@ const Register = () => {
 
       // Check for phone exists error - Supabase Functions returns non-2xx in error
       if (checkError) {
-        console.log('SMS check error:', checkError);
-        
         // For FunctionsHttpError, we need to check the context for the response body
         // The error.context contains the Response object
         if (checkError.name === 'FunctionsHttpError' && checkError.context) {
@@ -104,10 +97,8 @@ const Register = () => {
             const errorResponse = checkError.context;
             if (errorResponse && typeof errorResponse.json === 'function') {
               const errorBody = await errorResponse.json();
-              console.log('Error response body:', errorBody);
               
               if (errorBody?.error === 'PHONE_EXISTS') {
-                console.log('Phone exists, showing recovery options');
                 setExistingUserName(errorBody.existingUserName);
                 setRegistrationData(data);
                 setShowPhoneExists(true);
@@ -115,7 +106,7 @@ const Register = () => {
               }
             }
           } catch (parseError) {
-            console.log('Could not parse error response:', parseError);
+            // Error handled silently
           }
         }
         
@@ -125,15 +116,12 @@ const Register = () => {
 
       // If we got a PHONE_EXISTS response in data (shouldn't happen but check anyway)
       if (checkData?.error === 'PHONE_EXISTS') {
-        console.log('Phone exists (from data), showing recovery options');
         setExistingUserName(checkData.existingUserName);
         setRegistrationData(data);
         setShowPhoneExists(true);
         return;
       }
 
-      console.log("Phone is new, proceeding to SMS verification with data:", { ...data, invitationId });
-      
       // Store registration data for later use
       setRegistrationData(data);
       
@@ -147,13 +135,10 @@ const Register = () => {
 
   const handleSmsVerificationComplete = async (verified: boolean) => {
     if (!verified || !registrationData) {
-      console.log('SMS verification not completed or no registration data');
       return;
     }
 
     try {
-      console.log('SMS verified, proceeding with registration...');
-      
       // Store phone number for profile update after registration
       localStorage.setItem('pendingPhoneVerification', JSON.stringify({
         phoneNumber: registrationData.phoneNumber,
@@ -174,13 +159,10 @@ const Register = () => {
         };
         
         localStorage.setItem('pendingInvitationsAfterRegistration', JSON.stringify(pendingInvitations));
-        console.log(`Stored invitation ${invitationId} for email ${registrationData.email}`);
       }
       
       // Complete registration - SMS verified, no email verification needed
       const user = await register(registrationData.name, registrationData.email, registrationData.password, registrationData.phoneNumber);
-      
-      console.log('Registration successful, user:', user);
 
       // Save family role to profile
       if (user?.id && registrationData.familyRole) {
@@ -189,7 +171,6 @@ const Register = () => {
             .from('profiles')
             .update({ family_role: registrationData.familyRole })
             .eq('id', user.id);
-          console.log('Family role saved:', registrationData.familyRole);
         } catch (roleError) {
           console.error('Error saving family role:', roleError);
           // Non-critical - don't block registration
@@ -197,7 +178,6 @@ const Register = () => {
       }
       
       // Auto-login after successful registration
-      console.log('Auto-logging in after registration...');
       const { error: loginError } = await supabase.auth.signInWithPassword({
         email: registrationData.email,
         password: registrationData.password
@@ -209,8 +189,6 @@ const Register = () => {
         navigate('/login');
         return;
       }
-      
-      console.log('Auto-login successful, navigating to dashboard...');
       
       // Navigate directly to dashboard - user is now logged in
       navigate('/dashboard');

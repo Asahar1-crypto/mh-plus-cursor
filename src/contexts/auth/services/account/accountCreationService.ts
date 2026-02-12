@@ -6,10 +6,7 @@ import { isAccountRPCResponse } from './types';
 export const accountCreationService = {
   // Create new account using new member-based architecture
   createNewAccount: async (userId: string, userName: string): Promise<Account> => {
-    console.log('Creating new account for user:', userId, 'with name:', userName);
-    
     // First, ensure the user profile exists
-    console.log('Checking if user profile exists...');
     const { data: existingProfile, error: profileCheckError } = await supabase
       .from('profiles')
       .select('id, name')
@@ -23,7 +20,6 @@ export const accountCreationService = {
     
     // If profile doesn't exist, create it
     if (!existingProfile) {
-      console.log('User profile does not exist, creating it...');
       const { error: profileCreateError } = await supabase
         .from('profiles')
         .insert([
@@ -38,9 +34,6 @@ export const accountCreationService = {
         throw new Error(`Failed to create user profile: ${profileCreateError.message}`);
       }
       
-      console.log('User profile created successfully');
-    } else {
-      console.log('User profile already exists:', existingProfile);
     }
     
     // Check for existing accounts where user is a member
@@ -63,7 +56,6 @@ export const accountCreationService = {
     // If user is already admin of an account, return it
     if (existingMemberships && existingMemberships.length > 0) {
       const membership = existingMemberships[0];
-      console.log('Found existing admin account:', membership);
       return {
         id: membership.accounts.id,
         name: membership.accounts.name,
@@ -72,8 +64,6 @@ export const accountCreationService = {
     }
     
     try {
-      console.log('Creating new account with admin user...');
-      
       // Use the new RPC function to create account with admin
       const { data, error: createError } = await supabase.rpc(
         'create_account_with_admin',
@@ -93,7 +83,6 @@ export const accountCreationService = {
       }
       
       const accountData = Array.isArray(data) ? data[0] : data;
-      console.log('Successfully created account with admin:', accountData);
       
       return {
         id: accountData.id,

@@ -10,16 +10,12 @@ export const useAuthSubscriptions = (
 ) => {
   // Set up auth state listener and check for saved session
   useEffect(() => {
-    console.log('Setting up auth state listener');
-    
     // First set up the auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
-        console.log('Auth state changed:', event);
         
         // Handle auth state changes
         if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
-          console.log('User signed in or token refreshed, updating session');
           // Wrap in setTimeout to prevent any potential recursion issues
           setTimeout(() => {
             checkAndSetUserData(true).catch(err => {
@@ -31,7 +27,6 @@ export const useAuthSubscriptions = (
     );
 
     return () => {
-      console.log('Cleaning up auth state listener');
       subscription.unsubscribe();
     };
   }, [checkAndSetUserData]);
@@ -40,7 +35,7 @@ export const useAuthSubscriptions = (
   useEffect(() => {
     if (!user?.email) return;
     
-    console.log('Setting up one-time invitation check for', user.email);
+    // One-time invitation check for logged-in users
     
     // Keep track if check has been performed to avoid loops
     let checkDone = false;
@@ -53,12 +48,10 @@ export const useAuthSubscriptions = (
         checkDone = true;
         // Check for pending invitations
         const invitations = await invitationCheckService.checkPendingInvitations(user.email);
-        console.log('Initial invitation check result:', invitations);
         
         // Check if there's a pending invitation ID in sessionStorage that needs redirection
         const pendingInvitationId = sessionStorage.getItem('pendingInvitationId');
         if (pendingInvitationId) {
-          console.log(`Found pendingInvitationId ${pendingInvitationId} in sessionStorage after auth check`);
           
           // Verify that the invitation exists and is valid before redirecting
           const isValid = await invitationCheckService.checkInvitationById(pendingInvitationId);
@@ -69,14 +62,12 @@ export const useAuthSubscriptions = (
             const isOnBasePage = currentPath === '/' || currentPath === '/dashboard';
             
             if (isOnBasePage) {
-              console.log(`Redirecting to invitation page: /invitation/${pendingInvitationId}`);
               setTimeout(() => {
                 window.location.href = `/invitation/${pendingInvitationId}`;
               }, 1000);
             }
           } else {
             // If invitation is not valid, clear the pending ID to prevent further redirect attempts
-            console.log("Clearing invalid pending invitation ID");
             sessionStorage.removeItem('pendingInvitationId');
             sessionStorage.removeItem('pendingInvitationRedirectChecked');
           }

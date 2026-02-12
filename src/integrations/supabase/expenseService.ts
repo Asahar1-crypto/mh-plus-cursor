@@ -6,8 +6,7 @@ import { Account } from '@/contexts/auth/types';
 
 export const expenseService = {
   async getExpenses(user: User, account: Account): Promise<Expense[]> {
-    console.log(`🔍 getExpenses: Starting fetch for user ${user.id} in account ${account.id} (${account.name})`);
-    console.log(`Getting expenses for user ${user.id} in account ${account.id} (${account.name})`);
+    // Fetch expenses for user in account
     
     // Fetch expenses from the specific account
     const { data: rawExpenses, error } = await supabase
@@ -31,10 +30,7 @@ export const expenseService = {
       throw error;
     }
 
-    console.log(`Raw expenses data for account ${account.name}:`, rawExpenses);
-
     if (!rawExpenses || rawExpenses.length === 0) {
-      console.log(`No expenses found for account ${account.name}`);
       return [];
     }
 
@@ -43,14 +39,6 @@ export const expenseService = {
       // Get child name from the joined data
       const childName = expense.expense_children?.[0]?.children?.name || null;
       const childId = expense.expense_children?.[0]?.child_id || null;
-
-      // Debug log to see the actual data structure
-      console.log(`🔍 Expense ${expense.id}:`, {
-        paid_by_data: expense.paid_by,
-        created_by_data: expense.created_by,
-        paid_by_id: expense.paid_by_id,
-        created_by_id: expense.created_by_id
-      });
 
       return {
         id: expense.id,
@@ -78,16 +66,16 @@ export const expenseService = {
         // New fields for recurring auto-approval
         recurringParentId: expense.recurring_parent_id || undefined,
         recurringAutoApproved: expense.recurring_auto_approved || false,
-        recurringApprovedBy: expense.recurring_approved_by || undefined
+        recurringApprovedBy: expense.recurring_approved_by || undefined,
+        recurringActive: expense.recurring_active ?? true
       };
     });
 
-    console.log(`Transformed ${transformedExpenses.length} expenses for account ${account.name}`);
     return transformedExpenses;
   },
 
   async getChildren(user: User, account: Account): Promise<Child[]> {
-    console.log(`Getting children for user ${user.id} in account ${account.id} (${account.name})`);
+    // Fetch children for account
     
     const { data: children, error } = await supabase
       .from('children')
@@ -101,11 +89,8 @@ export const expenseService = {
     }
 
     if (!children || children.length === 0) {
-      console.log(`No children found for account ${account.name}`);
       return [];
     }
-
-    console.log(`Found ${children.length} children for account ${account.name}`);
     return children.map((child: any) => ({
       id: child.id,
       name: child.name,
@@ -115,8 +100,7 @@ export const expenseService = {
   },
 
   async addExpense(user: User, account: Account, expense: Omit<Expense, 'id' | 'createdBy' | 'creatorName' | 'status'>): Promise<{ id: string; isPending: boolean }> {
-    console.log(`Adding expense to account ${account.id} (${account.name})`);
-    console.log('Expense data:', expense);
+    // Adding expense to account
     
     // Auto-approve if:
     // 1. User is adding expense for themselves, OR
@@ -143,8 +127,6 @@ export const expenseService = {
       receipt_id: expense.receiptId || null
     };
     
-    console.log('Data being inserted:', expenseData);
-    
     const { data: newExpense, error } = await supabase
       .from('expenses')
       .insert(expenseData)
@@ -156,11 +138,8 @@ export const expenseService = {
       throw error;
     }
 
-    console.log('Successfully added expense:', newExpense);
-
     // If there's a child associated, add the relationship
     if (expense.childId && newExpense) {
-      console.log('Adding child relationship:', { expense_id: newExpense.id, child_id: expense.childId });
       const { error: childError } = await supabase
         .from('expense_children')
         .insert({
@@ -171,16 +150,53 @@ export const expenseService = {
       if (childError) {
         console.error('Error linking expense to child:', childError);
         // Don't throw here, the expense was created successfully
-      } else {
-        console.log('Successfully linked expense to child');
       }
     }
 
     return { id: newExpense.id, isPending: !isAutoApproved };
   },
 
+  async updateExpense(user: User, account: Account, expenseId: string, updates: Partial<{
+    amount: number;
+    description: string;
+    date: string;
+    category: string;
+    childId: string | undefined;
+    paidById: string;
+    splitEqually: boolean;
+  }>): Promise<void> {
+    const updateData: Record<string, unknown> = {};
+    if (updates.amount !== undefined) updateData.amount = updates.amount;
+    if (updates.description !== undefined) updateData.description = updates.description;
+    if (updates.date !== undefined) updateData.date = updates.date;
+    if (updates.category !== undefined) updateData.category = updates.category;
+    if (updates.paidById !== undefined) updateData.paid_by_id = updates.paidById;
+    if (updates.splitEqually !== undefined) updateData.split_equally = updates.splitEqually;
+
+    const { error } = await supabase
+      .from('expenses')
+      .update(updateData)
+      .eq('id', expenseId)
+      .eq('account_id', account.id);
+
+    if (error) {
+      console.error('Error updating expense:', error);
+      throw error;
+    }
+
+    if (updates.childId !== undefined) {
+      await supabase.from('expense_children').delete().eq('expense_id', expenseId);
+      if (updates.childId) {
+        await supabase.from('expense_children').insert({
+          expense_id: expenseId,
+          child_id: updates.childId
+        });
+      }
+    }
+  },
+
   async updateExpenseStatus(user: User, account: Account, expenseId: string, status: 'pending' | 'approved' | 'rejected' | 'paid'): Promise<void> {
-    console.log(`Updating expense ${expenseId} status to ${status} in account ${account.id} (${account.name})`);
+    // Updating expense status
     
     const updateData: any = { status };
     
@@ -203,7 +219,7 @@ export const expenseService = {
   },
 
   async approveAllRecurring(user: User, account: Account, expenseId: string): Promise<void> {
-    console.log(`Approving expense ${expenseId} and all future recurring in account ${account.id} (${account.name})`);
+    // Approving expense and all future recurring
     
     // First get the expense to find its recurring_parent_id
     const { data: expense, error: fetchError } = await supabase
@@ -258,7 +274,7 @@ export const expenseService = {
   },
 
   async addChild(user: User, account: Account, child: Omit<Child, 'id'>): Promise<void> {
-    console.log(`Adding child to account ${account.id} (${account.name})`);
+    // Adding child to account
     
     const { error } = await supabase
       .from('children')
@@ -275,9 +291,36 @@ export const expenseService = {
     }
   },
 
+  async updateRecurringActive(user: User, account: Account, expenseId: string, active: boolean): Promise<void> {
+    const { error } = await supabase
+      .from('expenses')
+      .update({ recurring_active: active })
+      .eq('id', expenseId)
+      .eq('account_id', account.id)
+      .eq('is_recurring', true)
+      .is('recurring_parent_id', null);
+
+    if (error) {
+      console.error('Error updating recurring active:', error);
+      throw error;
+    }
+  },
+
+  async deleteExpense(user: User, account: Account, expenseId: string): Promise<void> {
+    const { error } = await supabase
+      .from('expenses')
+      .delete()
+      .eq('id', expenseId)
+      .eq('account_id', account.id);
+
+    if (error) {
+      console.error('Error deleting expense:', error);
+      throw error;
+    }
+  },
+
   async updateChild(user: User, account: Account, id: string, updates: Partial<Omit<Child, 'id'>>): Promise<void> {
-    console.log(`Updating child ${id} in account ${account.id} (${account.name})`);
-    console.log('Updates:', updates);
+    // Updating child in account
     
     const updateData: any = {};
     
@@ -304,6 +347,5 @@ export const expenseService = {
       throw error;
     }
 
-    console.log('Successfully updated child');
   }
 };

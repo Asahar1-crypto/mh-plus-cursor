@@ -38,12 +38,6 @@ const SmsVerification: React.FC<SmsVerificationProps> = ({
   const sendVerificationCode = async () => {
     setIsResending(true);
     try {
-      console.log('SmsVerification: Sending SMS with params:', {
-        phoneNumber,
-        verificationType,
-        type: 'verification'
-      });
-      
       const { data, error } = await supabase.functions.invoke('send-sms', {
         body: {
           phoneNumber,
@@ -52,13 +46,10 @@ const SmsVerification: React.FC<SmsVerificationProps> = ({
         }
       });
 
-      console.log('SmsVerification: SMS response:', { data, error });
-
       if (error) {
         console.error('Error sending SMS:', error);
         toast.error(`שגיאה בשליחת קוד האימות: ${error.message}`);
       } else {
-        console.log('SMS sent successfully:', data);
         toast.success('קוד האימות נשלח בהצלחה');
         setCountdown(60); // Start 60 second countdown
       }

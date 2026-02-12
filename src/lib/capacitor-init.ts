@@ -30,7 +30,7 @@ async function initStatusBar() {
       await StatusBar.setOverlaysWebView({ overlay: false });
     }
   } catch (error) {
-    console.warn('StatusBar plugin not available:', error);
+    // StatusBar plugin not available
   }
 }
 
@@ -52,7 +52,7 @@ async function initKeyboard() {
       document.body.classList.remove('keyboard-open');
     });
   } catch (error) {
-    console.warn('Keyboard plugin not available:', error);
+    // Keyboard plugin not available
   }
 }
 
@@ -73,7 +73,7 @@ async function initBackButton() {
       }
     });
   } catch (error) {
-    console.warn('App plugin not available:', error);
+    // App plugin not available
   }
 }
 
@@ -96,7 +96,7 @@ async function initDeepLinks() {
       }
     });
   } catch (error) {
-    console.warn('Deep links not available:', error);
+    // Deep links not available
   }
 }
 
@@ -138,7 +138,7 @@ export async function initializeApp() {
   const platform = Capacitor.getPlatform();
   const isNative = Capacitor.isNativePlatform();
 
-  console.log(`[Capacitor] Platform: ${platform}, Native: ${isNative}`);
+  // Initialize platform
 
   // Apply safe area CSS variables
   applySafeArea();
@@ -158,7 +158,7 @@ export async function initializeApp() {
       initDeepLinks(),
     ]);
 
-    console.log('[Capacitor] Native plugins initialized');
+    // Native plugins initialized
   }
 }
 

@@ -75,7 +75,7 @@ const AdminSuperAdmins: React.FC = () => {
           emailMap = emailData.userEmails;
         }
       } catch {
-        console.warn('Could not fetch user emails');
+        // Could not fetch user emails - continue without
       }
 
       // Get account counts for each super admin

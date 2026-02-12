@@ -58,12 +58,6 @@ const FamilyRegister = () => {
     setIsSubmitting(true);
     try {
       // TODO: Implement family registration with OTP
-      console.log('Family registration data:', {
-        ...data,
-        email,
-        invitationId
-      });
-      
       toast.success('רישום התחיל בהצלחה! נשלח קוד אימות ל-' + data.phoneNumber);
       
       // Navigate to new phone-based OTP verification page

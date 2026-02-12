@@ -20,7 +20,6 @@ export class OTPService {
    */
   async sendOTP(request: OTPRequest): Promise<OTPSendResponse> {
     try {
-      console.log(`OTPService: Sending OTP`, request);
       
       const { data, error } = await supabase.functions.invoke('otp-send', {
         body: request
@@ -35,7 +34,6 @@ export class OTPService {
         };
       }
 
-      console.log('OTPService: OTP sent successfully:', data);
       return {
         success: true,
         codeSent: true,
@@ -59,7 +57,6 @@ export class OTPService {
    */
   async verifyOTP(verification: OTPVerification): Promise<OTPVerifyResponse> {
     try {
-      console.log(`OTPService: Verifying OTP`, verification);
       
       const { data, error } = await supabase.functions.invoke('otp-verify', {
         body: verification
@@ -82,7 +79,6 @@ export class OTPService {
         };
       }
 
-      console.log('OTPService: OTP verified successfully:', data);
       return {
         success: true,
         verified: true,

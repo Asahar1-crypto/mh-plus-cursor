@@ -14,8 +14,6 @@ const Children = () => {
   const { user, account } = useAuth();
   const [open, setOpen] = useState(false);
 
-  console.log('Children page - current account:', account?.name, 'children count:', childrenList.length);
-
   if (!user || !account) {
     return (
       <div className="flex items-center justify-center min-h-screen">

@@ -17,7 +17,6 @@ interface SendEmailOptions {
  */
 export async function sendEmail(options: SendEmailOptions) {
   try {
-    console.log('emailService: Sending email request to edge function with options:', options);
     
     // Make sure we have the required fields
     if (!options.to || !options.subject || (!options.text && !options.html)) {
@@ -33,7 +32,6 @@ export async function sendEmail(options: SendEmailOptions) {
       throw error;
     }
     
-    console.log('emailService: Email sent successfully with response:', data);
     return data;
   } catch (error) {
     console.error('emailService: Failed to send email:', error);
@@ -55,7 +53,7 @@ export async function sendInvitationEmail(
   senderName: string, 
   accountName: string
 ) {
-  console.log(`emailService: Preparing invitation email to ${email} with link ${invitationLink}`);
+  // Preparing invitation email
   
   if (!email || !invitationLink) {
     console.error('emailService: Missing required parameters for invitation email');
@@ -79,7 +77,7 @@ export async function sendInvitationEmail(
     </div>
   `;
   
-  console.log(`emailService: Sending invitation email to ${email} with HTML content length: ${html.length}`);
+  // Send invitation email
   
   try {
     const result = await sendEmail({
@@ -89,17 +87,14 @@ export async function sendInvitationEmail(
     });
     
     if (result && result.warning) {
-      console.warn('emailService: Warning from send-email function:', result.warning);
       toast.warning('ההזמנה נוצרה אך שליחת האימייל נכשלה. המשתמש יוכל לראות את ההזמנה בכניסה למערכת.');
     } else {
-      console.log('emailService: Invitation email sent successfully with result:', result);
       toast.success(`הזמנה נשלחה ל-${email} בהצלחה!`);
     }
     
     return result;
   } catch (error) {
     console.error(`emailService: Failed to send invitation email to ${email}:`, error);
-    console.warn('emailService: Email sending failed, but invitation will be created in database');
     
     // Instead of showing an error, show a warning that email failed but invitation was created
     toast.warning('ההזמנה נוצרה בהצלחה אך שליחת האימייל נכשלה. המשתמש יוכל לראות את ההזמנה בכניסה למערכת.');
@@ -115,7 +110,7 @@ export async function sendInvitationEmail(
  * @param email Recipient email
  */
 export async function sendTestEmail(email: string) {
-  console.log(`emailService: Sending test email to ${email}`);
+  // Sending test email
   
   // Test email HTML template
   const html = `
@@ -137,11 +132,9 @@ export async function sendTestEmail(email: string) {
     });
     
     if (result && result.warning) {
-      console.warn('emailService: Warning from send-email function:', result.warning);
       toast.warning('שליחת אימייל הבדיקה נכשלה.');
       return { success: false, message: 'שליחת אימייל הבדיקה נכשלה.' };
     } else {
-      console.log('emailService: Test email sent successfully with result:', result);
       toast.success(`אימייל בדיקה נשלח ל-${email} בהצלחה!`);
       return { success: true, message: `אימייל בדיקה נשלח ל-${email} בהצלחה!` };
     }

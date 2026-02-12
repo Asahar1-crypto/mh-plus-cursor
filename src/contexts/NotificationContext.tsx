@@ -75,18 +75,13 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
         // Check current permission status for web
         if (platform === 'web') {
           const status = getPermissionStatus();
-          console.log('[Notifications] Init - permission:', status);
           setHasPermission(status === 'granted');
 
           if (status === 'granted') {
-            console.log('[Notifications] Permission granted, initializing push...');
             const result = await initializePush(account.id);
-            console.log('[Notifications] Push init result:', result.success);
             if (result.success) {
               setupForegroundListener();
             }
-          } else {
-            console.log('[Notifications] Permission not granted:', status);
           }
         } else if (platform === 'android' || platform === 'ios') {
           const result = await initializePush(account.id);
@@ -159,7 +154,7 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
 
       if (error && error.code === 'PGRST116') {
         // No preferences found - create defaults
-        console.log('[Notifications] No preferences found, creating defaults...');
+        // No preferences found - create defaults
         const { data: newData, error: insertError } = await supabase
           .from('notification_preferences')
           .insert({
@@ -178,7 +173,6 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
         if (insertError) {
           console.error('[Notifications] Error creating default preferences:', insertError);
         } else if (newData) {
-          console.log('[Notifications] Default preferences created');
           setPreferences(newData as NotificationPreferences);
         }
         return;
@@ -202,18 +196,14 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
    */
   const requestPermission = useCallback(async (): Promise<boolean> => {
     if (!account?.id) {
-      console.warn('[Notifications] No account ID, cannot request permission');
       return false;
     }
 
     try {
-      console.log('[Notifications] Requesting permission for account:', account.id);
       const granted = await fcmRequestPermission(account.id);
-      console.log('[Notifications] Permission result:', granted);
       setHasPermission(granted);
 
       if (granted && platform === 'web') {
-        console.log('[Notifications] Setting up foreground listener');
         setupForegroundListener();
       }
 
@@ -232,7 +222,6 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
       if (!user || !account?.id) return;
 
       try {
-        console.log('[Notifications] Updating preferences:', prefs);
 
         // Update directly via Supabase (faster, avoids edge function overhead)
         const { data, error } = await supabase
@@ -256,7 +245,6 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
         // Update local state with the full returned data
         if (data) {
           setPreferences(data as NotificationPreferences);
-          console.log('[Notifications] Preferences updated successfully');
         }
       } catch (error) {
         console.error('[Notifications] Error updating preferences:', error);

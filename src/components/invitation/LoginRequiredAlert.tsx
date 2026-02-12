@@ -50,7 +50,6 @@ const LoginRequiredAlert = ({ email, phoneNumber, invitationId }: LoginRequiredA
           onClick={() => {
             // Store the invitation ID to redirect back after login
             if (invitationId) {
-              console.log(`Storing pendingInvitationId=${invitationId} in sessionStorage`);
               sessionStorage.setItem('pendingInvitationId', invitationId);
             }
             navigate('/login');

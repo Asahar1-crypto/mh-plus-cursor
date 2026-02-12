@@ -16,6 +16,7 @@ import { toast } from 'sonner';
 import { Plus, Repeat, Users, User } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/auth';
+import { useExpense } from '@/contexts/ExpenseContext';
 import { memberService } from '@/contexts/auth/services/account/memberService';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -49,6 +50,7 @@ export const AddRecurringExpenseModal: React.FC<AddRecurringExpenseModalProps> =
   childrenList
 }) => {
   const { user, account } = useAuth();
+  const { categoriesList } = useExpense();
   const [isOpen, setIsOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -73,16 +75,8 @@ export const AddRecurringExpenseModal: React.FC<AddRecurringExpenseModalProps> =
     },
   });
 
-  const categories = [
-    'חינוך',
-    'רפואה', 
-    'פנאי',
-    'ביגוד',
-    'מזון',
-    'מזונות',
-    'קייטנות',
-    'אחר',
-  ];
+  const DEFAULT_CATEGORIES = ['חינוך', 'רפואה', 'פנאי', 'ביגוד', 'מזון', 'מזונות', 'קייטנות', 'אחר'];
+  const categories = categoriesList.length > 0 ? categoriesList.map(c => c.name) : DEFAULT_CATEGORIES;
 
   const onSubmit = async (data: AddRecurringExpenseFormData) => {
     if (!user || !account) return;
@@ -129,6 +123,7 @@ export const AddRecurringExpenseModal: React.FC<AddRecurringExpenseModalProps> =
         created_by_id: user.id,
         split_equally: splitEqually,
         is_recurring: true,
+        recurring_active: true,
         frequency: data.frequency,
         has_end_date: data.hasEndDate,
         end_date: data.hasEndDate ? data.endDate : null,

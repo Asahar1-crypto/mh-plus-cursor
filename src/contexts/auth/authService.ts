@@ -42,8 +42,6 @@ export const authService = {
 
   // Switch active account function
   switchAccount: async (userId: string, accountId: string): Promise<{ account: Account, userAccounts: UserAccounts }> => {
-    console.log(`Switching to account ${accountId} for user ${userId}`);
-    
     // Save user preference
     await userService.setSelectedAccountId(userId, accountId);
     
@@ -56,17 +54,13 @@ export const authService = {
       throw new Error('Selected account not found');
     }
     
-    console.log('Account switched successfully:', selectedAccount);
     return { account: selectedAccount, userAccounts };
   },
 
   // Update account name function
   updateAccountName: async (accountId: string, newName: string): Promise<Account> => {
-    console.log(`Updating account ${accountId} name to "${newName}"`);
-    
     const updatedAccount = await accountService.updateAccountName(accountId, newName);
     
-    console.log('Account name updated successfully:', updatedAccount);
     return updatedAccount;
   }
 };

@@ -9,7 +9,6 @@ import { User } from '../../types';
 export const registrationService = {
   register: async (name: string, email: string, password: string, phoneNumber?: string) => {
     try {
-      console.log(`Registering user: ${name} (${email})`);
       
       // Check for pending invitations
       const { data: invitations, error: invitationsError } = await supabase
@@ -51,11 +50,8 @@ export const registrationService = {
         throw new Error(registerData?.error || 'שגיאה ברישום');
       }
       
-      console.log('User created successfully:', registerData.user.id);
-      
       // Handle pending invitations
       if (invitations && invitations.length > 0) {
-        console.log(`Found ${invitations.length} pending invitations for ${email}`);
         const pendingInvitations = {
           email,
           invitations: invitations.map(inv => ({
@@ -68,7 +64,6 @@ export const registrationService = {
         };
         
         localStorage.setItem('pendingInvitationsAfterRegistration', JSON.stringify(pendingInvitations));
-        console.log('Stored pending invitations');
       }
       
       toast.success('נרשמת בהצלחה!');

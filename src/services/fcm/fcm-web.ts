@@ -25,13 +25,11 @@ function getFirebaseMessaging(): Messaging | null {
 
   // Check browser support
   if (!('Notification' in window) || !('serviceWorker' in navigator)) {
-    console.warn('Push notifications not supported in this browser');
     return null;
   }
 
   // Check if config is set
   if (!firebaseConfig.apiKey || !firebaseConfig.projectId) {
-    console.warn('Firebase config not set. Push notifications disabled.');
     return null;
   }
 
@@ -62,7 +60,6 @@ export function isPushSupported(): boolean {
  */
 export async function requestNotificationPermission(): Promise<boolean> {
   if (!('Notification' in window)) {
-    console.warn('Notifications not supported');
     return false;
   }
 
@@ -87,11 +84,10 @@ export function getPermissionStatus(): NotificationPermission | 'unsupported' {
  * Register service worker and get FCM token, then save to backend
  */
 export async function getFCMToken(accountId: string): Promise<string | null> {
-  console.log('[FCM] getFCMToken called for account:', accountId);
+  // Get FCM token for account
   
   const msg = getFirebaseMessaging();
   if (!msg) {
-    console.warn('[FCM] Firebase messaging not available');
     return null;
   }
 
@@ -111,7 +107,6 @@ export async function getFCMToken(accountId: string): Promise<string | null> {
 
     const vapidKey = import.meta.env.VITE_FIREBASE_VAPID_KEY;
     if (!vapidKey) {
-      console.warn('[FCM] VITE_FIREBASE_VAPID_KEY not set');
       return null;
     }
 
@@ -121,7 +116,6 @@ export async function getFCMToken(accountId: string): Promise<string | null> {
     });
 
     if (token) {
-      console.log('[FCM] Token received, saving to backend...');
       
       const { data, error } = await supabase.functions.invoke('register-device-token', {
         body: {
@@ -138,14 +132,11 @@ export async function getFCMToken(accountId: string): Promise<string | null> {
 
       if (error) {
         console.error('[FCM] Error registering device token:', error);
-      } else {
-        console.log('[FCM] Token registered successfully');
       }
 
       return token;
     }
 
-    console.warn('[FCM] No token received from Firebase');
     return null;
   } catch (error) {
     console.error('[FCM] Error getting FCM token:', error);
@@ -162,7 +153,6 @@ export function onForegroundMessage(callback: (payload: any) => void): () => voi
   if (!msg) return () => {};
 
   return onMessage(msg, (payload) => {
-    console.log('Foreground message received:', payload);
     callback(payload);
   });
 }
@@ -176,7 +166,6 @@ export async function unregisterToken(token: string): Promise<void> {
       .from('device_tokens')
       .update({ is_active: false })
       .eq('token', token);
-    console.log('Device token deactivated');
   } catch (error) {
     console.error('Error unregistering token:', error);
   }

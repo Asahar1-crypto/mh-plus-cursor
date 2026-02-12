@@ -266,8 +266,6 @@ const AdminUnverifiedUsers: React.FC = () => {
     }
 
     try {
-      console.log('Deleting user:', { userId, email });
-      
       const { data, error } = await supabase.functions.invoke('delete-user', {
         body: { user_id: userId }
       });
@@ -276,8 +274,6 @@ const AdminUnverifiedUsers: React.FC = () => {
         console.error('Delete user error:', error);
         throw error;
       }
-
-      console.log('Delete user response:', data);
 
       toast({
         title: 'נמחק בהצלחה',

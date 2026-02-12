@@ -159,8 +159,6 @@ const AdminEmailSettings: React.FC = () => {
         }
       });
 
-      console.log('Connection test response:', response);
-
       if (response.error) {
         console.error('Connection test error:', response.error);
         setConnectionStatus('error');
@@ -264,8 +262,7 @@ const AdminEmailSettings: React.FC = () => {
 
     try {
       setTesting(true);
-      console.log('Sending test email to:', testEmail);
-      
+
       const response = await supabase.functions.invoke('send-email', {
         body: {
           to: testEmail,
@@ -282,8 +279,6 @@ const AdminEmailSettings: React.FC = () => {
           `
         }
       });
-
-      console.log('Test email response:', response);
 
       if (response.error) {
         console.error('Test email error:', response.error);

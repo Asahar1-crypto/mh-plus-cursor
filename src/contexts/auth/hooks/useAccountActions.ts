@@ -17,7 +17,6 @@ export const useAccountActions = (
     }
 
     if (accountId === account?.id) {
-      console.log('Already on this account, no switch needed');
       return;
     }
 
@@ -25,20 +24,15 @@ export const useAccountActions = (
     setIsLoading(true);
     
     try {
-      console.log(`Switching from account ${account?.id} (${account?.name}) to account ${accountId} for user ${user.id}`);
-      
       // Immediately clear current account to force UI update
       setAccount(null);
       
       const result = await authService.switchAccount(user.id, accountId);
       
-      console.log('Account switch result:', result);
-      
       // Update state with new account and userAccounts
       setAccount(result.account);
       setUserAccounts(result.userAccounts);
       
-      console.log('Account switched successfully to:', result.account.name);
       toast.success(`עבר לחשבון: ${result.account.name}`);
       
     } catch (error: any) {
@@ -66,22 +60,17 @@ export const useAccountActions = (
     }
 
     try {
-      console.log(`Updating account name from "${account.name}" to "${newName}"`);
-      
       const updatedAccount = await authService.updateAccountName(account.id, newName);
       
       // Update the account in state
       setAccount(updatedAccount);
       
-      console.log('Account name updated successfully');
     } catch (error: any) {
       console.error('Failed to update account name:', error);
       throw error; // Re-throw so the component can handle it
     }
   };
 
-  console.log('useAccountActions: returning functions', { switchAccount: typeof switchAccount, updateAccountName: typeof updateAccountName });
-  
   return {
     switchAccount,
     updateAccountName

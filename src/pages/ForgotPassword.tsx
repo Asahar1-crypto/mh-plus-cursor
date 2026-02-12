@@ -1,5 +1,4 @@
 
-import React from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -18,15 +17,6 @@ const ForgotPassword = () => {
   const { resetPassword, isLoading } = useAuth();
   const navigate = useNavigate();
   
-  console.log('🔧 ForgotPassword component rendered at:', new Date().toLocaleTimeString());
-  console.log('🔧 resetPassword function exists:', !!resetPassword);
-  console.log('🔧 isLoading state:', isLoading);
-  
-  React.useEffect(() => {
-    console.log('🔧 ForgotPassword component mounted');
-    return () => console.log('🔧 ForgotPassword component unmounted');
-  }, []);
-  
   const form = useForm<z.infer<typeof forgotPasswordSchema>>({
     resolver: zodResolver(forgotPasswordSchema),
     defaultValues: {
@@ -35,16 +25,8 @@ const ForgotPassword = () => {
   });
   
   const onSubmit = async (data: z.infer<typeof forgotPasswordSchema>) => {
-    alert('🎯 Form submitted with email: ' + data.email); // Debug alert
-    console.log('🎯 ForgotPassword form submitted with data:', data);
-    console.log('🎯 resetPassword function:', resetPassword);
     try {
-      console.log('🎯 About to call resetPassword...');
-      alert('🎯 About to call resetPassword for: ' + data.email); // Debug alert
       await resetPassword(data.email);
-      alert('🎯 resetPassword completed successfully'); // Debug alert
-      console.log('🎯 resetPassword completed successfully');
-      // Navigate to a confirmation page or show a success message
       navigate('/login');
     } catch (error) {
       console.error('Password reset error:', error);

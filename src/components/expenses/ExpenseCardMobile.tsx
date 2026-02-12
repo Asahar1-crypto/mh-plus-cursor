@@ -14,8 +14,11 @@ import {
   X,
   Eye,
   FileText,
-  Repeat
+  Repeat,
+  Pencil,
+  Trash2
 } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Expense } from '@/contexts/expense/types';
 
 interface ExpenseCardMobileProps {
@@ -29,8 +32,12 @@ interface ExpenseCardMobileProps {
   onReject: () => void;
   onMarkAsPaid: () => void;
   onPreviewReceipt?: () => void;
+  onEdit?: () => void;
+  onDelete?: () => void;
+  onUpdateStatus?: (status: Expense['status']) => void;
   showCheckbox: boolean;
   isPersonalPlan?: boolean;
+  isSuperAdmin?: boolean;
 }
 
 export const ExpenseCardMobile: React.FC<ExpenseCardMobileProps> = ({
@@ -44,8 +51,12 @@ export const ExpenseCardMobile: React.FC<ExpenseCardMobileProps> = ({
   onReject,
   onMarkAsPaid,
   onPreviewReceipt,
+  onEdit,
+  onDelete,
+  onUpdateStatus,
   showCheckbox,
-  isPersonalPlan = false
+  isPersonalPlan = false,
+  isSuperAdmin = false
 }) => {
   return (
     <Card className="bg-card/80 backdrop-blur-sm border border-border/50 hover:shadow-md transition-all duration-200">
@@ -64,7 +75,21 @@ export const ExpenseCardMobile: React.FC<ExpenseCardMobileProps> = ({
               {format(new Date(expense.date), 'dd/MM/yyyy')}
             </div>
           </div>
-          <StatusBadge status={expense.status} />
+          {isSuperAdmin && onUpdateStatus ? (
+            <Select value={expense.status} onValueChange={(v) => onUpdateStatus(v as Expense['status'])}>
+              <SelectTrigger className="h-7 text-xs w-20">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="pending">ממתין</SelectItem>
+                <SelectItem value="approved">מאושר</SelectItem>
+                <SelectItem value="rejected">נדחה</SelectItem>
+                <SelectItem value="paid">שולם</SelectItem>
+              </SelectContent>
+            </Select>
+          ) : (
+            <StatusBadge status={expense.status} />
+          )}
         </div>
 
         {/* Description & Amount */}
@@ -114,8 +139,32 @@ export const ExpenseCardMobile: React.FC<ExpenseCardMobileProps> = ({
 
         {/* Actions */}
         <div className="flex items-center justify-between pt-2 border-t border-border/30">
-          {/* Receipt */}
-          <div>
+          {/* Receipt + Edit + Delete */}
+          <div className="flex items-center gap-1">
+            {isSuperAdmin && onDelete && (
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={onDelete}
+                className="h-8 px-2 text-red-600 hover:text-red-700 hover:bg-red-50"
+                title="מחק"
+              >
+                <Trash2 className="h-4 w-4 ml-1" />
+                <span className="text-xs">מחק</span>
+              </Button>
+            )}
+            {!expense.isRecurring && onEdit && (expense.status === 'pending' || expense.status === 'approved' || isSuperAdmin) && (
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={onEdit}
+                className="h-8 px-2 text-muted-foreground hover:text-foreground"
+                title="ערוך"
+              >
+                <Pencil className="h-4 w-4 ml-1" />
+                <span className="text-xs">ערוך</span>
+              </Button>
+            )}
             {expense.receiptId ? (
               <Button
                 size="sm"

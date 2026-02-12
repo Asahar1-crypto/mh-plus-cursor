@@ -39,8 +39,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     checkAndSetUserData
   );
 
-  console.log('AuthProvider: received from useAuthActions', { authActions });
-
   const {
     login,
     register,
@@ -60,17 +58,11 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   // Perform initial auth check when component mounts
   useEffect(() => {
     const performInitialCheck = async () => {
-      console.log('AuthProvider: Performing initial auth check');
-      console.log('Current URL:', window.location.href);
-      console.log('URL search params:', window.location.search);
-      
       try {
         // Check if we just completed phone login
         const phoneLoginSuccess = sessionStorage.getItem('phoneLoginSuccess');
-        console.log('Phone login success flag:', phoneLoginSuccess);
         
         if (phoneLoginSuccess) {
-          console.log('Detected phone login completion, clearing flags');
           sessionStorage.removeItem('phoneLoginSuccess');
           sessionStorage.removeItem('sessionUrl');
           sessionStorage.removeItem('phoneLogin_showOtp');
@@ -79,12 +71,9 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         }
         
         // First check if there's already a session
-        console.log('Checking for existing session...');
         const { data: { session: existingSession } } = await supabase.auth.getSession();
-        console.log('Existing session:', existingSession ? 'Found' : 'Not found');
         
         await checkAndSetUserData();
-        console.log('AuthProvider: Initial auth check completed');
       } catch (err) {
         console.error('Error during initial auth check:', err);
       } finally {
