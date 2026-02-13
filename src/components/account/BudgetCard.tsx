@@ -146,7 +146,7 @@ export const BudgetCard: React.FC<BudgetCardProps> = ({ isAdmin = false }) => {
   };
 
   return (
-    <Card className="bg-card/80 backdrop-blur-sm border border-border/50" dir="rtl">
+    <Card className="bg-card/80 backdrop-blur-sm border border-border/50 overflow-hidden" dir="rtl">
       <CardHeader>
         <CardTitle className="flex items-center gap-2 justify-start">
           <span>תקציבים</span>
@@ -164,10 +164,10 @@ export const BudgetCard: React.FC<BudgetCardProps> = ({ isAdmin = false }) => {
               placeholder="שנה"
               value={year}
               onChange={(e) => setYear(parseInt(e.target.value) || year)}
-              className="w-[80px] text-right"
+              className="w-[80px] min-w-[70px] text-right min-h-[44px]"
             />
             <Select value={month.toString()} onValueChange={(v) => setMonth(parseInt(v, 10))}>
-              <SelectTrigger className="w-[120px] text-right">
+              <SelectTrigger className="w-[120px] min-w-[100px] text-right min-h-[44px]">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent className="z-[10000]">
@@ -182,11 +182,11 @@ export const BudgetCard: React.FC<BudgetCardProps> = ({ isAdmin = false }) => {
         )}
 
         {isAdmin && (
-          <div className="space-y-3 p-3 rounded-lg border bg-muted/20 text-right">
-            <div className="flex gap-2 items-center justify-start">
+          <div className="space-y-3 p-3 sm:p-4 rounded-lg border bg-muted/20 text-right">
+            <div className="flex flex-wrap gap-2 items-center justify-start">
               <span className="text-sm font-medium">סוג:</span>
               <Select value={budgetType} onValueChange={(v: 'monthly' | 'recurring') => setBudgetType(v)}>
-                <SelectTrigger className="w-[140px] text-right">
+                <SelectTrigger className="w-full xs:w-[140px] text-right">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent className="z-[10000]">
@@ -199,6 +199,7 @@ export const BudgetCard: React.FC<BudgetCardProps> = ({ isAdmin = false }) => {
               <Button
                 onClick={handleAdd}
                 disabled={newCategories.length === 0 || !newAmount.trim() || (budgetType === 'recurring' && !startDate)}
+                className="min-h-[44px] shrink-0"
               >
                 <Plus className="h-4 w-4 mr-1" />
                 הוסף
@@ -207,7 +208,7 @@ export const BudgetCard: React.FC<BudgetCardProps> = ({ isAdmin = false }) => {
                 <>
                   <Popover>
                     <PopoverTrigger asChild>
-                      <Button variant="outline" className={cn('w-[140px] justify-end', !endDate && 'text-muted-foreground')}>
+                      <Button variant="outline" className={cn('w-full min-w-[100px] sm:w-[140px] justify-end min-h-[44px]', !endDate && 'text-muted-foreground')}>
                         {endDate ? format(endDate, 'dd/MM/yyyy') : 'סיום (אופציונלי)'}
                         <CalendarIcon className="h-4 w-4 mr-2" />
                       </Button>
@@ -218,7 +219,7 @@ export const BudgetCard: React.FC<BudgetCardProps> = ({ isAdmin = false }) => {
                   </Popover>
                   <Popover>
                     <PopoverTrigger asChild>
-                      <Button variant="outline" className={cn('w-[140px] justify-end', !startDate && 'text-muted-foreground')}>
+                      <Button variant="outline" className={cn('w-full min-w-[100px] sm:w-[140px] justify-end min-h-[44px]', !startDate && 'text-muted-foreground')}>
                         {startDate ? format(startDate, 'dd/MM/yyyy') : 'התחלה'}
                         <CalendarIcon className="h-4 w-4 mr-2" />
                       </Button>
@@ -235,9 +236,9 @@ export const BudgetCard: React.FC<BudgetCardProps> = ({ isAdmin = false }) => {
                 value={newAmount}
                 onChange={(e) => setNewAmount(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleAdd()}
-                className="w-[110px] text-right"
+                className="w-full min-w-[80px] max-w-[140px] sm:w-[110px] text-right min-h-[44px]"
               />
-              <div className="min-w-[200px]">
+              <div className="w-full min-w-0 sm:min-w-[200px]">
                 <label className="text-xs text-muted-foreground mb-1 block text-right">קטגוריות (אחת או יותר)</label>
                 <div className="flex flex-wrap gap-2 p-2 rounded-md border bg-background max-h-24 overflow-y-auto justify-start">
                   {categories.map((cat) => (
@@ -264,22 +265,22 @@ export const BudgetCard: React.FC<BudgetCardProps> = ({ isAdmin = false }) => {
         ) : (
           <div className="space-y-2">
             {budgets.map((b) => (
-              <div key={b.id} className="flex items-center gap-2 p-2 rounded-lg border bg-muted/30">
+              <div key={b.id} className="flex flex-wrap sm:flex-nowrap items-center gap-2 p-2 sm:p-3 rounded-lg border bg-muted/30 min-w-0">
                 {editingId === b.id && isAdmin ? (
                   <>
-                    <Button size="sm" variant="outline" onClick={() => { setEditingId(null); setEditingAmount(''); }}>ביטול</Button>
-                    <Button size="sm" onClick={() => handleUpdate(b.id)}>שמור</Button>
+                    <Button size="sm" variant="outline" onClick={() => { setEditingId(null); setEditingAmount(''); }} className="shrink-0 min-h-[36px]">ביטול</Button>
+                    <Button size="sm" onClick={() => handleUpdate(b.id)} className="shrink-0 min-h-[36px]">שמור</Button>
                     <Input
                       type="number"
                       value={editingAmount}
                       onChange={(e) => setEditingAmount(e.target.value)}
-                      className="flex-1 text-right"
+                      className="flex-1 min-w-0 text-right min-h-[36px]"
                     />
-                    <span className="w-32 font-medium truncate text-right">{getBudgetLabel(b)}</span>
+                    <span className="w-full sm:w-32 font-medium truncate text-right shrink-0">{getBudgetLabel(b)}</span>
                   </>
                 ) : (
                   <>
-                    <span className="flex-1 font-medium truncate text-right">
+                    <span className="flex-1 min-w-0 font-medium truncate text-right">
                       {getBudgetLabel(b)}
                       {b.budget_type === 'recurring' && (
                         <span className="text-xs text-muted-foreground mr-2">(קבוע)</span>
@@ -287,14 +288,14 @@ export const BudgetCard: React.FC<BudgetCardProps> = ({ isAdmin = false }) => {
                     </span>
                     <span className="text-lg font-semibold">₪{b.monthly_amount.toLocaleString()}</span>
                     {isAdmin && (
-                      <>
-                        <Button size="sm" variant="ghost" onClick={() => { setEditingId(b.id); setEditingAmount(String(b.monthly_amount)); }}>
+                      <div className="flex shrink-0 gap-1">
+                        <Button size="sm" variant="ghost" onClick={() => { setEditingId(b.id); setEditingAmount(String(b.monthly_amount)); }} className="min-h-[36px] min-w-[36px] p-0">
                           <Pencil className="h-3.5 w-3.5" />
                         </Button>
-                        <Button size="sm" variant="ghost" className="text-destructive" onClick={() => handleDelete(b.id)}>
+                        <Button size="sm" variant="ghost" className="text-destructive min-h-[36px] min-w-[36px] p-0" onClick={() => handleDelete(b.id)}>
                           <Trash2 className="h-3.5 w-3.5" />
                         </Button>
-                      </>
+                      </div>
                     )}
                   </>
                 )}

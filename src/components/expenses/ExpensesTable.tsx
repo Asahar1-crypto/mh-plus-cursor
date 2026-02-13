@@ -557,10 +557,10 @@ export const ExpensesTable: React.FC<ExpensesTableProps> = ({
           </div>
         )}
 
-        {/* Desktop/Tablet: Compact Table Layout without horizontal scroll */}
+        {/* Desktop/Tablet: Compact Table Layout */}
         {!isMobile && filteredExpenses.length > 0 && (
-          <div className="w-full">
-            <Table dir="rtl" className="table-fixed w-full">
+          <div className="w-full overflow-x-auto -mx-2 px-2 md:mx-0 md:px-0">
+            <Table dir="rtl" className="table-fixed w-full min-w-[600px]">
               <TableHeader>
                 <TableRow className="bg-muted/30 border-b border-border/50">
                   <TableHead className="text-right font-semibold w-10 p-2"></TableHead>

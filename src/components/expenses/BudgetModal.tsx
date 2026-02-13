@@ -13,13 +13,13 @@ export const BudgetModal: React.FC<BudgetModalProps> = ({ isAdmin = false }) => 
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <Button variant="default" className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white border-emerald-700 shadow-md hover:shadow-lg transition-all duration-300">
-          <Wallet className="h-4 w-4" />
+        <Button variant="default" className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white border-emerald-700 shadow-md hover:shadow-lg transition-all duration-300 min-h-[44px] text-xs sm:text-sm">
+          <Wallet className="h-4 w-4 shrink-0" />
           תקציבים
         </Button>
       </DialogTrigger>
-      <DialogContent className="w-[95vw] max-w-[600px] max-h-[90vh] z-[9999] flex flex-col p-0" dir="rtl">
-        <ScrollArea className="flex-1 max-h-[90vh]">
+      <DialogContent className="w-[95vw] max-w-[600px] max-h-[85vh] sm:max-h-[90vh] z-[9999] flex flex-col p-0 sm:rounded-xl" dir="rtl">
+        <ScrollArea className="flex-1 max-h-[85vh] sm:max-h-[90vh]">
           <div className="p-4 sm:p-6">
             <BudgetCard isAdmin={isAdmin} />
           </div>

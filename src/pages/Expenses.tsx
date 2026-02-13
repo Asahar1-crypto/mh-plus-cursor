@@ -152,7 +152,7 @@ const ExpensesPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background/95 to-muted/30" dir="rtl">
+    <div className="min-h-screen bg-gradient-to-br from-background via-background/95 to-muted/30 overflow-x-hidden" dir="rtl">
       {/* Background decorative elements */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
         <div className="absolute -top-20 -right-20 w-96 h-96 bg-primary/5 rounded-full blur-3xl animate-pulse"></div>
@@ -181,7 +181,7 @@ const ExpensesPage = () => {
             </div>
 
             {/* Action Buttons */}
-            <div className="flex gap-2 sm:gap-3 w-full sm:w-auto">
+            <div className="flex flex-wrap gap-2 sm:gap-3 w-full sm:w-auto">
               <Button
                 variant="outline"
                 onClick={() => exportExpensesToCSV(filteredExpenses)}
@@ -213,7 +213,7 @@ const ExpensesPage = () => {
                 <span className="hidden sm:inline">רענון</span>
               </Button>
               <BudgetModal isAdmin={isAdmin || false} />
-              <div className="flex-1 sm:flex-none">
+              <div className="flex-none shrink-0">
                 <AddExpenseModal onSubmitSuccess={refreshData} />
               </div>
             </div>

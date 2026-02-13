@@ -59,7 +59,7 @@ export const ExpenseCardMobile: React.FC<ExpenseCardMobileProps> = ({
   isSuperAdmin = false
 }) => {
   return (
-    <Card className="bg-card/80 backdrop-blur-sm border border-border/50 hover:shadow-md transition-all duration-200">
+    <Card className="bg-card/80 backdrop-blur-sm border border-border/50 hover:shadow-md transition-all duration-200" dir="rtl">
       <CardContent className="p-4 space-y-3">
         {/* Header: Checkbox + Date + Status */}
         <div className="flex items-center justify-between">

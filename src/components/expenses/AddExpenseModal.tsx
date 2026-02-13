@@ -93,6 +93,7 @@ export const AddExpenseModal: React.FC<{ onSubmitSuccess?: () => void }> = ({ on
       <DialogTrigger asChild>
         <Button 
           data-modal-trigger="add-expense"
+          className="min-h-[44px] whitespace-nowrap shrink-0"
           onClick={(e) => {
             e.preventDefault();
             e.stopPropagation();
