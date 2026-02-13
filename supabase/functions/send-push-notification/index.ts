@@ -248,18 +248,24 @@ serve(async (req) => {
       .eq('is_active', true);
 
     if (!tokens || tokens.length === 0) {
-      console.log('No active device tokens found. Falling back to SMS.');
+      console.log('No active device tokens found. Checking if SMS fallback is allowed.');
 
-      // Fallback to SMS if configured
-      try {
-        await supabase.functions.invoke('send-sms', {
-          body: {
-            userId: payload.userId,
-            message: `${payload.title}: ${payload.body}`,
-          },
-        });
-      } catch (smsError) {
-        console.warn('SMS fallback failed:', smsError);
+      // SMS fallback - only by user preference (ערוצי התראות), not admin/family
+      const userWantsSms = prefs?.sms_enabled ?? true;
+
+      if (userWantsSms) {
+        try {
+          await supabase.functions.invoke('send-sms', {
+            body: {
+              userId: payload.userId,
+              message: `${payload.title}: ${payload.body}`,
+            },
+          });
+        } catch (smsError) {
+          console.warn('SMS fallback failed:', smsError);
+        }
+      } else {
+        console.log('SMS disabled in user preferences - skipping fallback');
       }
 
       return new Response(

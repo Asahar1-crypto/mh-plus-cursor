@@ -93,10 +93,19 @@ export const useExpenseStorage = (user: User | null, account: Account | null): E
   }, [user?.id, account?.id]);
 
   // Add visibility change listener for auto-refresh when returning to tab
+  // Skip refresh if was hidden < 2s (file picker, camera dialog - avoid replacing modal with skeleton)
   useEffect(() => {
+    let hiddenAt: number | null = null;
+
     const handleVisibilityChange = () => {
-      if (!document.hidden && user && account) {
-        refreshData();
+      if (document.hidden) {
+        hiddenAt = Date.now();
+      } else if (hiddenAt !== null && user && account) {
+        const wasHiddenMs = Date.now() - hiddenAt;
+        if (wasHiddenMs > 2000) {
+          refreshData();
+        }
+        hiddenAt = null;
       }
     };
 
@@ -106,29 +115,8 @@ export const useExpenseStorage = (user: User | null, account: Account | null): E
     };
   }, [user, account]);
 
-  // Add focus listener for auto-refresh when returning to window
-  // Only refresh if the window was actually inactive (not just modal interactions)
-  useEffect(() => {
-    let windowWasInactive = false;
-
-    const handleBlur = () => {
-      windowWasInactive = true;
-    };
-
-    const handleFocus = () => {
-      if (windowWasInactive && user && account) {
-        refreshData();
-        windowWasInactive = false;
-      }
-    };
-
-    window.addEventListener('blur', handleBlur);
-    window.addEventListener('focus', handleFocus);
-    return () => {
-      window.removeEventListener('blur', handleBlur);
-      window.removeEventListener('focus', handleFocus);
-    };
-  }, [user, account]);
+  // Removed blur/focus listener - it caused refresh when opening file picker,
+  // camera, or any native dialog. visibilitychange handles tab switch.
 
   return {
     expenses,

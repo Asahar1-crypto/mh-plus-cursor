@@ -31,7 +31,7 @@ serve(async (req) => {
       console.error('❌ Missing required fields');
       return new Response(JSON.stringify({ 
         success: false, 
-        error: 'Missing required fields: file_url and account_id' 
+        error: 'חסרים פרטים נדרשים. נסה שוב.' 
       }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -56,7 +56,7 @@ serve(async (req) => {
       console.error('❌ OpenAI API key is missing');
       return new Response(JSON.stringify({ 
         success: false, 
-        error: 'OpenAI API key not configured' 
+        error: 'מפתח OpenAI לא מוגדר. הוסף OPENAI_API_KEY ב-Supabase Dashboard > Edge Functions > scan-receipt > Secrets'
       }), {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -69,7 +69,7 @@ serve(async (req) => {
       console.error('❌ No authorization header');
       return new Response(JSON.stringify({ 
         success: false, 
-        error: 'No authorization header' 
+        error: 'יש להתחבר כדי לסרוק חשבונית. נסה להתחבר מחדש.' 
       }), {
         status: 401,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -100,7 +100,7 @@ serve(async (req) => {
       console.error('❌ User authentication failed:', userError);
       return new Response(JSON.stringify({ 
         success: false, 
-        error: 'Authentication failed' 
+        error: 'אימות נכשל. נסה להתחבר מחדש.' 
       }), {
         status: 401,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }

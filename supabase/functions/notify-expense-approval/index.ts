@@ -77,7 +77,7 @@ serve(async (req) => {
     // Get account details
     const { data: account, error: accountError } = await supabase
       .from('accounts')
-      .select('sms_notifications_enabled, name')
+      .select('name')
       .eq('id', account_id)
       .single();
 
@@ -89,7 +89,7 @@ serve(async (req) => {
       );
     }
 
-    console.log(`📋 Account: "${account.name}", SMS enabled: ${account.sms_notifications_enabled}`);
+    console.log(`📋 Account: "${account.name}"`);
 
     // Get expense details
     const { data: expense, error: expenseError } = await supabase
@@ -153,6 +153,14 @@ serve(async (req) => {
       );
     }
 
+    // Get recipient's notification preferences (מה שהמשתמש הגדיר ב"ערוצי התראות")
+    const { data: recipientPrefs } = await supabase
+      .from('notification_preferences')
+      .select('sms_enabled')
+      .eq('user_id', recipientUserId)
+      .eq('account_id', account_id)
+      .maybeSingle();
+
     // Get the creator's name for the notification message
     const { data: creatorProfile } = await supabase
       .from('profiles')
@@ -178,7 +186,7 @@ serve(async (req) => {
         title: `הוצאה חדשה לאישור`,
         body: `${creatorName} הוסיף/ה הוצאה: ${amount} ₪ - ${description}`,
         data: { expenseId: expense_id },
-        actionUrl: `${appUrl}/dashboard`,
+        actionUrl: appUrl,
       };
 
       console.log('📲 Sending push notification...');
@@ -199,10 +207,11 @@ serve(async (req) => {
     }
 
     // ============================================================
-    // 2. SMS NOTIFICATION
-    // Always send SMS for pending expenses as a reliable channel
+    // 2. SMS NOTIFICATION (התראות)
+    // Only by user preference ("ערוצי התראות") - not admin/family level.
+    // OTP, login, registration, password reset are always sent - handled elsewhere.
     // ============================================================
-    const shouldSendSMS = true; // Always send SMS for expense approvals
+    const shouldSendSMS = recipientPrefs?.sms_enabled ?? true; // default: send
 
     let smsResult: { success: boolean; messageId?: string; error?: string; reason?: string } = { success: false, reason: 'not_attempted' };
 
@@ -233,7 +242,7 @@ serve(async (req) => {
           console.error('📱 Vonage not configured');
           smsResult = { success: false, error: 'SMS service not configured' };
         } else {
-          const smsMessage = `היי ${recipientName},\n${creatorName} הוסיף/ה הוצאה חדשה לאישור: ${amount} ₪\n${description}\nלאישור: ${appUrl}/dashboard`;
+          const smsMessage = `היי ${recipientName},\n${creatorName} הוסיף/ה הוצאה חדשה לאישור: ${amount} ₪\n${description}\nלאישור: ${appUrl}`;
 
           console.log(`📱 Sending SMS to ${recipientPhone}...`);
           const cleanPhone = recipientPhone.replace(/^\+/, '');

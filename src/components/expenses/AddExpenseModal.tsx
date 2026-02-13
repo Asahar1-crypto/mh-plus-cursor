@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { FileText, ScanLine, PlusCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -85,7 +84,6 @@ export const AddExpenseModal: React.FC<{ onSubmitSuccess?: () => void }> = ({ on
         }
         setIsOpen(open);
         if (!open) {
-          // Reset state when dialog closes
           setCurrentStep('select');
           setScanResult(null);
           setIsManualForm(true);
@@ -124,6 +122,11 @@ export const AddExpenseModal: React.FC<{ onSubmitSuccess?: () => void }> = ({ on
             e.preventDefault();
           }
         }}
+        onFocusOutside={(e) => {
+          if (shouldPreventClose) {
+            e.preventDefault();
+          }
+        }}
       >
         <DialogHeader className="flex-shrink-0 px-4 sm:px-6 py-3 sm:py-4 border-b">
           <DialogTitle className="text-base sm:text-lg">
@@ -144,6 +147,7 @@ export const AddExpenseModal: React.FC<{ onSubmitSuccess?: () => void }> = ({ on
               <div className="space-y-6">
                 <div className="flex gap-4">
                   <Button 
+                    type="button"
                     variant="default"
                     onClick={() => {
                       setIsManualForm(true);
@@ -154,6 +158,7 @@ export const AddExpenseModal: React.FC<{ onSubmitSuccess?: () => void }> = ({ on
                     <FileText className="mr-2 h-4 w-4" /> הזנה ידנית
                   </Button>
                   <Button 
+                    type="button"
                     variant="outline"
                     onClick={() => {
                       setIsManualForm(false);
@@ -172,9 +177,7 @@ export const AddExpenseModal: React.FC<{ onSubmitSuccess?: () => void }> = ({ on
                         if (onSubmitSuccess) onSubmitSuccess();
                         handleCancel();
                       }}
-                      onCancel={() => {
-                        handleCancel();
-                      }}
+                      onCancel={() => handleCancel()}
                     />
                   </div>
                 )}
@@ -184,12 +187,8 @@ export const AddExpenseModal: React.FC<{ onSubmitSuccess?: () => void }> = ({ on
             {currentStep === 'upload' && (
               <div className="pb-4">
                 <ReceiptUpload 
-                  onScanComplete={(result) => {
-                    handleScanComplete(result);
-                  }}
-                  onCancel={() => {
-                    handleCancel();
-                  }}
+                  onScanComplete={handleScanComplete}
+                  onCancel={handleCancel}
                 />
               </div>
             )}
@@ -198,12 +197,8 @@ export const AddExpenseModal: React.FC<{ onSubmitSuccess?: () => void }> = ({ on
               <div className="pb-4">
                 <ReceiptValidation
                   scanResult={scanResult}
-                  onApprove={() => {
-                    handleScanApprove();
-                  }}
-                  onCancel={() => {
-                    handleCancel();
-                  }}
+                  onApprove={handleScanApprove}
+                  onCancel={handleCancel}
                 />
               </div>
             )}

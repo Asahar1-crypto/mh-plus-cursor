@@ -72,8 +72,10 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
     const init = async () => {
       setIsInitializing(true);
       try {
-        // Check current permission status for web
-        if (platform === 'web') {
+        // Use detectPlatform() directly to avoid race with platform state
+        const currentPlatform = detectPlatform();
+
+        if (currentPlatform === 'web') {
           const status = getPermissionStatus();
           setHasPermission(status === 'granted');
 
@@ -83,7 +85,7 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
               setupForegroundListener();
             }
           }
-        } else if (platform === 'android' || platform === 'ios') {
+        } else if (currentPlatform === 'android' || currentPlatform === 'ios') {
           const result = await initializePush(account.id);
           setHasPermission(result.success);
         }
@@ -120,7 +122,7 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
       }
       initializedRef.current = false;
     };
-  }, [user?.id, account?.id, platform]);
+  }, [user?.id, account?.id]);
 
   /**
    * Set up listener for foreground messages (web only)

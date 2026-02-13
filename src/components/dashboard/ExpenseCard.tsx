@@ -19,6 +19,13 @@ export interface ExpenseCardProps {
 export const ExpenseCard = ({ expense, accountMembers = [], onApprove, onReject, onMarkPaid }: ExpenseCardProps) => {
   const sortedMembers = [...accountMembers].sort((a, b) => a.user_id.localeCompare(b.user_id));
   const payerMember = sortedMembers.find(m => m.user_id === expense.paidById);
+  const creatorMember = accountMembers.find(m => m.user_id === expense.createdBy);
+  const creatorName = expense.creatorName && expense.creatorName !== 'Unknown'
+    ? expense.creatorName
+    : (creatorMember?.user_name ?? expense.creatorName ?? 'לא ידוע');
+  const paidByName = expense.paidByName && expense.paidByName !== 'Unknown'
+    ? expense.paidByName
+    : (payerMember?.user_name ?? expense.paidByName ?? 'לא ידוע');
   const payerIndex = payerMember ? sortedMembers.indexOf(payerMember) : -1;
 
   const paymentWallets = (() => {
@@ -39,7 +46,7 @@ export const ExpenseCard = ({ expense, accountMembers = [], onApprove, onReject,
           src={src}
           alt={alt}
           className="h-8 w-8 object-contain"
-          title={expense.paidByName || payerMember.user_name}
+          title={paidByName}
         />
       );
     }
@@ -68,9 +75,9 @@ export const ExpenseCard = ({ expense, accountMembers = [], onApprove, onReject,
       </div>
       <div className="flex flex-col sm:flex-row sm:items-center justify-between p-3 sm:p-4 bg-muted/20 gap-3 sm:gap-2">
         <div className="text-xs sm:text-sm text-muted-foreground space-y-1">
-          <div>נוצר על ידי: <span className="font-medium">{expense.creatorName}</span></div>
+          <div>נוצר על ידי: <span className="font-medium">{creatorName}</span></div>
           <div className="flex flex-col gap-1">
-            <div>חייב לשלם: <span className="font-medium">{expense.paidByName}</span></div>
+            <div>חייב לשלם: <span className="font-medium">{paidByName}</span></div>
             {paymentWallets && (
               <div className="flex items-center gap-1 mt-1">
                 {paymentWallets}
