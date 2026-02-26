@@ -1,12 +1,12 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useExpense } from '@/contexts/ExpenseContext';
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { PieChart as PieChartIcon, BarChart3, Calendar, Users, Wallet, Hash, UserCheck, TrendingUp } from 'lucide-react';
-import { format } from 'date-fns';
-import { he } from 'date-fns/locale';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { PieChart as PieChartIcon, BarChart3, Users, Wallet, Hash, UserCheck, TrendingUp, Table2 } from 'lucide-react';
+import { filterExpensesByPeriod } from '@/utils/reportsPeriodUtils';
+import type { PeriodFilter } from '@/utils/reportsPeriodUtils';
 
 interface ChildData {
   name: string;
@@ -16,50 +16,24 @@ interface ChildData {
 }
 
 const CHILD_COLORS = [
-  '#8B5CF6', // Purple
-  '#06B6D4', // Cyan
-  '#10B981', // Emerald
-  '#F59E0B', // Amber
-  '#EF4444', // Red
-  '#8B9DC3', // Blue Gray
-  '#F472B6', // Pink
-  '#84CC16', // Lime
+  '#8B5CF6', '#06B6D4', '#10B981', '#F59E0B', '#EF4444', '#8B9DC3', '#F472B6', '#84CC16',
 ];
 
-export const ChildrenExpensesChart: React.FC = () => {
-  const { expenses } = useExpense();
-  const [selectedMonth, setSelectedMonth] = useState<string>('all');
+interface ChildrenExpensesChartProps {
+  periodFilter: PeriodFilter;
+}
 
-  // Generate month options for the last 12 months
-  const monthOptions = useMemo(() => {
-    const options = [{ value: 'all', label: 'כל החודשים' }];
-    const now = new Date();
-    
-    for (let i = 0; i < 12; i++) {
-      const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
-      const value = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-      const label = format(date, 'MMMM yyyy', { locale: he });
-      options.push({ value, label });
-    }
-    
-    return options;
-  }, []);
+export const ChildrenExpensesChart: React.FC<ChildrenExpensesChartProps> = ({ periodFilter }) => {
+  const { expenses } = useExpense();
 
   const childrenData = useMemo(() => {
-    let validExpenses = expenses.filter(expense => expense.status !== 'rejected');
-    
-    if (selectedMonth !== 'all') {
-      const [year, month] = selectedMonth.split('-').map(Number);
-      validExpenses = validExpenses.filter(expense => {
-        const expenseDate = new Date(expense.date);
-        return expenseDate.getFullYear() === year && expenseDate.getMonth() + 1 === month;
-      });
-    }
+    const validExpenses = expenses.filter(expense => expense.status !== 'rejected');
+    const filtered = filterExpensesByPeriod(validExpenses, periodFilter);
     
     const childMap = new Map<string, { amount: number; count: number }>();
     
-    validExpenses.forEach(expense => {
-      const childName = expense.childName || 'ללא ילד';
+    filtered.forEach(expense => {
+      const childName = expense.childName || 'כללי';
       const existing = childMap.get(childName) || { amount: 0, count: 0 };
       childMap.set(childName, {
         amount: existing.amount + expense.amount,
@@ -75,7 +49,7 @@ export const ChildrenExpensesChart: React.FC = () => {
     })).sort((a, b) => b.value - a.value);
 
     return data;
-  }, [expenses, selectedMonth]);
+  }, [expenses, periodFilter]);
 
   const totalAmount = childrenData.reduce((sum, item) => sum + item.value, 0);
   const totalCount = childrenData.reduce((sum, item) => sum + item.count, 0);
@@ -175,8 +149,12 @@ export const ChildrenExpensesChart: React.FC = () => {
             <div className="p-4 bg-muted/30 rounded-full w-fit mx-auto mb-4">
               <Users className="h-10 w-10 sm:h-12 sm:w-12 opacity-50 animate-pulse" />
             </div>
-            <p className="text-base sm:text-lg font-semibold">אין נתוני הוצאות להצגה</p>
-            <p className="text-xs sm:text-sm mt-2 text-muted-foreground/70">הוסף הוצאות כדי לראות את החלוקה לפי ילדים</p>
+            <p className="text-base sm:text-lg font-semibold">אין נתונים לתקופה זו</p>
+            <p className="text-xs sm:text-sm mt-2 text-muted-foreground/70">
+              {periodFilter.type !== 'all'
+                ? 'נסה לבחור תקופה אחרת או "כל התקופה" בראש הדף'
+                : 'הוסף הוצאות (עם שיוך לילד) כדי לראות את החלוקה לפי ילדים'}
+            </p>
           </div>
         </CardContent>
       </Card>
@@ -205,29 +183,12 @@ export const ChildrenExpensesChart: React.FC = () => {
             </CardDescription>
           </div>
           
-          <div className="flex items-center gap-2 self-start sm:self-auto">
-            <div className="p-1 sm:p-1.5 bg-muted/50 rounded-md">
-              <Calendar className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-muted-foreground" />
-            </div>
-            <Select value={selectedMonth} onValueChange={setSelectedMonth}>
-              <SelectTrigger className="w-full xs:w-40 sm:w-[180px] h-9 sm:h-10 text-xs sm:text-sm bg-background/80 border-border/50 hover:bg-background hover:border-accent/50 transition-all duration-300 hover:shadow-md">
-                <SelectValue placeholder="בחר חודש" />
-              </SelectTrigger>
-              <SelectContent className="bg-background/95 backdrop-blur-lg border border-border/50 shadow-xl">
-                {monthOptions.map((option) => (
-                  <SelectItem key={option.value} value={option.value} className="text-xs sm:text-sm hover:bg-accent/10 transition-colors duration-200">
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
         </div>
       </CardHeader>
       
       <CardContent className="relative z-10 p-4 sm:p-6 space-y-4 sm:space-y-6">
         <Tabs defaultValue="pie" className="space-y-4 sm:space-y-5">
-          <TabsList className="grid w-full grid-cols-2 bg-muted/50 backdrop-blur-sm h-10 sm:h-11">
+          <TabsList className="grid w-full grid-cols-3 bg-muted/50 backdrop-blur-sm h-10 sm:h-11">
             <TabsTrigger value="pie" className="flex items-center gap-1.5 sm:gap-2 data-[state=active]:bg-background data-[state=active]:shadow-lg transition-all duration-300 text-xs sm:text-sm font-medium">
               <PieChartIcon className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
               <span className="hidden xs:inline">תרשים עוגה</span>
@@ -237,6 +198,11 @@ export const ChildrenExpensesChart: React.FC = () => {
               <BarChart3 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
               <span className="hidden xs:inline">תרשים עמודות</span>
               <span className="xs:hidden">עמודות</span>
+            </TabsTrigger>
+            <TabsTrigger value="table" className="flex items-center gap-1.5 sm:gap-2 data-[state=active]:bg-background data-[state=active]:shadow-lg transition-all duration-300 text-xs sm:text-sm font-medium">
+              <Table2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+              <span className="hidden xs:inline">טבלה</span>
+              <span className="xs:hidden">טבלה</span>
             </TabsTrigger>
           </TabsList>
 
@@ -322,6 +288,39 @@ export const ChildrenExpensesChart: React.FC = () => {
             </div>
 
             {/* Summary Stats */}
+            <SummaryStats />
+          </TabsContent>
+
+          <TabsContent value="table" className="space-y-4 sm:space-y-6 animate-fade-in">
+            <div className="rounded-xl border border-border/50 overflow-hidden">
+              <Table dir="rtl">
+                <TableHeader>
+                  <TableRow className="bg-muted/50">
+                    <TableHead className="text-right font-semibold">ילד</TableHead>
+                    <TableHead className="text-right font-semibold">סכום (₪)</TableHead>
+                    <TableHead className="text-right font-semibold">מספר הוצאות</TableHead>
+                    <TableHead className="text-right font-semibold">אחוז מסה"כ</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {childrenData.map((row) => (
+                    <TableRow key={row.name}>
+                      <TableCell className="font-medium">
+                        <div className="flex items-center gap-2">
+                          <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: row.color }} />
+                          {row.name}
+                        </div>
+                      </TableCell>
+                      <TableCell className="font-bold">₪{row.value.toLocaleString()}</TableCell>
+                      <TableCell>{row.count}</TableCell>
+                      <TableCell className="text-muted-foreground">
+                        {totalAmount > 0 ? ((row.value / totalAmount) * 100).toFixed(1) : 0}%
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
             <SummaryStats />
           </TabsContent>
         </Tabs>

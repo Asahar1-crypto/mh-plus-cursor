@@ -1,28 +1,36 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useAuth } from '@/contexts/auth';
 import { useExpense } from '@/contexts/ExpenseContext';
 import { Card, CardContent } from '@/components/ui/card';
 import { CategoryExpensesChart } from '@/components/reports/CategoryExpensesChart';
 import { ChildrenExpensesChart } from '@/components/reports/ChildrenExpensesChart';
 import FoodBudgetChart from '@/components/reports/FoodBudgetChart';
-import { BarChart3, TrendingUp, Wallet, Users, Tag, ArrowUpRight, ArrowDownRight } from 'lucide-react';
+import { ReportsPeriodFilter } from '@/components/reports/ReportsPeriodFilter';
+import { BarChart3, TrendingUp, Wallet, Users, Tag, ArrowUpRight, ArrowDownRight, Calendar } from 'lucide-react';
 import { ReportsSkeleton } from '@/components/reports/ReportsSkeleton';
+import { filterExpensesByPeriod, type PeriodFilter } from '@/utils/reportsPeriodUtils';
 
 const Reports = () => {
   const { user, account, isLoading } = useAuth();
   const { expenses } = useExpense();
+  const [periodFilter, setPeriodFilter] = useState<PeriodFilter>({ type: 'all' });
 
-  // Calculate overview stats
+  const filteredExpenses = useMemo(() => {
+    const valid = expenses.filter(exp => exp.status !== 'rejected');
+    return filterExpensesByPeriod(valid, periodFilter);
+  }, [expenses, periodFilter]);
+
+  // Calculate overview stats based on filtered period
   const overviewStats = useMemo(() => {
     const validExpenses = expenses.filter(exp => exp.status !== 'rejected');
-    const totalAmount = validExpenses.reduce((sum, exp) => sum + exp.amount, 0);
-    const totalCount = validExpenses.length;
+    const totalAmount = filteredExpenses.reduce((sum, exp) => sum + exp.amount, 0);
+    const totalCount = filteredExpenses.length;
 
-    // Get unique categories and children
-    const categories = new Set(validExpenses.map(exp => exp.category || 'אחר'));
-    const children = new Set(validExpenses.map(exp => exp.childName).filter(Boolean));
+    // Get unique categories and children from filtered data
+    const categories = new Set(filteredExpenses.map(exp => exp.category || 'אחר'));
+    const children = new Set(filteredExpenses.map(exp => exp.childName).filter(Boolean));
 
-    // Current month vs previous month comparison
+    // Current month vs previous month comparison (from all valid expenses)
     const now = new Date();
     const currentMonthExpenses = validExpenses.filter(exp => {
       const d = new Date(exp.date);
@@ -40,7 +48,7 @@ const Reports = () => {
     const trend = prevTotal > 0 ? ((currentTotal - prevTotal) / prevTotal) * 100 : 0;
 
     return { totalAmount, totalCount, categories: categories.size, children: children.size, currentTotal, trend };
-  }, [expenses]);
+  }, [expenses, filteredExpenses]);
 
   if (isLoading || !user) {
     return <ReportsSkeleton />;
@@ -58,7 +66,7 @@ const Reports = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5 animate-fade-in">
+    <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5 animate-fade-in" dir="rtl">
       <div className="w-full max-w-7xl mx-auto p-3 sm:p-4 md:p-6 space-y-4 sm:space-y-6 lg:space-y-8">
         
         {/* Header Card - matching dashboard DashboardHeader style */}
@@ -84,20 +92,25 @@ const Reports = () => {
                   </p>
                 </div>
                 
-                <div className="hidden md:flex flex-col items-end space-y-1 p-3 rounded-lg bg-background/50 backdrop-blur-sm border border-border/30">
-                  <div className="text-sm font-medium text-muted-foreground">
-                    {new Date().toLocaleDateString('he-IL', {
-                      weekday: 'long',
-                      year: 'numeric',
-                      month: 'long',
-                      day: 'numeric'
-                    })}
+                <div className="flex flex-col items-end gap-2 w-full sm:w-auto">
+                  <div className="flex items-center gap-2">
+                    <Calendar className="h-4 w-4 text-muted-foreground shrink-0" />
+                    <span className="text-xs font-medium text-muted-foreground">תקופה:</span>
                   </div>
+                  <ReportsPeriodFilter value={periodFilter} onChange={setPeriodFilter} />
                 </div>
               </div>
             </div>
           </Card>
         </div>
+
+        {/* Empty period message */}
+        {filteredExpenses.length === 0 && expenses.filter(e => e.status !== 'rejected').length > 0 && (
+          <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-4 text-center animate-fade-in" dir="rtl">
+            <p className="font-medium text-amber-800 dark:text-amber-200">אין נתונים לתקופה זו</p>
+            <p className="text-sm text-muted-foreground mt-1">נסה לבחור תקופה אחרת או "כל התקופה" בראש הדף</p>
+          </div>
+        )}
 
         {/* Summary Overview Cards */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-6 animate-fade-in [animation-delay:200ms]">
@@ -200,19 +213,19 @@ const Reports = () => {
         </div>
 
         {/* Charts Section */}
-        <div className="space-y-4 sm:space-y-6 lg:space-y-8">
+        <div className="space-y-4 sm:space-y-6 lg:space-y-8" dir="rtl">
           {/* Food Budget Chart */}
           <div className="animate-fade-in [animation-delay:300ms]">
             <FoodBudgetChart />
           </div>
           {/* Category Expenses Chart */}
           <div className="animate-fade-in [animation-delay:400ms]">
-            <CategoryExpensesChart />
+            <CategoryExpensesChart periodFilter={periodFilter} />
           </div>
           
           {/* Children Expenses Chart */}
           <div className="animate-fade-in [animation-delay:600ms]">
-            <ChildrenExpensesChart />
+            <ChildrenExpensesChart periodFilter={periodFilter} />
           </div>
         </div>
       </div>

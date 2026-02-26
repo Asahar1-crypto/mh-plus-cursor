@@ -261,7 +261,7 @@ export const AddRecurringExpenseModal: React.FC<AddRecurringExpenseModalProps> =
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="none">ללא שיוך לילד</SelectItem>
+                      <SelectItem value="none">כללי</SelectItem>
                       {childrenList.map((child) => (
                         <SelectItem key={child.id} value={child.id}>
                           {child.name}

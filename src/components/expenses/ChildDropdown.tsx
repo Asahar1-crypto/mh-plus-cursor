@@ -10,7 +10,7 @@ interface ChildDropdownProps {
 
 export function ChildDropdown({ children, value, onValueChange, className }: ChildDropdownProps) {
   const options = [
-    { value: "none", label: "ללא שיוך" },
+    { value: "none", label: "כללי" },
     ...children.map(child => ({
       value: child.id,
       label: child.name

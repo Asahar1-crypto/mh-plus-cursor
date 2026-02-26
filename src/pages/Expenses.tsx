@@ -16,6 +16,7 @@ import { useAuth } from '@/contexts/auth';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { BudgetModal } from '@/components/expenses/BudgetModal';
+import { BudgetAlertBanner } from '@/components/expenses/BudgetAlertBanner';
 import { ExpensesPageSkeleton } from '@/components/expenses/ExpensesPageSkeleton';
 
 
@@ -218,6 +219,11 @@ const ExpensesPage = () => {
               </div>
             </div>
           </div>
+        </div>
+
+        {/* Budget Alerts - when approaching or exceeding budget */}
+        <div className="mb-4 sm:mb-6 animate-fade-in [animation-delay:150ms]">
+          <BudgetAlertBanner selectedMonth={selectedMonth} selectedYear={selectedYear} />
         </div>
 
         {/* Quick Stats Cards */}

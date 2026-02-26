@@ -318,7 +318,7 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({ onSubmitSuccess, onCan
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent className="z-[10001]">
-                    <SelectItem value="general">כללי - ללא שיוך לילד/ה</SelectItem>
+                    <SelectItem value="general">כללי</SelectItem>
                     {childrenList.length > 0 ? (
                       childrenList.map((child) => (
                         <SelectItem key={child.id} value={child.id}>
