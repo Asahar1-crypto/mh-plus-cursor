@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useExpense } from '@/contexts/ExpenseContext';
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
@@ -34,10 +34,12 @@ function getCategoryColor(category: string, index: number): string {
 
 interface CategoryExpensesChartProps {
   periodFilter: PeriodFilter;
+  onCategoryClick?: (category: string) => void;
 }
 
-export const CategoryExpensesChart: React.FC<CategoryExpensesChartProps> = ({ periodFilter }) => {
+export const CategoryExpensesChart: React.FC<CategoryExpensesChartProps> = ({ periodFilter, onCategoryClick }) => {
   const { expenses } = useExpense();
+  const [activeCategory, setActiveCategory] = useState<string | null>(null);
 
   const categoryData = useMemo(() => {
     const validExpenses = expenses.filter(expense => expense.status !== 'rejected');
@@ -67,19 +69,65 @@ export const CategoryExpensesChart: React.FC<CategoryExpensesChartProps> = ({ pe
   const totalAmount = categoryData.reduce((sum, item) => sum + item.value, 0);
   const totalCount = categoryData.reduce((sum, item) => sum + item.count, 0);
 
+  // Previous period for comparison in tooltips
+  const prevCategoryMap = useMemo(() => {
+    let prevFilter: PeriodFilter | null = null;
+    if (periodFilter.type === 'month' && periodFilter.month && periodFilter.year) {
+      const prevMonth = periodFilter.month === 1 ? 12 : periodFilter.month - 1;
+      const prevYear = periodFilter.month === 1 ? periodFilter.year - 1 : periodFilter.year;
+      prevFilter = { type: 'month', month: prevMonth, year: prevYear };
+    } else if (periodFilter.type === 'year' && periodFilter.year) {
+      prevFilter = { type: 'year', year: periodFilter.year - 1 };
+    } else if (periodFilter.type === 'quarter' && periodFilter.quarter && periodFilter.year) {
+      const prevQ = periodFilter.quarter === 1 ? 4 : periodFilter.quarter - 1;
+      const prevY = periodFilter.quarter === 1 ? periodFilter.year - 1 : periodFilter.year;
+      prevFilter = { type: 'quarter', quarter: prevQ, year: prevY };
+    }
+    if (!prevFilter) return null;
+    const valid = expenses.filter(e => e.status !== 'rejected');
+    const prevFiltered = filterExpensesByPeriod(valid, prevFilter);
+    const map = new Map<string, number>();
+    prevFiltered.forEach(e => {
+      const cat = e.category || 'אחר';
+      map.set(cat, (map.get(cat) || 0) + e.amount);
+    });
+    return map;
+  }, [expenses, periodFilter]);
+
+  const handleClick = (category: string) => {
+    setActiveCategory(prev => prev === category ? null : category);
+    onCategoryClick?.(category);
+  };
+
   const CustomTooltip = ({ active, payload }: any) => {
     if (active && payload && payload.length) {
       const data = payload[0].payload;
+      const prevAmount = prevCategoryMap?.get(data.name) ?? null;
+      const change = prevAmount !== null && prevAmount > 0
+        ? ((data.value - prevAmount) / prevAmount) * 100
+        : null;
+      const isNew = prevCategoryMap !== null && prevAmount === 0;
       return (
-        <div className="bg-card/95 backdrop-blur-lg border border-border/50 p-3 sm:p-4 rounded-xl shadow-2xl">
+        <div className="bg-card/95 backdrop-blur-lg border border-border/50 p-3 sm:p-4 rounded-xl shadow-2xl min-w-[160px]">
           <div className="flex items-center gap-2 mb-2">
-            <div className="w-3 h-3 rounded-full" style={{ backgroundColor: data.color }}></div>
+            <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: data.color }}></div>
             <p className="font-bold text-sm sm:text-base">{data.name}</p>
           </div>
           <div className="space-y-1 text-xs sm:text-sm">
             <p className="text-primary font-semibold">{`₪${data.value.toLocaleString()}`}</p>
             <p className="text-muted-foreground">{`${data.count} הוצאות`}</p>
             <p className="text-muted-foreground">{`${((data.value / totalAmount) * 100).toFixed(1)}% מסה"כ`}</p>
+            {change !== null && (
+              <p className={`font-medium ${change >= 0 ? 'text-red-500 dark:text-red-400' : 'text-green-500 dark:text-green-400'}`}>
+                {change >= 0 ? '↑' : '↓'} {Math.abs(change).toFixed(0)}% מתקופה קודמת
+              </p>
+            )}
+            {isNew && (
+              <p className="text-amber-500 font-medium">חדש בתקופה זו</p>
+            )}
+            {onCategoryClick && (
+              <p className="text-muted-foreground/60 text-[10px] pt-1 border-t border-border/30 mt-1">לחץ לסינון הוצאות</p>
+            )}
           </div>
         </div>
       );
@@ -127,7 +175,17 @@ export const CategoryExpensesChart: React.FC<CategoryExpensesChartProps> = ({ pe
   const PieLegend = () => (
     <div className="space-y-2 sm:space-y-2.5">
       {categoryData.map((item) => (
-        <div key={item.name} className="flex items-center justify-between gap-2 p-2 sm:p-2.5 rounded-lg bg-background/50 hover:bg-background/80 border border-border/20 hover:border-border/40 transition-all duration-200 group/legend cursor-default">
+        <div
+          key={item.name}
+          onClick={() => handleClick(item.name)}
+          className={`flex items-center justify-between gap-2 p-2 sm:p-2.5 rounded-lg border transition-all duration-200 group/legend cursor-pointer
+            ${activeCategory === item.name
+              ? 'bg-primary/10 border-primary/40'
+              : activeCategory
+                ? 'bg-background/30 border-border/10 opacity-50 hover:opacity-80 hover:bg-background/50'
+                : 'bg-background/50 hover:bg-background/80 border-border/20 hover:border-border/40'
+            }`}
+        >
           <div className="flex items-center gap-2 min-w-0">
             <div className="w-3 h-3 sm:w-3.5 sm:h-3.5 rounded-full flex-shrink-0 shadow-md" style={{ backgroundColor: item.color }}></div>
             <span className="text-xs sm:text-sm font-medium truncate">{item.name}</span>
@@ -220,6 +278,12 @@ export const CategoryExpensesChart: React.FC<CategoryExpensesChartProps> = ({ pe
           </TabsList>
 
           <TabsContent value="pie" className="space-y-4 sm:space-y-6 animate-fade-in">
+            {activeCategory && (
+              <div className="flex items-center gap-2 px-3 py-2 bg-primary/10 border border-primary/30 rounded-lg text-sm">
+                <span className="font-medium text-primary">מסנן: {activeCategory}</span>
+                <button onClick={() => setActiveCategory(null)} className="mr-auto text-xs text-muted-foreground hover:text-foreground underline">נקה</button>
+              </div>
+            )}
             <div className="flex flex-col lg:flex-row gap-4 sm:gap-6 items-start">
               {/* Pie Chart */}
               <div className="w-full lg:w-3/5">
@@ -240,9 +304,16 @@ export const CategoryExpensesChart: React.FC<CategoryExpensesChartProps> = ({ pe
                       animationEasing="ease-out"
                       stroke="none"
                       paddingAngle={2}
+                      onClick={(data) => handleClick(data.name)}
+                      style={{ cursor: 'pointer' }}
                     >
                       {categoryData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.color} className="hover:opacity-80 transition-opacity duration-200" />
+                        <Cell
+                          key={`cell-${index}`}
+                          fill={entry.color}
+                          opacity={activeCategory && activeCategory !== entry.name ? 0.35 : 1}
+                          className="transition-opacity duration-200"
+                        />
                       ))}
                     </Pie>
                     <Tooltip content={<CustomTooltip />} />
@@ -284,16 +355,22 @@ export const CategoryExpensesChart: React.FC<CategoryExpensesChartProps> = ({ pe
                     tickFormatter={(value) => `₪${value.toLocaleString()}`}
                   />
                   <Tooltip content={<CustomTooltip />} />
-                  <Bar 
-                    dataKey="value" 
+                  <Bar
+                    dataKey="value"
                     fill="#8884d8"
                     radius={[8, 8, 0, 0]}
                     animationBegin={0}
                     animationDuration={800}
                     animationEasing="ease-out"
+                    onClick={(data) => handleClick(data.name)}
+                    style={{ cursor: 'pointer' }}
                   >
                     {categoryData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
+                      <Cell
+                        key={`cell-${index}`}
+                        fill={entry.color}
+                        opacity={activeCategory && activeCategory !== entry.name ? 0.35 : 1}
+                      />
                     ))}
                   </Bar>
                 </BarChart>

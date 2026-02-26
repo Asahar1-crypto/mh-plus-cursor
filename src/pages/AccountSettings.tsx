@@ -1,5 +1,6 @@
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import { useTheme } from 'next-themes';
 import { useAuth } from '@/contexts/auth';
 import AccountDetailsCard from '@/components/account/AccountDetailsCard';
 import UserAccountsCard from '@/components/account/UserAccountsCard';
@@ -14,11 +15,57 @@ import BillingCycleCard from '@/components/account/BillingCycleCard';
 import AvatarSetCard from '@/components/account/AvatarSetCard';
 import SubscriptionCard from '@/components/account/SubscriptionCard';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { User, Settings, Users, Bell } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { User, Settings, Users, Bell, Sun, Moon, Monitor } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import NotificationsCard from '@/components/account/NotificationsCard';
 import { CategoriesCard } from '@/components/account/CategoriesCard';
+
+const AppearanceCard = () => {
+  const { theme, setTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
+  const options = [
+    { value: 'light', label: 'בהיר', Icon: Sun },
+    { value: 'dark', label: 'כהה', Icon: Moon },
+    { value: 'system', label: 'אוטומטי', Icon: Monitor },
+  ] as const;
+
+  return (
+    <Card className="bg-gradient-to-br from-card/80 to-card/60 backdrop-blur-sm border border-border/50">
+      <CardHeader className="pb-3">
+        <CardTitle className="text-base flex items-center gap-2">
+          <Sun className="h-4 w-4 text-primary" />
+          מראה (Dark Mode)
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        {mounted ? (
+          <div className="flex gap-3" dir="rtl">
+            {options.map(({ value, label, Icon }) => (
+              <button
+                key={value}
+                onClick={() => setTheme(value)}
+                className={`flex-1 py-3 px-2 rounded-xl border-2 flex flex-col items-center gap-2 transition-all duration-200 ${
+                  theme === value
+                    ? 'border-primary bg-primary/10 text-primary'
+                    : 'border-border hover:border-primary/40 text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                <Icon className="h-5 w-5" />
+                <span className="text-xs font-medium">{label}</span>
+              </button>
+            ))}
+          </div>
+        ) : (
+          <div className="h-16 rounded-xl bg-muted/30 animate-pulse" />
+        )}
+      </CardContent>
+    </Card>
+  );
+};
 
 const AccountSettings = () => {
   const { user, account, isLoading, sendInvitation, removeInvitation } = useAuth();
@@ -137,6 +184,7 @@ const AccountSettings = () => {
               <div className="max-w-2xl mx-auto space-y-4 sm:space-y-6 animate-fade-in">
                 <UserProfileCard />
                 <ChangePasswordCard />
+                <AppearanceCard />
               </div>
             </TabsContent>
 

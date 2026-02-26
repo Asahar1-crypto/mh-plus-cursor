@@ -1,6 +1,6 @@
 
-import React, { useState, useEffect, useRef } from 'react';
-import { useLocation } from 'react-router-dom';
+import React, { useEffect, useRef } from 'react';
+import { useLocation, useSearchParams } from 'react-router-dom';
 import { useExpense } from '@/contexts/ExpenseContext';
 import { Expense } from '@/contexts/expense/types';
 import { ExpenseFilters } from '@/components/expenses/ExpenseFilters';
@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { RefreshCw, Plus, TrendingUp, CreditCard, Clock, Download } from 'lucide-react';
+import { toast } from 'sonner';
 import { exportExpensesToCSV, exportExpensesToPDF } from '@/utils/exportUtils';
 import { useAuth } from '@/contexts/auth';
 import { useQuery } from '@tanstack/react-query';
@@ -40,22 +41,42 @@ const ExpensesPage = () => {
     enabled: !!account?.id && !!user?.id
   });
   
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const [selectedChild, setSelectedChild] = useState<string | null>(null);
-  const [selectedStatus, setSelectedStatus] = useState<Expense['status'] | null>(null);
-  const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth());
-  const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
-  const [selectedPayer, setSelectedPayer] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'regular' | 'recurring'>('regular');
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  const selectedCategory = searchParams.get('category');
+  const selectedChild = searchParams.get('child');
+  const selectedStatus = searchParams.get('status') as Expense['status'] | null;
+  const selectedMonth = parseInt(searchParams.get('month') ?? String(new Date().getMonth()));
+  const selectedYear = parseInt(searchParams.get('year') ?? String(new Date().getFullYear()));
+  const selectedPayer = searchParams.get('payer');
+  const activeTab = (searchParams.get('tab') as 'regular' | 'recurring') ?? 'regular';
+
+  const setFilter = (key: string, value: string | null) => {
+    setSearchParams(prev => {
+      const next = new URLSearchParams(prev);
+      if (value === null || value === '') next.delete(key);
+      else next.set(key, value);
+      return next;
+    }, { replace: true });
+  };
+
+  const setSelectedCategory = (v: string | null) => setFilter('category', v);
+  const setSelectedChild = (v: string | null) => setFilter('child', v);
+  const setSelectedStatus = (v: Expense['status'] | null) => setFilter('status', v);
+  const setSelectedMonth = (v: number) => setFilter('month', String(v));
+  const setSelectedYear = (v: number) => setFilter('year', String(v));
+  const setSelectedPayer = (v: string | null) => setFilter('payer', v);
+  const setActiveTab = (v: 'regular' | 'recurring') => setFilter('tab', v);
   
-  const { 
-    expenses, 
-    childrenList, 
+  const {
+    expenses,
+    childrenList,
     categoriesList,
     approveExpense,
     approveAllRecurring,
-    rejectExpense, 
+    rejectExpense,
     markAsPaid,
+    addExpense,
     updateExpense,
     updateExpenseStatus: updateStatusFromContext,
     deleteExpense,
@@ -87,6 +108,27 @@ const ExpensesPage = () => {
 
   const handleRefresh = async () => {
     await refreshData();
+  };
+
+  const handleDuplicateExpense = async (expense: Expense) => {
+    try {
+      const today = new Date().toISOString().split('T')[0];
+      await addExpense({
+        amount: expense.amount,
+        description: expense.description,
+        category: expense.category,
+        date: today,
+        childId: expense.childId,
+        childName: expense.childName,
+        paidById: expense.paidById,
+        splitEqually: expense.splitEqually,
+        isRecurring: false,
+      });
+      toast.success('ההוצאה שוכפלה בהצלחה!');
+      await refreshData();
+    } catch (error) {
+      toast.error('שגיאה בשכפול ההוצאה');
+    }
   };
 
   // Check if we should auto-open the modal
@@ -344,7 +386,7 @@ const ExpensesPage = () => {
                 />
 
                 {/* Expenses Table */}
-                <ExpensesTable 
+                <ExpensesTable
                   expenses={filteredExpenses}
                   approveExpense={approveExpense}
                   approveAllRecurring={approveAllRecurring}
@@ -355,6 +397,7 @@ const ExpensesPage = () => {
                   deleteExpense={deleteExpense}
                   refreshData={refreshData}
                   isSuperAdmin={isSuperAdmin}
+                  onDuplicateExpense={handleDuplicateExpense}
                 />
               </TabsContent>
 

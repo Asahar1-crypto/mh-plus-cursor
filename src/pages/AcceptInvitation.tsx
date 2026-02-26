@@ -37,6 +37,11 @@ const AcceptInvitation = () => {
           acceptInvitation={acceptInvitation}
         />
       )}
+
+      {/* Fallback: success but no details (edge case) */}
+      {status === 'success' && !invitationDetails && (
+        <ErrorState message="ההזמנה לא נמצאה או שפג תוקפה" />
+      )}
     </div>
   );
 };

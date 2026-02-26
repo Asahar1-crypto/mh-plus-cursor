@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/auth';
 import { useExpense } from '@/contexts/ExpenseContext';
 import { Card, CardContent } from '@/components/ui/card';
@@ -8,12 +9,23 @@ import FoodBudgetChart from '@/components/reports/FoodBudgetChart';
 import { ReportsPeriodFilter } from '@/components/reports/ReportsPeriodFilter';
 import { BarChart3, TrendingUp, Wallet, Users, Tag, ArrowUpRight, ArrowDownRight, Calendar } from 'lucide-react';
 import { ReportsSkeleton } from '@/components/reports/ReportsSkeleton';
+import { MonthlyTrendChart } from '@/components/reports/MonthlyTrendChart';
 import { filterExpensesByPeriod, type PeriodFilter } from '@/utils/reportsPeriodUtils';
 
 const Reports = () => {
+  const navigate = useNavigate();
   const { user, account, isLoading } = useAuth();
   const { expenses } = useExpense();
   const [periodFilter, setPeriodFilter] = useState<PeriodFilter>({ type: 'all' });
+
+  const handleCategoryClick = (category: string) => {
+    const params = new URLSearchParams({ category });
+    if (periodFilter.type === 'month' && periodFilter.month != null && periodFilter.year != null) {
+      params.set('month', String(periodFilter.month - 1)); // Expenses uses 0-based month
+      params.set('year', String(periodFilter.year));
+    }
+    navigate(`/expenses?${params.toString()}`);
+  };
 
   const filteredExpenses = useMemo(() => {
     const valid = expenses.filter(exp => exp.status !== 'rejected');
@@ -214,15 +226,21 @@ const Reports = () => {
 
         {/* Charts Section */}
         <div className="space-y-4 sm:space-y-6 lg:space-y-8" dir="rtl">
+          {/* Multi-month Trend Chart */}
+          <div className="animate-fade-in [animation-delay:250ms]">
+            <MonthlyTrendChart />
+          </div>
+
           {/* Food Budget Chart */}
           <div className="animate-fade-in [animation-delay:300ms]">
             <FoodBudgetChart />
           </div>
+
           {/* Category Expenses Chart */}
           <div className="animate-fade-in [animation-delay:400ms]">
-            <CategoryExpensesChart periodFilter={periodFilter} />
+            <CategoryExpensesChart periodFilter={periodFilter} onCategoryClick={handleCategoryClick} />
           </div>
-          
+
           {/* Children Expenses Chart */}
           <div className="animate-fade-in [animation-delay:600ms]">
             <ChildrenExpensesChart periodFilter={periodFilter} />

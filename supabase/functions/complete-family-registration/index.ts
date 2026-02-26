@@ -193,11 +193,13 @@ serve(async (req) => {
     console.log('Invitation accepted successfully');
 
     // 4. Generate a one-time sign-in link for the user
+    const appUrl = Deno.env.get('APP_URL') || 'https://mhplus.online';
+    const redirectTo = `${appUrl}/dashboard`;
     const { data: signInData, error: signInError } = await supabaseAdmin.auth.admin.generateLink({
       type: 'magiclink',
       email: email,
       options: {
-        redirectTo: 'https://family-finance-plus.lovable.app/dashboard'
+        redirectTo
       }
     });
 

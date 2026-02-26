@@ -1,4 +1,5 @@
 
+import { ThemeProvider } from 'next-themes';
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -20,7 +21,6 @@ import AccountSettings from "./pages/AccountSettings";
 import AccountManagement from "./pages/AccountManagement";
 import AcceptInvitation from "./pages/AcceptInvitation";
 import FamilyInvitation from "./pages/FamilyInvitation";
-import FamilyRegister from "./pages/FamilyRegister";
 import FamilyPhoneRegister from "./pages/FamilyPhoneRegister";
 import FamilyOtp from "./pages/FamilyOtp";
 import NotFound from "./pages/NotFound";
@@ -29,6 +29,7 @@ import Children from "./pages/Children";
 import Expenses from "./pages/Expenses";
 import Reports from "./pages/Reports";
 import MonthlySettlement from "./pages/MonthlySettlement";
+import CustodyCalendar from "./pages/CustodyCalendar";
 import Privacy from "./pages/Privacy";
 import Terms from "./pages/Terms";
 import Pricing from "./pages/Pricing";
@@ -53,6 +54,7 @@ import { ErrorBoundary } from "./components/ErrorBoundary";
 const queryClient = new QueryClient();
 
 const App = () => (
+  <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
   <QueryClientProvider client={queryClient}>
     <ErrorBoundary>
       <AuthProvider>
@@ -96,6 +98,7 @@ const App = () => (
                 <Route path="/account-management" element={<AccountManagement />} />
                 <Route path="/add-expense" element={<AddExpense />} />
                 <Route path="/children" element={<Children />} />
+                <Route path="/custody-calendar" element={<CustodyCalendar />} />
                 <Route path="/expenses" element={<Expenses />} />
                 <Route path="/reports" element={<Reports />} />
                 <Route path="/monthly-settlement" element={<MonthlySettlement />} />
@@ -129,6 +132,7 @@ const App = () => (
       </AuthProvider>
     </ErrorBoundary>
   </QueryClientProvider>
+  </ThemeProvider>
 );
 
 export default App;

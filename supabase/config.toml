@@ -53,3 +53,6 @@ verify_jwt = true
 
 [functions.check-budget-before-expense]
 verify_jwt = true
+
+[functions.fetch-holidays]
+verify_jwt = true

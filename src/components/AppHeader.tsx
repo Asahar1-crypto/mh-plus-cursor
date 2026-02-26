@@ -7,6 +7,7 @@ import { LogOut, Settings, Menu } from 'lucide-react';
 import AccountSwitcher from './account/AccountSwitcher';
 import { Logo } from '@/components/ui/Logo';
 import { NotificationBadge } from '@/components/notifications';
+import { ThemeToggle } from '@/components/ThemeToggle';
 
 interface AppHeaderProps {
   onMenuClick?: () => void;
@@ -55,6 +56,11 @@ const AppHeader: React.FC<AppHeaderProps> = ({ onMenuClick, isMobile }) => {
               {/* Notification bell */}
               <div className="flex-shrink-0">
                 <NotificationBadge iconSize={18} />
+              </div>
+
+              {/* Theme toggle */}
+              <div className="flex-shrink-0">
+                <ThemeToggle />
               </div>
 
               {/* User greeting and logout */}

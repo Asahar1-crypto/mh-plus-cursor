@@ -19,14 +19,15 @@ import { ExpenseCardMobile } from './ExpenseCardMobile';
 import { Expense } from '@/contexts/expense/types';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { toast } from 'sonner';
-import { 
-  Check, 
-  X, 
+import {
+  Check,
+  X,
   Pencil,
+  Copy,
   Trash2,
-  Calendar, 
-  User, 
-  Tag, 
+  Calendar,
+  User,
+  Tag,
   FileText,
   CheckSquare,
   Square,
@@ -68,19 +69,21 @@ interface ExpensesTableProps {
   deleteExpense: (id: string) => Promise<void>;
   refreshData: () => Promise<void>;
   isSuperAdmin?: boolean;
+  onDuplicateExpense?: (expense: Expense) => Promise<void>;
 }
 
-export const ExpensesTable: React.FC<ExpensesTableProps> = ({ 
-  expenses, 
+export const ExpensesTable: React.FC<ExpensesTableProps> = ({
+  expenses,
   approveExpense,
   approveAllRecurring,
-  rejectExpense, 
+  rejectExpense,
   markAsPaid,
   updateExpense,
   updateExpenseStatus,
   deleteExpense,
   refreshData,
-  isSuperAdmin = false
+  isSuperAdmin = false,
+  onDuplicateExpense,
 }) => {
   const { account } = useAuth();
   const isMobile = useIsMobile();
@@ -94,6 +97,7 @@ export const ExpensesTable: React.FC<ExpensesTableProps> = ({
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [expenseToDelete, setExpenseToDelete] = useState<Expense | null>(null);
+  const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
 
@@ -252,6 +256,24 @@ export const ExpensesTable: React.FC<ExpensesTableProps> = ({
       toast.error('שגיאה בסימון ההוצאות כשולמות');
     } finally {
       setIsPerformingBulkAction(false);
+    }
+  };
+
+  const bulkDelete = async () => {
+    const allSelected = [...selectedPendingExpenses, ...selectedApprovedExpenses];
+    if (allSelected.length === 0) return;
+
+    setIsPerformingBulkAction(true);
+    try {
+      await Promise.all(allSelected.map(id => deleteExpense(id)));
+      toast.success(`נמחקו ${allSelected.length} הוצאות`);
+      setSelectedPendingExpenses([]);
+      setSelectedApprovedExpenses([]);
+    } catch (error) {
+      toast.error('שגיאה במחיקת ההוצאות');
+    } finally {
+      setIsPerformingBulkAction(false);
+      setBulkDeleteDialogOpen(false);
     }
   };
 
@@ -480,6 +502,18 @@ export const ExpensesTable: React.FC<ExpensesTableProps> = ({
                 )}
               </div>
             )}
+
+            {isSuperAdmin && (selectedPendingExpenses.length + selectedApprovedExpenses.length) > 0 && (
+              <Button
+                onClick={() => setBulkDeleteDialogOpen(true)}
+                disabled={isPerformingBulkAction}
+                size="sm"
+                className="bg-red-600 hover:bg-red-700 text-white h-8 text-xs"
+              >
+                <Trash2 className="h-3 w-3 ml-1" />
+                מחק נבחרים ({selectedPendingExpenses.length + selectedApprovedExpenses.length})
+              </Button>
+            )}
           </div>
         </div>
       </CardHeader>
@@ -682,6 +716,17 @@ export const ExpensesTable: React.FC<ExpensesTableProps> = ({
                                 title="ערוך"
                               >
                                 <Pencil className="h-3.5 w-3.5" />
+                              </Button>
+                            )}
+                            {onDuplicateExpense && !expense.isRecurring && (
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => onDuplicateExpense(expense)}
+                                className="h-7 w-7 p-0 text-muted-foreground hover:text-primary"
+                                title="שכפל הוצאה"
+                              >
+                                <Copy className="h-3.5 w-3.5" />
                               </Button>
                             )}
                             {expense.receiptId && (
@@ -900,6 +945,26 @@ export const ExpensesTable: React.FC<ExpensesTableProps> = ({
             }}
           >
             מחק
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+
+    <AlertDialog open={bulkDeleteDialogOpen} onOpenChange={setBulkDeleteDialogOpen}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>מחיקת הוצאות נבחרות</AlertDialogTitle>
+          <AlertDialogDescription>
+            האם למחוק {selectedPendingExpenses.length + selectedApprovedExpenses.length} הוצאות נבחרות? פעולה זו אינה ניתנת לביטול.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>ביטול</AlertDialogCancel>
+          <AlertDialogAction
+            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            onClick={bulkDelete}
+          >
+            מחק הכל
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

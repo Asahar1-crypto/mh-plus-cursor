@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { format } from 'date-fns';
 import { he } from 'date-fns/locale';
 import { useAuth } from '@/contexts/auth';
@@ -13,7 +13,8 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import { Calendar as CalendarIcon, Calculator, CheckCircle, Clock, TrendingUp, RefreshCw, Check, DollarSign, Archive, ChevronDown, ChevronUp, FileText, Download, User, Receipt } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Calendar as CalendarIcon, Calculator, CheckCircle, Clock, TrendingUp, RefreshCw, Check, DollarSign, Archive, ChevronDown, ChevronUp, FileText, Download, User, Receipt, ArrowRightLeft } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
 const MonthlySettlement = () => {
@@ -119,6 +120,98 @@ const MonthlySettlement = () => {
       }
     };
   }, [expenses, selectedMonth, selectedYear]);
+
+  // Settlement summary: who owes whom this month
+  const settlementSummary = useMemo(() => {
+    if (accountMembers.length < 2) return null;
+
+    const calcOwes = (expenseList: typeof monthlyData.paid.expenses) => {
+      const owes: { [userId: string]: number } = {};
+      accountMembers.forEach(m => { owes[m.user_id] = 0; });
+      expenseList.forEach(expense => {
+        if (expense.paidById && owes[expense.paidById] !== undefined) {
+          owes[expense.paidById] += expense.splitEqually ? expense.amount / 2 : expense.amount;
+        }
+      });
+      return owes;
+    };
+
+    const paidOwes = calcOwes(monthlyData.paid.expenses);
+    const approvedOwes = calcOwes(monthlyData.approved.expenses);
+
+    const memberA = accountMembers[0];
+    const memberB = accountMembers[1];
+
+    const calcTransfer = (diff: number, nameA: string, nameB: string) => {
+      if (Math.abs(diff) < 1) return { type: 'balanced' as const };
+      if (diff > 0) return { type: 'transfer' as const, from: nameA, to: nameB, amount: Math.round(Math.abs(diff)) };
+      return { type: 'transfer' as const, from: nameB, to: nameA, amount: Math.round(Math.abs(diff)) };
+    };
+
+    const paidDiff = paidOwes[memberA.user_id] - paidOwes[memberB.user_id];
+    const approvedDiff = approvedOwes[memberA.user_id] - approvedOwes[memberB.user_id];
+
+    return {
+      memberA: memberA.user_name,
+      memberB: memberB.user_name,
+      paidOwes: { [memberA.user_name]: paidOwes[memberA.user_id], [memberB.user_name]: paidOwes[memberB.user_id] },
+      approvedOwes: { [memberA.user_name]: approvedOwes[memberA.user_id], [memberB.user_name]: approvedOwes[memberB.user_id] },
+      settled: calcTransfer(paidDiff, memberA.user_name, memberB.user_name),
+      outstanding: calcTransfer(approvedDiff, memberA.user_name, memberB.user_name),
+      combined: calcTransfer(paidDiff + approvedDiff, memberA.user_name, memberB.user_name),
+    };
+  }, [accountMembers, monthlyData]);
+
+  // Undo-before-execute state
+  const [pendingAction, setPendingAction] = useState<{ label: string } | null>(null);
+  const [undoCountdown, setUndoCountdown] = useState(5);
+  const undoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const undoIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const pendingActionFnRef = useRef<(() => Promise<void>) | null>(null);
+
+  // Close Month strict dialog state
+  const [closeMonthDialogOpen, setCloseMonthDialogOpen] = useState(false);
+  const [closeMonthChecked, setCloseMonthChecked] = useState(false);
+
+  // Cleanup timers on unmount
+  useEffect(() => {
+    return () => {
+      if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
+      if (undoIntervalRef.current) clearInterval(undoIntervalRef.current);
+    };
+  }, []);
+
+  const startUndoTimer = (label: string, action: () => Promise<void>) => {
+    if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
+    if (undoIntervalRef.current) clearInterval(undoIntervalRef.current);
+
+    pendingActionFnRef.current = action;
+    setPendingAction({ label });
+    setUndoCountdown(5);
+
+    let remaining = 5;
+    undoIntervalRef.current = setInterval(() => {
+      remaining -= 1;
+      setUndoCountdown(remaining);
+      if (remaining <= 0) clearInterval(undoIntervalRef.current!);
+    }, 1000);
+
+    undoTimerRef.current = setTimeout(async () => {
+      setPendingAction(null);
+      if (pendingActionFnRef.current) {
+        await pendingActionFnRef.current();
+        pendingActionFnRef.current = null;
+      }
+    }, 5000);
+  };
+
+  const cancelUndoTimer = () => {
+    if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
+    if (undoIntervalRef.current) clearInterval(undoIntervalRef.current);
+    pendingActionFnRef.current = null;
+    setPendingAction(null);
+    toast({ title: "הפעולה בוטלה", description: "לא בוצעו שינויים" });
+  };
 
   // Bulk action functions
   const handleApproveAll = async () => {
@@ -467,6 +560,75 @@ const MonthlySettlement = () => {
           </Card>
         </div>
 
+        {/* Settlement Summary Card - family plans only */}
+        {!isPersonalPlan && settlementSummary && (monthlyData.approved.count > 0 || monthlyData.paid.count > 0) && (
+          <div className="mb-4 sm:mb-6">
+            <Card className="bg-gradient-to-br from-card/90 to-card/95 backdrop-blur-lg border border-border/50 shadow-xl">
+              <CardHeader className="pb-2 px-4 sm:px-6 pt-4">
+                <div className="flex items-center gap-2">
+                  <div className="p-2 bg-orange-500/10 rounded-lg">
+                    <ArrowRightLeft className="h-4 w-4 text-orange-600" />
+                  </div>
+                  <CardTitle className="text-base sm:text-lg">סיכום הסדרה — {months[selectedMonth]} {selectedYear}</CardTitle>
+                </div>
+              </CardHeader>
+              <CardContent className="px-4 sm:px-6 pb-4 space-y-3">
+                {/* Outstanding (approved) */}
+                {monthlyData.approved.count > 0 && (
+                  <div className="p-3 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
+                    <p className="text-xs font-semibold text-green-700 dark:text-green-300 mb-1.5">ממתין לתשלום (מאושר)</p>
+                    <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
+                      <span>{settlementSummary.memberA}: <strong>₪{settlementSummary.approvedOwes[settlementSummary.memberA].toFixed(0)}</strong></span>
+                      <span>{settlementSummary.memberB}: <strong>₪{settlementSummary.approvedOwes[settlementSummary.memberB].toFixed(0)}</strong></span>
+                    </div>
+                    {settlementSummary.outstanding.type === 'transfer' && (
+                      <p className="text-xs text-green-700 dark:text-green-300 mt-1.5">
+                        👉 {settlementSummary.outstanding.from} צריך להעביר <strong>₪{settlementSummary.outstanding.amount}</strong> ל{settlementSummary.outstanding.to}
+                      </p>
+                    )}
+                    {settlementSummary.outstanding.type === 'balanced' && (
+                      <p className="text-xs text-green-600 dark:text-green-400 mt-1.5">✅ מאוזן</p>
+                    )}
+                  </div>
+                )}
+
+                {/* Settled (paid) */}
+                {monthlyData.paid.count > 0 && (
+                  <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                    <p className="text-xs font-semibold text-blue-700 dark:text-blue-300 mb-1.5">כבר שולם</p>
+                    <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
+                      <span>{settlementSummary.memberA}: <strong>₪{settlementSummary.paidOwes[settlementSummary.memberA].toFixed(0)}</strong></span>
+                      <span>{settlementSummary.memberB}: <strong>₪{settlementSummary.paidOwes[settlementSummary.memberB].toFixed(0)}</strong></span>
+                    </div>
+                    {settlementSummary.settled.type === 'transfer' && (
+                      <p className="text-xs text-blue-700 dark:text-blue-300 mt-1.5">
+                        ✅ {settlementSummary.settled.from} שילם <strong>₪{settlementSummary.settled.amount}</strong> יותר מ{settlementSummary.settled.to}
+                      </p>
+                    )}
+                    {settlementSummary.settled.type === 'balanced' && (
+                      <p className="text-xs text-blue-600 dark:text-blue-400 mt-1.5">✅ מאוזן</p>
+                    )}
+                  </div>
+                )}
+
+                {/* Combined net */}
+                {monthlyData.approved.count > 0 && monthlyData.paid.count > 0 && (
+                  <div className="p-3 bg-orange-50 dark:bg-orange-900/20 rounded-lg border border-orange-200 dark:border-orange-800">
+                    <p className="text-xs font-semibold text-orange-700 dark:text-orange-300 mb-1">סה"כ נטו (שולם + מאושר)</p>
+                    {settlementSummary.combined.type === 'transfer' ? (
+                      <p className="text-sm font-bold text-orange-700 dark:text-orange-300">
+                        {settlementSummary.combined.from} צריך להעביר ₪{settlementSummary.combined.amount} ל{settlementSummary.combined.to}
+                      </p>
+                    ) : (
+                      <p className="text-sm text-green-600 dark:text-green-400">✅ החשבון מאוזן!</p>
+                    )}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
         {/* Main Content */}
         <div className="space-y-6">
           <Card className="bg-gradient-to-br from-card/90 to-card/80 backdrop-blur-lg border border-border/50 shadow-2xl">
@@ -517,7 +679,7 @@ const MonthlySettlement = () => {
                           </AlertDialogHeader>
                           <AlertDialogFooter>
                             <AlertDialogCancel>ביטול</AlertDialogCancel>
-                            <AlertDialogAction onClick={handleApproveAll}>
+                            <AlertDialogAction onClick={() => startUndoTimer(`מאשר ${monthlyData.pending.count} הוצאות`, handleApproveAll)}>
                               אשר הכל
                             </AlertDialogAction>
                           </AlertDialogFooter>
@@ -545,7 +707,7 @@ const MonthlySettlement = () => {
                           </AlertDialogHeader>
                           <AlertDialogFooter>
                             <AlertDialogCancel>ביטול</AlertDialogCancel>
-                            <AlertDialogAction onClick={handleMarkAllAsPaid}>
+                            <AlertDialogAction onClick={() => startUndoTimer(`מסמן ${monthlyData.approved.count} הוצאות כשולמו`, handleMarkAllAsPaid)}>
                               סמן הכל כשולם
                             </AlertDialogAction>
                           </AlertDialogFooter>
@@ -555,33 +717,47 @@ const MonthlySettlement = () => {
 
                     {/* Close Month Button */}
                     {(monthlyData.pending.count > 0 || monthlyData.approved.count > 0) && (
-                      <AlertDialog>
+                      <AlertDialog open={closeMonthDialogOpen} onOpenChange={(open) => { setCloseMonthDialogOpen(open); if (!open) setCloseMonthChecked(false); }}>
                         <AlertDialogTrigger asChild>
-                          <Button className="w-full bg-purple-600 hover:bg-purple-700 text-white">
+                          <Button className="w-full bg-purple-600 hover:bg-purple-700 text-white" onClick={() => setCloseMonthDialogOpen(true)}>
                             <Archive className="ml-2 h-4 w-4" />
                             סגור חודש
                           </Button>
                         </AlertDialogTrigger>
                         <AlertDialogContent>
                           <AlertDialogHeader>
-                            <AlertDialogTitle>סגירת חודש {months[selectedMonth]} {selectedYear}</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              פעולה זו תאשר את כל ההוצאות הממתינות ותסמן את כל ההוצאות כשולמו.
-                              <br />
-                              <br />
-                              <strong>סיכום:</strong>
-                              <br />
-                              • הוצאות ממתינות לאישור: {monthlyData.pending.count} (₪{monthlyData.pending.amount.toFixed(0)})
-                              <br />
-                              • הוצאות ממתינות לתשלום: {monthlyData.approved.count} (₪{monthlyData.approved.amount.toFixed(0)})
-                              <br />
-                              <br />
-                              <strong>סה"כ לטיפול: ₪{(monthlyData.pending.amount + monthlyData.approved.amount).toFixed(0)}</strong>
+                            <AlertDialogTitle className="flex items-center gap-2 text-destructive">
+                              ⚠️ סגירת חודש {months[selectedMonth]} {selectedYear}
+                            </AlertDialogTitle>
+                            <AlertDialogDescription asChild>
+                              <div className="space-y-3 text-sm">
+                                <p className="font-medium text-foreground">פעולה זו <strong>בלתי הפיכה</strong> — כל ההוצאות יאושרו וייסגרו.</p>
+                                <div className="p-3 bg-destructive/10 border border-destructive/30 rounded-lg space-y-1 text-xs">
+                                  <p>• הוצאות ממתינות לאישור: <strong>{monthlyData.pending.count}</strong> (₪{monthlyData.pending.amount.toFixed(0)})</p>
+                                  <p>• הוצאות ממתינות לתשלום: <strong>{monthlyData.approved.count}</strong> (₪{monthlyData.approved.amount.toFixed(0)})</p>
+                                  <p className="pt-1 font-semibold">סה"כ לטיפול: ₪{(monthlyData.pending.amount + monthlyData.approved.amount).toFixed(0)}</p>
+                                </div>
+                                <label className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg border border-border cursor-pointer select-none">
+                                  <Checkbox
+                                    checked={closeMonthChecked}
+                                    onCheckedChange={(v) => setCloseMonthChecked(!!v)}
+                                  />
+                                  <span className="text-xs font-medium">אני מבין שפעולה זו אינה ניתנת לביטול לאחר הביצוע</span>
+                                </label>
+                              </div>
                             </AlertDialogDescription>
                           </AlertDialogHeader>
                           <AlertDialogFooter>
-                            <AlertDialogCancel>ביטול</AlertDialogCancel>
-                            <AlertDialogAction onClick={handleCloseMonth} className="bg-purple-600 hover:bg-purple-700">
+                            <AlertDialogCancel onClick={() => setCloseMonthChecked(false)}>ביטול</AlertDialogCancel>
+                            <AlertDialogAction
+                              disabled={!closeMonthChecked}
+                              onClick={() => {
+                                setCloseMonthDialogOpen(false);
+                                setCloseMonthChecked(false);
+                                startUndoTimer(`סוגר את חודש ${months[selectedMonth]} ${selectedYear}`, handleCloseMonth);
+                              }}
+                              className="bg-purple-600 hover:bg-purple-700 disabled:opacity-40 disabled:cursor-not-allowed"
+                            >
                               סגור חודש
                             </AlertDialogAction>
                           </AlertDialogFooter>
@@ -807,6 +983,34 @@ const MonthlySettlement = () => {
           </Card>
         </div>
       </div>
+
+      {/* Undo countdown banner */}
+      {pendingAction && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 w-full max-w-sm px-4" dir="rtl">
+          <div className="bg-foreground text-background rounded-2xl shadow-2xl p-4">
+            <div className="flex items-center gap-3">
+              <div className="flex-1 min-w-0">
+                <p className="font-semibold text-sm truncate">{pendingAction.label}</p>
+                <p className="text-xs opacity-60 mt-0.5">מבצע בעוד {undoCountdown} שניות...</p>
+                <div className="mt-2 h-1 bg-background/20 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-background/70 rounded-full transition-all duration-1000 ease-linear"
+                    style={{ width: `${(undoCountdown / 5) * 100}%` }}
+                  />
+                </div>
+              </div>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={cancelUndoTimer}
+                className="bg-background text-foreground hover:bg-background/90 border-background/30 flex-shrink-0"
+              >
+                ביטול
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
