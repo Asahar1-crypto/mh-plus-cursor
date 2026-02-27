@@ -6,16 +6,40 @@ import { useExpense } from '@/contexts/ExpenseContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Calendar as CalendarIcon, Calculator, CheckCircle, Clock, TrendingUp, RefreshCw, Check, DollarSign, Archive, ChevronDown, ChevronUp, FileText, Download, User, Receipt, ArrowRightLeft } from 'lucide-react';
+import { Calendar as CalendarIcon, Calculator, CheckCircle, Clock, TrendingUp, RefreshCw, Check, DollarSign, Archive, ChevronDown, ChevronUp, FileText, Download, User, Receipt, ArrowRightLeft, Plus, Trash2, History, CreditCard, Banknote } from 'lucide-react';
 import confetti from 'canvas-confetti';
+
+interface SettlementPayment {
+  id: string;
+  account_id: string;
+  from_user_id: string;
+  to_user_id: string;
+  amount: number;
+  payment_method: string;
+  payment_date: string;
+  notes?: string;
+  created_by: string;
+  created_at: string;
+}
+
+const PAYMENT_METHOD_LABELS: Record<string, string> = {
+  bank_transfer: 'העברה בנקאית',
+  bit: 'Bit',
+  paybox: 'PayBox',
+  cash: 'מזומן',
+  other: 'אחר',
+};
 
 const MonthlySettlement = () => {
   const { user, account, isLoading } = useAuth();
@@ -25,6 +49,18 @@ const MonthlySettlement = () => {
   
   // State for account members
   const [accountMembers, setAccountMembers] = useState<{user_id: string, user_name: string}[]>([]);
+
+  // Settlement payments state
+  const [settlementPayments, setSettlementPayments] = useState<SettlementPayment[]>([]);
+  const [showPaymentDialog, setShowPaymentDialog] = useState(false);
+  const [paymentAmount, setPaymentAmount] = useState('');
+  const [paymentMethod, setPaymentMethod] = useState('bank_transfer');
+  const [paymentDate, setPaymentDate] = useState(format(new Date(), 'yyyy-MM-dd'));
+  const [paymentNotes, setPaymentNotes] = useState('');
+  const [paymentFromUserId, setPaymentFromUserId] = useState('');
+  const [paymentToUserId, setPaymentToUserId] = useState('');
+  const [isSubmittingPayment, setIsSubmittingPayment] = useState(false);
+  const [showPaymentHistory, setShowPaymentHistory] = useState(false);
   
   // State for selected month/year
   const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth());
@@ -50,22 +86,93 @@ const MonthlySettlement = () => {
   React.useEffect(() => {
     const loadAccountMembers = async () => {
       if (!account?.id) return;
-      
+
       try {
         const { data, error } = await supabase
           .rpc('get_account_members_with_details', {
             account_uuid: account.id
           });
-        
+
         if (error) throw error;
         setAccountMembers(data || []);
       } catch (error) {
         console.error('Error loading account members:', error);
       }
     };
-    
+
     loadAccountMembers();
   }, [account?.id]);
+
+  // Load settlement payments
+  const loadSettlementPayments = async () => {
+    if (!account?.id) return;
+    const { data, error } = await supabase
+      .from('settlement_payments')
+      .select('*')
+      .eq('account_id', account.id)
+      .order('payment_date', { ascending: false });
+    if (!error && data) setSettlementPayments(data);
+  };
+
+  React.useEffect(() => {
+    loadSettlementPayments();
+  }, [account?.id]);
+
+  // Handle adding a settlement payment
+  const handleAddPayment = async () => {
+    if (!account?.id || !user?.id || !paymentFromUserId || !paymentToUserId) return;
+    const amount = parseFloat(paymentAmount);
+    if (isNaN(amount) || amount <= 0) {
+      toast({ title: 'שגיאה', description: 'יש להזין סכום תקין', variant: 'destructive' });
+      return;
+    }
+
+    setIsSubmittingPayment(true);
+    try {
+      const { error } = await supabase.from('settlement_payments').insert({
+        account_id: account.id,
+        from_user_id: paymentFromUserId,
+        to_user_id: paymentToUserId,
+        amount,
+        payment_method: paymentMethod,
+        payment_date: paymentDate,
+        notes: paymentNotes || null,
+        created_by: user.id,
+      });
+      if (error) throw error;
+      toast({ title: '✅ התשלום נרשם בהצלחה!', description: `₪${amount} — ${PAYMENT_METHOD_LABELS[paymentMethod]}` });
+      setShowPaymentDialog(false);
+      setPaymentAmount('');
+      setPaymentNotes('');
+      await loadSettlementPayments();
+    } catch (err) {
+      toast({ title: 'שגיאה', description: 'אירעה שגיאה בשמירת התשלום', variant: 'destructive' });
+    } finally {
+      setIsSubmittingPayment(false);
+    }
+  };
+
+  // Handle deleting a settlement payment
+  const handleDeletePayment = async (id: string) => {
+    const { error } = await supabase.from('settlement_payments').delete().eq('id', id);
+    if (!error) {
+      setSettlementPayments(prev => prev.filter(p => p.id !== id));
+      toast({ title: 'התשלום נמחק' });
+    }
+  };
+
+  // Open payment dialog pre-filled with who owes whom
+  const openPaymentDialog = (fromUserId?: string, toUserId?: string) => {
+    if (fromUserId) setPaymentFromUserId(fromUserId);
+    else if (accountMembers.length >= 2) setPaymentFromUserId(accountMembers[0].user_id);
+    if (toUserId) setPaymentToUserId(toUserId);
+    else if (accountMembers.length >= 2) setPaymentToUserId(accountMembers[1].user_id);
+    setPaymentDate(format(new Date(), 'yyyy-MM-dd'));
+    setPaymentAmount('');
+    setPaymentNotes('');
+    setPaymentMethod('bank_transfer');
+    setShowPaymentDialog(true);
+  };
 
   // Helper to get user name from ID
   const getUserName = (userId: string) => {
@@ -161,6 +268,46 @@ const MonthlySettlement = () => {
       combined: calcTransfer(paidDiff + approvedDiff, memberA.user_name, memberB.user_name),
     };
   }, [accountMembers, monthlyData]);
+
+  // Cumulative balance: all-time paid expenses minus recorded settlement payments
+  const cumulativeBalance = useMemo(() => {
+    if (accountMembers.length < 2) return null;
+
+    const memberA = accountMembers[0];
+    const memberB = accountMembers[1];
+
+    let aPaid = 0;
+    let bPaid = 0;
+
+    expenses
+      .filter(e => e.status === 'paid')
+      .forEach(expense => {
+        if (expense.paidById === memberA.user_id) {
+          aPaid += expense.splitEqually ? expense.amount / 2 : expense.amount;
+        } else if (expense.paidById === memberB.user_id) {
+          bPaid += expense.splitEqually ? expense.amount / 2 : expense.amount;
+        }
+      });
+
+    // Net: positive = B owes A
+    let net = aPaid - bPaid;
+
+    // Subtract settlement payments already made
+    settlementPayments.forEach(p => {
+      if (p.from_user_id === memberB.user_id && p.to_user_id === memberA.user_id) {
+        net -= p.amount;
+      } else if (p.from_user_id === memberA.user_id && p.to_user_id === memberB.user_id) {
+        net += p.amount;
+      }
+    });
+
+    const rounded = Math.round(Math.abs(net));
+    const totalPaid = settlementPayments.reduce((s, p) => s + p.amount, 0);
+
+    if (rounded < 1) return { type: 'balanced' as const, memberA: memberA.user_name, memberB: memberB.user_name, totalPaid };
+    if (net > 0) return { type: 'transfer' as const, from: memberB.user_name, fromId: memberB.user_id, to: memberA.user_name, toId: memberA.user_id, amount: rounded, totalPaid };
+    return { type: 'transfer' as const, from: memberA.user_name, fromId: memberA.user_id, to: memberB.user_name, toId: memberB.user_id, amount: rounded, totalPaid };
+  }, [expenses, accountMembers, settlementPayments]);
 
   // Undo-before-execute state
   const [pendingAction, setPendingAction] = useState<{ label: string } | null>(null);
@@ -629,6 +776,129 @@ const MonthlySettlement = () => {
           </div>
         )}
 
+        {/* Cumulative Balance & Payment History - family plans only */}
+        {!isPersonalPlan && accountMembers.length >= 2 && cumulativeBalance && (
+          <div className="mb-4 sm:mb-6">
+            <Card className="bg-gradient-to-br from-card/90 to-card/95 backdrop-blur-lg border border-border/50 shadow-xl">
+              <CardHeader className="pb-2 px-4 sm:px-6 pt-4">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <div className="p-2 bg-violet-500/10 rounded-lg">
+                      <History className="h-4 w-4 text-violet-600" />
+                    </div>
+                    <CardTitle className="text-base sm:text-lg">יתרה מצטברת ותיעוד תשלומים</CardTitle>
+                  </div>
+                  <Button
+                    size="sm"
+                    className="bg-violet-600 hover:bg-violet-700 text-white gap-1.5"
+                    onClick={() =>
+                      openPaymentDialog(
+                        cumulativeBalance.type === 'transfer' ? cumulativeBalance.fromId : accountMembers[0].user_id,
+                        cumulativeBalance.type === 'transfer' ? cumulativeBalance.toId : accountMembers[1].user_id,
+                      )
+                    }
+                  >
+                    <Plus className="h-3.5 w-3.5" />
+                    תיעוד תשלום
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent className="px-4 sm:px-6 pb-4 space-y-3">
+                {/* Cumulative balance summary */}
+                <div className={cn(
+                  "p-3 rounded-lg border text-sm",
+                  cumulativeBalance.type === 'balanced'
+                    ? "bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800"
+                    : "bg-orange-50 dark:bg-orange-900/20 border-orange-200 dark:border-orange-800"
+                )}>
+                  <p className="text-xs font-semibold mb-1.5 text-muted-foreground">יתרה מצטברת (כל הזמנים)</p>
+                  {cumulativeBalance.type === 'balanced' ? (
+                    <p className="text-green-700 dark:text-green-300 font-medium">✅ החשבון מאוזן — אין חוב פתוח</p>
+                  ) : (
+                    <p className="font-bold text-orange-700 dark:text-orange-300">
+                      {cumulativeBalance.from} צריך להעביר <strong>₪{cumulativeBalance.amount}</strong> ל{cumulativeBalance.to}
+                    </p>
+                  )}
+                  {cumulativeBalance.totalPaid > 0 && (
+                    <p className="text-xs text-muted-foreground mt-1">
+                      סה"כ הועבר עד כה: ₪{Math.round(cumulativeBalance.totalPaid).toLocaleString()}
+                    </p>
+                  )}
+                </div>
+
+                {/* Payment history toggle */}
+                {settlementPayments.length > 0 && (
+                  <Collapsible open={showPaymentHistory} onOpenChange={setShowPaymentHistory}>
+                    <CollapsibleTrigger asChild>
+                      <Button variant="ghost" className="w-full justify-between p-2.5 h-auto bg-muted/30 hover:bg-muted/50 border border-border/40">
+                        <div className="flex items-center gap-2">
+                          <CreditCard className="h-3.5 w-3.5 text-muted-foreground" />
+                          <span className="text-xs sm:text-sm font-medium">היסטוריית תשלומים ({settlementPayments.length})</span>
+                        </div>
+                        {showPaymentHistory ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                      </Button>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent className="mt-2">
+                      <div className="space-y-2 max-h-72 overflow-y-auto">
+                        {settlementPayments.map(payment => {
+                          const fromName = accountMembers.find(m => m.user_id === payment.from_user_id)?.user_name || 'לא ידוע';
+                          const toName = accountMembers.find(m => m.user_id === payment.to_user_id)?.user_name || 'לא ידוע';
+                          return (
+                            <div key={payment.id} className="flex items-start justify-between gap-2 p-2.5 bg-background/80 rounded-lg border border-border/40">
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  <span className="font-bold text-sm text-violet-700 dark:text-violet-300">₪{Math.round(payment.amount).toLocaleString()}</span>
+                                  <Badge variant="secondary" className="text-[10px]">{PAYMENT_METHOD_LABELS[payment.payment_method] ?? payment.payment_method}</Badge>
+                                </div>
+                                <p className="text-xs text-muted-foreground mt-0.5">
+                                  {fromName} → {toName} · {format(new Date(payment.payment_date), 'dd/MM/yyyy')}
+                                </p>
+                                {payment.notes && (
+                                  <p className="text-xs text-muted-foreground mt-0.5 italic">{payment.notes}</p>
+                                )}
+                              </div>
+                              {payment.created_by === user?.id && (
+                                <AlertDialog>
+                                  <AlertDialogTrigger asChild>
+                                    <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-red-500 hover:text-red-600 hover:bg-red-50 flex-shrink-0">
+                                      <Trash2 className="h-3.5 w-3.5" />
+                                    </Button>
+                                  </AlertDialogTrigger>
+                                  <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                      <AlertDialogTitle>מחיקת תשלום</AlertDialogTitle>
+                                      <AlertDialogDescription>
+                                        האם למחוק את תיעוד התשלום של ₪{Math.round(payment.amount)} מ-{fromName} ל{toName}?
+                                      </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                      <AlertDialogCancel>ביטול</AlertDialogCancel>
+                                      <AlertDialogAction
+                                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                        onClick={() => handleDeletePayment(payment.id)}
+                                      >
+                                        מחק
+                                      </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                  </AlertDialogContent>
+                                </AlertDialog>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </CollapsibleContent>
+                  </Collapsible>
+                )}
+
+                {settlementPayments.length === 0 && (
+                  <p className="text-xs text-muted-foreground text-center py-2">אין תשלומים רשומים עדיין</p>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
         {/* Main Content */}
         <div className="space-y-6">
           <Card className="bg-gradient-to-br from-card/90 to-card/80 backdrop-blur-lg border border-border/50 shadow-2xl">
@@ -983,6 +1253,110 @@ const MonthlySettlement = () => {
           </Card>
         </div>
       </div>
+
+      {/* Record Payment Dialog */}
+      <Dialog open={showPaymentDialog} onOpenChange={setShowPaymentDialog}>
+        <DialogContent dir="rtl" className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Banknote className="h-5 w-5 text-violet-600" />
+              תיעוד תשלום
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            {/* From / To */}
+            <div className="grid grid-cols-2 gap-2">
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-muted-foreground">מ:</label>
+                <Select value={paymentFromUserId} onValueChange={setPaymentFromUserId}>
+                  <SelectTrigger className="h-9 text-sm">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {accountMembers.map(m => (
+                      <SelectItem key={m.user_id} value={m.user_id}>{m.user_name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-muted-foreground">אל:</label>
+                <Select value={paymentToUserId} onValueChange={setPaymentToUserId}>
+                  <SelectTrigger className="h-9 text-sm">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {accountMembers.map(m => (
+                      <SelectItem key={m.user_id} value={m.user_id}>{m.user_name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            {/* Amount */}
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-muted-foreground">סכום (₪)</label>
+              <Input
+                type="number"
+                placeholder="0"
+                value={paymentAmount}
+                onChange={e => setPaymentAmount(e.target.value)}
+                className="h-9 text-sm"
+                min="0"
+                step="0.01"
+              />
+            </div>
+
+            {/* Method + Date */}
+            <div className="grid grid-cols-2 gap-2">
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-muted-foreground">אמצעי תשלום</label>
+                <Select value={paymentMethod} onValueChange={setPaymentMethod}>
+                  <SelectTrigger className="h-9 text-sm">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Object.entries(PAYMENT_METHOD_LABELS).map(([k, v]) => (
+                      <SelectItem key={k} value={k}>{v}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-muted-foreground">תאריך</label>
+                <Input
+                  type="date"
+                  value={paymentDate}
+                  onChange={e => setPaymentDate(e.target.value)}
+                  className="h-9 text-sm"
+                />
+              </div>
+            </div>
+
+            {/* Notes */}
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-muted-foreground">הערות (אופציונלי)</label>
+              <Textarea
+                placeholder="לדוגמה: העברה בנקאית להסדרת ינואר-פברואר"
+                value={paymentNotes}
+                onChange={e => setPaymentNotes(e.target.value)}
+                className="text-sm resize-none h-16"
+              />
+            </div>
+          </div>
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setShowPaymentDialog(false)}>ביטול</Button>
+            <Button
+              onClick={handleAddPayment}
+              disabled={isSubmittingPayment || !paymentAmount || !paymentFromUserId || !paymentToUserId || paymentFromUserId === paymentToUserId}
+              className="bg-violet-600 hover:bg-violet-700 text-white"
+            >
+              {isSubmittingPayment ? 'שומר...' : 'שמור תשלום'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Undo countdown banner */}
       {pendingAction && (
