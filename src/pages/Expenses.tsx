@@ -1,8 +1,9 @@
 
 import React, { useEffect, useRef } from 'react';
-import { useLocation, useSearchParams } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import { useExpense } from '@/contexts/ExpenseContext';
 import { Expense } from '@/contexts/expense/types';
+import { useExpenseFilters } from '@/hooks/useExpenseFilters';
 import { ExpenseFilters } from '@/components/expenses/ExpenseFilters';
 import { ExpensesTable } from '@/components/expenses/ExpensesTable';
 import { AddExpenseModal } from '@/components/expenses/AddExpenseModal';
@@ -41,32 +42,16 @@ const ExpensesPage = () => {
     enabled: !!account?.id && !!user?.id
   });
   
-  const [searchParams, setSearchParams] = useSearchParams();
-
-  const selectedCategory = searchParams.get('category');
-  const selectedChild = searchParams.get('child');
-  const selectedStatus = searchParams.get('status') as Expense['status'] | null;
-  const selectedMonth = parseInt(searchParams.get('month') ?? String(new Date().getMonth()));
-  const selectedYear = parseInt(searchParams.get('year') ?? String(new Date().getFullYear()));
-  const selectedPayer = searchParams.get('payer');
-  const activeTab = (searchParams.get('tab') as 'regular' | 'recurring') ?? 'regular';
-
-  const setFilter = (key: string, value: string | null) => {
-    setSearchParams(prev => {
-      const next = new URLSearchParams(prev);
-      if (value === null || value === '') next.delete(key);
-      else next.set(key, value);
-      return next;
-    }, { replace: true });
-  };
-
-  const setSelectedCategory = (v: string | null) => setFilter('category', v);
-  const setSelectedChild = (v: string | null) => setFilter('child', v);
-  const setSelectedStatus = (v: Expense['status'] | null) => setFilter('status', v);
-  const setSelectedMonth = (v: number) => setFilter('month', String(v));
-  const setSelectedYear = (v: number) => setFilter('year', String(v));
-  const setSelectedPayer = (v: string | null) => setFilter('payer', v);
-  const setActiveTab = (v: 'regular' | 'recurring') => setFilter('tab', v);
+  const {
+    selectedCategory, setSelectedCategory,
+    selectedChild, setSelectedChild,
+    selectedStatus, setSelectedStatus,
+    selectedMonth, setSelectedMonth,
+    selectedYear, setSelectedYear,
+    selectedPayer, setSelectedPayer,
+    activeTab, setActiveTab,
+    applyFilters,
+  } = useExpenseFilters();
   
   const {
     expenses,
@@ -148,39 +133,8 @@ const ExpensesPage = () => {
     return <ExpensesPageSkeleton />;
   }
 
-  // Filter regular expenses (non-recurring) based on selected criteria
-  const filteredExpenses = expenses
-    .filter(expense => !expense.isRecurring) // Show only non-recurring expenses
-    .filter(expense => selectedCategory ? expense.category === selectedCategory : true)
-    .filter(expense => selectedChild ? expense.childId === selectedChild : true)
-    .filter(expense => selectedStatus ? expense.status === selectedStatus : true)
-    .filter(expense => {
-      if (selectedMonth !== null && selectedYear !== null) {
-        const expenseDate = new Date(expense.date);
-        return (
-          expenseDate.getMonth() === selectedMonth && 
-          expenseDate.getFullYear() === selectedYear
-        );
-      }
-      return true;
-    })
-    .filter(expense => {
-      if (!selectedPayer) return true;
-      
-      if (selectedPayer === 'split') {
-        // Show only split expenses
-        return expense.splitEqually;
-      } else {
-        // Show expenses where the specific user should pay
-        if (expense.splitEqually) {
-          // For split expenses, both users should pay
-          return true;
-        } else {
-          // For non-split expenses, only the designated payer should pay
-          return expense.paidById === selectedPayer;
-        }
-      }
-    });
+  // Filter regular expenses (non-recurring) via the centralised filter hook
+  const filteredExpenses = applyFilters(expenses);
 
   // Get recurring expenses only
   const recurringExpenses = expenses.filter(expense => expense.isRecurring);

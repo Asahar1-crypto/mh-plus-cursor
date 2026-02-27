@@ -1,5 +1,5 @@
 
-import React, { createContext, ReactNode } from 'react';
+import React, { createContext, ReactNode, useMemo } from 'react';
 import { useAuth } from '../AuthContext';
 import { Expense, Child, ExpenseContextType } from './types';
 import { useExpenseStorage } from './useExpenseStorage';
@@ -12,27 +12,22 @@ interface ExpenseProviderProps {
   children: ReactNode;
 }
 
-export const ExpenseProvider = ({ children }: ExpenseProviderProps) => {
+// Inner component so all hooks are called unconditionally
+const ExpenseProviderInner = ({ children }: ExpenseProviderProps) => {
   const { user, account } = useAuth();
-  
-  // Don't render children until auth is ready to prevent context issues
-  if (!user) {
-    return <>{children}</>;
-  }
-  
-  // Use our custom hooks to manage state and logic - pass both user and account
-  const { 
-    expenses, 
-    setExpenses, 
-    childrenList, 
+
+  const {
+    expenses,
+    setExpenses,
+    childrenList,
     setChildrenList,
     categoriesList,
     setCategoriesList,
     isLoading,
     refreshData
   } = useExpenseStorage(user, account);
-  
-  const { 
+
+  const {
     addExpense,
     updateExpense,
     approveExpense,
@@ -47,8 +42,8 @@ export const ExpenseProvider = ({ children }: ExpenseProviderProps) => {
     uploadReceipt,
     isSubmitting
   } = useExpenseActions(user, account, expenses, setExpenses, childrenList, setChildrenList, refreshData);
-  
-  const { 
+
+  const {
     getPendingExpenses,
     getApprovedExpenses,
     getPaidExpenses,
@@ -61,8 +56,8 @@ export const ExpenseProvider = ({ children }: ExpenseProviderProps) => {
     getMonthlyBalance
   } = useExpenseQueries(expenses);
 
-  // Combine all the pieces into our context value
-  const contextValue: ExpenseContextType = {
+  // Memoize the context value to prevent unnecessary re-renders of consumers
+  const contextValue = useMemo<ExpenseContextType>(() => ({
     expenses,
     childrenList,
     categoriesList,
@@ -91,11 +86,33 @@ export const ExpenseProvider = ({ children }: ExpenseProviderProps) => {
     getMonthlyBalance,
     uploadReceipt,
     refreshData
-  };
+  }), [
+    expenses, childrenList, categoriesList,
+    isLoading, isSubmitting,
+    addExpense, updateExpense,
+    approveExpense, approveAllRecurring, rejectExpense, markAsPaid,
+    updateExpenseStatus, deleteExpense, updateRecurringActive,
+    addChild, updateChild,
+    getPendingExpenses, getApprovedExpenses, getPaidExpenses, getRejectedExpenses,
+    getTotalPending, getTotalApproved,
+    getExpensesByChild, getExpensesByCategory, getExpensesByMonth, getMonthlyBalance,
+    uploadReceipt, refreshData
+  ]);
 
   return (
     <ExpenseContext.Provider value={contextValue}>
       {children}
     </ExpenseContext.Provider>
   );
+};
+
+export const ExpenseProvider = ({ children }: ExpenseProviderProps) => {
+  const { user } = useAuth();
+
+  // Don't render children until auth is ready to prevent context issues
+  if (!user) {
+    return <>{children}</>;
+  }
+
+  return <ExpenseProviderInner>{children}</ExpenseProviderInner>;
 };

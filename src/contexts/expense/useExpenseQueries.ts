@@ -1,4 +1,5 @@
 
+import { useCallback } from 'react';
 import { Expense } from './types';
 import {
   getPendingExpenses as getFilteredPendingExpenses,
@@ -27,17 +28,16 @@ export interface ExpenseQueries {
 }
 
 export const useExpenseQueries = (expenses: Expense[]): ExpenseQueries => {
-  // Use utility functions but pass in the current expenses state
-  const getPendingExpenses = () => getFilteredPendingExpenses(expenses);
-  const getApprovedExpenses = () => getFilteredApprovedExpenses(expenses);
-  const getPaidExpenses = () => getFilteredPaidExpenses(expenses);
-  const getRejectedExpenses = () => getFilteredRejectedExpenses(expenses);
-  const getTotalPending = () => calculateTotalPending(expenses);
-  const getTotalApproved = () => calculateTotalApproved(expenses);
-  const getExpensesByChild = (childId: string) => filterExpensesByChild(expenses, childId);
-  const getExpensesByCategory = (category: string) => filterExpensesByCategory(expenses, category);
-  const getExpensesByMonth = (month: number, year: number) => filterExpensesByMonth(expenses, month, year);
-  const getMonthlyBalance = () => calculateMonthlyBalance(expenses);
+  const getPendingExpenses = useCallback(() => getFilteredPendingExpenses(expenses), [expenses]);
+  const getApprovedExpenses = useCallback(() => getFilteredApprovedExpenses(expenses), [expenses]);
+  const getPaidExpenses = useCallback(() => getFilteredPaidExpenses(expenses), [expenses]);
+  const getRejectedExpenses = useCallback(() => getFilteredRejectedExpenses(expenses), [expenses]);
+  const getTotalPending = useCallback(() => calculateTotalPending(expenses), [expenses]);
+  const getTotalApproved = useCallback(() => calculateTotalApproved(expenses), [expenses]);
+  const getExpensesByChild = useCallback((childId: string) => filterExpensesByChild(expenses, childId), [expenses]);
+  const getExpensesByCategory = useCallback((category: string) => filterExpensesByCategory(expenses, category), [expenses]);
+  const getExpensesByMonth = useCallback((month: number, year: number) => filterExpensesByMonth(expenses, month, year), [expenses]);
+  const getMonthlyBalance = useCallback(() => calculateMonthlyBalance(expenses), [expenses]);
 
   return {
     getPendingExpenses,

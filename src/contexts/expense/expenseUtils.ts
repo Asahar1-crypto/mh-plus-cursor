@@ -1,17 +1,18 @@
 
 import { Expense } from './types';
+import { EXPENSE_STATUS } from './constants';
 
-export const getPendingExpenses = (expenses: Expense[]): Expense[] => 
-  expenses.filter(e => e.status === 'pending');
+export const getPendingExpenses = (expenses: Expense[]): Expense[] =>
+  expenses.filter(e => e.status === EXPENSE_STATUS.PENDING);
 
-export const getApprovedExpenses = (expenses: Expense[]): Expense[] => 
-  expenses.filter(e => e.status === 'approved');
+export const getApprovedExpenses = (expenses: Expense[]): Expense[] =>
+  expenses.filter(e => e.status === EXPENSE_STATUS.APPROVED);
 
-export const getPaidExpenses = (expenses: Expense[]): Expense[] => 
-  expenses.filter(e => e.status === 'paid');
+export const getPaidExpenses = (expenses: Expense[]): Expense[] =>
+  expenses.filter(e => e.status === EXPENSE_STATUS.PAID);
 
-export const getRejectedExpenses = (expenses: Expense[]): Expense[] => 
-  expenses.filter(e => e.status === 'rejected');
+export const getRejectedExpenses = (expenses: Expense[]): Expense[] =>
+  expenses.filter(e => e.status === EXPENSE_STATUS.REJECTED);
 
 export const getTotalPending = (expenses: Expense[]): number => 
   getPendingExpenses(expenses).reduce((acc, curr) => acc + curr.amount, 0);

@@ -1,4 +1,6 @@
 
+import { ExpenseStatus, ExpenseFrequency } from './constants';
+
 export interface Expense {
   id: string;
   amount: number;
@@ -11,13 +13,13 @@ export interface Expense {
   creatorName: string;
   paidById: string;
   paidByName: string;
-  status: 'pending' | 'approved' | 'rejected' | 'paid';
+  status: ExpenseStatus;
   approvedBy?: string;
   approvedAt?: string;
   receipt?: string;
   receiptId?: string;
   isRecurring: boolean;
-  frequency?: 'monthly' | 'weekly' | 'yearly';
+  frequency?: ExpenseFrequency;
   hasEndDate?: boolean;
   endDate?: string;
   includeInMonthlyBalance: boolean;

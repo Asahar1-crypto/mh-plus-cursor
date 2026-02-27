@@ -187,7 +187,11 @@ export const useExpenseActions = (
       toast.error('לא נמצא חשבון פעיל');
       return;
     }
-    
+
+    // Optimistic update – reflect the change instantly before the server responds
+    const previousExpenses = expenses;
+    setExpenses(prev => prev.map(e => e.id === id ? { ...e, status } : e));
+
     setIsSubmitting(true);
     try {
       await expenseService.updateExpenseStatus(user, account, id, status);
@@ -213,6 +217,8 @@ export const useExpenseActions = (
       }
       toast.success(`ההוצאה ${statusText.split(' ')[1] || statusText} בהצלחה`);
     } catch (error) {
+      // Revert optimistic update on failure
+      setExpenses(previousExpenses);
       console.error(`Failed to ${status} expense:`, error);
       toast.error(`שגיאה ב${status === 'approved' ? 'אישור' : status === 'rejected' ? 'דחיית' : 'סימון'} ההוצאה`);
     } finally {
@@ -315,12 +321,17 @@ export const useExpenseActions = (
       toast.error('יש להתחבר כדי למחוק הוצאה');
       return;
     }
+    // Optimistic update – remove immediately from the list
+    const previousExpenses = expenses;
+    setExpenses(prev => prev.filter(e => e.id !== id));
     setIsSubmitting(true);
     try {
       await expenseService.deleteExpense(user, account, id);
       await refreshData();
       toast.success('ההוצאה נמחקה בהצלחה');
     } catch (error) {
+      // Revert optimistic update on failure
+      setExpenses(previousExpenses);
       console.error('Failed to delete expense:', error);
       toast.error('שגיאה במחיקת ההוצאה');
     } finally {

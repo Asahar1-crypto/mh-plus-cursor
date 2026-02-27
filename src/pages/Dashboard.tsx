@@ -196,7 +196,11 @@ const Dashboard = () => {
           </Card>
         </div>
         
-        <div className="animate-fade-in [animation-delay:600ms]">
+        <div className="animate-scale-in [animation-delay:600ms]">
+          <MonthlyFoodPaymentCard selectedMonth={selectedMonth} />
+        </div>
+        
+        <div className="animate-fade-in [animation-delay:800ms]">
           <ExpensesSummary 
             pendingExpenses={filteredPending}
             approvedExpenses={filteredApproved}
@@ -204,10 +208,6 @@ const Dashboard = () => {
             selectedMonth={selectedMonth}
             allApprovedExpenses={allApprovedExpenses}
           />
-        </div>
-        
-        <div className="animate-scale-in [animation-delay:800ms]">
-          <MonthlyFoodPaymentCard selectedMonth={selectedMonth} />
         </div>
         
         <div className="animate-fade-in [animation-delay:1000ms]">

@@ -1,6 +1,7 @@
 
 export * from './ExpenseContext';
 export * from './types';
+export * from './constants';
 export * from './useExpense';
 export * from './useExpenseStorage';
 export * from './useExpenseActions';
