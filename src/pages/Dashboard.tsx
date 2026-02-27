@@ -11,6 +11,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { CalendarIcon } from 'lucide-react';
 import { OnboardingModal } from '@/components/onboarding/OnboardingModal';
 import { DashboardSkeleton } from '@/components/dashboard/DashboardSkeleton';
+import { ActivityLog } from '@/components/ActivityLog';
 import confetti from 'canvas-confetti';
 import { toast } from '@/hooks/use-toast';
 
@@ -210,7 +211,7 @@ const Dashboard = () => {
         </div>
         
         <div className="animate-fade-in [animation-delay:1000ms]">
-          <ExpensesTabs 
+          <ExpensesTabs
             pendingExpenses={filteredPending}
             approvedExpenses={filteredApproved}
             paidExpenses={filteredPaid}
@@ -219,7 +220,11 @@ const Dashboard = () => {
             onMarkPaid={handleMarkAsPaidWithCelebration}
           />
         </div>
-        
+
+        <div className="animate-fade-in [animation-delay:1200ms]">
+          <ActivityLog limit={30} />
+        </div>
+
       </div>
     </div>
   );

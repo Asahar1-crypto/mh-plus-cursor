@@ -17,6 +17,7 @@ const childSchema = z.object({
   birthDate: z.date({
     required_error: 'יש לבחור תאריך לידה',
   }),
+  budgetLimit: z.string().optional(),
 });
 
 type AddChildFormProps = {
@@ -39,10 +40,12 @@ const AddChildForm: React.FC<AddChildFormProps> = ({ open, setOpen }) => {
   const onSubmit = async (data: z.infer<typeof childSchema>) => {
     setIsPending(true);
     try {
+      const budgetLimit = data.budgetLimit ? parseFloat(data.budgetLimit) : undefined;
       await addChild({
         name: data.name,
         gender: data.gender,
         birthDate: format(data.birthDate, 'yyyy-MM-dd'),
+        budgetLimit: budgetLimit && budgetLimit > 0 ? budgetLimit : undefined,
       });
       
       form.reset();
@@ -121,6 +124,29 @@ const AddChildForm: React.FC<AddChildFormProps> = ({ open, setOpen }) => {
                 </FormControl>
                 <FormDescription className="text-xs sm:text-sm">
                   תאריך הלידה של הילד/ה
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="budgetLimit"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="text-sm">תקציב חודשי (₪) — אופציונלי</FormLabel>
+                <FormControl>
+                  <Input
+                    type="number"
+                    placeholder="לדוגמה: 500"
+                    min="0"
+                    step="0.01"
+                    {...field}
+                  />
+                </FormControl>
+                <FormDescription className="text-xs">
+                  הגבלת תקציב חודשית לילד
                 </FormDescription>
                 <FormMessage />
               </FormItem>

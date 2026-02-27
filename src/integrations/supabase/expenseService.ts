@@ -95,7 +95,8 @@ export const expenseService = {
       id: child.id,
       name: child.name,
       birthDate: child.birth_date,
-      gender: child.gender || 'son'
+      gender: child.gender || 'son',
+      budgetLimit: child.budget_limit ?? undefined,
     }));
   },
 
@@ -282,7 +283,8 @@ export const expenseService = {
         name: child.name,
         birth_date: child.birthDate,
         gender: child.gender || 'son',
-        account_id: account.id
+        account_id: account.id,
+        budget_limit: child.budgetLimit ?? null,
       });
 
     if (error) {
@@ -334,6 +336,10 @@ export const expenseService = {
 
     if (updates.gender !== undefined) {
       updateData.gender = updates.gender;
+    }
+
+    if (updates.budgetLimit !== undefined) {
+      updateData.budget_limit = updates.budgetLimit === 0 ? null : updates.budgetLimit;
     }
 
     const { error } = await supabase

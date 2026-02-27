@@ -5,6 +5,7 @@ import { User } from '@/contexts/AuthContext';
 import { Account } from '@/contexts/auth/types';
 import { expenseService } from '@/integrations/supabase/expenseService';
 import { supabase } from '@/integrations/supabase/client';
+import { activityService } from '@/integrations/supabase/activityService';
 
 export interface ExpenseActions {
   addExpense: (expense: Omit<Expense, 'id' | 'createdBy' | 'creatorName' | 'status' | 'approvedBy' | 'approvedAt'>) => Promise<void>;
@@ -66,12 +67,19 @@ export const useExpenseActions = (
     setIsSubmitting(true);
     try {
       const result = await expenseService.addExpense(user, account, newExpense);
-      
+
       // Send notification if expense is pending (needs approval)
       if (result.isPending) {
         await sendExpenseNotification(result.id, account.id);
       }
-      
+
+      activityService.log({
+        accountId: account.id, userId: user.id, userName: user.name,
+        action: 'add_expense',
+        description: `${user.name} הוסיף/ה הוצאה: ${newExpense.description} ₪${newExpense.amount}`,
+        metadata: { expense_id: result.id, amount: newExpense.amount, description: newExpense.description },
+      });
+
       await refreshData(); // Refresh data to show new expense
       toast.success('ההוצאה נוספה בהצלחה');
     } catch (error) {
@@ -184,14 +192,26 @@ export const useExpenseActions = (
     try {
       await expenseService.updateExpenseStatus(user, account, id, status);
       await refreshData(); // Refresh data to show updated status
-      
+
+      const expense = expenses.find(e => e.id === id);
+      const expenseLabel = expense ? `${expense.description} ₪${expense.amount}` : id;
+      let actionLabel = '';
       let statusText = '';
       switch (status) {
-        case 'approved': statusText = 'אושרה'; break;
-        case 'rejected': statusText = 'נדחתה'; break;
-        case 'paid': statusText = 'סומנה כשולמה'; break;
+        case 'approved': actionLabel = 'approve_expense'; statusText = 'אישר/ה הוצאה'; break;
+        case 'rejected': actionLabel = 'reject_expense'; statusText = 'דחה/תה הוצאה'; break;
+        case 'paid': actionLabel = 'mark_paid'; statusText = 'סימן/ה כשולם'; break;
+        default: actionLabel = 'update_expense'; statusText = 'עדכן/ה הוצאה';
       }
-      toast.success(`ההוצאה ${statusText} בהצלחה`);
+      if (actionLabel) {
+        activityService.log({
+          accountId: account.id, userId: user.id, userName: user.name,
+          action: actionLabel,
+          description: `${user.name} ${statusText}: ${expenseLabel}`,
+          metadata: { expense_id: id, status },
+        });
+      }
+      toast.success(`ההוצאה ${statusText.split(' ')[1] || statusText} בהצלחה`);
     } catch (error) {
       console.error(`Failed to ${status} expense:`, error);
       toast.error(`שגיאה ב${status === 'approved' ? 'אישור' : status === 'rejected' ? 'דחיית' : 'סימון'} ההוצאה`);

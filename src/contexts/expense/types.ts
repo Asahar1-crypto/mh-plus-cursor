@@ -36,6 +36,7 @@ export interface Child {
   name: string;
   birthDate: string;
   gender: ChildGender;
+  budgetLimit?: number;
 }
 
 export interface Category {

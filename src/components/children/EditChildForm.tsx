@@ -28,6 +28,7 @@ const EditChildForm: React.FC<EditChildFormProps> = ({ child, open, setOpen }) =
     name: child.name,
     birthDate: child.birthDate,
     gender: (child.gender || 'son') as ChildGender,
+    budgetLimit: child.budgetLimit ? String(child.budgetLimit) : '',
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -53,10 +54,12 @@ const EditChildForm: React.FC<EditChildFormProps> = ({ child, open, setOpen }) =
 
     setIsSubmitting(true);
     try {
+      const budgetLimit = formData.budgetLimit ? parseFloat(formData.budgetLimit) : undefined;
       await updateChild(child.id, {
         name: formData.name.trim(),
         birthDate: formData.birthDate,
         gender: formData.gender,
+        budgetLimit: budgetLimit && budgetLimit > 0 ? budgetLimit : 0,
       });
       
       toast({
@@ -140,6 +143,20 @@ const EditChildForm: React.FC<EditChildFormProps> = ({ child, open, setOpen }) =
             onChange={(e) => handleInputChange('birthDate', e.target.value)}
             required
           />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="budgetLimit">תקציב חודשי (₪) — אופציונלי</Label>
+          <Input
+            id="budgetLimit"
+            type="number"
+            placeholder="לדוגמה: 500"
+            min="0"
+            step="0.01"
+            value={formData.budgetLimit}
+            onChange={(e) => handleInputChange('budgetLimit', e.target.value)}
+          />
+          <p className="text-xs text-muted-foreground">הגבלת תקציב חודשית לילד</p>
         </div>
 
         <DialogFooter className="gap-2">

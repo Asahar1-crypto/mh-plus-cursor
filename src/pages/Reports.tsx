@@ -10,6 +10,7 @@ import { ReportsPeriodFilter } from '@/components/reports/ReportsPeriodFilter';
 import { BarChart3, TrendingUp, Wallet, Users, Tag, ArrowUpRight, ArrowDownRight, Calendar } from 'lucide-react';
 import { ReportsSkeleton } from '@/components/reports/ReportsSkeleton';
 import { MonthlyTrendChart } from '@/components/reports/MonthlyTrendChart';
+import BudgetDeviationChart from '@/components/reports/BudgetDeviationChart';
 import { filterExpensesByPeriod, type PeriodFilter } from '@/utils/reportsPeriodUtils';
 
 const Reports = () => {
@@ -231,8 +232,13 @@ const Reports = () => {
             <MonthlyTrendChart />
           </div>
 
-          {/* Food Budget Chart */}
+          {/* Budget Deviation Chart */}
           <div className="animate-fade-in [animation-delay:300ms]">
+            <BudgetDeviationChart periodFilter={periodFilter} filteredExpenses={filteredExpenses} />
+          </div>
+
+          {/* Food Budget Chart */}
+          <div className="animate-fade-in [animation-delay:350ms]">
             <FoodBudgetChart />
           </div>
 

@@ -19,6 +19,7 @@ import { cn } from '@/lib/utils';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Calendar as CalendarIcon, Calculator, CheckCircle, Clock, TrendingUp, RefreshCw, Check, DollarSign, Archive, ChevronDown, ChevronUp, FileText, Download, User, Receipt, ArrowRightLeft, Plus, Trash2, History, CreditCard, Banknote } from 'lucide-react';
 import confetti from 'canvas-confetti';
+import { activityService } from '@/integrations/supabase/activityService';
 
 interface SettlementPayment {
   id: string;
@@ -530,7 +531,16 @@ const MonthlySettlement = () => {
         title: "🎉 חודש נסגר בהצלחה!",
         description: `כל ההוצאות של ${months[selectedMonth]} ${selectedYear} סומנו כשולמו`,
       });
-      
+
+      if (account && user) {
+        activityService.log({
+          accountId: account.id, userId: user.id, userName: user.name ?? user.email,
+          action: 'close_month',
+          description: `${user.name ?? user.email} סגר/ה את חודש ${months[selectedMonth]} ${selectedYear}`,
+          metadata: { month: selectedMonth, year: selectedYear },
+        });
+      }
+
       await refreshData();
     } catch (error) {
       toast({
