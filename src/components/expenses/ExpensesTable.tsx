@@ -70,6 +70,7 @@ interface ExpensesTableProps {
   refreshData: () => Promise<void>;
   isSuperAdmin?: boolean;
   onDuplicateExpense?: (expense: Expense) => Promise<void>;
+  recurringTemplates?: Expense[];
 }
 
 export const ExpensesTable: React.FC<ExpensesTableProps> = ({
@@ -84,6 +85,7 @@ export const ExpensesTable: React.FC<ExpensesTableProps> = ({
   refreshData,
   isSuperAdmin = false,
   onDuplicateExpense,
+  recurringTemplates = [],
 }) => {
   const { account } = useAuth();
   const isMobile = useIsMobile();
@@ -100,6 +102,7 @@ export const ExpensesTable: React.FC<ExpensesTableProps> = ({
   const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false);
   const [recurringApproveDialogOpen, setRecurringApproveDialogOpen] = useState(false);
   const [expenseToApproveId, setExpenseToApproveId] = useState<string | null>(null);
+  const [approveDialogTemplate, setApproveDialogTemplate] = useState<Expense | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
 
@@ -293,7 +296,9 @@ export const ExpensesTable: React.FC<ExpensesTableProps> = ({
   const handleApprove = (id: string) => {
     const expense = filteredExpenses.find(e => e.id === id);
     if (expense?.recurringParentId) {
+      const template = recurringTemplates.find(t => t.id === expense.recurringParentId) ?? null;
       setExpenseToApproveId(id);
+      setApproveDialogTemplate(template);
       setRecurringApproveDialogOpen(true);
     } else {
       handleApproveOnce(id);
@@ -305,6 +310,7 @@ export const ExpensesTable: React.FC<ExpensesTableProps> = ({
     if (!targetId) return;
     setRecurringApproveDialogOpen(false);
     setExpenseToApproveId(null);
+    setApproveDialogTemplate(null);
     try {
       await approveExpense(targetId);
       fireApproveConfetti();
@@ -319,6 +325,7 @@ export const ExpensesTable: React.FC<ExpensesTableProps> = ({
     if (!targetId) return;
     setRecurringApproveDialogOpen(false);
     setExpenseToApproveId(null);
+    setApproveDialogTemplate(null);
     try {
       await approveAllRecurring(targetId);
       
@@ -969,8 +976,21 @@ export const ExpensesTable: React.FC<ExpensesTableProps> = ({
             <Repeat className="h-5 w-5 text-purple-600" />
             אישור הוצאה חוזרת
           </AlertDialogTitle>
-          <AlertDialogDescription>
-            הוצאה זו מתחדשת מדי חודש. כיצד תרצה לאשר אותה?
+          <AlertDialogDescription asChild>
+            <div className="space-y-2 text-sm text-muted-foreground">
+              <p>הוצאה זו מתחדשת מדי חודש. כיצד תרצה לאשר אותה?</p>
+              {approveDialogTemplate?.hasEndDate && approveDialogTemplate.endDate ? (
+                <p className="flex items-center gap-1.5 text-amber-600 dark:text-amber-400 font-medium">
+                  <Calendar className="h-3.5 w-3.5 shrink-0" />
+                  תוקף ההוצאה עד: {format(new Date(approveDialogTemplate.endDate), 'dd/MM/yyyy')}
+                </p>
+              ) : (
+                <p className="flex items-center gap-1.5 text-blue-600 dark:text-blue-400 font-medium">
+                  <Calendar className="h-3.5 w-3.5 shrink-0" />
+                  ללא הגבלת זמן
+                </p>
+              )}
+            </div>
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter className="flex-col gap-2 sm:flex-col sm:space-x-0">

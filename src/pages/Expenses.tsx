@@ -342,6 +342,7 @@ const ExpensesPage = () => {
                 {/* Expenses Table */}
                 <ExpensesTable
                   expenses={filteredExpenses}
+                  recurringTemplates={recurringExpenses}
                   approveExpense={approveExpense}
                   approveAllRecurring={approveAllRecurring}
                   rejectExpense={rejectExpense}
