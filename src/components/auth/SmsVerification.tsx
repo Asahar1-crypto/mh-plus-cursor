@@ -12,13 +12,15 @@ interface SmsVerificationProps {
   onVerificationComplete: (verified: boolean) => void;
   onBack: () => void;
   verificationType?: 'registration' | 'family_registration' | 'login';
+  skipInitialSend?: boolean; // pass true when the caller already sent the SMS
 }
 
 const SmsVerification: React.FC<SmsVerificationProps> = ({
   phoneNumber,
   onVerificationComplete,
   onBack,
-  verificationType = 'registration'
+  verificationType = 'registration',
+  skipInitialSend = false,
 }) => {
   const [code, setCode] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -78,8 +80,18 @@ const SmsVerification: React.FC<SmsVerificationProps> = ({
         }
       });
 
-      if (error || !data?.verified) {
-        toast.error('קוד אימות שגוי או פג תוקף');
+      if (error) {
+        // Parse specific error message from edge function response body
+        let errorMessage = 'קוד אימות שגוי או פג תוקף';
+        try {
+          const errorBody = await (error as any).context?.json?.();
+          if (errorBody?.error) errorMessage = errorBody.error;
+        } catch { /* keep default */ }
+        toast.error(errorMessage);
+        return;
+      }
+      if (!data?.verified) {
+        toast.error(data?.error || 'קוד אימות שגוי או פג תוקף');
         return;
       }
 
@@ -95,9 +107,11 @@ const SmsVerification: React.FC<SmsVerificationProps> = ({
     }
   };
 
-  // Send initial verification code when component mounts
+  // Send initial verification code when component mounts (skip if caller already sent it)
   useEffect(() => {
-    sendVerificationCode();
+    if (!skipInitialSend) {
+      sendVerificationCode();
+    }
   }, []);
 
   const handleCelebrationClose = () => {

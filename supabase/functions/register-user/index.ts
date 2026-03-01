@@ -92,18 +92,27 @@ const handler = async (req: Request): Promise<Response> => {
         console.log("Profile updated with phone number");
       }
 
-      // Update SMS verification record with user_id
-      const { error: smsError } = await supabaseAdmin
+      // Update SMS verification record with user_id.
+      // .order()/.limit() are not supported on .update() – select the target row first.
+      const { data: latestSmsCode } = await supabaseAdmin
         .from("sms_verification_codes")
-        .update({ user_id: userData.user.id })
+        .select("id")
         .eq("phone_number", phoneNumber)
         .eq("verification_type", "registration")
         .is("user_id", null)
         .order("created_at", { ascending: false })
-        .limit(1);
+        .limit(1)
+        .maybeSingle();
 
-      if (smsError) {
-        console.error("Error updating SMS verification:", smsError);
+      if (latestSmsCode) {
+        const { error: smsError } = await supabaseAdmin
+          .from("sms_verification_codes")
+          .update({ user_id: userData.user.id })
+          .eq("id", latestSmsCode.id);
+
+        if (smsError) {
+          console.error("Error updating SMS verification:", smsError);
+        }
       }
     }
 

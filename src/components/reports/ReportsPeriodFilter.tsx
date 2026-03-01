@@ -4,6 +4,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
 import { CalendarIcon } from 'lucide-react';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { format } from 'date-fns';
 import { he } from 'date-fns/locale';
 import type { PeriodFilter, PeriodType } from '@/utils/reportsPeriodUtils';
@@ -15,6 +16,7 @@ interface ReportsPeriodFilterProps {
 
 export const ReportsPeriodFilter: React.FC<ReportsPeriodFilterProps> = ({ value, onChange }) => {
   const now = new Date();
+  const isMobile = useIsMobile();
   const currentYear = now.getFullYear();
 
   const periodTypeOptions: { value: PeriodType; label: string }[] = [
@@ -186,7 +188,7 @@ export const ReportsPeriodFilter: React.FC<ReportsPeriodFilterProps> = ({ value,
               <CalendarIcon className="h-4 w-4 mr-2" />
             </Button>
           </PopoverTrigger>
-          <PopoverContent className="w-auto p-0" align="start">
+          <PopoverContent className="w-auto max-w-[95vw] p-0" align="start">
             <Calendar
               mode="range"
               selected={
@@ -203,7 +205,7 @@ export const ReportsPeriodFilter: React.FC<ReportsPeriodFilterProps> = ({ value,
                   });
                 }
               }}
-              numberOfMonths={2}
+              numberOfMonths={isMobile ? 1 : 2}
             />
           </PopoverContent>
         </Popover>

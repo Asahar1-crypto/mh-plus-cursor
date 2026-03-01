@@ -13,7 +13,7 @@ serve(async (req) => {
   }
 
   try {
-    const { name, email, phone, invitationId } = await req.json();
+    const { name, email, phone, invitationId, password: providedPassword } = await req.json();
     
     console.log('Family registration request:', { name, email, phone, invitationId });
 
@@ -38,28 +38,38 @@ serve(async (req) => {
       }
     });
 
-    // 1. Check if user already exists - FIRST by phone (since invitation is phone-based), then by email
-    const { data: existingUsers } = await supabaseAdmin.auth.admin.listUsers();
-    
-    // First, check if there's a user with this phone number
+    // 1. Check if user already exists - FIRST by phone (since invitation is phone-based), then by email.
+    //    Avoid listUsers() without pagination (1000-user cap) – use targeted lookups instead.
+
+    // Phone check: profiles table has phone_e164, then fetch the auth user by ID
     const { data: phoneProfile } = await supabaseAdmin
       .from('profiles')
       .select('id')
       .eq('phone_e164', phone)
       .maybeSingle();
-    
+
     let existingUser = null;
     if (phoneProfile?.id) {
-      // Found user by phone - use them
-      existingUser = existingUsers?.users?.find(u => u.id === phoneProfile.id);
+      const { data: userById } = await supabaseAdmin.auth.admin.getUserById(phoneProfile.id);
+      existingUser = userById?.user ?? null;
       console.log('Found existing user by phone:', existingUser?.id, existingUser?.email);
     }
-    
-    // If no user found by phone, check by email
+
+    // Email check: paginated listUsers to handle any DB size
     if (!existingUser) {
-      existingUser = existingUsers?.users?.find(u => u.email?.toLowerCase() === email.toLowerCase());
-      if (existingUser) {
-        console.log('Found existing user by email:', existingUser.id);
+      let page = 1;
+      const perPage = 1000;
+      while (true) {
+        const { data: pageData, error: pageError } = await supabaseAdmin.auth.admin.listUsers({ page, perPage });
+        if (pageError || !pageData?.users?.length) break;
+        const found = pageData.users.find(u => u.email?.toLowerCase() === email.toLowerCase());
+        if (found) {
+          existingUser = found;
+          console.log('Found existing user by email:', existingUser.id);
+          break;
+        }
+        if (pageData.users.length < perPage) break;
+        page++;
       }
     }
     
@@ -107,16 +117,17 @@ serve(async (req) => {
       }
     } else {
       // Create new user
-      const generateRandomPassword = () => {
+      const generateSecurePassword = () => {
         const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*';
-        let password = '';
-        for (let i = 0; i < 12; i++) {
-          password += chars.charAt(Math.floor(Math.random() * chars.length));
-        }
-        return password;
+        const bytes = new Uint8Array(16);
+        crypto.getRandomValues(bytes);
+        return Array.from(bytes, b => chars[b % chars.length]).join('');
       };
 
-      const password = generateRandomPassword();
+      // Use provided password if valid (≥6 chars), otherwise generate one
+      const password = (providedPassword && providedPassword.length >= 6)
+        ? providedPassword
+        : generateSecurePassword();
 
       const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
         email,

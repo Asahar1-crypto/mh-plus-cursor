@@ -91,8 +91,18 @@ const FamilyOtpVerification: React.FC<FamilyOtpVerificationProps> = ({
         }
       });
 
-      if (error || !data?.verified) {
-        toast.error('קוד אימות שגוי או פג תוקף');
+      if (error) {
+        // Parse specific error message from edge function response body
+        let errorMessage = 'קוד אימות שגוי או פג תוקף';
+        try {
+          const errorBody = await (error as any).context?.json?.();
+          if (errorBody?.error) errorMessage = errorBody.error;
+        } catch { /* keep default */ }
+        toast.error(errorMessage);
+        return;
+      }
+      if (!data?.verified) {
+        toast.error(data?.error || 'קוד אימות שגוי או פג תוקף');
         return;
       }
 

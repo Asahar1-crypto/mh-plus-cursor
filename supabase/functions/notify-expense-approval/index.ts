@@ -156,7 +156,7 @@ serve(async (req) => {
     // Get recipient's notification preferences (מה שהמשתמש הגדיר ב"ערוצי התראות")
     const { data: recipientPrefs } = await supabase
       .from('notification_preferences')
-      .select('sms_enabled')
+      .select('sms_enabled, email_enabled, preferences')
       .eq('user_id', recipientUserId)
       .eq('account_id', account_id)
       .maybeSingle();
@@ -207,19 +207,29 @@ serve(async (req) => {
     }
 
     // ============================================================
-    // 2. SMS NOTIFICATION (התראות)
-    // Only by user preference ("ערוצי התראות") - not admin/family level.
+    // 2. SMS NOTIFICATION (fallback only)
+    // SMS is sent only when push could not reach the user:
+    //   - no active device tokens (push returns { fallback: 'sms' })
+    //   - push globally disabled for the user
+    //   - push threw an exception
     // OTP, login, registration, password reset are always sent - handled elsewhere.
     // ============================================================
-    const shouldSendSMS = recipientPrefs?.sms_enabled ?? true; // default: send
+    const shouldSendSMS = recipientPrefs?.sms_enabled ?? true; // user's channel preference
+
+    // Determine whether push actually reached the user
+    const noActiveTokens = pushResult?.fallback === 'sms';
+    const pushGloballyDisabled = pushResult?.success === false && pushResult?.reason === 'Push notifications disabled';
+    const pushException = pushResult?.success === false && pushResult?.reason === 'exception';
+    const shouldAttemptSms = (noActiveTokens || pushGloballyDisabled || pushException) && shouldSendSMS;
 
     let smsResult: { success: boolean; messageId?: string; error?: string; reason?: string } = { success: false, reason: 'not_attempted' };
 
-    if (!shouldSendSMS) {
-      console.log('📵 SMS not needed');
-      smsResult = { success: false, reason: 'not_needed' };
+    if (!shouldAttemptSms) {
+      const skipReason = !shouldSendSMS ? 'sms_disabled_by_user' : 'push_delivered';
+      console.log(`📵 SMS skipped (${skipReason})`);
+      smsResult = { success: false, reason: skipReason };
     } else {
-      console.log(`📱 Will send SMS for pending expense`);
+      console.log(`📱 Push did not reach user – attempting SMS fallback`);
 
       // Check if SMS already sent
       const { data: existingNotification } = await supabase
@@ -295,13 +305,104 @@ serve(async (req) => {
       }
     }
 
-    console.log(`📊 Final: push=${JSON.stringify(pushResult)}, sms=${JSON.stringify(smsResult)}`);
+    // ============================================================
+    // 3. EMAIL NOTIFICATION
+    // Independent channel – sent alongside push (not a fallback).
+    // Respects: email_enabled master toggle + per-type email preference.
+    // ============================================================
+    const emailMasterEnabled = recipientPrefs?.email_enabled ?? true;
+    const perTypeEmailEnabled = (recipientPrefs?.preferences as Record<string, { push: boolean; sms: boolean; email: boolean }> | null)?.['expense_pending_approval']?.email ?? true;
+    const shouldSendEmail = emailMasterEnabled && perTypeEmailEnabled;
+
+    let emailResult: { success: boolean; error?: string; reason?: string } = { success: false, reason: 'not_attempted' };
+
+    if (!shouldSendEmail) {
+      console.log('📧 Email skipped (disabled by user)');
+      emailResult = { success: false, reason: 'email_disabled_by_user' };
+    } else {
+      // Get recipient email address from auth
+      const { data: authUserData, error: authUserError } = await supabase.auth.admin.getUserById(recipientUserId);
+      const recipientEmail = authUserData?.user?.email;
+
+      if (authUserError || !recipientEmail) {
+        console.log('📧 No email address for recipient');
+        emailResult = { success: false, reason: 'no_email_address' };
+      } else {
+        const emailHtml = `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; direction: rtl;">
+            <h2 style="color: #4a5568;">הוצאה חדשה ממתינה לאישורך</h2>
+            <p>היי ${recipientName},</p>
+            <p><strong>${creatorName}</strong> הוסיף/ה הוצאה חדשה הדורשת את אישורך:</p>
+            <table style="width: 100%; border-collapse: collapse; margin: 16px 0;">
+              <tr style="background: #f7fafc;">
+                <td style="padding: 10px; border: 1px solid #e2e8f0; font-weight: bold;">סכום</td>
+                <td style="padding: 10px; border: 1px solid #e2e8f0;">${amount} ₪</td>
+              </tr>
+              <tr>
+                <td style="padding: 10px; border: 1px solid #e2e8f0; font-weight: bold;">תיאור</td>
+                <td style="padding: 10px; border: 1px solid #e2e8f0;">${description}</td>
+              </tr>
+              <tr style="background: #f7fafc;">
+                <td style="padding: 10px; border: 1px solid #e2e8f0; font-weight: bold;">חשבון</td>
+                <td style="padding: 10px; border: 1px solid #e2e8f0;">${account.name}</td>
+              </tr>
+            </table>
+            <p style="margin: 25px 0;">
+              <a href="${appUrl}" style="background-color: #3182ce; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px;">לאישור ההוצאה</a>
+            </p>
+            <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 20px 0;" />
+            <p style="color: #718096; font-size: 14px;">מחציות פלוס - ניהול הוצאות משותפות</p>
+          </div>
+        `;
+
+        console.log(`📧 Sending email to ${recipientEmail}...`);
+        try {
+          const emailResponse = await supabase.functions.invoke('send-email', {
+            body: {
+              to: recipientEmail,
+              subject: `הוצאה חדשה לאישור: ${amount} ₪ - ${description}`,
+              html: emailHtml,
+            },
+          });
+
+          if (emailResponse.error) {
+            console.error('❌ Email error:', emailResponse.error);
+            emailResult = { success: false, error: emailResponse.error.message };
+          } else if (emailResponse.data?.warning) {
+            console.warn('⚠️ Email warning (SendGrid):', emailResponse.data.warning);
+            emailResult = { success: false, error: emailResponse.data.warning };
+          } else {
+            console.log('✅ Email sent successfully');
+            emailResult = { success: true };
+          }
+        } catch (emailError) {
+          console.error('❌ Email exception:', emailError);
+          emailResult = { success: false, error: 'Exception sending email' };
+        }
+
+        // Log to notification_logs regardless of outcome
+        await supabase.from('notification_logs').insert({
+          user_id: recipientUserId,
+          account_id: account_id,
+          notification_type: 'expense_pending_approval',
+          channel: 'email',
+          title: `הוצאה חדשה לאישור: ${amount} ₪ - ${description}`,
+          body: `${creatorName} הוסיף/ה הוצאה חדשה הדורשת את אישורך`,
+          data: { expenseId: expense_id },
+          status: emailResult.success ? 'sent' : 'failed',
+          error_message: emailResult.error || null,
+        });
+      }
+    }
+
+    console.log(`📊 Final: push=${JSON.stringify(pushResult)}, sms=${JSON.stringify(smsResult)}, email=${JSON.stringify(emailResult)}`);
 
     return new Response(
-      JSON.stringify({ 
-        success: pushResult.success || smsResult.success,
+      JSON.stringify({
+        success: pushResult.success || smsResult.success || emailResult.success,
         push: pushResult,
         sms: smsResult,
+        email: emailResult,
       }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );

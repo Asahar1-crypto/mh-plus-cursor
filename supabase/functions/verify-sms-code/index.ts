@@ -96,55 +96,63 @@ serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseKey)
 
     console.log('Searching for verification code...')
-    
-    // Find valid verification code using normalized phone number
-    const { data: verificationData, error: fetchError } = await supabase
+
+    // 1. Find the latest active (non-verified, non-expired) code for this phone + type
+    //    without filtering by code value yet – so we can track failed attempts.
+    const { data: activeCode, error: activeError } = await supabase
       .from('sms_verification_codes')
       .select('*')
-      .eq('phone_number', normalizedPhone)  // Use normalized phone number
-      .eq('code', code)
-      .eq('verification_type', verificationType)  // Filter by verification type
+      .eq('phone_number', normalizedPhone)
+      .eq('verification_type', verificationType)
       .eq('verified', false)
       .gt('expires_at', new Date().toISOString())
       .order('created_at', { ascending: false })
       .limit(1)
-      .maybeSingle()  // Use maybeSingle instead of single
+      .maybeSingle()
 
-    console.log('Database query result:', { verificationData, fetchError })
-    console.log('Query parameters used:', {
-      normalizedPhone,
-      code,
-      verificationType,
-      currentTime: new Date().toISOString()
-    })
-
-    if (fetchError) {
-      console.error('Database fetch error:', fetchError)
+    if (activeError) {
+      console.error('Database fetch error:', activeError)
       return new Response(
-        JSON.stringify({ 
-          verified: false,
-          error: 'Database error: ' + fetchError.message
-        }),
-        {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 400,
-        },
+        JSON.stringify({ verified: false, error: 'Database error: ' + activeError.message }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 },
       )
     }
 
-    if (!verificationData) {
-      console.error('No verification data found for:', { normalizedPhone, code, verificationType })
+    if (!activeCode) {
+      console.error('No active code found for:', { normalizedPhone, verificationType })
       return new Response(
-        JSON.stringify({ 
-          verified: false,
-          error: 'Invalid or expired verification code'
-        }),
-        {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 400,
-        },
+        JSON.stringify({ verified: false, error: 'Invalid or expired verification code' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 },
       )
     }
+
+    // 2. Brute-force protection: block after 5 failed attempts
+    const currentAttempts = activeCode.attempts ?? 0
+    if (currentAttempts >= 5) {
+      console.warn(`Brute-force block: phone=${normalizedPhone}, attempts=${currentAttempts}`)
+      return new Response(
+        JSON.stringify({ verified: false, error: 'יותר מדי ניסיונות שגויים. אנא בקש קוד חדש.' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 429 },
+      )
+    }
+
+    // 3. Verify code value – on mismatch, increment attempts and reject
+    if (activeCode.code !== code) {
+      await supabase
+        .from('sms_verification_codes')
+        .update({ attempts: currentAttempts + 1 })
+        .eq('id', activeCode.id)
+
+      const remaining = 4 - currentAttempts
+      console.warn(`Wrong code for ${normalizedPhone}. Attempt ${currentAttempts + 1}/5`)
+      return new Response(
+        JSON.stringify({ verified: false, error: `קוד שגוי. נותרו ${remaining} ניסיונות.` }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 },
+      )
+    }
+
+    // Code is correct – alias to verificationData for the rest of the function
+    const verificationData = activeCode
 
     // Mark as verified
     const { error: updateError } = await supabase

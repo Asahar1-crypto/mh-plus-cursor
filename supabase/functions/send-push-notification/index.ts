@@ -224,10 +224,13 @@ serve(async (req) => {
     const isUrgent = urgentTypes.includes(payload.type);
 
     if (prefs?.quiet_hours_enabled && !isUrgent) {
-      // Israel is UTC+2 (or UTC+3 in summer - we use +2 as default)
-      const now = new Date();
-      const israelTime = new Date(now.getTime() + 2 * 3600000 + now.getTimezoneOffset() * 60000);
-      const currentTime = israelTime.toTimeString().slice(0, 5);
+      // Use Asia/Jerusalem timezone to correctly handle DST (UTC+2 winter, UTC+3 summer)
+      const currentTime = new Intl.DateTimeFormat('he-IL', {
+        timeZone: 'Asia/Jerusalem',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false,
+      }).format(new Date());
 
       if (isInQuietHours(currentTime, prefs.quiet_hours_start, prefs.quiet_hours_end)) {
         console.log(`Quiet hours active (${currentTime}), skipping non-urgent push`);
@@ -248,26 +251,7 @@ serve(async (req) => {
       .eq('is_active', true);
 
     if (!tokens || tokens.length === 0) {
-      console.log('No active device tokens found. Checking if SMS fallback is allowed.');
-
-      // SMS fallback - only by user preference (ערוצי התראות), not admin/family
-      const userWantsSms = prefs?.sms_enabled ?? true;
-
-      if (userWantsSms) {
-        try {
-          await supabase.functions.invoke('send-sms', {
-            body: {
-              userId: payload.userId,
-              message: `${payload.title}: ${payload.body}`,
-            },
-          });
-        } catch (smsError) {
-          console.warn('SMS fallback failed:', smsError);
-        }
-      } else {
-        console.log('SMS disabled in user preferences - skipping fallback');
-      }
-
+      console.log('No active device tokens found, signaling SMS fallback to caller.');
       return new Response(
         JSON.stringify({ success: true, fallback: 'sms' }),
         { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

@@ -50,7 +50,7 @@ const config: CapacitorConfig = {
     backgroundColor: '#0F172A',
     contentInset: 'automatic',
     preferredContentMode: 'mobile',
-    scheme: 'מחציות פלוס',
+    scheme: 'mhplus',
   },
 };
 

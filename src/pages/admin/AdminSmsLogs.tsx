@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { MessageSquare, Phone, CheckCircle, XCircle, Clock, AlertCircle } from 'lucide-react';
+import { MessageSquare, Phone, CheckCircle, XCircle, Clock, AlertCircle, Receipt } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/auth';
@@ -21,10 +21,22 @@ interface SmsLog {
   attempts: number;
 }
 
+interface ExpenseNotification {
+  id: string;
+  expense_id: string;
+  recipient_phone: string | null;
+  recipient_user_id: string | null;
+  status: string;
+  sent_at: string;
+  error_message: string | null;
+  notification_type: string;
+}
+
 const AdminSmsLogs: React.FC = () => {
   const { user, profile } = useAuth();
   const { toast } = useToast();
   const [smsLogs, setSmsLogs] = useState<SmsLog[]>([]);
+  const [expenseNotifs, setExpenseNotifs] = useState<ExpenseNotification[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Check if user is super admin
@@ -34,6 +46,7 @@ const AdminSmsLogs: React.FC = () => {
 
   useEffect(() => {
     fetchSmsLogs();
+    fetchExpenseNotifications();
   }, []);
 
   const fetchSmsLogs = async () => {
@@ -56,6 +69,33 @@ const AdminSmsLogs: React.FC = () => {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchExpenseNotifications = async () => {
+    try {
+      const now = new Date();
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const yesterday = new Date(today);
+      yesterday.setDate(yesterday.getDate() - 1);
+      const yesterdayStart = yesterday.toISOString();
+      const todayEnd = new Date(today);
+      todayEnd.setDate(todayEnd.getDate() + 1);
+      todayEnd.setMilliseconds(-1);
+      const todayEndStr = todayEnd.toISOString();
+
+      const { data, error } = await supabase
+        .from('expense_notifications')
+        .select('*')
+        .eq('notification_type', 'sms')
+        .gte('sent_at', yesterdayStart)
+        .lte('sent_at', todayEndStr)
+        .order('sent_at', { ascending: false });
+
+      if (error) throw error;
+      setExpenseNotifs(data || []);
+    } catch (error: any) {
+      console.error('Error fetching expense notifications:', error);
     }
   };
 
@@ -211,6 +251,69 @@ const AdminSmsLogs: React.FC = () => {
             <div className="text-center py-8 text-muted-foreground">
               <AlertCircle className="w-12 h-12 mx-auto mb-4" />
               <p>אין הודעות SMS במערכת</p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Receipt className="h-5 w-5" />
+            הודעות הוצאות (אתמול והיום)
+          </CardTitle>
+          <p className="text-sm text-muted-foreground">
+            הודעות SMS על הוצאות חדשות לאישור שנשלחו למספרי הטלפון של המאשרים
+          </p>
+        </CardHeader>
+        <CardContent className="p-0 sm:p-6">
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="text-xs sm:text-sm">נשלח ב</TableHead>
+                  <TableHead className="text-xs sm:text-sm">מספר טלפון</TableHead>
+                  <TableHead className="text-xs sm:text-sm">סטטוס</TableHead>
+                  <TableHead className="text-xs sm:text-sm hidden sm:table-cell">הוצאה</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {expenseNotifs.map((n) => (
+                  <TableRow key={n.id}>
+                    <TableCell className="text-xs sm:text-sm">
+                      {format(new Date(n.sent_at), 'dd/MM/yyyy HH:mm')}
+                    </TableCell>
+                    <TableCell className="font-mono text-xs sm:text-sm">
+                      <div className="flex items-center gap-1 sm:gap-2">
+                        <Phone className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
+                        {n.recipient_phone || '-'}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      {n.status === 'sent' ? (
+                        <Badge variant="default" className="bg-green-500">
+                          <CheckCircle className="w-3 h-3 mr-1" />נשלח
+                        </Badge>
+                      ) : (
+                        <Badge variant="destructive">
+                          <XCircle className="w-3 h-3 mr-1" />
+                          {n.status}
+                          {n.error_message ? `: ${n.error_message}` : ''}
+                        </Badge>
+                      )}
+                    </TableCell>
+                    <TableCell className="hidden sm:table-cell font-mono text-xs">
+                      {n.expense_id.slice(0, 8)}…
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+          {expenseNotifs.length === 0 && (
+            <div className="text-center py-8 text-muted-foreground">
+              <Receipt className="w-12 h-12 mx-auto mb-4 opacity-50" />
+              <p>אין הודעות הוצאות אתמול והיום</p>
             </div>
           )}
         </CardContent>

@@ -117,8 +117,6 @@ const FamilyPhoneRegister = () => {
       setFamilyInfo(newFamilyInfo);
       setShowOtpVerification(true);
       
-      toast.success('נשלח קוד אימות ל-' + data.phoneNumber);
-      
     } catch (error: any) {
       console.error('Registration failed:', error);
       toast.error(`שגיאה ברישום: ${error.message}`);

@@ -5,38 +5,54 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { RefreshCw } from 'lucide-react';
 
+const HEBREW_MONTHS = [
+  'ינואר', 'פברואר', 'מרץ', 'אפריל', 'מאי', 'יוני',
+  'יולי', 'אוגוסט', 'ספטמבר', 'אוקטובר', 'נובמבר', 'דצמבר',
+];
+
 const BackfillRecurringExpenses = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const { toast } = useToast();
 
-  const handleBackfill = async () => {
+  const now = new Date();
+  const currentMonth = now.getMonth() + 1;
+  const currentYear  = now.getFullYear();
+  const monthLabel   = `${HEBREW_MONTHS[currentMonth - 1]} ${currentYear}`;
+
+  const handleGenerate = async () => {
     setIsProcessing(true);
 
     try {
-      const { data, error } = await supabase.functions.invoke('backfill-recurring-expenses', {
-        body: {
-          months: ['2025-10', '2025-11']
-        }
+      const { data, error } = await supabase.rpc('generate_recurring_expenses', {
+        p_month: currentMonth,
+        p_year:  currentYear,
       });
 
       if (error) throw error;
 
+      // rpc returns an array with one row
+      const result = Array.isArray(data) ? data[0] : data;
+      const generated = result?.generated ?? 0;
+      const skipped   = result?.skipped   ?? 0;
+
       toast({
-        title: "הצלחה!",
-        description: `נוצרו ${data.totalGenerated} הוצאות חוזרות חסרות`,
+        title: 'הצלחה!',
+        description: generated > 0
+          ? `נוצרו ${generated} הוצאות חוזרות עבור ${monthLabel}${skipped > 0 ? ` (${skipped} כבר קיימות)` : ''}`
+          : `כל ההוצאות החוזרות עבור ${monthLabel} כבר קיימות (${skipped} דולגו)`,
       });
 
-      // Refresh the page after a short delay
-      setTimeout(() => {
-        window.location.reload();
-      }, 2000);
+      if (generated > 0) {
+        setTimeout(() => window.location.reload(), 2000);
+      }
 
-    } catch (error) {
-      console.error('Error backfilling expenses:', error);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
+      console.error('Error generating recurring expenses:', message);
       toast({
-        title: "שגיאה",
-        description: "לא ניתן ליצור את ההוצאות החסרות",
-        variant: "destructive",
+        title: 'שגיאה',
+        description: 'לא ניתן ליצור את ההוצאות החוזרות',
+        variant: 'destructive',
       });
     } finally {
       setIsProcessing(false);
@@ -48,28 +64,29 @@ const BackfillRecurringExpenses = () => {
       <CardHeader>
         <div className="flex items-center gap-2">
           <RefreshCw className="h-5 w-5 text-orange-500" />
-          <CardTitle>תיקון הוצאות חוזרות חסרות</CardTitle>
+          <CardTitle>יצירת הוצאות חוזרות לחודש הנוכחי</CardTitle>
         </div>
         <CardDescription>
-          יצירת הוצאות חוזרות שלא נוצרו אוטומטית עבור אוקטובר ונובמבר 2025
+          הפעל את מנגנון יצירת ההוצאות החוזרות עבור {monthLabel}
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="bg-orange-50 dark:bg-orange-950 p-4 rounded-md text-sm space-y-2">
           <p className="font-medium text-orange-900 dark:text-orange-100">
-            ⚠️ פעולה חד-פעמית
+            ℹ️ מידע
           </p>
           <p className="text-orange-800 dark:text-orange-200">
-            פעולה זו תיצור את כל ההוצאות החוזרות החסרות עבור החודשים אוקטובר ונובמבר 2025.
-            אין צורך להריץ אותה יותר מפעם אחת.
+            הכפתור יצור את ההוצאות החוזרות הפעילות עבור {monthLabel}.
+            הוצאות שכבר קיימות ידולגו אוטומטית (אין כפילויות).
           </p>
           <p className="text-orange-800 dark:text-orange-200">
-            לאחר הפעלה, המערכת תיצור אוטומטית הוצאות חדשות כל חודש ב-1 לחודש.
+            בדרך כלל מנגנון זה רץ אוטומטית ב-1 לכל חודש בשעה 06:00 UTC.
+            השתמש בכפתור זה רק אם ההוצאות לא נוצרו אוטומטית.
           </p>
         </div>
 
         <Button
-          onClick={handleBackfill}
+          onClick={handleGenerate}
           disabled={isProcessing}
           className="w-full"
           variant="default"
@@ -77,12 +94,12 @@ const BackfillRecurringExpenses = () => {
           {isProcessing ? (
             <>
               <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-              יוצר הוצאות...
+              יוצר הוצאות עבור {monthLabel}...
             </>
           ) : (
             <>
               <RefreshCw className="mr-2 h-4 w-4" />
-              צור הוצאות חוזרות חסרות
+              צור הוצאות חוזרות עבור {monthLabel}
             </>
           )}
         </Button>

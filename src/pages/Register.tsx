@@ -243,6 +243,7 @@ const Register = () => {
               phoneNumber={registrationData.phoneNumber}
               onVerificationComplete={handleSmsVerificationComplete}
               onBack={handleBackToForm}
+              skipInitialSend={true}
             />
           </div>
         </div>

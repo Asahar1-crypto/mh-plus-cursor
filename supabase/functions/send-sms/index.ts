@@ -58,6 +58,22 @@ serve(async (req) => {
     // Initialize Supabase client early for phone check
     const supabase = createClient(supabaseUrl, supabaseServiceRoleKey);
 
+    // Rate limiting: max 5 SMS per phone number per hour
+    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+    const { count: smsCount, error: countError } = await supabase
+      .from('sms_verification_codes')
+      .select('*', { count: 'exact', head: true })
+      .eq('phone_number', normalizedPhone)
+      .gte('created_at', oneHourAgo);
+
+    if (!countError && smsCount !== null && smsCount >= 5) {
+      console.warn(`Rate limit exceeded for ${normalizedPhone}: ${smsCount} requests in last hour`);
+      return new Response(
+        JSON.stringify({ error: 'יותר מדי בקשות. אנא נסה שוב מאוחר יותר.' }),
+        { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     // Check if phone number already exists in the system (for registration type only)
     if (verificationType === 'registration' && !skipExistingCheck) {
       console.log('Checking if phone number exists in profiles...');

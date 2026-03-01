@@ -16,7 +16,7 @@ const AccountSwitcher = () => {
 
   if (!userAccounts || isLoading) {
     return (
-      <div className="flex items-center space-x-2">
+      <div className="flex items-center gap-2">
         <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent"></div>
         <span className="text-sm text-muted-foreground">טוען חשבונות...</span>
       </div>
@@ -28,7 +28,7 @@ const AccountSwitcher = () => {
   if (allAccounts.length <= 1) {
     // If user has only one account, just display it without selector
     return (
-      <div className="flex items-center space-x-2">
+      <div className="flex items-center gap-2">
         <Building2 className="h-4 w-4 text-muted-foreground" />
         <span className="text-sm font-medium">{account?.name || 'חשבון ראשי'}</span>
         {account?.isSharedAccount && (
@@ -54,14 +54,14 @@ const AccountSwitcher = () => {
   const currentAccountValue = account?.id || '';
   
   return (
-    <div className="flex items-center space-x-2">
-      <Building2 className="h-4 w-4 text-muted-foreground" />
+    <div className="flex items-center gap-2">
+      <Building2 className="h-4 w-4 text-muted-foreground flex-shrink-0" />
       <Select 
         key={`account-switcher-${currentAccountValue}`} 
         value={currentAccountValue} 
         onValueChange={handleAccountChange}
       >
-        <SelectTrigger className="w-[140px] sm:w-[200px] text-xs sm:text-sm h-8 sm:h-10">
+        <SelectTrigger className="min-w-0 w-[120px] xs:w-[140px] sm:w-[200px] text-xs sm:text-sm h-8 sm:h-10">
           <SelectValue placeholder="בחר חשבון" />
         </SelectTrigger>
         <SelectContent>
@@ -79,7 +79,7 @@ const AccountSwitcher = () => {
             <SelectItem key={acc.id} value={acc.id}>
               <div className="flex items-center justify-between w-full">
                 <span>{acc.name}</span>
-                <div className="flex items-center space-x-1 mr-2">
+                <div className="flex items-center gap-1 mr-2">
                   <Users className="h-3 w-3" />
                   <Badge variant="secondary" className="text-xs">
                     שותף

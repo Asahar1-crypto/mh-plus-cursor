@@ -1,5 +1,3 @@
-
-import { ThemeProvider } from 'next-themes';
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -50,14 +48,15 @@ import AdminSystemHealth from "./pages/admin/AdminSystemHealth";
 import AuthLayout from "./components/AuthLayout";
 import AppLayout from "./components/AppLayout";
 import { ErrorBoundary } from "./components/ErrorBoundary";
+import { AuthAwareThemeProvider } from "./components/AuthAwareThemeProvider";
 
 const queryClient = new QueryClient();
 
 const App = () => (
-  <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
   <QueryClientProvider client={queryClient}>
     <ErrorBoundary>
       <AuthProvider>
+        <AuthAwareThemeProvider>
         <NotificationProvider>
           <ExpenseProvider>
             <Toaster />
@@ -129,10 +128,10 @@ const App = () => (
             </AppRouter>
           </ExpenseProvider>
         </NotificationProvider>
+        </AuthAwareThemeProvider>
       </AuthProvider>
     </ErrorBoundary>
   </QueryClientProvider>
-  </ThemeProvider>
 );
 
 export default App;
