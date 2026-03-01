@@ -189,11 +189,13 @@ const FamilyPhoneRegister = () => {
             {/* Left Wallet Character - Green */}
             <div className="hidden lg:flex flex-col items-center justify-center p-8 animate-fade-in">
               <div className="relative">
-                <img 
-                  src="/lovable-uploads/3d7094a5-211e-416b-a8c4-8fd864c98499.png" 
-                  alt="Green Wallet Character" 
-                  className="w-64 h-64 object-contain animate-bounce [animation-duration:3s]"
-                />
+                <div className="w-64 h-64 rounded-3xl bg-white overflow-hidden flex items-center justify-center animate-bounce [animation-duration:3s]">
+                  <img
+                    src="/lovable-uploads/3d7094a5-211e-416b-a8c4-8fd864c98499.png"
+                    alt="Green Wallet Character"
+                    className="w-full h-full object-contain mix-blend-multiply"
+                  />
+                </div>
                 <div className="absolute -bottom-4 left-1/2 transform -translate-x-1/2 w-32 h-8 bg-black/10 rounded-full blur-md animate-pulse"></div>
               </div>
             </div>
@@ -204,16 +206,20 @@ const FamilyPhoneRegister = () => {
                 <CardHeader className="text-center pb-4 sm:pb-8 pt-4 sm:pt-8 px-4 sm:px-6">
                   {/* Mobile wallet characters */}
                   <div className="lg:hidden flex justify-center gap-3 sm:gap-4 mb-3 sm:mb-4">
-                    <img 
-                      src="/lovable-uploads/3a973532-2477-462a-9a84-0390b7045844.png" 
-                      alt="Red Wallet Character" 
-                      className="w-20 h-20 sm:w-28 sm:h-28 object-contain animate-bounce [animation-duration:2s]"
-                    />
-                    <img 
-                      src="/lovable-uploads/3d7094a5-211e-416b-a8c4-8fd864c98499.png" 
-                      alt="Green Wallet Character" 
-                      className="w-20 h-20 sm:w-28 sm:h-28 object-contain animate-bounce [animation-duration:2s] [animation-delay:0.3s]"
-                    />
+                    <div className="w-20 h-20 sm:w-28 sm:h-28 rounded-2xl bg-white overflow-hidden flex items-center justify-center animate-bounce [animation-duration:2s]">
+                      <img
+                        src="/lovable-uploads/3a973532-2477-462a-9a84-0390b7045844.png"
+                        alt="Red Wallet Character"
+                        className="w-full h-full object-contain mix-blend-multiply"
+                      />
+                    </div>
+                    <div className="w-20 h-20 sm:w-28 sm:h-28 rounded-2xl bg-white overflow-hidden flex items-center justify-center animate-bounce [animation-duration:2s] [animation-delay:0.3s]">
+                      <img
+                        src="/lovable-uploads/3d7094a5-211e-416b-a8c4-8fd864c98499.png"
+                        alt="Green Wallet Character"
+                        className="w-full h-full object-contain mix-blend-multiply"
+                      />
+                    </div>
                   </div>
                   <div className="w-12 h-12 sm:w-16 sm:h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
                     <Users className="w-6 h-6 sm:w-8 sm:h-8 text-primary" />
@@ -400,11 +406,13 @@ const FamilyPhoneRegister = () => {
             {/* Right Wallet Character - Red */}
             <div className="hidden lg:flex flex-col items-center justify-center p-8 animate-fade-in">
               <div className="relative">
-                <img 
-                  src="/lovable-uploads/3a973532-2477-462a-9a84-0390b7045844.png" 
-                  alt="Red Wallet Character" 
-                  className="w-64 h-64 object-contain animate-bounce [animation-duration:3s] [animation-delay:0.5s]"
-                />
+                <div className="w-64 h-64 rounded-3xl bg-white overflow-hidden flex items-center justify-center animate-bounce [animation-duration:3s] [animation-delay:0.5s]">
+                  <img
+                    src="/lovable-uploads/3a973532-2477-462a-9a84-0390b7045844.png"
+                    alt="Red Wallet Character"
+                    className="w-full h-full object-contain mix-blend-multiply"
+                  />
+                </div>
                 <div className="absolute -bottom-4 left-1/2 transform -translate-x-1/2 w-32 h-8 bg-black/10 rounded-full blur-md animate-pulse [animation-delay:0.5s]"></div>
               </div>
             </div>

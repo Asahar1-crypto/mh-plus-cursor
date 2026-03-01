@@ -33,8 +33,12 @@ export const ExpenseCard = ({ expense, accountMembers = [], onApprove, onReject,
     if (expense.splitEqually) {
       return (
         <div className="flex -space-x-2" title="חצי חצי">
-          <img src={WALLET_FATHER} alt="אבא" className="h-8 w-8 object-contain" />
-          <img src={WALLET_MOTHER} alt="אמא" className="h-8 w-8 object-contain" />
+          <div className="h-8 w-8 rounded-full bg-white flex items-center justify-center overflow-hidden">
+            <img src={WALLET_FATHER} alt="אבא" className="w-full h-full object-contain mix-blend-multiply" />
+          </div>
+          <div className="h-8 w-8 rounded-full bg-white flex items-center justify-center overflow-hidden">
+            <img src={WALLET_MOTHER} alt="אמא" className="w-full h-full object-contain mix-blend-multiply" />
+          </div>
         </div>
       );
     }
@@ -42,12 +46,9 @@ export const ExpenseCard = ({ expense, accountMembers = [], onApprove, onReject,
       const src = payerIndex === 0 ? WALLET_FATHER : WALLET_MOTHER;
       const alt = payerIndex === 0 ? 'אבא' : 'אמא';
       return (
-        <img
-          src={src}
-          alt={alt}
-          className="h-8 w-8 object-contain"
-          title={paidByName}
-        />
+        <div className="h-8 w-8 rounded-full bg-white flex items-center justify-center overflow-hidden" title={paidByName}>
+          <img src={src} alt={alt} className="w-full h-full object-contain mix-blend-multiply" />
+        </div>
       );
     }
     return null;

@@ -200,16 +200,20 @@ const PhoneLogin: React.FC<PhoneLoginProps> = ({ onBack, hideHeader = false }) =
       <CardHeader className="text-center">
         {/* Mobile wallet characters */}
         <div className="lg:hidden flex justify-center gap-4 mb-4">
-          <img 
-            src="/lovable-uploads/3a973532-2477-462a-9a84-0390b7045844.png" 
-            alt="Red Wallet Character" 
-            className="w-28 h-28 object-contain animate-bounce [animation-duration:2s]"
-          />
-          <img 
-            src="/lovable-uploads/3d7094a5-211e-416b-a8c4-8fd864c98499.png" 
-            alt="Green Wallet Character" 
-            className="w-28 h-28 object-contain animate-bounce [animation-duration:2s] [animation-delay:0.3s]"
-          />
+          <div className="w-28 h-28 rounded-2xl bg-white overflow-hidden flex items-center justify-center animate-bounce [animation-duration:2s]">
+            <img
+              src="/lovable-uploads/3a973532-2477-462a-9a84-0390b7045844.png"
+              alt="Red Wallet Character"
+              className="w-full h-full object-contain mix-blend-multiply"
+            />
+          </div>
+          <div className="w-28 h-28 rounded-2xl bg-white overflow-hidden flex items-center justify-center animate-bounce [animation-duration:2s] [animation-delay:0.3s]">
+            <img
+              src="/lovable-uploads/3d7094a5-211e-416b-a8c4-8fd864c98499.png"
+              alt="Green Wallet Character"
+              className="w-full h-full object-contain mix-blend-multiply"
+            />
+          </div>
         </div>
         <div className="flex items-center justify-center gap-2 mb-2">
           <Smartphone className="w-6 h-6 text-primary animate-pulse" />

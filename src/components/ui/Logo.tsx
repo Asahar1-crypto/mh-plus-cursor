@@ -29,14 +29,14 @@ export const Logo: React.FC<LogoProps> = ({
 
   return (
     <div className={cn("flex items-center gap-3", className)}>
-      <div className="relative">
-        <img 
-          src="/lovable-uploads/dc4b6d32-5c74-44a1-8d9c-b07947f361d7.png" 
-          alt="Family Budget Logo" 
-          className={cn(
-            sizeClasses[size],
-            "rounded-lg shadow-sm transition-transform hover:scale-105"
-          )}
+      <div className={cn(
+        "relative bg-white rounded-xl shadow-sm flex items-center justify-center p-1 transition-transform hover:scale-105",
+        sizeClasses[size]
+      )}>
+        <img
+          src="/lovable-uploads/dc4b6d32-5c74-44a1-8d9c-b07947f361d7.png"
+          alt="Family Budget Logo"
+          className="w-full h-full object-contain mix-blend-multiply"
         />
       </div>
       {showText && (

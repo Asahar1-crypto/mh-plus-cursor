@@ -107,19 +107,23 @@ const Login = () => {
               <div className="flex justify-center gap-3 mb-4">
                 <div className="relative group">
                   <div className="absolute inset-0 bg-primary/15 rounded-full blur-lg group-hover:blur-xl transition-all duration-300" />
-                  <img 
-                    src="/lovable-uploads/3a973532-2477-462a-9a84-0390b7045844.png" 
-                    alt="Red Wallet Character" 
-                    className="relative w-20 h-20 sm:w-24 sm:h-24 object-contain animate-float hover:scale-110 transition-transform duration-300"
-                  />
+                  <div className="relative w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-white overflow-hidden flex items-center justify-center animate-float hover:scale-110 transition-transform duration-300">
+                    <img
+                      src="/lovable-uploads/3a973532-2477-462a-9a84-0390b7045844.png"
+                      alt="Red Wallet Character"
+                      className="w-full h-full object-contain mix-blend-multiply"
+                    />
+                  </div>
                 </div>
                 <div className="relative group">
                   <div className="absolute inset-0 bg-secondary/15 rounded-full blur-lg group-hover:blur-xl transition-all duration-300" />
-                  <img 
-                    src="/lovable-uploads/3d7094a5-211e-416b-a8c4-8fd864c98499.png" 
-                    alt="Green Wallet Character" 
-                    className="relative w-20 h-20 sm:w-24 sm:h-24 object-contain animate-float [animation-delay:1s] hover:scale-110 transition-transform duration-300"
-                  />
+                  <div className="relative w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-white overflow-hidden flex items-center justify-center animate-float [animation-delay:1s] hover:scale-110 transition-transform duration-300">
+                    <img
+                      src="/lovable-uploads/3d7094a5-211e-416b-a8c4-8fd864c98499.png"
+                      alt="Green Wallet Character"
+                      className="w-full h-full object-contain mix-blend-multiply"
+                    />
+                  </div>
                 </div>
               </div>
               

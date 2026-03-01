@@ -106,11 +106,13 @@ const ChildCard: React.FC<ChildCardProps> = ({ child }) => {
       <CardHeader className="pb-2 sm:pb-3 p-3 sm:p-4 relative z-10">
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-2.5 flex-1 min-w-0">
-            <img 
-              src={child.gender === 'daughter' ? '/avatars/roles/daughter.png' : '/avatars/roles/son.png'} 
-              alt={child.gender === 'daughter' ? 'בת' : 'בן'} 
-              className="w-10 h-10 sm:w-12 sm:h-12 object-contain rounded-full shrink-0" 
-            />
+            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-white flex items-center justify-center shrink-0 overflow-hidden p-0.5">
+              <img
+                src={child.gender === 'daughter' ? '/avatars/roles/daughter.png' : '/avatars/roles/son.png'}
+                alt={child.gender === 'daughter' ? 'בת' : 'בן'}
+                className="w-full h-full object-contain mix-blend-multiply"
+              />
+            </div>
             <div className="min-w-0">
               <CardTitle className="text-base sm:text-lg bg-gradient-to-r from-foreground to-primary bg-clip-text text-transparent truncate">
                 {child.name}

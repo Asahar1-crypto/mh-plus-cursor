@@ -127,7 +127,9 @@ const EditChildForm: React.FC<EditChildFormProps> = ({ child, open, setOpen }) =
                     : 'border-border/50 bg-background/50 hover:border-primary/40 hover:bg-primary/5 text-muted-foreground'
                 }`}
               >
-                <img src={option.image} alt={option.label} className="w-12 h-12 sm:w-14 sm:h-14 object-contain rounded-full" />
+                <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-white flex items-center justify-center overflow-hidden p-0.5">
+                  <img src={option.image} alt={option.label} className="w-full h-full object-contain mix-blend-multiply" />
+                </div>
                 <span>{option.label}</span>
               </button>
             ))}
