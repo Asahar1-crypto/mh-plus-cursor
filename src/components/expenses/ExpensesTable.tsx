@@ -98,6 +98,8 @@ export const ExpensesTable: React.FC<ExpensesTableProps> = ({
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [expenseToDelete, setExpenseToDelete] = useState<Expense | null>(null);
   const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false);
+  const [recurringApproveDialogOpen, setRecurringApproveDialogOpen] = useState(false);
+  const [expenseToApproveId, setExpenseToApproveId] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
 
@@ -277,47 +279,48 @@ export const ExpensesTable: React.FC<ExpensesTableProps> = ({
     }
   };
 
-  const handleApprove = async (id: string) => {
+  const fireApproveConfetti = () => {
+    const duration = 2000;
+    const animationEnd = Date.now() + duration;
+    const colors = ['#10B981', '#8B5CF6', '#EC4899'];
+    const interval = setInterval(() => {
+      if (Date.now() >= animationEnd) { clearInterval(interval); return; }
+      confetti({ particleCount: 5, angle: 60,  spread: 55, origin: { x: 0, y: 0.6 }, colors });
+      confetti({ particleCount: 5, angle: 120, spread: 55, origin: { x: 1, y: 0.6 }, colors });
+    }, 50);
+  };
+
+  const handleApprove = (id: string) => {
+    const expense = filteredExpenses.find(e => e.id === id);
+    if (expense?.recurringParentId) {
+      setExpenseToApproveId(id);
+      setRecurringApproveDialogOpen(true);
+    } else {
+      handleApproveOnce(id);
+    }
+  };
+
+  const handleApproveOnce = async (id?: string) => {
+    const targetId = id ?? expenseToApproveId;
+    if (!targetId) return;
+    setRecurringApproveDialogOpen(false);
+    setExpenseToApproveId(null);
     try {
-      await approveExpense(id);
-      
-      // Celebration confetti
-      const duration = 2000;
-      const animationEnd = Date.now() + duration;
-      const colors = ['#10B981', '#8B5CF6', '#EC4899'];
-
-      const interval = setInterval(() => {
-        const timeLeft = animationEnd - Date.now();
-        if (timeLeft <= 0) {
-          clearInterval(interval);
-          return;
-        }
-
-        confetti({
-          particleCount: 5,
-          angle: 60,
-          spread: 55,
-          origin: { x: 0, y: 0.6 },
-          colors: colors,
-        });
-        confetti({
-          particleCount: 5,
-          angle: 120,
-          spread: 55,
-          origin: { x: 1, y: 0.6 },
-          colors: colors,
-        });
-      }, 50);
-      
+      await approveExpense(targetId);
+      fireApproveConfetti();
       toast.success('🎉 ההוצאה אושרה בהצלחה!');
     } catch (error) {
       toast.error('שגיאה באישור ההוצאה');
     }
   };
 
-  const handleApproveAllRecurring = async (id: string) => {
+  const handleApproveAllRecurring = async (id?: string) => {
+    const targetId = id ?? expenseToApproveId;
+    if (!targetId) return;
+    setRecurringApproveDialogOpen(false);
+    setExpenseToApproveId(null);
     try {
-      await approveAllRecurring(id);
+      await approveAllRecurring(targetId);
       
       // Extra celebration confetti for recurring approval
       const duration = 2500;
@@ -575,7 +578,6 @@ export const ExpensesTable: React.FC<ExpensesTableProps> = ({
                       }
                     }}
                     onApprove={() => handleApprove(expense.id)}
-                    onApproveAllRecurring={expense.recurringParentId ? () => handleApproveAllRecurring(expense.id) : undefined}
                     onReject={() => handleReject(expense.id)}
                     onMarkAsPaid={() => handleMarkAsPaid(expense.id)}
                     onPreviewReceipt={expense.receiptId ? () => setPreviewReceiptId(expense.receiptId!) : undefined}
@@ -747,21 +749,10 @@ export const ExpensesTable: React.FC<ExpensesTableProps> = ({
                                   variant="ghost"
                                   onClick={() => handleApprove(expense.id)}
                                   className="h-7 w-7 p-0 text-green-600 hover:text-green-700 hover:bg-green-50"
-                                  title={expense.recurringParentId ? "אשר פעם אחת" : "אשר"}
+                                  title="אשר"
                                 >
                                   <Check className="h-3.5 w-3.5" />
                                 </Button>
-                                {expense.recurringParentId && (
-                                  <Button
-                                    size="sm"
-                                    variant="ghost"
-                                    onClick={() => handleApproveAllRecurring(expense.id)}
-                                    className="h-7 w-7 p-0 text-purple-600 hover:text-purple-700 hover:bg-purple-50"
-                                    title="אשר את כל החוזרות"
-                                  >
-                                    <Repeat className="h-3.5 w-3.5" />
-                                  </Button>
-                                )}
                                 <Button
                                   size="sm"
                                   variant="ghost"
@@ -966,6 +957,38 @@ export const ExpensesTable: React.FC<ExpensesTableProps> = ({
           >
             מחק הכל
           </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+
+    {/* ── Recurring approval dialog ─────────────────────────────── */}
+    <AlertDialog open={recurringApproveDialogOpen} onOpenChange={setRecurringApproveDialogOpen}>
+      <AlertDialogContent dir="rtl">
+        <AlertDialogHeader>
+          <AlertDialogTitle className="flex items-center gap-2">
+            <Repeat className="h-5 w-5 text-purple-600" />
+            אישור הוצאה חוזרת
+          </AlertDialogTitle>
+          <AlertDialogDescription>
+            הוצאה זו מתחדשת מדי חודש. כיצד תרצה לאשר אותה?
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter className="flex-col gap-2 sm:flex-col sm:space-x-0">
+          <AlertDialogAction
+            onClick={() => handleApproveAllRecurring()}
+            className="bg-purple-600 hover:bg-purple-700 text-white w-full"
+          >
+            <Repeat className="h-4 w-4 ml-2" />
+            חודש זה וכל החודשים הבאים
+          </AlertDialogAction>
+          <AlertDialogAction
+            onClick={() => handleApproveOnce()}
+            className="bg-green-600 hover:bg-green-700 text-white w-full"
+          >
+            <Check className="h-4 w-4 ml-2" />
+            חודש זה בלבד
+          </AlertDialogAction>
+          <AlertDialogCancel className="w-full mt-0">ביטול</AlertDialogCancel>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>

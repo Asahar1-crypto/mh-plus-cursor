@@ -5,16 +5,14 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { StatusBadge } from './StatusBadge';
-import { 
-  Calendar, 
-  User, 
-  Tag, 
+import {
+  Calendar,
+  User,
+  Tag,
   Users,
   Check,
   X,
   Eye,
-  FileText,
-  Repeat,
   Pencil,
   Trash2
 } from 'lucide-react';
@@ -28,7 +26,6 @@ interface ExpenseCardMobileProps {
   isSelected: boolean;
   onSelect: (checked: boolean) => void;
   onApprove: () => void;
-  onApproveAllRecurring?: () => void;
   onReject: () => void;
   onMarkAsPaid: () => void;
   onPreviewReceipt?: () => void;
@@ -47,7 +44,6 @@ export const ExpenseCardMobile: React.FC<ExpenseCardMobileProps> = ({
   isSelected,
   onSelect,
   onApprove,
-  onApproveAllRecurring,
   onReject,
   onMarkAsPaid,
   onPreviewReceipt,
@@ -138,9 +134,9 @@ export const ExpenseCardMobile: React.FC<ExpenseCardMobileProps> = ({
         </div>
 
         {/* Actions */}
-        <div className="flex items-center justify-between pt-2 border-t border-border/30">
+        <div className="flex flex-col xs:flex-row xs:items-center xs:justify-between gap-2 pt-2 border-t border-border/30">
           {/* Receipt + Edit + Delete */}
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1 flex-wrap">
             {isSuperAdmin && onDelete && (
               <Button
                 size="sm"
@@ -181,7 +177,7 @@ export const ExpenseCardMobile: React.FC<ExpenseCardMobileProps> = ({
           </div>
 
           {/* Status Actions */}
-          <div className="flex gap-1">
+          <div className="flex gap-1 flex-wrap">
             {!isPersonalPlan && expense.status === 'pending' && (
               <>
                 <Button
@@ -189,23 +185,11 @@ export const ExpenseCardMobile: React.FC<ExpenseCardMobileProps> = ({
                   variant="ghost"
                   onClick={onApprove}
                   className="h-8 px-2 text-green-600 hover:text-green-700 hover:bg-green-50"
-                  title={onApproveAllRecurring ? "אשר פעם אחת" : "אשר"}
+                  title="אשר"
                 >
                   <Check className="h-4 w-4 ml-1" />
-                  <span className="text-xs">{onApproveAllRecurring ? "פעם אחת" : "אשר"}</span>
+                  <span className="text-xs">אשר</span>
                 </Button>
-                {onApproveAllRecurring && (
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={onApproveAllRecurring}
-                    className="h-8 px-2 text-purple-600 hover:text-purple-700 hover:bg-purple-50"
-                    title="אשר את כל החוזרות"
-                  >
-                    <Repeat className="h-4 w-4 ml-1" />
-                    <span className="text-xs">כל החוזרות</span>
-                  </Button>
-                )}
                 <Button
                   size="sm"
                   variant="ghost"
