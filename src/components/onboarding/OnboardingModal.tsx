@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { OnboardingProgress } from './OnboardingProgress';
 import { WelcomeStep } from './steps/WelcomeStep';
@@ -24,17 +25,21 @@ const STEP_TITLES = [
 
 export const OnboardingModal: React.FC = () => {
   const { user, profile, refreshProfile } = useAuth();
+  const [searchParams] = useSearchParams();
   const [isOpen, setIsOpen] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
   const [isReady, setIsReady] = useState(false);
+
+  // ?test-onboarding=1 – הצגת אונבורדינג לבדיקה (גם אם הושלם)
+  const forceTestOnboarding = searchParams.get('test-onboarding') === '1';
 
   useEffect(() => {
     // Wait for profile to be fully loaded before checking
     if (profile !== null && profile !== undefined) {
       setIsReady(true);
       
-      // Check if onboarding is needed
-      if (!profile.onboarding_completed) {
+      // Check if onboarding is needed (or forced for testing)
+      if (!profile.onboarding_completed || forceTestOnboarding) {
         // Small delay to ensure everything is mounted
         const timer = setTimeout(() => {
           setIsOpen(true);
@@ -42,7 +47,7 @@ export const OnboardingModal: React.FC = () => {
         return () => clearTimeout(timer);
       }
     }
-  }, [profile]);
+  }, [profile, forceTestOnboarding]);
 
   const handleNext = () => {
     if (currentStep < STEP_TITLES.length - 1) {

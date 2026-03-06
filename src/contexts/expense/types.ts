@@ -29,6 +29,13 @@ export interface Expense {
   recurringAutoApproved?: boolean;
   recurringApprovedBy?: string;
   recurringActive?: boolean;
+  // CPI index linking
+  isIndexLinked?: boolean;
+  baseAmount?: number;
+  baseIndexPeriod?: string;
+  indexUpdateFrequency?: 'monthly' | 'quarterly' | 'yearly';
+  floorEnabled?: boolean;
+  lastCalculatedAmount?: number;
 }
 
 export type ChildGender = 'son' | 'daughter';

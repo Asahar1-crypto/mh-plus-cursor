@@ -68,28 +68,28 @@ const AppLayout = () => {
 
   return (
     <TooltipProvider>
-      <div className="flex min-h-screen w-full bg-background overflow-x-hidden">
-        <AppSidebar 
+      <div className="flex h-screen w-full bg-background overflow-hidden">
+        <AppSidebar
           isMobile={isMobile}
           isOpen={isMobileSidebarOpen}
           onClose={() => setIsMobileSidebarOpen(false)}
           collapsed={isSidebarCollapsed}
           onToggleCollapse={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
         />
-        <div 
-          className={`flex flex-col flex-1 transition-all duration-300 ${
-            isMobile 
-              ? 'w-full' 
-              : isSidebarCollapsed 
-                ? 'mr-16' 
+        <div
+          className={`flex flex-col flex-1 min-h-0 transition-all duration-300 ${
+            isMobile
+              ? 'w-full'
+              : isSidebarCollapsed
+                ? 'mr-16'
                 : 'mr-64'
           }`}
         >
-          <AppHeader 
+          <AppHeader
             onMenuClick={() => setIsMobileSidebarOpen(!isMobileSidebarOpen)}
             isMobile={isMobile}
           />
-          <main className="flex-1 p-3 sm:p-6 lg:p-8 overflow-x-hidden bg-gradient-to-br from-background to-accent/20">
+          <main className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden p-3 sm:p-6 lg:p-8 bg-gradient-to-br from-background to-accent/20">
             <TrialStatusBanner />
             <Outlet />
           </main>

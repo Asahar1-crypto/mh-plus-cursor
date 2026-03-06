@@ -28,6 +28,8 @@ import Expenses from "./pages/Expenses";
 import Reports from "./pages/Reports";
 import MonthlySettlement from "./pages/MonthlySettlement";
 import CustodyCalendar from "./pages/CustodyCalendar";
+import BirthdayProjects from "./pages/BirthdayProjects";
+import BirthdayProjectDetail from "./pages/BirthdayProjectDetail";
 import Privacy from "./pages/Privacy";
 import Terms from "./pages/Terms";
 import Pricing from "./pages/Pricing";
@@ -101,6 +103,8 @@ const App = () => (
                 <Route path="/expenses" element={<Expenses />} />
                 <Route path="/reports" element={<Reports />} />
                 <Route path="/monthly-settlement" element={<MonthlySettlement />} />
+                <Route path="/birthday-projects" element={<BirthdayProjects />} />
+                <Route path="/birthday-projects/:id" element={<BirthdayProjectDetail />} />
                 <Route path="/choose-plan" element={<ChoosePlan />} />
                 
                 {/* Admin routes */}

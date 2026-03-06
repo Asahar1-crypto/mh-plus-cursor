@@ -39,7 +39,7 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({ requiresAuth = false }) => {
     if (isPasswordResetFlow) {
       // Allow user to stay on reset page to enter new password
       return (
-        <div className="min-h-screen bg-background">
+        <div className="min-h-screen bg-background overflow-y-auto">
           <AppHeader />
           <div className="pt-16">
             <Outlet />
@@ -61,7 +61,7 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({ requiresAuth = false }) => {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background overflow-y-auto">
       <AppHeader />
       <div className="pt-16">
         <Outlet />

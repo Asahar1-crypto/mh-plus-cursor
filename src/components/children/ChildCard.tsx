@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from 'react';
 import { format } from 'date-fns';
 import { Edit3 } from 'lucide-react';
@@ -106,11 +105,11 @@ const ChildCard: React.FC<ChildCardProps> = ({ child }) => {
       <CardHeader className="pb-2 sm:pb-3 p-3 sm:p-4 relative z-10">
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-2.5 flex-1 min-w-0">
-            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-white flex items-center justify-center shrink-0 overflow-hidden p-0.5">
+            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center shrink-0 overflow-hidden">
               <img
                 src={child.gender === 'daughter' ? '/avatars/roles/daughter.png' : '/avatars/roles/son.png'}
                 alt={child.gender === 'daughter' ? 'בת' : 'בן'}
-                className="w-full h-full object-contain mix-blend-multiply"
+                className="w-full h-full object-contain"
               />
             </div>
             <div className="min-w-0">

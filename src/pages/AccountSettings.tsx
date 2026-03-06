@@ -21,6 +21,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import NotificationsCard from '@/components/account/NotificationsCard';
 import { CategoriesCard } from '@/components/account/CategoriesCard';
+import { IndexLinkingSettingsCard } from '@/components/account/IndexLinkingSettingsCard';
 
 const AppearanceCard = () => {
   const { theme, setTheme } = useTheme();
@@ -204,6 +205,11 @@ const AccountSettings = () => {
                   isAdmin={isAdmin || false}
                 />
                 <CategoriesCard isAdmin={isAdmin || false} />
+                <IndexLinkingSettingsCard
+                  accountId={account?.id}
+                  currentIndexLinkingEnabled={account?.index_linking_enabled}
+                  isAdmin={isAdmin || false}
+                />
                 <UserAccountsCard />
               </div>
             </TabsContent>

@@ -42,7 +42,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({ userName }) =>
           <div className="flex flex-col md:flex-row items-start md:items-center gap-3 sm:gap-4 w-full md:w-auto">
             <div className="hidden md:flex flex-col items-end space-y-1 p-3 rounded-lg bg-background/50 backdrop-blur-sm border border-border/30">
               <div className="text-sm font-medium text-muted-foreground">
-                {new Date().toLocaleDateString('he-IL', { 
+                {new Date().toLocaleDateString('he-IL', {
                   weekday: 'long',
                   year: 'numeric',
                   month: 'long',
@@ -50,9 +50,9 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({ userName }) =>
                 })}
               </div>
             </div>
-            <Button 
+            <Button
               onClick={handleAddExpense}
-              className="w-full md:w-auto bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 group h-10 sm:h-11"
+              className="w-full md:w-auto bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 group h-11 sm:h-12"
               size="lg"
             >
               <Plus className="ml-2 h-4 w-4 sm:h-5 sm:w-5 group-hover:rotate-90 transition-transform duration-300" />

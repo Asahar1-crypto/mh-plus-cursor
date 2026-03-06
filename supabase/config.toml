@@ -9,6 +9,9 @@ verify_jwt = true
 [functions.generate-recurring-expenses]
 verify_jwt = false
 
+[functions.fetch-cpi-index]
+verify_jwt = false
+
 [functions.backfill-recurring-expenses]
 verify_jwt = false
 

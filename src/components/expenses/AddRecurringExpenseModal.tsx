@@ -36,7 +36,14 @@ const addRecurringExpenseSchema = z.object({
   frequency: z.enum(['monthly', 'weekly', 'yearly']),
   hasEndDate: z.boolean(),
   endDate: z.string().optional(),
-});
+  isIndexLinked: z.boolean().optional(),
+  baseIndexPeriod: z.string().optional(),
+  indexUpdateFrequency: z.enum(['monthly', 'quarterly', 'yearly']).optional(),
+  floorEnabled: z.boolean().optional(),
+}).refine(
+  (data) => !data.isIndexLinked || (data.baseIndexPeriod && data.baseIndexPeriod.length >= 7),
+  { message: 'נדרש לבחור חודש מדד בסיס', path: ['baseIndexPeriod'] }
+);
 
 type AddRecurringExpenseFormData = z.infer<typeof addRecurringExpenseSchema>;
 
@@ -50,6 +57,7 @@ export const AddRecurringExpenseModal: React.FC<AddRecurringExpenseModalProps> =
   childrenList
 }) => {
   const { user, account } = useAuth();
+  const indexLinkingAvailable = account?.index_linking_enabled === true;
   const { categoriesList } = useExpense();
   const [isOpen, setIsOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -72,6 +80,10 @@ export const AddRecurringExpenseModal: React.FC<AddRecurringExpenseModalProps> =
       frequency: 'monthly',
       hasEndDate: false,
       endDate: '',
+      isIndexLinked: false,
+      baseIndexPeriod: '',
+      indexUpdateFrequency: 'monthly',
+      floorEnabled: true,
     },
   });
 
@@ -113,9 +125,10 @@ export const AddRecurringExpenseModal: React.FC<AddRecurringExpenseModalProps> =
           paidById = currentUserId;
       }
 
+      const isIndexLinked = indexLinkingAvailable && data.frequency === 'monthly' && data.isIndexLinked === true;
       const expenseData: any = {
         account_id: account.id,
-        amount: data.amount,
+        amount: isIndexLinked ? data.amount : data.amount,
         description: data.description,
         category: data.category,
         date: new Date().toISOString().split('T')[0],
@@ -129,6 +142,11 @@ export const AddRecurringExpenseModal: React.FC<AddRecurringExpenseModalProps> =
         end_date: data.hasEndDate ? data.endDate : null,
         status: 'pending',
         include_in_monthly_balance: includeInMonthlyBalance,
+        is_index_linked: isIndexLinked,
+        base_amount: isIndexLinked ? data.amount : null,
+        base_index_period: isIndexLinked ? data.baseIndexPeriod || null : null,
+        index_update_frequency: isIndexLinked ? (data.indexUpdateFrequency || 'monthly') : null,
+        floor_enabled: isIndexLinked ? (data.floorEnabled ?? true) : null,
       };
 
       const { data: insertedExpense, error } = await supabase
@@ -380,6 +398,105 @@ export const AddRecurringExpenseModal: React.FC<AddRecurringExpenseModalProps> =
                 </FormItem>
               )}
             />
+
+            {indexLinkingAvailable && form.watch('frequency') === 'monthly' && (
+              <>
+                <FormField
+                  control={form.control}
+                  name="isIndexLinked"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
+                      <div className="space-y-0.5">
+                        <FormLabel>צמוד למדד המחירים לצרכן</FormLabel>
+                        <div className="text-sm text-muted-foreground">
+                          הסכום יתעדכן אוטומטית לפי נתוני הלמ"ס
+                        </div>
+                      </div>
+                      <FormControl>
+                        <Switch
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+                {form.watch('isIndexLinked') && (
+                  <>
+                    <FormField
+                      control={form.control}
+                      name="baseIndexPeriod"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>חודש ושנת מדד הבסיס</FormLabel>
+                          <Select onValueChange={field.onChange} value={field.value}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="בחר חודש (למשל: ינואר 2024)" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {(() => {
+                                const opts: { value: string; label: string }[] = [];
+                                const now = new Date();
+                                for (let i = 0; i < 36; i++) {
+                                  const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+                                  const val = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+                                  const months = ['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'];
+                                  opts.push({ value: val, label: `${months[d.getMonth()]} ${d.getFullYear()}` });
+                                }
+                                return opts.map(o => (
+                                  <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+                                ));
+                              })()}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="indexUpdateFrequency"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>תדירות עדכון</FormLabel>
+                          <Select onValueChange={field.onChange} value={field.value}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="monthly">חודשי</SelectItem>
+                              <SelectItem value="quarterly">כל 3 חודשים</SelectItem>
+                              <SelectItem value="yearly">שנתי</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="floorEnabled"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
+                          <div className="space-y-0.5">
+                            <FormLabel>רצפת מדד</FormLabel>
+                            <div className="text-sm text-muted-foreground">
+                              הסכום לא יורד מתחת לסכום הבסיס
+                            </div>
+                          </div>
+                          <FormControl>
+                            <Switch checked={field.value} onCheckedChange={field.onChange} />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+                  </>
+                )}
+              </>
+            )}
 
             <FormField
               control={form.control}

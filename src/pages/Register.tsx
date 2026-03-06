@@ -362,8 +362,8 @@ const Register = () => {
                         }`}
                       >
                         {'image' in option && option.image ? (
-                          <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-white flex items-center justify-center overflow-hidden p-0.5">
-                            <img src={option.image} alt={option.label} className="w-full h-full object-contain mix-blend-multiply" />
+                          <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center overflow-hidden p-0.5">
+                            <img src={option.image} alt={option.label} className="w-full h-full object-contain" />
                           </div>
                         ) : (
                           <span className="text-xl sm:text-2xl">{'emoji' in option ? option.emoji : '👤'}</span>

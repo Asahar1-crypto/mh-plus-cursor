@@ -28,6 +28,7 @@ export interface Account {
   billing_period?: string | null;
   billing_cycle_start_day?: number | null;
   avatar_set?: string | null;
+  index_linking_enabled?: boolean | null;
   // Legacy fields (will be removed in future)
   ownerId?: string;
   sharedWithId?: string;

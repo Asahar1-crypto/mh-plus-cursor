@@ -33,11 +33,11 @@ export const ExpenseCard = ({ expense, accountMembers = [], onApprove, onReject,
     if (expense.splitEqually) {
       return (
         <div className="flex -space-x-2" title="חצי חצי">
-          <div className="h-8 w-8 rounded-full bg-white flex items-center justify-center overflow-hidden">
-            <img src={WALLET_FATHER} alt="אבא" className="w-full h-full object-contain mix-blend-multiply" />
+          <div className="h-8 w-8 rounded-full flex items-center justify-center overflow-hidden">
+            <img src={WALLET_FATHER} alt="אבא" className="w-full h-full object-contain" />
           </div>
-          <div className="h-8 w-8 rounded-full bg-white flex items-center justify-center overflow-hidden">
-            <img src={WALLET_MOTHER} alt="אמא" className="w-full h-full object-contain mix-blend-multiply" />
+          <div className="h-8 w-8 rounded-full flex items-center justify-center overflow-hidden">
+            <img src={WALLET_MOTHER} alt="אמא" className="w-full h-full object-contain" />
           </div>
         </div>
       );
@@ -46,8 +46,8 @@ export const ExpenseCard = ({ expense, accountMembers = [], onApprove, onReject,
       const src = payerIndex === 0 ? WALLET_FATHER : WALLET_MOTHER;
       const alt = payerIndex === 0 ? 'אבא' : 'אמא';
       return (
-        <div className="h-8 w-8 rounded-full bg-white flex items-center justify-center overflow-hidden" title={paidByName}>
-          <img src={src} alt={alt} className="w-full h-full object-contain mix-blend-multiply" />
+        <div className="h-8 w-8 rounded-full flex items-center justify-center overflow-hidden" title={paidByName}>
+          <img src={src} alt={alt} className="w-full h-full object-contain" />
         </div>
       );
     }
@@ -69,7 +69,7 @@ export const ExpenseCard = ({ expense, accountMembers = [], onApprove, onReject,
             <span>{expense.category}</span>
           </div>
         </div>
-        <div className="text-left sm:text-right">
+        <div className="text-right">
           <div className="text-lg sm:text-xl font-semibold">₪{expense.amount.toFixed(2)}</div>
           <div className="text-xs text-muted-foreground">{expense.date}</div>
         </div>

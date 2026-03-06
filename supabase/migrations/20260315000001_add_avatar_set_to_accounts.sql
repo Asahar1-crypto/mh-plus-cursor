@@ -1,0 +1,2 @@
+ALTER TABLE public.accounts
+  ADD COLUMN IF NOT EXISTS avatar_set TEXT DEFAULT NULL;

@@ -59,7 +59,7 @@ export const ActivityLog: React.FC<{ limit?: number }> = ({ limit = 30 }) => {
             {isLoading ? (
               <div className="py-4 text-center text-sm text-muted-foreground">טוען...</div>
             ) : (
-              <div className="space-y-2 max-h-80 overflow-y-auto">
+              <div className="space-y-2">
                 {logs.map(log => {
                   const cfg = ACTION_CONFIG[log.action] ?? { label: log.action, color: 'bg-muted text-muted-foreground' };
                   return (

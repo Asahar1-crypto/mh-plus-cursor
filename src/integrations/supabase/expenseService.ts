@@ -67,7 +67,13 @@ export const expenseService = {
         recurringParentId: expense.recurring_parent_id || undefined,
         recurringAutoApproved: expense.recurring_auto_approved || false,
         recurringApprovedBy: expense.recurring_approved_by || undefined,
-        recurringActive: expense.recurring_active ?? true
+        recurringActive: expense.recurring_active ?? true,
+        isIndexLinked: expense.is_index_linked || false,
+        baseAmount: expense.base_amount ?? undefined,
+        baseIndexPeriod: expense.base_index_period || undefined,
+        indexUpdateFrequency: expense.index_update_frequency as 'monthly' | 'quarterly' | 'yearly' | undefined,
+        floorEnabled: expense.floor_enabled ?? true,
+        lastCalculatedAmount: expense.last_calculated_amount ?? undefined,
       };
     });
 

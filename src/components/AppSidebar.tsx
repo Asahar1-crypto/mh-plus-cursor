@@ -2,7 +2,7 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
-import { Home, CreditCard, Settings, Users, BarChart3, X, Shield, UserCog, Calculator, ChevronRight, ChevronLeft, Tag, Mail, MessageSquare, DollarSign, Activity, Crown, CalendarDays } from 'lucide-react';
+import { Home, CreditCard, Settings, Users, BarChart3, X, Shield, UserCog, Calculator, ChevronRight, ChevronLeft, Tag, Mail, MessageSquare, DollarSign, Activity, Crown, CalendarDays, PartyPopper } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useAuth } from '@/contexts/auth';
@@ -89,6 +89,7 @@ const AppSidebar: React.FC<AppSidebarProps> = ({
     { icon: Calculator, label: 'סגירת חודש', path: '/monthly-settlement' },
     { icon: Users, label: 'ילדים', path: '/children' },
     { icon: CalendarDays, label: 'משמורת', path: '/custody-calendar' },
+    { icon: PartyPopper, label: 'ימי הולדת', path: '/birthday-projects' },
     { icon: BarChart3, label: 'דוחות', path: '/reports' },
     { icon: Settings, label: 'הגדרות', path: '/account-settings' },
   ];

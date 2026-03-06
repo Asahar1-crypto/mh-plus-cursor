@@ -360,8 +360,8 @@ const UserProfileCard: React.FC = () => {
                 } ${isSavingRole ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
               >
                 {option.image ? (
-                  <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-white flex items-center justify-center overflow-hidden p-0.5">
-                    <img src={option.image} alt={option.label} className="w-full h-full object-contain mix-blend-multiply" />
+                  <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full flex items-center justify-center overflow-hidden p-0.5">
+                    <img src={option.image} alt={option.label} className="w-full h-full object-contain" />
                   </div>
                 ) : (
                   <span className="text-2xl sm:text-3xl">{option.emoji}</span>

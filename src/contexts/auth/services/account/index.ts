@@ -16,7 +16,7 @@ export const accountService = {
         .select(`
           account_id,
           role,
-          accounts:account_id(id, name)
+          accounts:account_id(id, name, billing_cycle_start_day, avatar_set, index_linking_enabled)
         `)
         .eq('user_id', userId)
         .order('role', { ascending: false }) // admins first
@@ -30,10 +30,14 @@ export const accountService = {
       // If user has accounts, return the first one (prioritizing admin accounts)
       if (memberships && memberships.length > 0) {
         const membership = memberships[0];
+        const acc = membership.accounts;
         return {
-          id: membership.accounts.id,
-          name: membership.accounts.name,
-          userRole: membership.role
+          id: acc.id,
+          name: acc.name,
+          userRole: membership.role,
+          billing_cycle_start_day: acc.billing_cycle_start_day ?? undefined,
+          avatar_set: acc.avatar_set ?? undefined,
+          index_linking_enabled: acc.index_linking_enabled ?? undefined,
         };
       }
       
@@ -66,7 +70,7 @@ export const accountService = {
           account_id,
           role,
           joined_at,
-          accounts:account_id(id, name)
+          accounts:account_id(id, name, billing_cycle_start_day, avatar_set, index_linking_enabled)
         `)
         .eq('user_id', userId)
         .order('role', { ascending: false }) // admins first
@@ -89,10 +93,14 @@ export const accountService = {
       const memberAccounts: Account[] = [];
       
       memberships.forEach(membership => {
+        const acc = membership.accounts;
         const account: Account = {
-          id: membership.accounts.id,
-          name: membership.accounts.name,
-          userRole: membership.role
+          id: acc.id,
+          name: acc.name,
+          userRole: membership.role,
+          billing_cycle_start_day: acc.billing_cycle_start_day ?? undefined,
+          avatar_set: acc.avatar_set ?? undefined,
+          index_linking_enabled: acc.index_linking_enabled ?? undefined,
         };
         
         if (membership.role === 'admin') {

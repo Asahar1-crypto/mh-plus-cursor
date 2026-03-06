@@ -64,6 +64,7 @@ export type Database = {
           avatar_set: string | null
           billing_cycle_end_day: number | null
           billing_cycle_start_day: number | null
+          index_linking_enabled: boolean | null
           billing_cycle_type: string | null
           billing_period: string | null
           created_at: string
@@ -102,6 +103,7 @@ export type Database = {
           avatar_set?: string | null
           billing_cycle_end_day?: number | null
           billing_cycle_start_day?: number | null
+          index_linking_enabled?: boolean | null
           billing_cycle_type?: string | null
           billing_period?: string | null
           created_at?: string
@@ -596,16 +598,22 @@ export type Database = {
           amount: number
           approved_at: string | null
           approved_by: string | null
+          base_amount: number | null
+          base_index_period: string | null
           category: string | null
           created_at: string
           created_by_id: string | null
           date: string
           description: string
           end_date: string | null
+          floor_enabled: boolean | null
           frequency: string | null
           has_end_date: boolean | null
           id: string
+          index_update_frequency: string | null
+          is_index_linked: boolean | null
           is_recurring: boolean | null
+          last_calculated_amount: number | null
           paid_by_id: string
           receipt_id: string | null
           receipt_url: string | null
@@ -622,16 +630,22 @@ export type Database = {
           amount: number
           approved_at?: string | null
           approved_by?: string | null
+          base_amount?: number | null
+          base_index_period?: string | null
           category?: string | null
           created_at?: string
           created_by_id?: string | null
           date?: string
           description: string
           end_date?: string | null
+          floor_enabled?: boolean | null
           frequency?: string | null
           has_end_date?: boolean | null
           id?: string
+          index_update_frequency?: string | null
+          is_index_linked?: boolean | null
           is_recurring?: boolean | null
+          last_calculated_amount?: number | null
           paid_by_id: string
           receipt_id?: string | null
           receipt_url?: string | null
@@ -648,16 +662,22 @@ export type Database = {
           amount?: number
           approved_at?: string | null
           approved_by?: string | null
+          base_amount?: number | null
+          base_index_period?: string | null
           category?: string | null
           created_at?: string
           created_by_id?: string | null
           date?: string
           description?: string
           end_date?: string | null
+          floor_enabled?: boolean | null
           frequency?: string | null
           has_end_date?: boolean | null
           id?: string
+          index_update_frequency?: string | null
+          is_index_linked?: boolean | null
           is_recurring?: boolean | null
+          last_calculated_amount?: number | null
           paid_by_id?: string
           receipt_id?: string | null
           receipt_url?: string | null

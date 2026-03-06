@@ -39,7 +39,7 @@ export const ExpensesTabs: React.FC<ExpensesTabsProps> = ({
       <div className="absolute -bottom-24 -left-24 w-48 h-48 bg-accent/10 rounded-full blur-3xl group-hover:scale-150 transition-transform duration-700"></div>
       
       <Tabs defaultValue={isPersonalPlan ? "approved" : "pending"} className="w-full relative z-10" dir="rtl">
-        <TabsList className={`w-full mb-4 sm:mb-6 grid ${isPersonalPlan ? 'grid-cols-2' : 'grid-cols-3'} h-auto bg-gradient-to-r from-background/80 to-background/60 backdrop-blur-sm border border-border/50 rounded-xl p-1`}>
+        <TabsList className={`w-full mb-4 sm:mb-6 grid ${isPersonalPlan ? 'grid-cols-2' : 'grid-cols-3'} h-auto min-h-[44px] bg-gradient-to-r from-background/80 to-background/60 backdrop-blur-sm border border-border/50 rounded-xl p-1`}>
           {!isPersonalPlan && (
             <TabsTrigger 
               value="pending" 

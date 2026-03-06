@@ -163,14 +163,14 @@ const AvatarSetOption = ({ avatarSet, isSelected, isDisabled, onSelect }: Avatar
         {ROLE_ORDER.map((role) => (
           <div key={role} className="flex flex-col items-center gap-1.5">
             <div className={cn(
-              "w-14 h-14 sm:w-16 sm:h-16 rounded-xl overflow-hidden bg-white p-1",
+              "w-14 h-14 sm:w-16 sm:h-16 rounded-xl overflow-hidden flex items-center justify-center",
               "transition-transform duration-200",
               isSelected && "ring-2 ring-primary/20"
             )}>
               <img
                 src={avatarSet.avatars[role]}
                 alt={FAMILY_ROLE_LABELS[role]}
-                className="w-full h-full object-contain mix-blend-multiply"
+                className="w-full h-full object-contain"
                 loading="lazy"
               />
             </div>

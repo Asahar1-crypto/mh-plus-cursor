@@ -8,11 +8,17 @@ interface LogoProps {
   size?: 'sm' | 'md' | 'lg' | 'xl';
 }
 
+const LOGO_SRC = '/logo.png';
+const LOGO_FALLBACK = '/lovable-uploads/dc4b6d32-5c74-44a1-8d9c-b07947f361d7.png';
+
 export const Logo: React.FC<LogoProps> = ({ 
   className, 
   showText = true, 
   size = 'md' 
 }) => {
+  const [imgSrc, setImgSrc] = React.useState(LOGO_SRC);
+
+  const handleError = () => setImgSrc(LOGO_FALLBACK);
   const sizeClasses = {
     sm: 'h-16',
     md: 'h-20',
@@ -30,13 +36,17 @@ export const Logo: React.FC<LogoProps> = ({
   return (
     <div className={cn("flex items-center gap-3", className)}>
       <div className={cn(
-        "relative bg-white rounded-xl shadow-sm flex items-center justify-center p-1 transition-transform hover:scale-105",
+        "relative flex items-center justify-center p-1.5 rounded-xl bg-card border border-border/50 shadow-sm transition-transform hover:scale-105",
         sizeClasses[size]
       )}>
         <img
-          src="/lovable-uploads/dc4b6d32-5c74-44a1-8d9c-b07947f361d7.png"
-          alt="Family Budget Logo"
-          className="w-full h-full object-contain mix-blend-multiply"
+          src={imgSrc}
+          alt="מחציות פלוס - לוגו"
+          className={cn(
+            "w-full h-full object-contain",
+            imgSrc === LOGO_FALLBACK && "mix-blend-multiply"
+          )}
+          onError={handleError}
         />
       </div>
       {showText && (

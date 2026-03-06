@@ -152,7 +152,7 @@ const Dashboard = () => {
   
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5 animate-fade-in">
+    <div className="bg-gradient-to-br from-background via-background to-primary/5 animate-fade-in">
       <OnboardingModal />
       <div className="w-full max-w-7xl mx-auto p-3 sm:p-4 md:p-6 space-y-4 sm:space-y-6 lg:space-y-8">
         <div className="animate-scale-in">
