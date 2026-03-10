@@ -155,7 +155,12 @@ const MonthlySettlement = () => {
 
   // Handle deleting a settlement payment
   const handleDeletePayment = async (id: string) => {
-    const { error } = await supabase.from('settlement_payments').delete().eq('id', id);
+    if (!account?.id) return;
+    const { error } = await supabase
+      .from('settlement_payments')
+      .delete()
+      .eq('id', id)
+      .eq('account_id', account.id);
     if (!error) {
       setSettlementPayments(prev => prev.filter(p => p.id !== id));
       toast({ title: 'התשלום נמחק' });

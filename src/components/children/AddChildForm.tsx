@@ -156,6 +156,9 @@ const AddChildForm: React.FC<AddChildFormProps> = ({ open, setOpen }) => {
           />
 
           <DialogFooter className="sm:justify-end">
+            <Button type="button" variant="outline" onClick={() => setOpen(false)} disabled={isPending} className="w-full sm:w-auto">
+              ביטול
+            </Button>
             <Button type="submit" disabled={isPending} className="w-full sm:w-auto">
               {isPending ? (
                 <span className="flex items-center gap-2">

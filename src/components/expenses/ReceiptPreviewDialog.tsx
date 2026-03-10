@@ -11,20 +11,28 @@ interface ReceiptPreviewDialogProps {
   receiptId: string;
 }
 
+/** Extract storage path from a Supabase public or signed URL. */
+function extractStoragePath(url: string): string | null {
+  const match = url.match(/\/storage\/v1\/object\/(?:public|sign)\/receipts\/([^?]+)/);
+  return match ? match[1] : null;
+}
+
 export const ReceiptPreviewDialog: React.FC<ReceiptPreviewDialogProps> = ({
   isOpen,
   onClose,
   receiptId
 }) => {
   const [receipt, setReceipt] = React.useState<any>(null);
+  const [signedUrl, setSignedUrl] = React.useState<string | null>(null);
   const [isLoading, setIsLoading] = React.useState(true);
   const { toast } = useToast();
 
   React.useEffect(() => {
     const fetchReceipt = async () => {
       if (!receiptId) return;
-      
+
       setIsLoading(true);
+      setSignedUrl(null);
       try {
         const { data, error } = await supabase
           .from('scanned_receipts')
@@ -34,6 +42,18 @@ export const ReceiptPreviewDialog: React.FC<ReceiptPreviewDialogProps> = ({
 
         if (error) throw error;
         setReceipt(data);
+
+        // Generate a 5-minute signed URL from the stored path.
+        // Fall back to extracting the path from a legacy public/signed URL.
+        const storagePath: string | null = data.file_path ?? extractStoragePath(data.file_url ?? '');
+        if (storagePath) {
+          const { data: signed, error: signErr } = await supabase.storage
+            .from('receipts')
+            .createSignedUrl(storagePath, 300);
+          if (!signErr && signed?.signedUrl) {
+            setSignedUrl(signed.signedUrl);
+          }
+        }
       } catch (error) {
         console.error('Error fetching receipt:', error);
         toast({
@@ -52,11 +72,11 @@ export const ReceiptPreviewDialog: React.FC<ReceiptPreviewDialogProps> = ({
   }, [receiptId, isOpen, toast]);
 
   const handleDownload = () => {
-    if (!receipt) return;
+    if (!receipt || !signedUrl) return;
 
     // Create temporary anchor element to trigger download
     const link = document.createElement('a');
-    link.href = receipt.file_url;
+    link.href = signedUrl;
     link.download = receipt.file_name || 'receipt';
     link.target = '_blank';
     document.body.appendChild(link);
@@ -82,7 +102,7 @@ export const ReceiptPreviewDialog: React.FC<ReceiptPreviewDialogProps> = ({
                 variant="outline"
                 size="sm"
                 onClick={handleDownload}
-                disabled={!receipt}
+                disabled={!receipt || !signedUrl}
               >
                 <Download className="h-4 w-4 mr-2" />
                 הורדה
@@ -103,7 +123,7 @@ export const ReceiptPreviewDialog: React.FC<ReceiptPreviewDialogProps> = ({
             <div className="flex items-center justify-center h-full">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
             </div>
-          ) : !receipt ? (
+          ) : !receipt || !signedUrl ? (
             <div className="flex items-center justify-center h-full text-muted-foreground">
               לא נמצאה חשבונית
             </div>
@@ -119,7 +139,7 @@ export const ReceiptPreviewDialog: React.FC<ReceiptPreviewDialogProps> = ({
           ) : (
             <div className="h-full overflow-auto">
               <img
-                src={receipt.file_url}
+                src={signedUrl}
                 alt="Receipt preview"
                 className="w-full h-auto object-contain"
               />

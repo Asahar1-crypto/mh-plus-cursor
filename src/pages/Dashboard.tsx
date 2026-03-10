@@ -128,14 +128,10 @@ const Dashboard = () => {
         });
       }, 40);
       
-      toast({
-        title: "💰 ההוצאה סומנה כשולמה!",
-        description: "התשלום נרשם בהצלחה",
-      });
     } catch (error) {
       toast({
         title: "שגיאה",
-        description: "אירעה שגיאה בסימון ההוצאה כשולמה",
+        description: "שגיאה בסימון ההוצאה כשולמה — נסה שוב",
         variant: "destructive"
       });
     }

@@ -29,13 +29,22 @@ export interface Account {
   billing_cycle_start_day?: number | null;
   avatar_set?: string | null;
   index_linking_enabled?: boolean | null;
-  // Legacy fields (will be removed in future)
+  /**
+   * @deprecated Use `userRole === 'member'` to check if the current user is a member (not owner).
+   * Use `members` array to derive partner names. Will be removed in a future refactor.
+   */
   ownerId?: string;
+  /** @deprecated Use `members` array instead. */
   sharedWithId?: string;
+  /** @deprecated Use invitations query for pending state; no equivalent in members system. */
   sharedWithEmail?: string;
+  /** @deprecated Use `members.find(m => m.role === 'member')?.user_name` instead. */
   sharedWithName?: string;
+  /** @deprecated Use `members.find(m => m.role === 'admin')?.user_name` instead. */
   ownerName?: string;
+  /** @deprecated No longer needed with member-based system. */
   invitationId?: string;
+  /** @deprecated Use `userRole === 'member'` instead. */
   isSharedAccount?: boolean;
   // New member-based fields
   members?: AccountMember[];

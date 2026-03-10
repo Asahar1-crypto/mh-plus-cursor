@@ -84,7 +84,7 @@ export const useExpenseActions = (
       toast.success('ההוצאה נוספה בהצלחה');
     } catch (error) {
       console.error('Failed to add expense:', error);
-      toast.error('שגיאה בהוספת ההוצאה');
+      toast.error('שגיאה בהוספת ההוצאה — נסה שוב');
     } finally {
       setIsSubmitting(false);
     }
@@ -102,7 +102,7 @@ export const useExpenseActions = (
       toast.success('ההוצאה עודכנה בהצלחה');
     } catch (error) {
       console.error('Failed to update expense:', error);
-      toast.error('שגיאה בעדכון ההוצאה');
+      toast.error('שגיאה בעדכון ההוצאה — נסה שוב');
     } finally {
       setIsSubmitting(false);
     }
@@ -171,7 +171,7 @@ export const useExpenseActions = (
       toast.success('הקבלה הועלתה בהצלחה');
     } catch (error) {
       console.error('Failed to upload receipt:', error);
-      toast.error('שגיאה בהעלאת הקבלה');
+      toast.error('שגיאה בהעלאת הקבלה — בדוק את הקובץ ונסה שוב');
     } finally {
       setIsSubmitting(false);
     }
@@ -215,12 +215,17 @@ export const useExpenseActions = (
           metadata: { expense_id: id, status },
         });
       }
-      toast.success(`ההוצאה ${statusText.split(' ')[1] || statusText} בהצלחה`);
+      const statusToastText: Record<string, string> = {
+        approved: 'ההוצאה אושרה בהצלחה',
+        rejected: 'ההוצאה נדחתה בהצלחה',
+        paid: 'ההוצאה סומנה כשולמה בהצלחה',
+      };
+      toast.success(statusToastText[status] ?? 'ההוצאה עודכנה בהצלחה');
     } catch (error) {
       // Revert optimistic update on failure
       setExpenses(previousExpenses);
       console.error(`Failed to ${status} expense:`, error);
-      toast.error(`שגיאה ב${status === 'approved' ? 'אישור' : status === 'rejected' ? 'דחיית' : 'סימון'} ההוצאה`);
+      toast.error(`שגיאה ב${status === 'approved' ? 'אישור' : status === 'rejected' ? 'דחיית' : 'סימון'} ההוצאה — נסה שוב`);
     } finally {
       setIsSubmitting(false);
     }
@@ -276,7 +281,7 @@ export const useExpenseActions = (
       toast.success('🎉 ההוצאה אושרה! כל ההוצאות העתידיות יאושרו אוטומטית');
     } catch (error) {
       console.error('Failed to approve all recurring:', error);
-      toast.error('שגיאה באישור ההוצאות החוזרות');
+      toast.error('שגיאה באישור ההוצאות החוזרות — נסה שוב');
     } finally {
       setIsSubmitting(false);
     }
@@ -333,7 +338,7 @@ export const useExpenseActions = (
       // Revert optimistic update on failure
       setExpenses(previousExpenses);
       console.error('Failed to delete expense:', error);
-      toast.error('שגיאה במחיקת ההוצאה');
+      toast.error('שגיאה במחיקת ההוצאה — נסה שוב');
     } finally {
       setIsSubmitting(false);
     }
@@ -351,7 +356,7 @@ export const useExpenseActions = (
       toast.success(active ? 'ההוצאה החוזרת הופעלה' : 'ההוצאה החוזרת הושהתה');
     } catch (error) {
       console.error('Failed to update recurring active:', error);
-      toast.error('שגיאה בעדכון סטטוס ההוצאה החוזרת');
+      toast.error('שגיאה בעדכון ההוצאה החוזרת — נסה שוב');
     } finally {
       setIsSubmitting(false);
     }

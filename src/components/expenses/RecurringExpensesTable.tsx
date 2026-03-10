@@ -146,7 +146,8 @@ export const RecurringExpensesTable: React.FC<RecurringExpensesTableProps> = ({
       await supabase
         .from('expenses')
         .update({ recurring_parent_id: null })
-        .eq('recurring_parent_id', expenseId);
+        .eq('recurring_parent_id', expenseId)
+        .eq('account_id', account.id);
 
       // Then delete the recurring expense itself
       const { error } = await supabase

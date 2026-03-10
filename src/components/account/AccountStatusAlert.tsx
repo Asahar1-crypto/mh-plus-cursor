@@ -11,31 +11,36 @@ interface AccountStatusAlertProps {
 const AccountStatusAlert: React.FC<AccountStatusAlertProps> = ({ account }) => {
   if (!account) return null;
 
-  // If user is participating in someone else's account
-  if (account.isSharedAccount) {
+  // Current user is a member (not admin) in this account
+  if (account.userRole === 'member') {
+    const adminName =
+      account.members?.find(m => m.role === 'admin')?.user_name ||
+      account.ownerName ||
+      'משתמש אחר';
     return (
       <Alert className="mb-4">
         <AlertDescription className="flex items-center gap-2">
           <CheckCircle2 className="h-5 w-5 text-green-500" />
-          <span>אתה משתתף בחשבון של {account.ownerName || 'משתמש אחר'}</span>
+          <span>אתה משתתף בחשבון של {adminName}</span>
         </AlertDescription>
       </Alert>
     );
   }
 
-  // If there's a shared user in the account that the current user owns
-  if (account.sharedWithId) {
+  // Current user is admin and there's an active partner member
+  const partnerMember = account.members?.find(m => m.role === 'member');
+  if (partnerMember) {
     return (
       <Alert className="mb-4">
         <AlertDescription className="flex items-center gap-2">
           <CheckCircle2 className="h-5 w-5 text-green-500" />
-          <span>{account.sharedWithName || account.sharedWithEmail} משתתף פעיל בחשבון שלך</span>
+          <span>{partnerMember.user_name} משתתף פעיל בחשבון שלך</span>
         </AlertDescription>
       </Alert>
     );
   }
 
-  // If an invitation has been sent but not yet accepted
+  // Fallback: invitation sent but not yet accepted (no equivalent in members system)
   if (account.sharedWithEmail && !account.sharedWithId) {
     return (
       <Alert className="mb-4">

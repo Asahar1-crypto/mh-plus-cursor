@@ -212,7 +212,7 @@ export const ExpensesTable: React.FC<ExpensesTableProps> = ({
       toast.success(`🎉 אושרו ${selectedPendingExpenses.length} הוצאות בהצלחה!`);
       setSelectedPendingExpenses([]);
     } catch (error) {
-      toast.error('שגיאה באישור ההוצאות');
+      toast.error('שגיאה באישור ההוצאות — נסה שוב');
     } finally {
       setIsPerformingBulkAction(false);
     }
@@ -258,7 +258,7 @@ export const ExpensesTable: React.FC<ExpensesTableProps> = ({
       toast.success(`💰 סומנו כשולם ${selectedApprovedExpenses.length} הוצאות בהצלחה!`);
       setSelectedApprovedExpenses([]);
     } catch (error) {
-      toast.error('שגיאה בסימון ההוצאות כשולמות');
+      toast.error('שגיאה בסימון ההוצאות כשולמות — נסה שוב');
     } finally {
       setIsPerformingBulkAction(false);
     }
@@ -314,9 +314,8 @@ export const ExpensesTable: React.FC<ExpensesTableProps> = ({
     try {
       await approveExpense(targetId);
       fireApproveConfetti();
-      toast.success('🎉 ההוצאה אושרה בהצלחה!');
     } catch (error) {
-      toast.error('שגיאה באישור ההוצאה');
+      toast.error('שגיאה באישור ההוצאה — נסה שוב');
     }
   };
 
@@ -357,18 +356,16 @@ export const ExpensesTable: React.FC<ExpensesTableProps> = ({
         });
       }, 40);
       
-      toast.success('🎉 ההוצאה אושרה! כל ההוצאות העתידיות יאושרו אוטומטית');
     } catch (error) {
-      toast.error('שגיאה באישור ההוצאות החוזרות');
+      toast.error('שגיאה באישור ההוצאות החוזרות — נסה שוב');
     }
   };
 
   const handleReject = async (id: string) => {
     try {
       await rejectExpense(id);
-      toast.success('ההוצאה נדחתה');
     } catch (error) {
-      toast.error('שגיאה בדחיית ההוצאה');
+      toast.error('שגיאה בדחיית ההוצאה — נסה שוב');
     }
   };
 
@@ -406,9 +403,8 @@ export const ExpensesTable: React.FC<ExpensesTableProps> = ({
         });
       }, 40);
       
-      toast.success('💰 ההוצאה סומנה כשולמה!');
     } catch (error) {
-      toast.error('שגיאה בסימון ההוצאה כשולמה');
+      toast.error('שגיאה בסימון ההוצאה כשולמה — נסה שוב');
     }
   };
 

@@ -139,7 +139,7 @@ export const ReceiptUpload: React.FC<ReceiptUploadProps> = ({ onScanComplete, on
     }
   }, [handleFileSelect, toast]);
 
-  const uploadFileToStorage = async (file: File): Promise<string> => {
+  const uploadFileToStorage = async (file: File): Promise<{ signedUrl: string; filePath: string }> => {
     if (!account?.id) {
       throw new Error('לא נמצא חשבון פעיל');
     }
@@ -156,11 +156,16 @@ export const ReceiptUpload: React.FC<ReceiptUploadProps> = ({ onScanComplete, on
       throw new Error(`שגיאה בהעלאת הקובץ: ${uploadError.message}`);
     }
 
-    const { data } = supabase.storage
+    // 10-minute signed URL — enough for OpenAI to download during the scan
+    const { data: signedData, error: signError } = await supabase.storage
       .from('receipts')
-      .getPublicUrl(filePath);
+      .createSignedUrl(filePath, 600);
 
-    return data.publicUrl;
+    if (signError || !signedData?.signedUrl) {
+      throw new Error('שגיאה ביצירת קישור לקובץ');
+    }
+
+    return { signedUrl: signedData.signedUrl, filePath };
   };
 
   const scanReceipt = async () => {
@@ -179,11 +184,12 @@ export const ReceiptUpload: React.FC<ReceiptUploadProps> = ({ onScanComplete, on
     setIsScanning(true);
 
     try {
-      const fileUrl = await uploadFileToStorage(selectedFile);
+      const { signedUrl, filePath } = await uploadFileToStorage(selectedFile);
 
       const { data, error } = await supabase.functions.invoke('scan-receipt', {
         body: {
-          file_url: fileUrl,
+          file_url: signedUrl,
+          file_path: filePath,
           file_name: selectedFile.name,
           file_size: selectedFile.size,
           file_type: selectedFile.type,

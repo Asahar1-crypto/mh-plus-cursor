@@ -25,7 +25,7 @@ serve(async (req) => {
       account_id: requestBody.account_id ? 'present' : 'missing'
     });
 
-    const { file_url, file_name, file_size, file_type, account_id } = requestBody;
+    const { file_url, file_path, file_name, file_size, file_type, account_id } = requestBody;
 
     if (!file_url || !account_id) {
       console.error('❌ Missing required fields');
@@ -317,6 +317,7 @@ serve(async (req) => {
         user_id: user.id,
         account_id,
         file_url,
+        file_path: file_path || null,
         file_name: file_name || 'receipt',
         file_size: file_size || 0,
         file_type: file_type || 'image',

@@ -112,7 +112,7 @@ const ExpensesPage = () => {
       toast.success('ההוצאה שוכפלה בהצלחה!');
       await refreshData();
     } catch (error) {
-      toast.error('שגיאה בשכפול ההוצאה');
+      toast.error('שגיאה בשכפול ההוצאה — נסה שוב');
     }
   };
 

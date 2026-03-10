@@ -1,7 +1,7 @@
 import React from 'react';
 import { Wallet } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { BudgetCard } from '@/components/account/BudgetCard';
 
@@ -19,6 +19,9 @@ export const BudgetModal: React.FC<BudgetModalProps> = ({ isAdmin = false }) => 
         </Button>
       </DialogTrigger>
       <DialogContent className="w-[95vw] max-w-[600px] max-h-[85vh] sm:max-h-[90vh] z-[9999] flex flex-col p-0 sm:rounded-xl" dir="rtl">
+        <DialogHeader className="sr-only">
+          <DialogTitle>ניהול תקציבים</DialogTitle>
+        </DialogHeader>
         <ScrollArea className="flex-1 max-h-[85vh] sm:max-h-[90vh]">
           <div className="p-4 sm:p-6">
             <BudgetCard isAdmin={isAdmin} />

@@ -33,7 +33,7 @@ export function useCustodyAssignments() {
       setAssignments(data);
     } catch (err) {
       console.error('Failed to load assignments:', err);
-      toast.error('שגיאה בטעינת נתוני המשמורת');
+      toast.error('שגיאה בטעינת נתוני המשמורת — רענן את הדף');
     } finally {
       setIsLoading(false);
     }
@@ -85,8 +85,9 @@ export function useCustodyAssignments() {
   }, [accountId, userId, loadAssignments]);
 
   const assignParent = useCallback(async (assignmentId: string, parentId: string | null) => {
+    if (!accountId) return;
     try {
-      await custodyService.updateParent(assignmentId, parentId);
+      await custodyService.updateParent(assignmentId, accountId, parentId);
       setAssignments((prev) =>
         prev.map((a) =>
           a.id === assignmentId
@@ -96,7 +97,7 @@ export function useCustodyAssignments() {
       );
       toast.success('הורה שובץ בהצלחה');
     } catch {
-      toast.error('שגיאה בשיבוץ הורה');
+      toast.error('שגיאה בשיבוץ הורה — נסה שוב');
     }
   }, []);
 
@@ -109,23 +110,25 @@ export function useCustodyAssignments() {
         )
       );
     } catch {
-      toast.error('שגיאה בעדכון הערות');
+      toast.error('שגיאה בעדכון הערות — נסה שוב');
     }
   }, []);
 
   const deleteAssignment = useCallback(async (assignmentId: string) => {
+    if (!accountId) return;
     try {
-      await custodyService.deleteAssignment(assignmentId);
+      await custodyService.deleteAssignment(assignmentId, accountId);
       setAssignments((prev) => prev.filter((a) => a.id !== assignmentId));
       toast.success('האירוע נמחק');
     } catch {
-      toast.error('שגיאה במחיקת האירוע');
+      toast.error('שגיאה במחיקת האירוע — נסה שוב');
     }
   }, []);
 
   const bulkAssignParent = useCallback(async (assignmentIds: string[], parentId: string | null) => {
+    if (!accountId) return;
     try {
-      await custodyService.bulkAssignParent(assignmentIds, parentId);
+      await custodyService.bulkAssignParent(assignmentIds, accountId, parentId);
       setAssignments((prev) =>
         prev.map((a) =>
           assignmentIds.includes(a.id)
@@ -135,7 +138,7 @@ export function useCustodyAssignments() {
       );
       toast.success(`${assignmentIds.length} אירועים שובצו בהצלחה`);
     } catch {
-      toast.error('שגיאה בשיבוץ מרובה');
+      toast.error('שגיאה בשיבוץ מרובה — נסה שוב');
     }
   }, []);
 

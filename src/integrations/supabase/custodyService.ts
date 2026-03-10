@@ -130,6 +130,7 @@ export const custodyService = {
 
   async updateParent(
     assignmentId: string,
+    accountId: string,
     parentId: string | null
   ): Promise<void> {
     const { error } = await supabase
@@ -138,7 +139,8 @@ export const custodyService = {
         assigned_parent_id: parentId,
         updated_at: new Date().toISOString(),
       })
-      .eq('id', assignmentId);
+      .eq('id', assignmentId)
+      .eq('account_id', accountId);
 
     if (error) {
       console.error('Error updating parent assignment:', error);
@@ -161,11 +163,12 @@ export const custodyService = {
     }
   },
 
-  async deleteAssignment(assignmentId: string): Promise<void> {
+  async deleteAssignment(assignmentId: string, accountId: string): Promise<void> {
     const { error } = await supabase
       .from('custody_assignments')
       .delete()
-      .eq('id', assignmentId);
+      .eq('id', assignmentId)
+      .eq('account_id', accountId);
 
     if (error) {
       console.error('Error deleting assignment:', error);
@@ -175,6 +178,7 @@ export const custodyService = {
 
   async bulkAssignParent(
     assignmentIds: string[],
+    accountId: string,
     parentId: string | null
   ): Promise<void> {
     const { error } = await supabase
@@ -183,7 +187,8 @@ export const custodyService = {
         assigned_parent_id: parentId,
         updated_at: new Date().toISOString(),
       })
-      .in('id', assignmentIds);
+      .in('id', assignmentIds)
+      .eq('account_id', accountId);
 
     if (error) {
       console.error('Error bulk updating parent:', error);

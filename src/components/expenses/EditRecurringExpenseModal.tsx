@@ -67,6 +67,7 @@ export const EditRecurringExpenseModal: React.FC<EditRecurringExpenseModalProps>
   const [isSubmitting, setIsSubmitting] = useState(false);
   const DEFAULT_CATEGORIES = ['חינוך', 'רפואה', 'פנאי', 'ביגוד', 'מזון', 'מזונות', 'קייטנות', 'אחר'];
   const categories = categoriesList.length > 0 ? categoriesList.map(c => c.name) : DEFAULT_CATEGORIES;
+  const indexLinkingAvailable = account?.index_linking_enabled === true;
 
   // Get account members
   const { data: accountMembers } = useQuery({

@@ -118,17 +118,30 @@ const AccountDetailsCard: React.FC<AccountDetailsCardProps> = ({ account }) => {
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium">סוג חשבון</label>
-              <Input 
-                value={account.isSharedAccount ? 'חשבון משותף (משתתף)' : account.sharedWithId ? 'חשבון משותף (בעלים)' : 'חשבון משפחה'} 
-                readOnly 
+              <Input
+                value={
+                  account.userRole === 'member'
+                    ? 'חשבון משותף (משתתף)'
+                    : (account.members?.length ?? 0) > 1
+                    ? 'חשבון משותף (בעלים)'
+                    : 'חשבון משפחה'
+                }
+                readOnly
               />
             </div>
           </div>
-          {account.isSharedAccount && (
+          {account.userRole === 'member' && (
             <div className="mt-2">
               <div className="space-y-2">
                 <label className="text-sm font-medium">בעל החשבון</label>
-                <Input value={account.ownerName || 'לא ידוע'} readOnly />
+                <Input
+                  value={
+                    account.members?.find(m => m.role === 'admin')?.user_name ||
+                    account.ownerName ||
+                    'לא ידוע'
+                  }
+                  readOnly
+                />
               </div>
             </div>
           )}
