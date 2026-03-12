@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>סקיצת שילוב דמויות - מחציות פלוס</title>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Heebo', sans-serif; background: #F9F8FF; color: #0C2C3D; overflow-x: hidden; }
+
+  /* ===== SECTION LABELS ===== */
+  .section-label {
+    background: #ff4444;
+    color: white;
+    padding: 8px 20px;
+    font-size: 14px;
+    font-weight: 700;
+    text-align: center;
+    letter-spacing: 1px;
+  }
+
+  /* ===== 1. HERO SECTION ===== */
+  .hero {
+    position: relative;
+    min-height: 85vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    background: linear-gradient(135deg, #F9F8FF 0%, #E0F2FE 50%, #F9F8FF 100%);
+  }
+
+  .hero-orb {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(60px);
+    opacity: 0.3;
+    animation: float 6s ease-in-out infinite;
+  }
+  .hero-orb.orb1 { width: 300px; height: 300px; background: #0EA5E9; top: 10%; right: 10%; }
+  .hero-orb.orb2 { width: 250px; height: 250px; background: #06B6D4; bottom: 10%; left: 15%; animation-delay: 2s; }
+
+  .hero-content {
+    position: relative;
+    z-index: 10;
+    text-align: center;
+    max-width: 900px;
+    padding: 40px 20px;
+  }
+
+  .hero h1 {
+    font-size: clamp(1.8rem, 5vw, 3.5rem);
+    font-weight: 800;
+    line-height: 1.3;
+    margin-bottom: 16px;
+  }
+  .hero h1 .gradient-text {
+    background: linear-gradient(90deg, #0EA5E9, #06B6D4, #0EA5E9);
+    background-size: 200% auto;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: gradientShift 3s linear infinite;
+  }
+
+  .hero p {
+    font-size: clamp(1rem, 2.5vw, 1.3rem);
+    color: #5a7a8a;
+    max-width: 600px;
+    margin: 0 auto 30px;
+  }
+
+  /* ===== MASCOT PARADE IN HERO ===== */
+  .mascot-parade {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 40px;
+  }
+
+  .mascot-hero {
+    width: clamp(70px, 15vw, 120px);
+    height: clamp(70px, 15vw, 120px);
+    object-fit: contain;
+    filter: drop-shadow(0 8px 20px rgba(0,0,0,0.15));
+    cursor: pointer;
+    transition: transform 0.3s;
+  }
+
+  .mascot-hero:nth-child(1) { animation: bounce 2s ease-in-out infinite; }
+  .mascot-hero:nth-child(2) { animation: bounce 2s ease-in-out infinite 0.3s; }
+  .mascot-hero:nth-child(3) { animation: bounce 2s ease-in-out infinite 0.6s; }
+  .mascot-hero:nth-child(4) { animation: bounce 2s ease-in-out infinite 0.9s; }
+
+  .mascot-hero:hover {
+    transform: scale(1.2) rotate(-5deg) !important;
+  }
+
+  /* ===== CTA BUTTONS ===== */
+  .cta-group { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+  .btn {
+    padding: 14px 32px;
+    border-radius: 12px;
+    font-size: 1.1rem;
+    font-weight: 700;
+    cursor: pointer;
+    border: none;
+    transition: all 0.3s;
+  }
+  .btn-primary {
+    background: linear-gradient(135deg, #0EA5E9, #06B6D4);
+    color: white;
+    box-shadow: 0 4px 15px rgba(14,165,233,0.3);
+  }
+  .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(14,165,233,0.4); }
+  .btn-outline {
+    background: transparent;
+    color: #0EA5E9;
+    border: 2px solid #0EA5E9;
+  }
+
+  /* ===== 2. FEATURE CARDS WITH MASCOTS ===== */
+  .features {
+    padding: 60px 20px;
+    background: #f0f4f8;
+  }
+  .features h2 {
+    text-align: center;
+    font-size: clamp(1.4rem, 3vw, 2rem);
+    margin-bottom: 40px;
+  }
+  .features-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 24px;
+    max-width: 1000px;
+    margin: 0 auto;
+  }
+  .feature-card {
+    background: white;
+    border-radius: 16px;
+    padding: 30px;
+    border: 1px solid #e2e8f0;
+    transition: all 0.3s;
+    position: relative;
+    overflow: visible;
+  }
+  .feature-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 30px rgba(0,0,0,0.08);
+    border-color: #0EA5E9;
+  }
+  .feature-card .mascot-peek {
+    position: absolute;
+    top: -30px;
+    left: 20px;
+    width: 60px;
+    height: 60px;
+    object-fit: contain;
+    filter: drop-shadow(0 4px 8px rgba(0,0,0,0.1));
+    animation: wave 2s ease-in-out infinite;
+    transform-origin: bottom center;
+  }
+  .feature-card h3 { font-size: 1.2rem; margin-bottom: 8px; padding-top: 15px; }
+  .feature-card p { color: #5a7a8a; font-size: 0.95rem; line-height: 1.6; }
+
+  /* ===== 3. EMPTY STATE DEMO ===== */
+  .empty-state-demo {
+    padding: 60px 20px;
+    background: white;
+  }
+  .empty-state-demo h2 { text-align: center; margin-bottom: 40px; font-size: clamp(1.4rem, 3vw, 2rem); }
+
+  .empty-state-container {
+    display: flex;
+    gap: 30px;
+    justify-content: center;
+    flex-wrap: wrap;
+    max-width: 900px;
+    margin: 0 auto;
+  }
+
+  .empty-state-card {
+    background: #f9fafb;
+    border: 2px dashed #d1d5db;
+    border-radius: 16px;
+    padding: 40px 30px;
+    text-align: center;
+    width: 280px;
+    transition: all 0.3s;
+  }
+  .empty-state-card:hover { border-color: #0EA5E9; }
+
+  .empty-mascot {
+    width: 100px;
+    height: 100px;
+    object-fit: contain;
+    margin: 0 auto 16px;
+    filter: drop-shadow(0 4px 8px rgba(0,0,0,0.1));
+  }
+  .empty-mascot.sad {
+    animation: sadBob 3s ease-in-out infinite;
+    filter: drop-shadow(0 4px 8px rgba(0,0,0,0.1)) grayscale(0.3);
+  }
+  .empty-mascot.happy {
+    animation: celebrate 0.6s ease-in-out infinite;
+  }
+  .empty-state-card h4 { margin-bottom: 8px; font-size: 1.1rem; }
+  .empty-state-card p { color: #5a7a8a; font-size: 0.9rem; }
+
+  /* ===== 4. LOADING STATE ===== */
+  .loading-demo {
+    padding: 60px 20px;
+    background: #f0f4f8;
+    text-align: center;
+  }
+  .loading-demo h2 { margin-bottom: 40px; font-size: clamp(1.4rem, 3vw, 2rem); }
+
+  .loading-mascots {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    margin-bottom: 20px;
+  }
+  .loading-mascot {
+    width: 60px;
+    height: 60px;
+    object-fit: contain;
+    filter: drop-shadow(0 4px 8px rgba(0,0,0,0.1));
+  }
+  .loading-mascot:nth-child(1) { animation: loadJump 1.2s ease-in-out infinite 0s; }
+  .loading-mascot:nth-child(2) { animation: loadJump 1.2s ease-in-out infinite 0.15s; }
+  .loading-mascot:nth-child(3) { animation: loadJump 1.2s ease-in-out infinite 0.3s; }
+  .loading-mascot:nth-child(4) { animation: loadJump 1.2s ease-in-out infinite 0.45s; }
+
+  .loading-text { color: #5a7a8a; font-size: 1rem; }
+
+  /* ===== 5. ONBOARDING / GUIDE ===== */
+  .onboarding-demo {
+    padding: 60px 20px;
+    background: white;
+  }
+  .onboarding-demo h2 { text-align: center; margin-bottom: 40px; font-size: clamp(1.4rem, 3vw, 2rem); }
+
+  .chat-bubble-container {
+    max-width: 500px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+  .chat-row {
+    display: flex;
+    align-items: flex-end;
+    gap: 12px;
+  }
+  .chat-mascot {
+    width: 50px;
+    height: 50px;
+    object-fit: contain;
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
+    animation: tilt 3s ease-in-out infinite;
+    flex-shrink: 0;
+  }
+  .chat-bubble {
+    background: linear-gradient(135deg, #E0F2FE, #f0f9ff);
+    border-radius: 16px 16px 4px 16px;
+    padding: 16px 20px;
+    font-size: 0.95rem;
+    line-height: 1.6;
+    color: #0C2C3D;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    position: relative;
+    max-width: 380px;
+  }
+  .chat-bubble::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    right: -8px;
+    width: 20px;
+    height: 20px;
+    background: linear-gradient(135deg, #E0F2FE, #f0f9ff);
+    clip-path: polygon(0 0, 100% 0, 0 100%);
+  }
+  .chat-row:nth-child(2) .chat-bubble {
+    animation: fadeSlideIn 0.5s ease-out 1s both;
+  }
+  .chat-row:nth-child(3) .chat-bubble {
+    animation: fadeSlideIn 0.5s ease-out 2s both;
+  }
+
+  /* ===== 6. SUCCESS CELEBRATION ===== */
+  .success-demo {
+    padding: 60px 20px;
+    background: #f0f4f8;
+    text-align: center;
+  }
+  .success-demo h2 { margin-bottom: 40px; font-size: clamp(1.4rem, 3vw, 2rem); }
+
+  .success-card {
+    background: white;
+    border: 2px solid #22c55e;
+    border-radius: 16px;
+    padding: 40px;
+    max-width: 400px;
+    margin: 0 auto;
+    position: relative;
+  }
+  .success-mascots {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+  .success-mascot {
+    width: 70px;
+    height: 70px;
+    object-fit: contain;
+    animation: celebrate 0.6s ease-in-out infinite;
+  }
+  .success-mascot:nth-child(2) { animation-delay: 0.15s; }
+  .success-card .checkmark {
+    width: 50px;
+    height: 50px;
+    background: #22c55e;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 12px;
+    color: white;
+    font-size: 24px;
+    animation: popIn 0.5s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+  }
+  .success-card h3 { color: #22c55e; margin-bottom: 8px; }
+  .success-card p { color: #5a7a8a; }
+
+  .confetti {
+    position: absolute;
+    width: 8px;
+    height: 8px;
+    border-radius: 2px;
+    animation: confettiFall 2s ease-in infinite;
+  }
+
+  /* ===== ANIMATIONS ===== */
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-20px); }
+  }
+  @keyframes bounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-15px); }
+  }
+  @keyframes wave {
+    0%, 100% { transform: rotate(0deg); }
+    25% { transform: rotate(5deg); }
+    75% { transform: rotate(-5deg); }
+  }
+  @keyframes sadBob {
+    0%, 100% { transform: translateY(0) rotate(0deg); }
+    25% { transform: translateY(3px) rotate(-3deg); }
+    75% { transform: translateY(3px) rotate(3deg); }
+  }
+  @keyframes loadJump {
+    0%, 100% { transform: translateY(0) scale(1); }
+    30% { transform: translateY(-20px) scale(1.1); }
+    50% { transform: translateY(0) scale(0.95); }
+  }
+  @keyframes celebrate {
+    0%, 100% { transform: translateY(0) rotate(0deg); }
+    25% { transform: translateY(-8px) rotate(5deg); }
+    75% { transform: translateY(-8px) rotate(-5deg); }
+  }
+  @keyframes tilt {
+    0%, 100% { transform: rotate(0deg); }
+    50% { transform: rotate(5deg); }
+  }
+  @keyframes gradientShift {
+    0% { background-position: 0% center; }
+    100% { background-position: 200% center; }
+  }
+  @keyframes fadeSlideIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes popIn {
+    from { transform: scale(0); }
+    to { transform: scale(1); }
+  }
+  @keyframes confettiFall {
+    0% { transform: translateY(-20px) rotate(0deg); opacity: 1; }
+    100% { transform: translateY(100px) rotate(720deg); opacity: 0; }
+  }
+
+  /* ===== ANNOTATIONS ===== */
+  .annotation {
+    background: #fef3c7;
+    border: 2px solid #f59e0b;
+    border-radius: 8px;
+    padding: 12px 16px;
+    margin: 20px auto;
+    max-width: 600px;
+    font-size: 0.9rem;
+    color: #92400e;
+    text-align: center;
+  }
+  .annotation strong { color: #78350f; }
+</style>
+</head>
+<body>
+
+<!-- ===== SKETCH HEADER ===== -->
+<div style="background: linear-gradient(90deg, #0EA5E9, #06B6D4); color: white; padding: 20px; text-align: center;">
+  <h1 style="font-size: 1.5rem;">סקיצת עיצוב - שילוב דמויות הארנק באתר מחציות פלוס</h1>
+  <p style="opacity: 0.9; margin-top: 8px;">קונספט אינטראקטיבי - העבירו עכבר מעל הדמויות!</p>
+</div>
+
+<!-- ===== 1. HERO WITH MASCOTS ===== -->
+<div class="section-label">1. דף הבית - Hero Section עם דמויות מונפשות</div>
+<section class="hero">
+  <div class="hero-orb orb1"></div>
+  <div class="hero-orb orb2"></div>
+  <div class="hero-content">
+    <div class="mascot-parade">
+      <img src="avatars/wallets/son.png" alt="בן" class="mascot-hero">
+      <img src="avatars/wallets/daughter.png" alt="בת" class="mascot-hero">
+      <img src="avatars/wallets/mother.png" alt="אמא" class="mascot-hero">
+      <img src="avatars/wallets/father.png" alt="אבא" class="mascot-hero">
+    </div>
+    <h1>
+      נהל <span class="gradient-text">הוצאות משותפות</span><br>בקלות וביעילות
+    </h1>
+    <p>מערכת "מחציות פלוס" מאפשרת להורים לנהל הוצאות משותפות עבור ילדיהם בצורה פשוטה ושקופה</p>
+    <div class="cta-group">
+      <button class="btn btn-primary">התחל להשתמש - חינם</button>
+      <button class="btn btn-outline">כניסה למשתמשים קיימים</button>
+    </div>
+  </div>
+</section>
+<div class="annotation">
+  <strong>הרעיון:</strong> הדמויות קופצות בתזמון מדורג (wave effect), יוצרות תחושה של משפחה שמחה ומזמינה.
+  <br>בהובר - הדמות מתגדלת ומסתובבת קצת. אפשר להוסיף גם אנימציית נפנוף יד.
+</div>
+
+<!-- ===== 2. FEATURES WITH PEEKING MASCOTS ===== -->
+<div class="section-label">2. כרטיסי פיצ'רים - דמות מציצה מכל כרטיס</div>
+<section class="features">
+  <h2>למה להשתמש במחציות פלוס?</h2>
+  <div class="features-grid">
+    <div class="feature-card">
+      <img src="avatars/wallets/father.png" alt="" class="mascot-peek">
+      <h3>ניהול הוצאות פשוט</h3>
+      <p>הזנה מהירה של הוצאות, שיוך לילדים ספציפיים וסיווג לפי קטגוריות</p>
+    </div>
+    <div class="feature-card">
+      <img src="avatars/wallets/mother.png" alt="" class="mascot-peek" style="animation-delay: 0.5s;">
+      <h3>שיתוף ושקיפות</h3>
+      <p>שיתוף מלא בין ההורים, תיעוד כל פעולה, ושקיפות מלאה בכל ההוצאות</p>
+    </div>
+    <div class="feature-card">
+      <img src="avatars/wallets/son.png" alt="" class="mascot-peek" style="animation-delay: 1s;">
+      <h3>התחשבנות פשוטה</h3>
+      <p>מעקב אחר תשלומים, חישוב חלוקת הוצאות הוגנת, דוחות התחשבנות חודשיים</p>
+    </div>
+  </div>
+</section>
+<div class="annotation">
+  <strong>הרעיון:</strong> כל דמות "מציצה" מאחורי הכרטיס שלה עם אנימציית נדנוד עדינה.
+  <br>כל דמות מתאימה לפיצ'ר - אבא=ניהול, אמא=שיתוף, בן=התחשבנות
+</div>
+
+<!-- ===== 3. EMPTY STATES ===== -->
+<div class="section-label">3. מצבי ריק - כשאין תוכן, הדמות מעודדת</div>
+<section class="empty-state-demo">
+  <h2>מצבי ריק (Empty States)</h2>
+  <div class="empty-state-container">
+    <div class="empty-state-card">
+      <img src="avatars/wallets/son.png" alt="" class="empty-mascot sad">
+      <h4>אין הוצאות עדיין</h4>
+      <p>הוסף את ההוצאה הראשונה שלך כדי להתחיל!</p>
+      <button class="btn btn-primary" style="margin-top: 16px; font-size: 0.9rem; padding: 10px 24px;">הוסף הוצאה +</button>
+    </div>
+    <div class="empty-state-card">
+      <img src="avatars/wallets/daughter.png" alt="" class="empty-mascot sad">
+      <h4>אין ילדים במערכת</h4>
+      <p>הוסף ילדים כדי לשייך אליהם הוצאות</p>
+      <button class="btn btn-primary" style="margin-top: 16px; font-size: 0.9rem; padding: 10px 24px;">הוסף ילד +</button>
+    </div>
+  </div>
+</section>
+<div class="annotation">
+  <strong>הרעיון:</strong> כשאין תוכן, הדמות מופיעה עם מבט "ממתין" ואנימציה עדינה (מעט אפורה).
+  <br>מעודדת את המשתמש לפעולה במקום מסך ריק ומשעמם.
+</div>
+
+<!-- ===== 4. LOADING STATE ===== -->
+<div class="section-label">4. מסך טעינה - דמויות קופצות</div>
+<section class="loading-demo">
+  <h2>אנימציית טעינה</h2>
+  <div class="loading-mascots">
+    <img src="avatars/wallets/father.png" alt="" class="loading-mascot">
+    <img src="avatars/wallets/mother.png" alt="" class="loading-mascot">
+    <img src="avatars/wallets/son.png" alt="" class="loading-mascot">
+    <img src="avatars/wallets/daughter.png" alt="" class="loading-mascot">
+  </div>
+  <p class="loading-text">טוען נתונים...</p>
+</section>
+<div class="annotation">
+  <strong>הרעיון:</strong> במקום ספינר רגיל - 4 דמויות קופצות אחת אחרי השנייה (כמו גל).
+  <br>מחליף את חווית ה-loading הסטנדרטית למשהו ייחודי ומותגי.
+</div>
+
+<!-- ===== 5. ONBOARDING GUIDE ===== -->
+<div class="section-label">5. מדריך / Onboarding - דמות מלווה</div>
+<section class="onboarding-demo">
+  <h2>דמות מלווה בהדרכות</h2>
+  <div class="chat-bubble-container">
+    <div class="chat-row">
+      <img src="avatars/wallets/father.png" alt="" class="chat-mascot">
+      <div class="chat-bubble">
+        שלום! אני ארנק-אבא 👋<br>בוא אראה לך איך להוסיף את ההוצאה הראשונה שלך
+      </div>
+    </div>
+    <div class="chat-row">
+      <img src="avatars/wallets/father.png" alt="" class="chat-mascot" style="animation-delay: 1s;">
+      <div class="chat-bubble">
+        לחץ על כפתור ה-"+" למטה כדי להוסיף הוצאה חדשה. אל תשכח לבחור קטגוריה!
+      </div>
+    </div>
+    <div class="chat-row">
+      <img src="avatars/wallets/father.png" alt="" class="chat-mascot" style="animation-delay: 2s;">
+      <div class="chat-bubble">
+        מעולה! עכשיו ההורה השני יכול לראות את ההוצאה ולאשר אותה 🎉
+      </div>
+    </div>
+  </div>
+</section>
+<div class="annotation">
+  <strong>הרעיון:</strong> דמות ה"אבא" (או כל דמות בהתאם לתפקיד המשתמש) מלווה בבועות צ'אט.
+  <br>מופיע ב-onboarding, tooltips, ובהסברים. יוצר חיבור רגשי למוצר.
+</div>
+
+<!-- ===== 6. SUCCESS STATE ===== -->
+<div class="section-label">6. הצלחה - חגיגה עם הדמויות</div>
+<section class="success-demo">
+  <h2>אנימציית הצלחה</h2>
+  <div class="success-card">
+    <!-- Confetti particles -->
+    <div class="confetti" style="background:#0EA5E9; top:0; left:20%; animation-delay:0s;"></div>
+    <div class="confetti" style="background:#f59e0b; top:0; left:40%; animation-delay:0.3s;"></div>
+    <div class="confetti" style="background:#22c55e; top:0; left:60%; animation-delay:0.6s;"></div>
+    <div class="confetti" style="background:#ef4444; top:0; left:80%; animation-delay:0.2s;"></div>
+    <div class="confetti" style="background:#8b5cf6; top:0; left:50%; animation-delay:0.8s;"></div>
+
+    <div class="success-mascots">
+      <img src="avatars/wallets/father.png" alt="" class="success-mascot">
+      <img src="avatars/wallets/mother.png" alt="" class="success-mascot">
+    </div>
+    <div class="checkmark">✓</div>
+    <h3>ההוצאה נוספה בהצלחה!</h3>
+    <p>ההוצאה שותפה עם ההורה השני לאישור</p>
+  </div>
+</section>
+<div class="annotation">
+  <strong>הרעיון:</strong> אחרי פעולה מוצלחת (הוספת הוצאה, התחשבנות, אישור) - הדמויות חוגגות!
+  <br>קונפטי + קפיצות = חוויה מתגמלת שמעודדת שימוש חוזר.
+</div>
+
+<!-- ===== SUMMARY ===== -->
+<div style="background: #0C2C3D; color: white; padding: 40px 20px; text-align: center;">
+  <h2 style="margin-bottom: 16px;">סיכום הקונספט</h2>
+  <div style="max-width: 700px; margin: 0 auto; text-align: right; line-height: 2;">
+    <p>✅ <strong>Hero Section</strong> - מצעד דמויות קופצות מעל הכותרת</p>
+    <p>✅ <strong>כרטיסי פיצ'רים</strong> - דמויות מציצות מכל כרטיס</p>
+    <p>✅ <strong>מצבי ריק</strong> - דמות "ממתינה" מעודדת פעולה</p>
+    <p>✅ <strong>טעינה</strong> - דמויות קופצות במקום ספינר</p>
+    <p>✅ <strong>Onboarding</strong> - דמות מלווה בבועות צ'אט</p>
+    <p>✅ <strong>הצלחה</strong> - חגיגה עם קונפטי</p>
+    <br>
+    <p style="opacity: 0.7; text-align: center;">אנימציות CSS בלבד - ללא ספריות חיצוניות, ביצועים מעולים</p>
+  </div>
+</div>
+
+</body>
+</html>
