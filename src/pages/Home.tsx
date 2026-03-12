@@ -2,7 +2,7 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
-import { CheckCircle } from 'lucide-react';
+import { Wallet, Users, BarChart3, RefreshCw, ShieldCheck, PieChart } from 'lucide-react';
 
 const Home = () => {
   const navigate = useNavigate();
@@ -39,60 +39,22 @@ const Home = () => {
         <div className="container mx-auto px-4">
           <h2 className="text-xl sm:text-3xl font-bold text-center mb-6 sm:mb-12">למה להשתמש במחציות פלוס?</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-8">
-            <div className="bg-card p-6 rounded-lg shadow-sm border border-border">
-              <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center mb-4">
-                <CheckCircle className="h-6 w-6 text-primary" />
+            {[
+              { icon: Wallet, title: 'ניהול הוצאות פשוט', desc: 'הזנה מהירה של הוצאות, שיוך לילדים ספציפיים וסיווג לפי קטגוריות', color: 'from-cyan-500 to-blue-500' },
+              { icon: Users, title: 'שיתוף ושקיפות', desc: 'שיתוף מלא בין ההורים, תיעוד כל פעולה, ושקיפות מלאה בכל ההוצאות', color: 'from-violet-500 to-purple-500' },
+              { icon: BarChart3, title: 'התחשבנות פשוטה', desc: 'מעקב אחר תשלומים, חישוב חלוקת הוצאות הוגנת, דוחות התחשבנות חודשיים', color: 'from-emerald-500 to-teal-500' },
+              { icon: RefreshCw, title: 'ניהול הוצאות קבועות', desc: 'הגדרת הוצאות חוזרות, תזכורות אוטומטיות, ומעקב אחר תשלומים שוטפים', color: 'from-amber-500 to-orange-500' },
+              { icon: ShieldCheck, title: 'אישור הוצאות', desc: 'תהליך אישור הוצאות מובנה, מאפשר לכל הורה לאשר או לדחות הוצאות לפני התשלום', color: 'from-rose-500 to-pink-500' },
+              { icon: PieChart, title: 'סטטיסטיקות וניתוחים', desc: 'גרפים ודוחות מפורטים, ניתוח מגמות הוצאות, והתראות על חריגות', color: 'from-sky-500 to-indigo-500' },
+            ].map(({ icon: Icon, title, desc, color }) => (
+              <div key={title} className="bg-card p-6 rounded-xl shadow-sm border border-border hover:shadow-lg hover:border-primary/30 transition-all duration-300 group">
+                <div className={`h-12 w-12 rounded-xl bg-gradient-to-br ${color} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300`}>
+                  <Icon className="h-6 w-6 text-white" />
+                </div>
+                <h3 className="text-xl font-semibold mb-2">{title}</h3>
+                <p className="text-muted-foreground">{desc}</p>
               </div>
-              <h3 className="text-xl font-semibold mb-2">ניהול הוצאות פשוט</h3>
-              <p className="text-muted-foreground">
-                הזנה מהירה של הוצאות, שיוך לילדים ספציפיים וסיווג לפי קטגוריות
-              </p>
-            </div>
-            <div className="bg-card p-6 rounded-lg shadow-sm border border-border">
-              <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center mb-4">
-                <CheckCircle className="h-6 w-6 text-primary" />
-              </div>
-              <h3 className="text-xl font-semibold mb-2">שיתוף ושקיפות</h3>
-              <p className="text-muted-foreground">
-                שיתוף מלא בין ההורים, תיעוד כל פעולה, ושקיפות מלאה בכל ההוצאות
-              </p>
-            </div>
-            <div className="bg-card p-6 rounded-lg shadow-sm border border-border">
-              <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center mb-4">
-                <CheckCircle className="h-6 w-6 text-primary" />
-              </div>
-              <h3 className="text-xl font-semibold mb-2">התחשבנות פשוטה</h3>
-              <p className="text-muted-foreground">
-                מעקב אחר תשלומים, חישוב חלוקת הוצאות הוגנת, דוחות התחשבנות חודשיים
-              </p>
-            </div>
-            <div className="bg-card p-6 rounded-lg shadow-sm border border-border">
-              <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center mb-4">
-                <CheckCircle className="h-6 w-6 text-primary" />
-              </div>
-              <h3 className="text-xl font-semibold mb-2">ניהול הוצאות קבועות</h3>
-              <p className="text-muted-foreground">
-                הגדרת הוצאות חוזרות, תזכורות אוטומטיות, ומעקב אחר תשלומים שוטפים
-              </p>
-            </div>
-            <div className="bg-card p-6 rounded-lg shadow-sm border border-border">
-              <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center mb-4">
-                <CheckCircle className="h-6 w-6 text-primary" />
-              </div>
-              <h3 className="text-xl font-semibold mb-2">אישור הוצאות</h3>
-              <p className="text-muted-foreground">
-                תהליך אישור הוצאות מובנה, מאפשר לכל הורה לאשר או לדחות הוצאות לפני התשלום
-              </p>
-            </div>
-            <div className="bg-card p-6 rounded-lg shadow-sm border border-border">
-              <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center mb-4">
-                <CheckCircle className="h-6 w-6 text-primary" />
-              </div>
-              <h3 className="text-xl font-semibold mb-2">סטטיסטיקות וניתוחים</h3>
-              <p className="text-muted-foreground">
-                גרפים ודוחות מפורטים, ניתוח מגמות הוצאות, והתראות על חריגות
-              </p>
-            </div>
+            ))}
           </div>
         </div>
       </section>
@@ -121,7 +83,7 @@ const Home = () => {
                 </div>
                 <span className="text-lg sm:text-xl font-bold">מחציות פלוס</span>
               </div>
-              <p className="text-xs sm:text-sm text-muted-foreground mt-1">© 2025 כל הזכויות שמורות</p>
+              <p className="text-xs sm:text-sm text-muted-foreground mt-1">© 2026 כל הזכויות שמורות</p>
             </div>
             <div className="flex gap-4 sm:gap-6">
               <a href="/pricing" className="text-xs sm:text-sm text-muted-foreground hover:text-foreground">מחירים</a>

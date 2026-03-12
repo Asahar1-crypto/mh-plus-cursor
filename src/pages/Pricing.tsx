@@ -288,7 +288,7 @@ const Pricing: React.FC = () => {
                 </div>
                 <span className="text-lg sm:text-xl font-bold">מחציות פלוס</span>
               </div>
-              <p className="text-xs sm:text-sm text-muted-foreground mt-1">© 2025 כל הזכויות שמורות</p>
+              <p className="text-xs sm:text-sm text-muted-foreground mt-1">© 2026 כל הזכויות שמורות</p>
             </div>
             <div className="flex gap-4 sm:gap-6">
               <a href="/terms" className="text-xs sm:text-sm text-muted-foreground hover:text-foreground">תנאי שימוש</a>

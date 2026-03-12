@@ -130,11 +130,16 @@ const AppSidebar: React.FC<AppSidebarProps> = ({
       )}
       
       <aside className={sidebarClasses}>
-        {/* Mobile header */}
+        {/* Mobile header with logo */}
         {isMobile && (
           <div className="p-4 border-b border-border bg-card">
             <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold">תפריט</h2>
+              <Link to="/dashboard" className="flex items-center gap-2" onClick={onClose}>
+                <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-primary to-secondary flex items-center justify-center shadow-sm">
+                  <span className="font-bold text-white text-sm">מ+</span>
+                </div>
+                <span className="text-lg font-bold text-foreground">מחציות פלוס</span>
+              </Link>
               <Button
                 variant="ghost"
                 size="sm"
@@ -146,26 +151,56 @@ const AppSidebar: React.FC<AppSidebarProps> = ({
             </div>
           </div>
         )}
-        
-        {/* Desktop collapse toggle */}
+
+        {/* Desktop header with logo + collapse toggle */}
         {!isMobile && (
-          <div className="p-2 border-b border-border bg-card/50">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onToggleCollapse}
-              className={cn(
-                "w-full hover:bg-accent transition-all duration-200",
-                collapsed ? "justify-center px-2" : "justify-end px-3"
+          <div className="border-b border-border bg-card/50">
+            <div className={cn(
+              "flex items-center transition-all duration-300",
+              collapsed ? "justify-center p-3" : "justify-between p-4"
+            )}>
+              <Link to="/dashboard" className={cn(
+                "flex items-center gap-2 hover:opacity-80 transition-opacity",
+                collapsed && "justify-center"
+              )}>
+                <div className={cn(
+                  "rounded-lg bg-gradient-to-br from-primary to-secondary flex items-center justify-center shadow-sm flex-shrink-0",
+                  collapsed ? "h-8 w-8" : "h-9 w-9"
+                )}>
+                  <span className={cn("font-bold text-white", collapsed ? "text-xs" : "text-sm")}>מ+</span>
+                </div>
+                {!collapsed && (
+                  <div className="flex flex-col">
+                    <span className="text-base font-bold text-foreground leading-tight">מחציות פלוס</span>
+                    <span className="text-[10px] text-muted-foreground">ניהול תקציב משפחתי</span>
+                  </div>
+                )}
+              </Link>
+              {!collapsed && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={onToggleCollapse}
+                  className="p-1.5 hover:bg-accent transition-all duration-200 flex-shrink-0"
+                  title="צמצם תפריט"
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
               )}
-              title={collapsed ? "הרחב תפריט" : "צמצם תפריט"}
-            >
-              {collapsed ? (
-                <ChevronLeft className="h-4 w-4" />
-              ) : (
-                <ChevronRight className="h-4 w-4" />
-              )}
-            </Button>
+            </div>
+            {collapsed && (
+              <div className="flex justify-center pb-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={onToggleCollapse}
+                  className="p-1.5 hover:bg-accent transition-all duration-200"
+                  title="הרחב תפריט"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+              </div>
+            )}
           </div>
         )}
         
@@ -216,7 +251,7 @@ const AppSidebar: React.FC<AppSidebarProps> = ({
         
         {(!collapsed || isMobile) && (
           <div className="p-4 border-t border-border text-sm text-muted-foreground text-center">
-            <p>מחציות פלוס &copy; 2025</p>
+            <p>מחציות פלוס &copy; 2026</p>
           </div>
         )}
       </aside>

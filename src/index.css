@@ -294,6 +294,33 @@ body {
   background: hsl(var(--primary-glow));
 }
 
+/* Accessibility: Respect user's motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .animate-float,
+  .animate-pulse-slow,
+  .animate-glow,
+  .animate-confetti-fall,
+  .animate-celebration-bounce,
+  .animate-rainbow {
+    animation: none !important;
+  }
+
+  .group-hover\:scale-110,
+  .hover\:scale-105,
+  .hover\:scale-\[1\.02\] {
+    transform: none !important;
+  }
+}
+
 .page-transition-enter {
   opacity: 0;
   transform: translateY(10px);
