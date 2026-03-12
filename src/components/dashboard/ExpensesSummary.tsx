@@ -8,6 +8,7 @@ import { useAuth } from '@/contexts/auth';
 import { memberService } from '@/contexts/auth/services/account/memberService';
 import { NetCalculationCard } from './NetCalculationCard';
 import { PreviousMonthsCard } from './PreviousMonthsCard';
+import { useAnimatedCounter } from '@/hooks/use-animated-counter';
 
 interface ExpensesSummaryProps {
   pendingExpenses: Expense[];
@@ -82,6 +83,10 @@ export const ExpensesSummary: React.FC<ExpensesSummaryProps> = ({
 
   const isPersonalPlan = account?.plan_slug === 'personal';
 
+  const animatedPending = useAnimatedCounter(summaryData.pending.total);
+  const animatedApproved = useAnimatedCounter(summaryData.approved.total);
+  const animatedPaid = useAnimatedCounter(summaryData.paid.total);
+
   return (
     <div className={`grid grid-cols-1 xs:grid-cols-2 lg:grid-cols-3 ${isPersonalPlan ? 'xl:grid-cols-4' : 'xl:grid-cols-5'} gap-3 sm:gap-4 md:gap-6 mb-6 sm:mb-8`}>
       {/* כרטיס הוצאות ממתינות - מוסתר בתוכנית אישית */}
@@ -100,7 +105,7 @@ export const ExpensesSummary: React.FC<ExpensesSummaryProps> = ({
             </div>
           </div>
           <CardTitle className="text-2xl sm:text-3xl md:text-4xl font-bold bg-gradient-to-r from-amber-600 to-orange-600 bg-clip-text text-transparent group-hover:scale-110 transition-transform duration-300 origin-left">
-            ₪{summaryData.pending.total.toFixed(0)}
+            ₪{animatedPending.toLocaleString()}
           </CardTitle>
         </CardHeader>
         <CardContent className="p-3 sm:p-4 md:p-6 pt-0 space-y-2 sm:space-y-3 relative z-10">
@@ -141,7 +146,7 @@ export const ExpensesSummary: React.FC<ExpensesSummaryProps> = ({
             </div>
           </div>
           <CardTitle className="text-2xl sm:text-3xl md:text-4xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent group-hover:scale-110 transition-transform duration-300 origin-left">
-            ₪{summaryData.approved.total.toFixed(0)}
+            ₪{animatedApproved.toLocaleString()}
           </CardTitle>
         </CardHeader>
         <CardContent className="p-3 sm:p-4 md:p-6 pt-0 space-y-2 sm:space-y-3 relative z-10">
@@ -181,7 +186,7 @@ export const ExpensesSummary: React.FC<ExpensesSummaryProps> = ({
             </div>
           </div>
           <CardTitle className="text-2xl sm:text-3xl md:text-4xl font-bold bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent group-hover:scale-110 transition-transform duration-300 origin-left">
-            ₪{summaryData.paid.total.toFixed(0)}
+            ₪{animatedPaid.toLocaleString()}
           </CardTitle>
         </CardHeader>
         <CardContent className="p-3 sm:p-4 md:p-6 pt-0 space-y-2 sm:space-y-3 relative z-10">

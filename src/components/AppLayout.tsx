@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
+import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/auth';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -7,6 +8,8 @@ import AppHeader from './AppHeader';
 import AppSidebar from './AppSidebar';
 import TrialStatusBanner from './TrialStatusBanner';
 import NoAccountScreen from './NoAccountScreen';
+import BottomNavBar from './BottomNavBar';
+import FloatingAddButton from './FloatingAddButton';
 import { BrandedLoader } from '@/components/ui/branded-loader';
 
 const AppLayout = () => {
@@ -90,11 +93,20 @@ const AppLayout = () => {
             onMenuClick={() => setIsMobileSidebarOpen(!isMobileSidebarOpen)}
             isMobile={isMobile}
           />
-          <main className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden p-3 sm:p-6 lg:p-8 bg-gradient-to-br from-background to-accent/20">
+          <main className={cn(
+            "flex-1 min-h-0 overflow-y-auto overflow-x-hidden p-3 sm:p-6 lg:p-8 bg-gradient-to-br from-background to-accent/20",
+            isMobile && "pb-20"
+          )}>
             <TrialStatusBanner />
             <Outlet />
           </main>
         </div>
+        {isMobile && (
+          <>
+            <FloatingAddButton />
+            <BottomNavBar onMoreClick={() => setIsMobileSidebarOpen(true)} />
+          </>
+        )}
       </div>
     </TooltipProvider>
   );

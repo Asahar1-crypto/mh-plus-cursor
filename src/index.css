@@ -165,6 +165,37 @@
   .animate-rainbow {
     animation: rainbow 3s linear infinite;
   }
+
+  /* Enhanced hover utilities for 2026 micro-interactions */
+  .hover-lift {
+    transition: transform 0.25s cubic-bezier(0.33, 1, 0.68, 1), box-shadow 0.25s ease;
+  }
+  .hover-lift:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px -5px rgba(0, 0, 0, 0.1), 0 4px 10px -5px rgba(0, 0, 0, 0.04);
+  }
+  .hover-lift:active {
+    transform: translateY(0);
+  }
+
+  .hover-glow {
+    transition: box-shadow 0.3s ease;
+  }
+  .hover-glow:hover {
+    box-shadow: 0 0 20px hsl(var(--primary) / 0.15), 0 4px 12px rgba(0, 0, 0, 0.08);
+  }
+
+  .interactive-card {
+    transition: transform 0.25s cubic-bezier(0.33, 1, 0.68, 1), box-shadow 0.25s ease, border-color 0.25s ease;
+  }
+  .interactive-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 28px -8px rgba(0, 0, 0, 0.12);
+    border-color: hsl(var(--primary) / 0.3);
+  }
+  .interactive-card:active {
+    transform: translateY(0) scale(0.99);
+  }
 }
 
 @keyframes float {

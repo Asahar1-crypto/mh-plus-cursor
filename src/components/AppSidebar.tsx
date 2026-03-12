@@ -6,6 +6,7 @@ import { Home, CreditCard, Settings, Users, BarChart3, X, Shield, UserCog, Calcu
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useAuth } from '@/contexts/auth';
+import { useExpense } from '@/contexts/ExpenseContext';
 
 interface SidebarItemProps {
   icon: React.ElementType;
@@ -15,16 +16,18 @@ interface SidebarItemProps {
   onClick?: () => void;
   collapsed?: boolean;
   isMobile?: boolean;
+  badge?: number;
 }
 
-const SidebarItem: React.FC<SidebarItemProps> = ({ 
-  icon: Icon, 
-  label, 
-  path, 
-  isActive, 
-  onClick, 
+const SidebarItem: React.FC<SidebarItemProps> = ({
+  icon: Icon,
+  label,
+  path,
+  isActive,
+  onClick,
   collapsed,
-  isMobile 
+  isMobile,
+  badge
 }) => {
   const content = (
     <Link
@@ -38,9 +41,26 @@ const SidebarItem: React.FC<SidebarItemProps> = ({
           : 'hover:bg-accent text-foreground hover:text-accent-foreground'
       )}
     >
-      <Icon className="h-5 w-5 flex-shrink-0" />
+      <div className="relative flex-shrink-0">
+        <Icon className="h-5 w-5" />
+        {badge != null && badge > 0 && collapsed && !isMobile && (
+          <span className="absolute -top-1.5 -right-1.5 min-w-[16px] h-4 flex items-center justify-center rounded-full bg-destructive text-destructive-foreground text-[9px] font-bold px-0.5 leading-none">
+            {badge > 99 ? '99+' : badge}
+          </span>
+        )}
+      </div>
       {(!collapsed || isMobile) && (
-        <span className="font-medium whitespace-nowrap">{label}</span>
+        <span className="font-medium whitespace-nowrap flex-1">{label}</span>
+      )}
+      {(!collapsed || isMobile) && badge != null && badge > 0 && (
+        <span className={cn(
+          "min-w-[20px] h-5 flex items-center justify-center rounded-full text-[10px] font-bold px-1.5 leading-none",
+          isActive
+            ? "bg-primary-foreground/20 text-primary-foreground"
+            : "bg-destructive text-destructive-foreground"
+        )}>
+          {badge > 99 ? '99+' : badge}
+        </span>
       )}
       {isActive && (
         <div className="absolute right-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-primary-foreground rounded-l-full"></div>
@@ -82,10 +102,13 @@ const AppSidebar: React.FC<AppSidebarProps> = ({
 }) => {
   const location = useLocation();
   const { profile } = useAuth();
+  const { getPendingExpenses } = useExpense();
+
+  const pendingCount = getPendingExpenses().length;
 
   const regularItems = [
     { icon: Home, label: 'דשבורד', path: '/dashboard' },
-    { icon: CreditCard, label: 'הוצאות', path: '/expenses' },
+    { icon: CreditCard, label: 'הוצאות', path: '/expenses', badge: pendingCount },
     { icon: Calculator, label: 'סגירת חודש', path: '/monthly-settlement' },
     { icon: Users, label: 'ילדים', path: '/children' },
     { icon: CalendarDays, label: 'משמורת', path: '/custody-calendar' },
@@ -219,6 +242,7 @@ const AppSidebar: React.FC<AppSidebarProps> = ({
                 onClick={isMobile ? onClose : undefined}
                 collapsed={collapsed}
                 isMobile={isMobile}
+                badge={'badge' in item ? (item as any).badge : undefined}
               />
             ))}
             {profile?.is_super_admin && (

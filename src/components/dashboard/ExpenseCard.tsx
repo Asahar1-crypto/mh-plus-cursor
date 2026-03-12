@@ -55,7 +55,7 @@ export const ExpenseCard = ({ expense, accountMembers = [], onApprove, onReject,
   })();
 
   return (
-    <Card className="mb-3 sm:mb-4 overflow-hidden">
+    <Card className="mb-3 sm:mb-4 overflow-hidden interactive-card">
       <div className="flex flex-col sm:flex-row border-b border-border p-3 sm:p-4 gap-2 sm:gap-0">
         <div className="flex-1">
           <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 mb-1">
@@ -89,29 +89,29 @@ export const ExpenseCard = ({ expense, accountMembers = [], onApprove, onReject,
         <div className="flex items-center gap-2 flex-wrap">
           {expense.status === 'pending' && onApprove && onReject && (
             <>
-              <Button variant="ghost" size="sm" onClick={onReject} className="text-red-500 h-8 text-xs sm:text-sm">
-                <XCircle className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
+              <Button variant="ghost" size="sm" onClick={onReject} className="text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/30 h-9 sm:h-8 min-w-[70px] text-xs sm:text-sm transition-colors duration-200">
+                <XCircle className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1" />
                 <span>דחה</span>
               </Button>
-              <Button variant="ghost" size="sm" onClick={onApprove} className="text-green-500 h-8 text-xs sm:text-sm">
-                <CheckCircle className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
+              <Button variant="ghost" size="sm" onClick={onApprove} className="text-green-500 hover:text-green-700 hover:bg-green-50 dark:hover:bg-green-950/30 h-9 sm:h-8 min-w-[70px] text-xs sm:text-sm transition-colors duration-200">
+                <CheckCircle className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1" />
                 <span>אשר</span>
               </Button>
             </>
           )}
           {expense.status === 'approved' && onMarkPaid && (
-            <Button variant="outline" size="sm" onClick={onMarkPaid} className="h-8 text-xs sm:text-sm">
-              <CreditCard className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
+            <Button variant="outline" size="sm" onClick={onMarkPaid} className="h-9 sm:h-8 text-xs sm:text-sm hover:bg-primary hover:text-primary-foreground hover:border-primary transition-colors duration-200">
+              <CreditCard className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1" />
               <span>סמן כשולם</span>
             </Button>
           )}
           {expense.status === 'rejected' && (
-            <span className="text-xs bg-red-100 text-red-700 px-2 py-1 rounded">
+            <span className="text-xs bg-red-100 dark:bg-red-950/40 text-red-700 dark:text-red-400 px-2.5 py-1 rounded-full font-medium">
               נדחה
             </span>
           )}
           {expense.status === 'paid' && (
-            <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded">
+            <span className="text-xs bg-green-100 dark:bg-green-950/40 text-green-700 dark:text-green-400 px-2.5 py-1 rounded-full font-medium">
               שולם
             </span>
           )}
