@@ -3,6 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { Home, CreditCard, Calculator, BarChart3, Menu } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useExpense } from '@/contexts/ExpenseContext';
+import { hapticSelection } from '@/lib/haptics';
 
 interface BottomNavBarProps {
   onMoreClick: () => void;
@@ -32,6 +33,7 @@ const BottomNavBar: React.FC<BottomNavBarProps> = ({ onMoreClick }) => {
             <Link
               key={path}
               to={path}
+              onClick={() => { if (!isActive) hapticSelection(); }}
               className={cn(
                 'flex flex-col items-center justify-center gap-0.5 flex-1 h-full relative transition-colors duration-200',
                 isActive
@@ -58,7 +60,7 @@ const BottomNavBar: React.FC<BottomNavBarProps> = ({ onMoreClick }) => {
         })}
         {/* More button */}
         <button
-          onClick={onMoreClick}
+          onClick={() => { hapticSelection(); onMoreClick(); }}
           className="flex flex-col items-center justify-center gap-0.5 flex-1 h-full text-muted-foreground active:text-primary/70 transition-colors duration-200"
         >
           <Menu className="h-5 w-5" />

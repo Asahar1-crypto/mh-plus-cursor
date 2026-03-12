@@ -2,6 +2,7 @@ import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Plus } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { hapticImpact } from '@/lib/haptics';
 
 const FAB_PAGES = ['/dashboard', '/expenses'];
 
@@ -13,7 +14,7 @@ const FloatingAddButton: React.FC = () => {
 
   return (
     <button
-      onClick={() => navigate('/add-expense')}
+      onClick={() => { hapticImpact('Light'); navigate('/add-expense'); }}
       className={cn(
         'fixed z-30 flex items-center justify-center',
         'h-14 w-14 rounded-full',

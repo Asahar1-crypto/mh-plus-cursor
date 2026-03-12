@@ -11,6 +11,7 @@ import NoAccountScreen from './NoAccountScreen';
 import BottomNavBar from './BottomNavBar';
 import FloatingAddButton from './FloatingAddButton';
 import { BrandedLoader } from '@/components/ui/branded-loader';
+import PageTransition from './PageTransition';
 
 const AppLayout = () => {
   const { isAuthenticated, isLoading, account, user } = useAuth();
@@ -98,7 +99,9 @@ const AppLayout = () => {
             isMobile && "pb-20"
           )}>
             <TrialStatusBanner />
-            <Outlet />
+            <PageTransition>
+              <Outlet />
+            </PageTransition>
           </main>
         </div>
         {isMobile && (
