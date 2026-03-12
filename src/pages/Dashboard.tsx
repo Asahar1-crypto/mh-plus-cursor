@@ -151,34 +151,31 @@ const Dashboard = () => {
     <div className="bg-gradient-to-br from-background via-background to-primary/5 animate-fade-in">
       <OnboardingModal />
       <div className="w-full max-w-7xl mx-auto p-3 sm:p-4 md:p-6 space-y-4 sm:space-y-6 lg:space-y-8">
-        <div className="animate-scale-in">
-          <PendingInvitationAlert />
-        </div>
-        
-        <div className="animate-fade-in [animation-delay:200ms]">
+        <PendingInvitationAlert />
+
+        <div className="animate-fade-in">
           <DashboardHeader userName={user?.name} />
         </div>
-        
-        {/* Month Filter with enhanced design */}
-        <div className="animate-slide-in-right [animation-delay:400ms]">
-          <Card className="bg-gradient-to-r from-card/90 to-card/95 backdrop-blur-lg border border-border/50 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.02] group overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-r from-primary/5 to-accent/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-            <CardContent className="p-3 sm:p-4 md:p-6 relative">
+
+        {/* Month Filter - Liquid Glass */}
+        <div className="animate-fade-in [animation-delay:100ms]">
+          <Card className="liquid-glass-subtle border-border/30 overflow-hidden">
+            <CardContent className="p-3 sm:p-4 md:p-6">
               <div className="flex flex-col xs:flex-row items-start xs:items-center gap-2 xs:gap-3 sm:gap-4">
                 <div className="flex items-center gap-2 xs:gap-3 flex-1 xs:flex-none">
-                  <div className="p-1.5 sm:p-2 rounded-full bg-primary/10 group-hover:bg-primary/20 transition-colors duration-300">
-                    <CalendarIcon className="h-4 w-4 sm:h-5 sm:w-5 text-primary group-hover:scale-110 transition-transform duration-300" />
+                  <div className="p-1.5 sm:p-2 rounded-full bg-primary/10">
+                    <CalendarIcon className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
                   </div>
                   <label className="text-xs sm:text-sm font-semibold text-foreground whitespace-nowrap">סינון לפי חודש:</label>
                 </div>
                 <Select value={selectedMonth} onValueChange={setSelectedMonth}>
-                  <SelectTrigger className="w-full xs:w-44 sm:w-52 h-9 sm:h-10 bg-background/80 border-border/50 hover:bg-background hover:border-primary/50 transition-all duration-300 hover:shadow-md text-xs sm:text-sm">
+                  <SelectTrigger className="w-full xs:w-44 sm:w-52 h-9 sm:h-10 bg-background/80 border-border/50 hover:border-primary/50 transition-colors duration-200 text-xs sm:text-sm">
                     <SelectValue placeholder="בחר חודש" />
                   </SelectTrigger>
-                  <SelectContent className="bg-background/95 backdrop-blur-lg border border-border/50 shadow-xl">
+                  <SelectContent className="liquid-glass-strong border-border/50">
                     {monthOptions.map(option => (
-                      <SelectItem 
-                        key={option.value} 
+                      <SelectItem
+                        key={option.value}
                         value={option.value}
                         className="hover:bg-primary/10 focus:bg-primary/10 transition-colors duration-200 text-xs sm:text-sm"
                       >
@@ -191,13 +188,13 @@ const Dashboard = () => {
             </CardContent>
           </Card>
         </div>
-        
-        <div className="animate-scale-in [animation-delay:600ms]">
+
+        <div className="animate-fade-in [animation-delay:200ms]">
           <MonthlyFoodPaymentCard selectedMonth={selectedMonth} />
         </div>
-        
-        <div className="animate-fade-in [animation-delay:800ms]">
-          <ExpensesSummary 
+
+        <div className="animate-fade-in [animation-delay:300ms]">
+          <ExpensesSummary
             pendingExpenses={filteredPending}
             approvedExpenses={filteredApproved}
             paidExpenses={filteredPaid}
@@ -205,8 +202,8 @@ const Dashboard = () => {
             allApprovedExpenses={allApprovedExpenses}
           />
         </div>
-        
-        <div className="animate-fade-in [animation-delay:1000ms]">
+
+        <div className="animate-fade-in [animation-delay:400ms]">
           <ExpensesTabs
             pendingExpenses={filteredPending}
             approvedExpenses={filteredApproved}
@@ -217,7 +214,7 @@ const Dashboard = () => {
           />
         </div>
 
-        <div className="animate-fade-in [animation-delay:1200ms]">
+        <div className="animate-fade-in [animation-delay:500ms]">
           <ActivityLog limit={30} />
         </div>
 

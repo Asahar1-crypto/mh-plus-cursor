@@ -47,6 +47,12 @@
     --glass-border: rgba(255, 255, 255, 0.2);
     --glass-backdrop: blur(20px);
 
+    /* Liquid Glass 2026 */
+    --liquid-glass-bg: rgba(255, 255, 255, 0.55);
+    --liquid-glass-border: rgba(255, 255, 255, 0.6);
+    --liquid-glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.8);
+    --liquid-glass-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.9), inset 0 -1px 0 rgba(255, 255, 255, 0.1);
+
     /* סיידבאר */
     --sidebar-background: 200 100% 99%;
     --sidebar-foreground: 195 40% 30%;
@@ -86,6 +92,12 @@
     --glass-border: rgba(255, 255, 255, 0.1);
     --shadow-glow: 0 0 40px hsl(195 100% 49% / 0.2);
 
+    /* Liquid Glass dark */
+    --liquid-glass-bg: rgba(255, 255, 255, 0.06);
+    --liquid-glass-border: rgba(255, 255, 255, 0.1);
+    --liquid-glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    --liquid-glass-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.1), inset 0 -1px 0 rgba(255, 255, 255, 0.02);
+
     --sidebar-background: 195 50% 7%;
     --sidebar-foreground: 195 10% 80%;
     --sidebar-primary: 195 100% 49%;
@@ -116,6 +128,35 @@
     background: var(--glass-bg);
     backdrop-filter: var(--glass-backdrop);
     border: 1px solid var(--glass-border);
+  }
+
+  /* Liquid Glass - Apple-inspired 2026 */
+  .liquid-glass {
+    background: var(--liquid-glass-bg);
+    backdrop-filter: blur(24px) saturate(180%);
+    -webkit-backdrop-filter: blur(24px) saturate(180%);
+    border: 1px solid var(--liquid-glass-border);
+    box-shadow: var(--liquid-glass-shadow), var(--liquid-glass-highlight);
+  }
+
+  .liquid-glass-subtle {
+    background: var(--liquid-glass-bg);
+    backdrop-filter: blur(16px) saturate(150%);
+    -webkit-backdrop-filter: blur(16px) saturate(150%);
+    border: 1px solid var(--liquid-glass-border);
+    box-shadow: var(--liquid-glass-shadow);
+  }
+
+  .liquid-glass-strong {
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(40px) saturate(200%);
+    -webkit-backdrop-filter: blur(40px) saturate(200%);
+    border: 1px solid rgba(255, 255, 255, 0.7);
+    box-shadow: var(--liquid-glass-shadow), var(--liquid-glass-highlight);
+  }
+  .dark .liquid-glass-strong {
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.12);
   }
   
   .border-glass-border {
@@ -372,4 +413,25 @@ body {
   opacity: 0;
   transform: translateY(10px);
   transition: opacity 300ms, transform 300ms;
+}
+
+/* Scroll-triggered reveal animations */
+.scroll-reveal {
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+}
+.scroll-reveal.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.scroll-reveal .scroll-reveal-item {
+  opacity: 0;
+  transform: translateY(16px);
+  transition: opacity 0.5s ease-out, transform 0.5s ease-out;
+}
+.scroll-reveal.is-visible .scroll-reveal-item {
+  opacity: 1;
+  transform: translateY(0);
 }

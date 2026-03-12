@@ -136,7 +136,7 @@ const AppSidebar: React.FC<AppSidebarProps> = ({
 
   // Sidebar classes based on state
   const sidebarClasses = cn(
-    'flex flex-col bg-card/95 backdrop-blur-xl border-l border-border shadow-lg transition-all duration-300 ease-in-out',
+    'flex flex-col liquid-glass border-l border-border/50 transition-all duration-300 ease-in-out',
     isMobile 
       ? 'fixed top-0 right-0 h-full z-50 w-64 transform' + (isOpen ? ' translate-x-0' : ' translate-x-full')
       : 'fixed top-0 right-0 h-full z-20' + (collapsed ? ' w-16' : ' w-64')
