@@ -233,7 +233,7 @@ const MonthlySettlement = () => {
   // Calculate expenses data for selected month
   const monthlyData = useMemo(() => {
     const monthExpenses = expenses.filter(expense => {
-      return isDateInCycle(expense.date, billingDay, selectedMonth + 1, selectedYear);
+      return !expense.isRecurring && isDateInCycle(expense.date, billingDay, selectedMonth + 1, selectedYear);
     });
     
     const pending = monthExpenses.filter(e => e.status === 'pending');
@@ -321,7 +321,7 @@ const MonthlySettlement = () => {
     let bPaid = 0;
 
     expenses
-      .filter(e => e.status === 'paid' || e.status === 'approved')
+      .filter(e => (e.status === 'paid' || e.status === 'approved') && !e.isRecurring)
       .forEach(expense => {
         if (expense.paidById === memberA.user_id) {
           aPaid += expense.splitEqually ? expense.amount / 2 : expense.amount;
