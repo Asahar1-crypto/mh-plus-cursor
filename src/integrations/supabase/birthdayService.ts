@@ -186,11 +186,12 @@ export const birthdayService = {
     return (data ?? []).map(mapProject);
   },
 
-  async getProject(id: string): Promise<BirthdayProject> {
+  async getProject(id: string, accountId: string): Promise<BirthdayProject> {
     const { data, error } = await supabase
       .from('birthday_projects')
       .select('*')
       .eq('id', id)
+      .eq('account_id', accountId)
       .single();
     if (error) throw error;
     return mapProject(data);

@@ -20,17 +20,22 @@ export const useAuthState = () => {
 
   const refreshProfile = useCallback(async (): Promise<void> => {
     if (!user?.id) return;
-    
+
     try {
       const { data: profileData, error } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', user.id)
         .single();
-      
+
       if (error) throw error;
-      
+
       setProfile(profileData);
+
+      // Also reload account & userAccounts (fixes NoAccountScreen loop after family creation)
+      const authResult = await authService.checkAuth();
+      if (authResult.account) setAccount(authResult.account);
+      if (authResult.userAccounts) setUserAccounts(authResult.userAccounts);
     } catch (error) {
       console.error('Error loading profile:', error);
       setProfile(null);

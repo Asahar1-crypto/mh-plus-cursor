@@ -1,5 +1,3 @@
-import { jsPDF } from 'jspdf';
-import autoTable from 'jspdf-autotable';
 import { Expense } from '@/contexts/expense/types';
 
 const STATUS_LABELS: Record<string, string> = {
@@ -45,7 +43,9 @@ export function exportExpensesToCSV(expenses: Expense[], filename?: string): voi
 /**
  * Export expenses to PDF format
  */
-export function exportExpensesToPDF(expenses: Expense[], filename?: string): void {
+export async function exportExpensesToPDF(expenses: Expense[], filename?: string): Promise<void> {
+  const { jsPDF } = await import('jspdf');
+  await import('jspdf-autotable');
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
 
   doc.setFont('helvetica');
@@ -75,7 +75,7 @@ export function exportExpensesToPDF(expenses: Expense[], filename?: string): voi
   });
 
   const finalY = (doc as { lastAutoTable?: { finalY: number } }).lastAutoTable?.finalY ?? 40;
-  const total = expenses.reduce((sum, exp) => sum + exp.amount, 0);
+  const total = expenses.filter(exp => exp.status !== 'rejected').reduce((sum, exp) => sum + exp.amount, 0);
   doc.setFontSize(11);
   doc.text(`סה"כ: ₪${total.toFixed(2)}`, 105, finalY + 15, { align: 'center' });
 

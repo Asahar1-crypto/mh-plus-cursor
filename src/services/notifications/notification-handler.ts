@@ -15,6 +15,20 @@ interface NotificationData {
 }
 
 /**
+ * Validates that a URL is a safe relative path (not an external redirect).
+ * Blocks absolute URLs, protocol-relative URLs, and javascript: URIs.
+ */
+function isSafeRelativeUrl(url: string): boolean {
+  if (!url) return false;
+  const trimmed = url.trim();
+  // Must start with / and not // (protocol-relative)
+  if (!trimmed.startsWith('/') || trimmed.startsWith('//')) return false;
+  // Block javascript: and data: URIs embedded after path
+  if (/javascript:|data:/i.test(trimmed)) return false;
+  return true;
+}
+
+/**
  * Handle a foreground push notification
  * Shows a toast and dispatches appropriate events
  */
@@ -31,7 +45,7 @@ export function handleForegroundNotification(payload: {
   toast.info(title, {
     description: body,
     duration: 6000,
-    action: actionUrl
+    action: actionUrl && isSafeRelativeUrl(actionUrl)
       ? {
           label: 'פתח',
           onClick: () => {
@@ -91,7 +105,7 @@ function dispatchNotificationEvent(type: string): void {
  * Called when user taps a background notification
  */
 export function handleNotificationClick(data: NotificationData): void {
-  if (data.actionUrl) {
+  if (data.actionUrl && isSafeRelativeUrl(data.actionUrl)) {
     window.location.href = data.actionUrl;
   }
 

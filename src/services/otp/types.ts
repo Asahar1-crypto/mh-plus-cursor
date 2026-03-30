@@ -32,7 +32,8 @@ export interface OTPSendResponse extends OTPResponse {
 
 export interface OTPVerifyResponse extends OTPResponse {
   verified: boolean;
-  magicLink?: string;
+  access_token?: string;
+  refresh_token?: string;
   userId?: string;
 }
 

@@ -44,12 +44,65 @@ serve(async (req) => {
     if (!phoneNumber || !invitationId || !accountName) {
       return new Response(
         JSON.stringify({ error: 'Missing required parameters: phoneNumber, invitationId, accountName' }),
-        { 
-          status: 400, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         }
       );
     }
+
+    // Initialize Supabase client for validation
+    const supabase = createClient(supabaseUrl, supabaseServiceRoleKey);
+
+    // Validate invitation exists and is still pending
+    const { data: invitation, error: invError } = await supabase
+      .from('invitations')
+      .select('id, status, expires_at')
+      .eq('id', invitationId)
+      .maybeSingle();
+
+    if (invError || !invitation) {
+      console.warn(`Invalid invitation ID: ${invitationId}`);
+      return new Response(
+        JSON.stringify({ error: 'הזמנה לא נמצאה' }),
+        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    if (invitation.status !== 'pending') {
+      console.warn(`Invitation ${invitationId} already used (status: ${invitation.status})`);
+      return new Response(
+        JSON.stringify({ error: 'ההזמנה כבר מומשה' }),
+        { status: 410, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Rate limiting: max 3 invitation SMS per phone per hour
+    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+    const { count: recentCount } = await supabase
+      .from('sms_verification_codes')
+      .select('*', { count: 'exact', head: true })
+      .eq('phone_number', phoneNumber)
+      .eq('verification_type', 'invitation')
+      .gte('created_at', oneHourAgo);
+
+    if (recentCount !== null && recentCount >= 3) {
+      console.warn(`Invitation SMS rate limit exceeded for ${phoneNumber}`);
+      return new Response(
+        JSON.stringify({ error: 'יותר מדי הזמנות נשלחו. אנא נסה שוב מאוחר יותר.' }),
+        { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Log the invitation SMS for rate limiting
+    await supabase.from('sms_verification_codes').insert({
+      phone_number: phoneNumber,
+      code: invitationId.substring(0, 6),
+      verification_type: 'invitation',
+      expires_at: new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString(),
+      verified: false,
+      attempts: 0
+    });
 
     // Normalize phone number using libphonenumber-js
     let normalizedPhone;

@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { ArrowLeft, Plus, Tag, Trash2, ToggleLeft, ToggleRight, RefreshCw } from 'lucide-react';
+import { ArrowRight, Plus, Tag, Trash2, ToggleLeft, ToggleRight, RefreshCw } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/auth';
@@ -192,7 +192,7 @@ const AdminCoupons: React.FC = () => {
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2 sm:gap-4">
             <Button onClick={() => window.history.back()} variant="ghost" size="sm">
-              <ArrowLeft className="h-4 w-4" />
+              <ArrowRight className="h-4 w-4" />
               <span className="hidden sm:inline mr-1">חזור</span>
             </Button>
             <div>

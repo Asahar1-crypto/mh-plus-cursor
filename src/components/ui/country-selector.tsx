@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Check, ChevronDown, Search } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { getCommonCountries } from '@/utils/phoneUtils';
-import { CountryCode } from 'libphonenumber-js';
+import { CountryCode } from 'libphonenumber-js/min';
 import {
   Command,
   CommandEmpty,

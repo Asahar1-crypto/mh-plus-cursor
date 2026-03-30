@@ -14,9 +14,11 @@ export const useExpenseFilters = () => {
   const selectedCategory = searchParams.get('category');
   const selectedChild = searchParams.get('child');
   const selectedStatus = searchParams.get('status') as Expense['status'] | null;
-  const selectedMonth = parseInt(
-    searchParams.get('month') ?? String(new Date().getMonth())
-  );
+  const monthParam = searchParams.get('month');
+  const showAllMonths = monthParam === 'all';
+  const selectedMonth = showAllMonths
+    ? new Date().getMonth()
+    : parseInt(monthParam ?? String(new Date().getMonth()));
   const selectedYear = parseInt(
     searchParams.get('year') ?? String(new Date().getFullYear())
   );
@@ -59,20 +61,21 @@ export const useExpenseFilters = () => {
         .filter(e => (selectedChild ? e.childId === selectedChild : true))
         .filter(e => (selectedStatus ? e.status === selectedStatus : true))
         .filter(e => {
+          if (showAllMonths) return true;
           const d = new Date(e.date);
           return d.getMonth() === selectedMonth && d.getFullYear() === selectedYear;
         })
         .filter(e => {
           if (!selectedPayer) return true;
           if (selectedPayer === 'split') return e.splitEqually;
-          if (e.splitEqually) return true;
           return e.paidById === selectedPayer;
         }),
-    [selectedCategory, selectedChild, selectedStatus, selectedMonth, selectedYear, selectedPayer]
+    [selectedCategory, selectedChild, selectedStatus, selectedMonth, selectedYear, selectedPayer, showAllMonths]
   );
 
   return {
     // Values
+    showAllMonths,
     selectedCategory,
     selectedChild,
     selectedStatus,

@@ -54,8 +54,7 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
 
   // Detect platform on mount
   useEffect(() => {
-    const p = detectPlatform();
-    setPlatform(p);
+    detectPlatform().then((p) => setPlatform(p));
   }, []);
 
   // Initialize notifications when user and account are available
@@ -73,10 +72,10 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
       setIsInitializing(true);
       try {
         // Use detectPlatform() directly to avoid race with platform state
-        const currentPlatform = detectPlatform();
+        const currentPlatform = await detectPlatform();
 
         if (currentPlatform === 'web') {
-          const status = getPermissionStatus();
+          const status = await getPermissionStatus();
           setHasPermission(status === 'granted');
 
           if (status === 'granted') {
@@ -133,9 +132,11 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
       unsubscribeRef.current();
     }
 
-    unsubscribeRef.current = onForegroundMessage((payload) => {
+    onForegroundMessage((payload) => {
       handleForegroundNotification(payload);
       setUnreadCount((prev) => prev + 1);
+    }).then((unsub) => {
+      unsubscribeRef.current = unsub;
     });
   }, []);
 

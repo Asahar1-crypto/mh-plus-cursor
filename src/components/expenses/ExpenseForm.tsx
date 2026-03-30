@@ -96,7 +96,10 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({ onSubmitSuccess, onCan
       
       // Use the actual logged-in user's ID, not the admin
       const currentUserId = user?.id || '';
-      const otherUserId = accountMembers?.find(m => m.user_id !== currentUserId)?.user_id || '';
+      const hasVirtualPartner = accountMembers?.length === 1 && !!account?.virtual_partner_name && !!account?.virtual_partner_id;
+      const otherUserId = hasVirtualPartner
+        ? account.virtual_partner_id!
+        : accountMembers?.find(m => m.user_id !== currentUserId)?.user_id || '';
       
       switch (data.paymentType) {
         case 'i_paid_shared':
@@ -128,6 +131,9 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({ onSubmitSuccess, onCan
       }
       
       const paidByMember = accountMembers?.find(m => m.user_id === paidById);
+      const paidByName = hasVirtualPartner && paidById === account.virtual_partner_id
+        ? account.virtual_partner_name!
+        : paidByMember?.user_name || '';
       const payload = {
         amount: Number(data.amount),
         description: data.description,
@@ -136,7 +142,7 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({ onSubmitSuccess, onCan
         childId: data.childId === 'general' ? undefined : data.childId,
         childName: childInfo?.name,
         paidById: paidById,
-        paidByName: paidByMember?.user_name || '',
+        paidByName: paidByName,
         isRecurring: data.isRecurring,
         frequency: data.isRecurring ? data.frequency as 'monthly' | 'weekly' | 'yearly' : undefined,
         hasEndDate: data.hasEndDate,
@@ -346,7 +352,10 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({ onSubmitSuccess, onCan
           name="paymentType"
           render={({ field }) => {
             // Get the other user's name based on the actual logged-in user
-            const otherUserName = accountMembers?.find(m => m.user_id !== user?.id)?.user_name || 'השותף/ה';
+            const isVirtualPartnerMode = accountMembers?.length === 1 && !!account?.virtual_partner_name;
+            const otherUserName = isVirtualPartnerMode
+              ? account.virtual_partner_name!
+              : accountMembers?.find(m => m.user_id !== user?.id)?.user_name || 'השותף/ה';
             
             const paymentOptions = [
               {
@@ -389,7 +398,7 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({ onSubmitSuccess, onCan
                     className="space-y-2 sm:space-y-3"
                     dir="rtl"
                   >
-                    {accountMembers && accountMembers.length >= 2 && paymentOptions.map((option) => (
+                    {accountMembers && (accountMembers.length >= 2 || (accountMembers.length === 1 && !!account?.virtual_partner_name)) && paymentOptions.map((option) => (
                       <div 
                         key={option.value}
                         className="flex items-start space-x-3 space-x-reverse rounded-lg border p-3 sm:p-4 hover:bg-muted/50 transition-colors"

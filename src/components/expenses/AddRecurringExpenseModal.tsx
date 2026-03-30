@@ -102,7 +102,10 @@ export const AddRecurringExpenseModal: React.FC<AddRecurringExpenseModalProps> =
       let splitEqually = false;
       
       const currentUserId = user?.id || '';
-      const otherUserId = accountMembers?.find(m => m.user_id !== currentUserId)?.user_id || '';
+      const hasVirtualPartner = accountMembers?.length === 1 && !!account?.virtual_partner_name && !!account?.virtual_partner_id;
+      const otherUserId = hasVirtualPartner
+        ? account.virtual_partner_id!
+        : accountMembers?.find(m => m.user_id !== currentUserId)?.user_id || '';
       
       switch (data.paymentType) {
         case 'i_paid_shared':
@@ -126,6 +129,9 @@ export const AddRecurringExpenseModal: React.FC<AddRecurringExpenseModalProps> =
       }
 
       const isIndexLinked = indexLinkingAvailable && data.frequency === 'monthly' && data.isIndexLinked === true;
+      // Auto-approve when account has a virtual partner (no real second member) or user paid for themselves
+      const isVirtualPartnerAccount = hasVirtualPartner;
+      const isAutoApproved = isVirtualPartnerAccount || paidById === user.id;
       const expenseData: any = {
         account_id: account.id,
         amount: isIndexLinked ? data.amount : data.amount,
@@ -140,7 +146,9 @@ export const AddRecurringExpenseModal: React.FC<AddRecurringExpenseModalProps> =
         frequency: data.frequency,
         has_end_date: data.hasEndDate,
         end_date: data.hasEndDate ? data.endDate : null,
-        status: 'pending',
+        status: isAutoApproved ? 'approved' : 'pending',
+        approved_by: isAutoApproved ? user.id : null,
+        approved_at: isAutoApproved ? new Date().toISOString() : null,
         include_in_monthly_balance: includeInMonthlyBalance,
         is_index_linked: isIndexLinked,
         base_amount: isIndexLinked ? data.amount : null,
@@ -189,7 +197,7 @@ export const AddRecurringExpenseModal: React.FC<AddRecurringExpenseModalProps> =
           הוספת הוצאה חוזרת
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-[95vw] sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Repeat className="h-5 w-5" />
@@ -296,8 +304,11 @@ export const AddRecurringExpenseModal: React.FC<AddRecurringExpenseModalProps> =
               control={form.control}
               name="paymentType"
               render={({ field }) => {
-                const otherUserName = accountMembers?.find(m => m.user_id !== user?.id)?.user_name || 'השותף/ה';
-                
+                const isVirtualPartnerMode = accountMembers?.length === 1 && !!account?.virtual_partner_name;
+                const otherUserName = isVirtualPartnerMode
+                  ? account.virtual_partner_name!
+                  : accountMembers?.find(m => m.user_id !== user?.id)?.user_name || 'השותף/ה';
+
                 const paymentOptions = [
                   {
                     value: 'i_paid_shared',
@@ -339,7 +350,7 @@ export const AddRecurringExpenseModal: React.FC<AddRecurringExpenseModalProps> =
                         className="space-y-3"
                         dir="rtl"
                       >
-                        {accountMembers && accountMembers.length >= 2 && paymentOptions.map((option) => (
+                        {accountMembers && (accountMembers.length >= 2 || (accountMembers.length === 1 && !!account?.virtual_partner_name)) && paymentOptions.map((option) => (
                           <div 
                             key={option.value}
                             className="flex items-start space-x-3 space-x-reverse rounded-lg border p-3 hover:bg-muted/50 transition-colors"

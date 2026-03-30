@@ -28,18 +28,31 @@ export const ExpensesSummary: React.FC<ExpensesSummaryProps> = ({
   const { account } = useAuth();
   
   // Get account members
-  const { data: accountMembers } = useQuery({
+  const { data: rawAccountMembers } = useQuery({
     queryKey: ['account-members', account?.id],
     queryFn: () => memberService.getAccountMembers(account!.id),
     enabled: !!account?.id
   });
+
+  // Virtual partner support: augment members list when solo user has virtual partner
+  const accountMembers = useMemo(() => {
+    if (!rawAccountMembers) return rawAccountMembers;
+    const hasVP = rawAccountMembers.length === 1 && !!account?.virtual_partner_name && !!account?.virtual_partner_id;
+    if (hasVP) {
+      return [
+        ...rawAccountMembers,
+        { user_id: account!.virtual_partner_id!, user_name: account!.virtual_partner_name!, role: 'member' as const, joined_at: '' }
+      ];
+    }
+    return rawAccountMembers;
+  }, [rawAccountMembers, account?.virtual_partner_name, account?.virtual_partner_id]);
 
   // Calculate totals and breakdown by user
   const summaryData = useMemo(() => {
     const calculateBreakdown = (expenses: Expense[]) => {
       const total = expenses.reduce((sum, exp) => sum + exp.amount, 0);
       const count = expenses.length;
-      
+
       if (!accountMembers || accountMembers.length === 0) {
         return { total, count, breakdown: [] };
       }
@@ -47,7 +60,7 @@ export const ExpensesSummary: React.FC<ExpensesSummaryProps> = ({
       const breakdown = accountMembers.map(member => {
         let userTotal = 0;
         let userCount = 0;
-        
+
         expenses.forEach(exp => {
           if (exp.paidById === member.user_id) {
             // This member paid the expense
@@ -63,7 +76,7 @@ export const ExpensesSummary: React.FC<ExpensesSummaryProps> = ({
             userCount++;
           }
         });
-        
+
         return {
           userName: member.user_name,
           amount: userTotal,
@@ -82,15 +95,18 @@ export const ExpensesSummary: React.FC<ExpensesSummaryProps> = ({
   }, [pendingExpenses, approvedExpenses, paidExpenses, accountMembers]);
 
   const isPersonalPlan = account?.plan_slug === 'personal';
+  const hasVirtualPartner = !!account?.virtual_partner_name && !!account?.virtual_partner_id;
+  // Show settlement UI when it's a family plan OR solo user with virtual partner
+  const showSettlementUI = !isPersonalPlan || hasVirtualPartner;
 
   const animatedPending = useAnimatedCounter(summaryData.pending.total);
   const animatedApproved = useAnimatedCounter(summaryData.approved.total);
   const animatedPaid = useAnimatedCounter(summaryData.paid.total);
 
   return (
-    <div className={`grid grid-cols-1 xs:grid-cols-2 lg:grid-cols-3 ${isPersonalPlan ? 'xl:grid-cols-4' : 'xl:grid-cols-5'} gap-3 sm:gap-4 md:gap-6 mb-6 sm:mb-8`}>
-      {/* כרטיס הוצאות ממתינות - מוסתר בתוכנית אישית */}
-      {!isPersonalPlan && (
+    <div className={`grid grid-cols-1 xs:grid-cols-2 lg:grid-cols-3 ${showSettlementUI ? 'xl:grid-cols-5' : 'xl:grid-cols-4'} gap-3 sm:gap-4 md:gap-6 mb-6 sm:mb-8`}>
+      {/* כרטיס הוצאות ממתינות - מוסתר בתוכנית אישית ללא שותף וירטואלי */}
+      {showSettlementUI && (
       <Card className="bg-gradient-to-br from-card/90 to-card/95 backdrop-blur-lg border border-border/50 shadow-xl hover:shadow-2xl overflow-hidden relative group hover:scale-105 transition-all duration-500">
         <div className="absolute inset-0 bg-gradient-to-br from-amber-500/10 to-orange-500/15 opacity-60 group-hover:opacity-90 transition-opacity duration-300"></div>
         <div className="absolute -top-20 -right-20 w-40 h-40 bg-amber-400/20 rounded-full blur-3xl group-hover:scale-150 transition-transform duration-700"></div>

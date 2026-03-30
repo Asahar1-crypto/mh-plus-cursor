@@ -96,8 +96,9 @@ serve(async (req) => {
 
     console.log(`OTP Verify: Code verified successfully for ${phoneNumber}`);
 
-    // For login type, generate magic link
-    let magicLink = undefined;
+    // For login type, generate session tokens
+    let access_token = undefined;
+    let refresh_token = undefined;
     if (type === 'login') {
       try {
         // Find user by phone number
@@ -108,30 +109,38 @@ serve(async (req) => {
           .single();
 
         if (profile) {
-          const { data: linkData, error: linkError } = await supabase.auth.admin.generateLink({
-            type: 'magiclink',
-            email: profile.id, // This might need to be email instead
-            options: {
-              redirectTo: `${supabaseUrl.replace('supabase.co', 'vercel.app')}/dashboard`
-            }
-          });
+          // Get the user's email from auth.users
+          const { data: authUser } = await supabase.auth.admin.getUserById(profile.id);
+          const userEmail = authUser?.user?.email;
 
-          if (!linkError && linkData?.properties?.action_link) {
-            magicLink = linkData.properties.action_link;
+          if (userEmail) {
+            const { data: linkData, error: linkError } = await supabase.auth.admin.generateLink({
+              type: 'magiclink',
+              email: userEmail,
+              options: {
+                redirectTo: `${supabaseUrl.replace('supabase.co', 'vercel.app')}/dashboard`
+              }
+            });
+
+            if (!linkError && linkData?.properties) {
+              access_token = linkData.properties.access_token;
+              refresh_token = linkData.properties.refresh_token;
+            }
           }
         }
       } catch (error) {
-        console.error('Error generating magic link:', error);
-        // Continue without magic link
+        console.error('Error generating session tokens:', error);
+        // Continue without tokens
       }
     }
 
     return new Response(
-      JSON.stringify({ 
+      JSON.stringify({
         verified: true,
         success: true,
         message: 'הקוד אומת בהצלחה',
-        magicLink,
+        access_token,
+        refresh_token,
         userId: verificationRecord.user_id
       }),
       { 

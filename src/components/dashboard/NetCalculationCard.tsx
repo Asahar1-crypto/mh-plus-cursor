@@ -25,11 +25,24 @@ export const NetCalculationCard: React.FC<NetCalculationCardProps> = ({
   const { account } = useAuth();
   
   // Get account members
-  const { data: accountMembers } = useQuery({
+  const { data: rawAccountMembers } = useQuery({
     queryKey: ['account-members', account?.id],
     queryFn: () => memberService.getAccountMembers(account!.id),
     enabled: !!account?.id
   });
+
+  // Virtual partner support: when solo user has a virtual partner, include them in effective members
+  const accountMembers = useMemo(() => {
+    if (!rawAccountMembers) return rawAccountMembers;
+    const hasVirtualPartner = rawAccountMembers.length === 1 && !!account?.virtual_partner_name && !!account?.virtual_partner_id;
+    if (hasVirtualPartner) {
+      return [
+        ...rawAccountMembers,
+        { user_id: account!.virtual_partner_id!, user_name: account!.virtual_partner_name!, role: 'member' as const, joined_at: '' }
+      ];
+    }
+    return rawAccountMembers;
+  }, [rawAccountMembers, account?.virtual_partner_name, account?.virtual_partner_id]);
 
   // Filter approved expenses by selected month if provided
   const filteredApprovedExpenses = useMemo(() => {

@@ -2,10 +2,10 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ModernButton } from '@/components/ui/modern-button';
-import { Smartphone, ArrowLeft } from 'lucide-react';
+import { Smartphone, ArrowRight } from 'lucide-react';
 import { useAuth } from '@/contexts/auth';
 import { Link } from 'react-router-dom';
-import { CountryCode } from 'libphonenumber-js';
+import { CountryCode } from 'libphonenumber-js/min';
 import { InternationalPhoneInput } from '@/components/ui/international-phone-input';
 import { normalizePhoneNumber } from '@/utils/phoneUtils';
 import OtpVerification from './OtpVerification';
@@ -202,16 +202,18 @@ const PhoneLogin: React.FC<PhoneLoginProps> = ({ onBack, hideHeader = false }) =
         <div className="lg:hidden flex justify-center gap-4 mb-4">
           <div className="w-28 h-28 rounded-2xl bg-white overflow-hidden flex items-center justify-center animate-bounce [animation-duration:2s]">
             <img
-              src="/lovable-uploads/3a973532-2477-462a-9a84-0390b7045844.png"
+              src="/lovable-uploads/3a973532-2477-462a-9a84-0390b7045844.webp"
               alt="Red Wallet Character"
               className="w-full h-full object-contain mix-blend-multiply"
+              loading="lazy"
             />
           </div>
           <div className="w-28 h-28 rounded-2xl bg-white overflow-hidden flex items-center justify-center animate-bounce [animation-duration:2s] [animation-delay:0.3s]">
             <img
-              src="/lovable-uploads/3d7094a5-211e-416b-a8c4-8fd864c98499.png"
+              src="/lovable-uploads/3d7094a5-211e-416b-a8c4-8fd864c98499.webp"
               alt="Green Wallet Character"
               className="w-full h-full object-contain mix-blend-multiply"
+              loading="lazy"
             />
           </div>
         </div>
@@ -284,7 +286,7 @@ const PhoneLogin: React.FC<PhoneLoginProps> = ({ onBack, hideHeader = false }) =
             onClick={onBack}
             className="w-full flex items-center gap-2 hover:bg-muted/50 transition-colors"
           >
-            <ArrowLeft className="w-4 h-4" />
+            <ArrowRight className="w-4 h-4" />
             חזור לאימייל וסיסמה
           </Button>
         </div>

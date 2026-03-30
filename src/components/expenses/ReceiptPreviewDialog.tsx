@@ -142,6 +142,7 @@ export const ReceiptPreviewDialog: React.FC<ReceiptPreviewDialogProps> = ({
                 src={signedUrl}
                 alt="Receipt preview"
                 className="w-full h-auto object-contain"
+                loading="lazy"
               />
             </div>
           )}

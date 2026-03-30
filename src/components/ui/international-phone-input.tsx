@@ -2,7 +2,7 @@ import React, { useState, forwardRef, useEffect } from 'react';
 import { Phone, Check, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { normalizePhoneNumber, formatPhoneForDisplay } from '@/utils/phoneUtils';
-import { CountryCode } from 'libphonenumber-js';
+import { CountryCode } from 'libphonenumber-js/min';
 import { CountrySelector } from './country-selector';
 
 interface InternationalPhoneInputProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'onChange'> {

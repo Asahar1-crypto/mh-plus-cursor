@@ -13,8 +13,8 @@ import { User, Save, Edit2, Mail, Phone, Check, X } from 'lucide-react';
 import type { FamilyRoleType } from '@/contexts/auth/types';
 
 const FAMILY_ROLE_OPTIONS: { value: FamilyRoleType; label: string; image?: string; emoji?: string }[] = [
-  { value: 'father', label: 'אבא', image: '/avatars/roles/father.png' },
-  { value: 'mother', label: 'אמא', image: '/avatars/roles/mother.png' },
+  { value: 'father', label: 'אבא', image: '/avatars/roles/father.webp' },
+  { value: 'mother', label: 'אמא', image: '/avatars/roles/mother.webp' },
   { value: 'other', label: 'אחר', emoji: '👤' },
 ];
 
@@ -361,7 +361,7 @@ const UserProfileCard: React.FC = () => {
               >
                 {option.image ? (
                   <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full flex items-center justify-center overflow-hidden p-0.5">
-                    <img src={option.image} alt={option.label} className="w-full h-full object-contain" />
+                    <img src={option.image} alt={option.label} className="w-full h-full object-contain" loading="lazy" />
                   </div>
                 ) : (
                   <span className="text-2xl sm:text-3xl">{option.emoji}</span>

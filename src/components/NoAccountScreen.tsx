@@ -1,13 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Users, UserPlus, Mail, ArrowRight, LogOut } from 'lucide-react';
+import { Users, UserPlus, Mail, ArrowRight, LogOut, RefreshCw } from 'lucide-react';
 import { useAuth } from '@/contexts/auth';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
+import PendingInvitationAlert from '@/components/invitation/PendingInvitationAlert';
 
 const NoAccountScreen = () => {
   const { user, refreshProfile } = useAuth();
@@ -15,7 +16,43 @@ const NoAccountScreen = () => {
   const navigate = useNavigate();
   const [isCreating, setIsCreating] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [isCheckingInvitations, setIsCheckingInvitations] = useState(false);
   const [accountName, setAccountName] = useState(`משפחת ${user?.name || 'המשתמש'}`);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const checkAndRefresh = useCallback(async () => {
+    if (!user) return;
+    setIsCheckingInvitations(true);
+    try {
+      await refreshProfile();
+      // After refreshProfile, if user now has an account_id the parent component
+      // will re-render and stop showing NoAccountScreen. As a fallback, reload.
+      window.location.reload();
+    } catch (error) {
+      console.error('Error checking invitations:', error);
+    } finally {
+      setIsCheckingInvitations(false);
+    }
+  }, [user, refreshProfile]);
+
+  // Auto-check every 10 seconds for accepted invitations
+  useEffect(() => {
+    if (!user) return;
+
+    intervalRef.current = setInterval(async () => {
+      try {
+        await refreshProfile();
+      } catch (error) {
+        console.error('Auto-check invitations error:', error);
+      }
+    }, 10000);
+
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
+    };
+  }, [user, refreshProfile]);
 
   const createNewFamily = async () => {
     if (!user || !accountName.trim()) return;
@@ -94,6 +131,9 @@ const NoAccountScreen = () => {
         </div>
 
 
+        {/* Pending invitation check */}
+        <PendingInvitationAlert />
+
         {/* Options */}
         <div className="grid gap-4 sm:gap-6 md:grid-cols-2">
           {/* Create new family */}
@@ -163,9 +203,23 @@ const NoAccountScreen = () => {
                 </ol>
               </div>
               
-              <Button variant="outline" className="w-full" disabled>
-                <Mail className="h-4 w-4 ml-2" />
-                המתן להזמנה
+              <Button
+                variant="outline"
+                className="w-full border-blue-300 text-blue-700 hover:bg-blue-100"
+                onClick={checkAndRefresh}
+                disabled={isCheckingInvitations}
+              >
+                {isCheckingInvitations ? (
+                  <>
+                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-blue-500 border-t-transparent ml-2" />
+                    בודק הזמנות...
+                  </>
+                ) : (
+                  <>
+                    <RefreshCw className="h-4 w-4 ml-2" />
+                    בדוק הזמנות
+                  </>
+                )}
               </Button>
             </CardContent>
           </Card>

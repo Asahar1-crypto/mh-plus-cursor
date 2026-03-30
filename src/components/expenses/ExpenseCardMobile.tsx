@@ -142,7 +142,7 @@ export const ExpenseCardMobile: React.FC<ExpenseCardMobileProps> = ({
                 size="sm"
                 variant="ghost"
                 onClick={onDelete}
-                className="h-8 px-2 text-red-600 hover:text-red-700 hover:bg-red-50"
+                className="h-10 px-2 text-red-600 hover:text-red-700 hover:bg-red-50"
                 title="מחק"
               >
                 <Trash2 className="h-4 w-4 ml-1" />
@@ -154,7 +154,7 @@ export const ExpenseCardMobile: React.FC<ExpenseCardMobileProps> = ({
                 size="sm"
                 variant="ghost"
                 onClick={onEdit}
-                className="h-8 px-2 text-muted-foreground hover:text-foreground"
+                className="h-10 px-2 text-muted-foreground hover:text-foreground"
                 title="ערוך"
               >
                 <Pencil className="h-4 w-4 ml-1" />
@@ -166,7 +166,7 @@ export const ExpenseCardMobile: React.FC<ExpenseCardMobileProps> = ({
                 size="sm"
                 variant="ghost"
                 onClick={onPreviewReceipt}
-                className="h-8 px-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                className="h-10 px-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
               >
                 <Eye className="h-4 w-4 ml-1" />
                 <span className="text-xs">חשבונית</span>
@@ -184,7 +184,7 @@ export const ExpenseCardMobile: React.FC<ExpenseCardMobileProps> = ({
                   size="sm"
                   variant="ghost"
                   onClick={onApprove}
-                  className="h-8 px-2 text-green-600 hover:text-green-700 hover:bg-green-50"
+                  className="h-10 px-2 text-green-600 hover:text-green-700 hover:bg-green-50"
                   title="אשר"
                 >
                   <Check className="h-4 w-4 ml-1" />
@@ -194,7 +194,7 @@ export const ExpenseCardMobile: React.FC<ExpenseCardMobileProps> = ({
                   size="sm"
                   variant="ghost"
                   onClick={onReject}
-                  className="h-8 px-2 text-red-600 hover:text-red-700 hover:bg-red-50"
+                  className="h-10 px-2 text-red-600 hover:text-red-700 hover:bg-red-50"
                 >
                   <X className="h-4 w-4 ml-1" />
                   <span className="text-xs">דחה</span>
@@ -205,7 +205,7 @@ export const ExpenseCardMobile: React.FC<ExpenseCardMobileProps> = ({
               <Button
                 size="sm"
                 onClick={onMarkAsPaid}
-                className="h-8 px-3 bg-blue-600 hover:bg-blue-700 text-white text-xs"
+                className="h-10 px-3 bg-blue-600 hover:bg-blue-700 text-white text-xs"
               >
                 סמן כשולם
               </Button>

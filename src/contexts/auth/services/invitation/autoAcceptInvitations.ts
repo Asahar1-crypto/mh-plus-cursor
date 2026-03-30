@@ -41,7 +41,17 @@ export const autoAcceptRegistrationInvitations = async (user: User): Promise<Acc
     localStorage.removeItem('pendingInvitationsAfterRegistration');
     
     if (acceptedAccounts.length > 0) {
-      toast.success(`הצטרפת בהצלחה ל-${acceptedAccounts.length} חשבונות!`);
+      // Check if any account had a virtual partner promotion
+      const promotedAccount = acceptedAccounts.find(a => a.promotionResult);
+      if (promotedAccount?.promotionResult && promotedAccount.promotionResult.expenses_updated > 0) {
+        const { expenses_updated } = promotedAccount.promotionResult;
+        toast.success(
+          `שלום ${user.name}! הצטרפת למשפחת ${promotedAccount.name}. ${expenses_updated} הוצאות הועברו לחשבון שלך.`,
+          { duration: 8000 }
+        );
+      } else {
+        toast.success(`הצטרפת בהצלחה ל-${acceptedAccounts.length} חשבונות!`);
+      }
     }
     
     return acceptedAccounts;

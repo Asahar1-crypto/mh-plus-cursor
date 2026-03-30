@@ -66,8 +66,6 @@ serve(async (req) => {
       );
     }
     
-    console.log('Normalized phone number:', normalizedPhone);
-
     // Initialize Supabase client
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
@@ -75,48 +73,92 @@ serve(async (req) => {
     );
 
     // Check if phone number exists in profiles - search both phone_e164 and phone_number fields
-    console.log('Searching for profile with phone:', normalizedPhone);
-    
-    const { data: profile, error: profileError } = await supabase
+    // Use separate queries to avoid filter injection via .or() string interpolation
+    let profile = null;
+    const { data: profileByE164, error: e164Error } = await supabase
       .from('profiles')
       .select('id, name, phone_e164, phone_number')
-      .or(`phone_e164.eq.${normalizedPhone},phone_number.eq.${normalizedPhone}`)
+      .eq('phone_e164', normalizedPhone)
       .maybeSingle();
 
-    if (profileError) {
-      console.error('Error checking profile:', profileError);
+    if (e164Error) {
+      console.error('Error checking profile by e164:', e164Error.message);
       return new Response(
         JSON.stringify({ error: 'Database error' }),
-        { 
+        {
           status: 500,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         }
       );
     }
 
+    profile = profileByE164;
+
     if (!profile) {
-      console.log('Phone number not found in profiles. Searched for:', normalizedPhone);
+      const { data: profileByPhone, error: phoneError } = await supabase
+        .from('profiles')
+        .select('id, name, phone_e164, phone_number')
+        .eq('phone_number', normalizedPhone)
+        .maybeSingle();
+
+      if (phoneError) {
+        console.error('Error checking profile by phone:', phoneError.message);
+        return new Response(
+          JSON.stringify({ error: 'Database error' }),
+          {
+            status: 500,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          }
+        );
+      }
+
+      profile = profileByPhone;
+    }
+
+    if (!profile) {
       return new Response(
-        JSON.stringify({ 
+        JSON.stringify({
           error: 'Phone number not registered',
           message: 'מספר הטלפון לא רשום במערכת. אנא הירשם תחילה או בדוק את המספר.',
           suggestion: 'register'
         }),
-        { 
+        {
           status: 404,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         }
       );
     }
 
-    console.log('Profile found for phone:', profile);
+    console.log('Profile found for phone login, userId:', profile.id);
 
-    // Temporarily disable rate limiting for testing
-    console.log('Rate limiting temporarily disabled for testing');
+    // Rate limiting: max 3 OTP requests per phone number in the last 10 minutes
+    const { data: recentCodes, error: rateError } = await supabase
+      .from('sms_verification_codes')
+      .select('id')
+      .eq('phone_number', normalizedPhone)
+      .eq('verification_type', 'login')
+      .gte('created_at', new Date(Date.now() - 10 * 60 * 1000).toISOString());
+
+    if (rateError) {
+      console.error('Rate limit check error:', rateError.message);
+    }
+
+    if (recentCodes && recentCodes.length >= 3) {
+      console.log('Rate limit exceeded for phone login');
+      return new Response(
+        JSON.stringify({
+          error: 'Too many attempts',
+          message: 'נשלחו יותר מדי קודים. נסה שוב בעוד 10 דקות.'
+        }),
+        {
+          status: 429,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
+    }
 
     // Generate 6-digit OTP
     const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
-    console.log('Generated OTP code:', otpCode);
 
     // Store OTP in database
     const { error: storeError } = await supabase
@@ -182,7 +224,7 @@ serve(async (req) => {
 
     const vonageResult = await vonageResponse.json();
     
-    console.log('Vonage response:', JSON.stringify(vonageResult));
+    console.log('Vonage response status:', vonageResult.messages?.[0]?.status);
     
     // Vonage returns status in messages array
     if (!vonageResult.messages || vonageResult.messages[0]?.status !== '0') {
@@ -197,7 +239,7 @@ serve(async (req) => {
       );
     }
 
-    console.log('SMS sent successfully via Vonage:', vonageResult.messages[0]['message-id']);
+    console.log('SMS sent successfully');
 
     return new Response(
       JSON.stringify({ 

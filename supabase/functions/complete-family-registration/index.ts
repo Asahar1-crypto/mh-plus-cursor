@@ -203,6 +203,45 @@ serve(async (req) => {
 
     console.log('Invitation accepted successfully');
 
+    // 3b. Promote virtual partner if the account has one
+    let promotionResult = null;
+    try {
+      // Get the account_id from the invitation
+      const { data: invitationRow } = await supabaseAdmin
+        .from('invitations')
+        .select('account_id')
+        .eq('invitation_id', invitationId)
+        .single();
+
+      const accountId = invitationRow?.account_id;
+      if (accountId) {
+        const { data: accountWithVP } = await supabaseAdmin
+          .from('accounts')
+          .select('virtual_partner_id, virtual_partner_name')
+          .eq('id', accountId)
+          .single();
+
+        if (accountWithVP?.virtual_partner_id) {
+          console.log(`Account ${accountId} has virtual partner "${accountWithVP.virtual_partner_name}". Promoting to real user ${userId}.`);
+
+          const { data: rpcResult, error: rpcError } = await supabaseAdmin.rpc('promote_virtual_partner', {
+            p_account_id: accountId,
+            p_real_user_id: userId,
+          });
+
+          if (rpcError) {
+            console.error('Error promoting virtual partner:', rpcError);
+          } else {
+            promotionResult = typeof rpcResult === 'string' ? JSON.parse(rpcResult) : rpcResult;
+            console.log('Virtual partner promoted successfully:', promotionResult);
+          }
+        }
+      }
+    } catch (vpError) {
+      console.error('Error checking/promoting virtual partner:', vpError);
+      // Don't fail the registration — promotion is best-effort
+    }
+
     // 4. Generate a one-time sign-in link for the user
     const appUrl = Deno.env.get('APP_URL') || 'https://mhplus.online';
     const redirectTo = `${appUrl}/dashboard`;
@@ -219,13 +258,15 @@ serve(async (req) => {
     }
 
     return new Response(
-      JSON.stringify({ 
+      JSON.stringify({
         success: true,
         userId: userId,
         email: email,
         isExistingUser: isExistingUser,
-        magicLink: signInData?.properties?.action_link,
-        message: isExistingUser 
+        access_token: signInData?.properties?.access_token,
+        refresh_token: signInData?.properties?.refresh_token,
+        promotionResult: promotionResult || undefined,
+        message: isExistingUser
           ? 'המשתמש נוסף לחשבון המשפחתי בהצלחה!'
           : 'הרישום הושלם בהצלחה! המשתמש נוסף לחשבון המשפחתי'
       }),

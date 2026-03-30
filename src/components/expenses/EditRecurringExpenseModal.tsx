@@ -150,8 +150,11 @@ export const EditRecurringExpenseModal: React.FC<EditRecurringExpenseModalProps>
       let splitEqually = false;
       
       const currentUserId = user?.id || '';
-      const otherUserId = accountMembers?.find(m => m.user_id !== currentUserId)?.user_id || '';
-      
+      const hasVirtualPartner = accountMembers?.length === 1 && !!account?.virtual_partner_name && !!account?.virtual_partner_id;
+      const otherUserId = hasVirtualPartner
+        ? account.virtual_partner_id!
+        : accountMembers?.find(m => m.user_id !== currentUserId)?.user_id || '';
+
       switch (data.paymentType) {
         case 'i_paid_shared':
           paidById = otherUserId;
@@ -230,7 +233,7 @@ export const EditRecurringExpenseModal: React.FC<EditRecurringExpenseModalProps>
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="w-[95vw] sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>עריכת הוצאה חוזרת</DialogTitle>
           <DialogDescription>
@@ -334,8 +337,11 @@ export const EditRecurringExpenseModal: React.FC<EditRecurringExpenseModalProps>
               control={form.control}
               name="paymentType"
               render={({ field }) => {
-                const otherUserName = accountMembers?.find(m => m.user_id !== user?.id)?.user_name || 'השותף/ה';
-                
+                const isVirtualPartnerMode = accountMembers?.length === 1 && !!account?.virtual_partner_name;
+                const otherUserName = isVirtualPartnerMode
+                  ? account.virtual_partner_name!
+                  : accountMembers?.find(m => m.user_id !== user?.id)?.user_name || 'השותף/ה';
+
                 const paymentOptions = [
                   {
                     value: 'i_paid_shared',
@@ -377,7 +383,7 @@ export const EditRecurringExpenseModal: React.FC<EditRecurringExpenseModalProps>
                         className="space-y-3"
                         dir="rtl"
                       >
-                        {accountMembers && accountMembers.length >= 2 && paymentOptions.map((option) => (
+                        {accountMembers && (accountMembers.length >= 2 || (accountMembers.length === 1 && !!account?.virtual_partner_name)) && paymentOptions.map((option) => (
                           <div 
                             key={option.value}
                             className="flex items-start space-x-3 space-x-reverse rounded-lg border p-3 hover:bg-muted/50 transition-colors"

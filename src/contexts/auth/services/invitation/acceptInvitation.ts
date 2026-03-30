@@ -1,6 +1,6 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { User, Account } from '../../types';
+import { User, Account, VirtualPartnerPromotionResult } from '../../types';
 import { toast } from 'sonner';
 import { validateAccountExists, getAccountDetails, debugListAllAccounts } from './accountValidator';
 import { memberService } from '../account/memberService';
@@ -39,10 +39,26 @@ export async function acceptInvitation(invitationId: string, user: User): Promis
     
     const invitation = invitationArray[0];
     
-    // Case insensitive comparison for email
-    if (invitation.email && invitation.email.toLowerCase() !== user.email.toLowerCase()) {
-      console.error(`acceptInvitation: Email mismatch: invitation for ${invitation.email} but user is ${user.email}`);
-      throw new Error(`ההזמנה מיועדת ל-${invitation.email} אך אתה מחובר כ-${user.email}`);
+    // Validate the accepting user matches the invitation target
+    if (invitation.email) {
+      // Case insensitive comparison for email-based invitations
+      if (invitation.email.toLowerCase() !== user.email.toLowerCase()) {
+        console.error(`acceptInvitation: Email mismatch: invitation for ${invitation.email} but user is ${user.email}`);
+        throw new Error(`ההזמנה מיועדת ל-${invitation.email} אך אתה מחובר כ-${user.email}`);
+      }
+    } else if (invitation.phone_number) {
+      // For phone-based invitations, verify the acceptor's phone matches
+      const { data: acceptorProfile } = await supabase
+        .from('profiles')
+        .select('phone_e164, phone_number')
+        .eq('id', user.id)
+        .single();
+
+      const acceptorPhone = acceptorProfile?.phone_e164 || acceptorProfile?.phone_number;
+      if (!acceptorPhone || acceptorPhone !== invitation.phone_number) {
+        console.error(`acceptInvitation: Phone mismatch: invitation for ${invitation.phone_number} but user phone is ${acceptorPhone}`);
+        throw new Error('ההזמנה מיועדת למספר טלפון אחר. אנא ודא שאתה מחובר עם החשבון הנכון.');
+      }
     }
     
     const accountId = invitation.account_id;
@@ -96,15 +112,51 @@ export async function acceptInvitation(invitationId: string, user: User): Promis
       .eq('account_id', accountId)
       .eq('user_id', user.id)
       .single();
-    
+
     const userRole = membership?.role || 'member';
-    
-    
+
+    // Check if account has a virtual partner and promote to real user
+    let promotionResult: VirtualPartnerPromotionResult | undefined;
+    try {
+      const { data: accountWithVP } = await supabase
+        .from('accounts')
+        .select('virtual_partner_id, virtual_partner_name')
+        .eq('id', accountId)
+        .single();
+
+      if (accountWithVP?.virtual_partner_id) {
+        console.log(`acceptInvitation: Account ${accountId} has virtual partner "${accountWithVP.virtual_partner_name}" (${accountWithVP.virtual_partner_id}). Promoting to real user ${user.id}.`);
+
+        const { data: rpcResult, error: rpcError } = await supabase.rpc('promote_virtual_partner', {
+          p_account_id: accountId,
+          p_real_user_id: user.id,
+        });
+
+        if (rpcError) {
+          console.error('acceptInvitation: Error promoting virtual partner:', rpcError);
+          // Don't fail the entire invitation acceptance -- promotion is best-effort
+        } else if (rpcResult) {
+          const result = typeof rpcResult === 'string' ? JSON.parse(rpcResult) : rpcResult;
+          promotionResult = {
+            status: result.status || result.success ? 'ok' : 'error',
+            virtual_name: result.virtual_name || accountWithVP.virtual_partner_name || '',
+            expenses_updated: result.expenses_transferred || result.expenses_updated || 0,
+            settlements_updated: result.settlements_transferred || result.settlements_updated || 0,
+          };
+          console.log(`acceptInvitation: Virtual partner promoted successfully. ${promotionResult.expenses_updated} expenses, ${promotionResult.settlements_updated} settlements updated.`);
+        }
+      }
+    } catch (vpError) {
+      console.error('acceptInvitation: Error checking/promoting virtual partner:', vpError);
+      // Don't fail the invitation acceptance due to promotion error
+    }
+
     // Create account object to return
     const sharedAccount: Account = {
       id: accountData.id,
       name: accountData.name,
-      userRole: userRole
+      userRole: userRole,
+      promotionResult,
     };
     
     // Clear sessionStorage and localStorage invitation data

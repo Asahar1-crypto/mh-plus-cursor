@@ -2,7 +2,7 @@
 import React, { useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
-import { Wallet, Users, BarChart3, RefreshCw, ShieldCheck, PieChart, ArrowLeft, Heart } from 'lucide-react';
+import { Wallet, Users, BarChart3, RefreshCw, ShieldCheck, PieChart, ArrowRight, Heart } from 'lucide-react';
 import { useAnimatedCounter } from '@/hooks/use-animated-counter';
 
 /* Lightweight scroll-reveal: adds .is-visible when element enters viewport */
@@ -64,7 +64,7 @@ const Home = () => {
           <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center px-4 sm:px-0 animate-fade-in [animation-delay:300ms]">
             <Button size="lg" onClick={() => navigate('/register')} className="text-sm sm:text-lg h-11 sm:h-12 shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30 transition-shadow duration-300">
               התחל להשתמש - חינם
-              <ArrowLeft className="h-4 w-4 mr-2" />
+              <ArrowRight className="h-4 w-4 mr-2" />
             </Button>
             <Button size="lg" variant="outline" onClick={() => navigate('/login')} className="text-sm sm:text-lg h-11 sm:h-12">
               כניסה למשתמשים קיימים

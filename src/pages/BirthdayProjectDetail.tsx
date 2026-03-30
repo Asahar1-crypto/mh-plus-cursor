@@ -39,7 +39,7 @@ const BirthdayProjectDetail: React.FC = () => {
   const navigate = useNavigate();
   const { user, account } = useAuth();
 
-  const { data: project, isLoading: projectLoading, error: projectError } = useBirthdayProject(id);
+  const { data: project, isLoading: projectLoading, error: projectError } = useBirthdayProject(id, account?.id);
   const { tasks, isLoading: tasksLoading, addTask, claimTask, unclaimTask, markPaid, verifyTask, cancelTask, isAddingTask } =
     useBirthdayTasks(id);
   const { confirmBudget, isConfirmingBudget, markSettled, isSettling } = useBirthdayProjects(account?.id);

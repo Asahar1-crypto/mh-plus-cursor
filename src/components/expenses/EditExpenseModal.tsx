@@ -91,7 +91,7 @@ export const EditExpenseModal: React.FC<EditExpenseModalProps> = ({ expense, ope
         date: format(data.date, 'yyyy-MM-dd'),
         childId: data.childId === 'general' ? undefined : data.childId,
       };
-      if (!isPersonalPlan) {
+      if (!isPersonalPlan || hasVirtualPartner) {
         updates.paidById = data.paidById && data.paidById !== '' ? data.paidById : expense.paidById;
         updates.splitEqually = data.splitEqually;
       }
@@ -104,10 +104,12 @@ export const EditExpenseModal: React.FC<EditExpenseModalProps> = ({ expense, ope
   };
 
   const isPersonalPlan = account?.plan_slug === 'personal';
+  const hasVirtualPartner = accountMembers?.length === 1 && !!account?.virtual_partner_name && !!account?.virtual_partner_id;
+  const showPayerFields = !isPersonalPlan && accountMembers && (accountMembers.length > 1 || hasVirtualPartner);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-[95vw] sm:max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>עריכת הוצאה</DialogTitle>
         </DialogHeader>
@@ -211,7 +213,7 @@ export const EditExpenseModal: React.FC<EditExpenseModalProps> = ({ expense, ope
                 </FormItem>
               )}
             />
-            {!isPersonalPlan && accountMembers && accountMembers.length > 1 && (
+            {showPayerFields && (
               <>
                 <FormField
                   control={form.control}
@@ -226,9 +228,14 @@ export const EditExpenseModal: React.FC<EditExpenseModalProps> = ({ expense, ope
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          {accountMembers.map((m) => (
+                          {accountMembers!.map((m) => (
                             <SelectItem key={m.user_id} value={m.user_id}>{m.user_name}</SelectItem>
                           ))}
+                          {hasVirtualPartner && (
+                            <SelectItem key={account!.virtual_partner_id!} value={account!.virtual_partner_id!}>
+                              {account!.virtual_partner_name!}
+                            </SelectItem>
+                          )}
                         </SelectContent>
                       </Select>
                     </FormItem>

@@ -23,12 +23,12 @@ export const AVATAR_SETS: AvatarSet[] = [
     description: 'Cute wallet characters for the whole family',
     descriptionHe: 'דמויות ארנק חמודות לכל המשפחה',
     avatars: {
-      father: '/avatars/wallets/father.png',
-      mother: '/avatars/wallets/mother.png',
-      son: '/avatars/wallets/son.png',
-      daughter: '/avatars/wallets/daughter.png',
+      father: '/avatars/roles/father.webp',
+      mother: '/avatars/roles/mother.webp',
+      son: '/avatars/roles/son.webp',
+      daughter: '/avatars/roles/daughter.webp',
     },
-    preview: '/avatars/wallets/father.png',
+    preview: '/avatars/roles/father.webp',
   },
 ];
 

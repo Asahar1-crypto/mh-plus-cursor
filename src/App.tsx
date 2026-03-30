@@ -1,3 +1,4 @@
+import React, { Suspense } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -8,49 +9,59 @@ import { ExpenseProvider } from "@/contexts/ExpenseContext";
 import { NotificationProvider } from "@/contexts/NotificationContext";
 import { NotificationPermissionPrompt } from "@/components/notifications";
 
+// Eagerly loaded pages (landing/auth for fast first paint)
 import Home from "./pages/Home";
 import Login from "./pages/Login";
-import Register from "./pages/Register";
-import VerifyEmail from "./pages/VerifyEmail";
-import ForgotPassword from "./pages/ForgotPassword";
-import ResetPassword from "./pages/ResetPassword";
-import Dashboard from "./pages/Dashboard";
-import AccountSettings from "./pages/AccountSettings";
-import AccountManagement from "./pages/AccountManagement";
-import AcceptInvitation from "./pages/AcceptInvitation";
-import FamilyInvitation from "./pages/FamilyInvitation";
-import FamilyPhoneRegister from "./pages/FamilyPhoneRegister";
-import FamilyOtp from "./pages/FamilyOtp";
-import NotFound from "./pages/NotFound";
-import AddExpense from "./pages/AddExpense";
-import Children from "./pages/Children";
-import Expenses from "./pages/Expenses";
-import Reports from "./pages/Reports";
-import MonthlySettlement from "./pages/MonthlySettlement";
-import CustodyCalendar from "./pages/CustodyCalendar";
-import BirthdayProjects from "./pages/BirthdayProjects";
-import BirthdayProjectDetail from "./pages/BirthdayProjectDetail";
-import Privacy from "./pages/Privacy";
-import Terms from "./pages/Terms";
-import Pricing from "./pages/Pricing";
-import ChoosePlan from "./pages/ChoosePlan";
 
-// Admin pages
-import AdminDashboard from "./pages/admin/AdminDashboard";
-import AdminPricing from "./pages/admin/AdminPricing";
-import AdminTenants from "./pages/admin/AdminTenants";
-import AdminEmailSettings from "./pages/admin/AdminEmailSettings";
-import AdminUnverifiedUsers from "./pages/admin/AdminUnverifiedUsers";
-import AdminSmsLogs from "./pages/admin/AdminSmsLogs";
-import AdminEmailManagement from "./pages/admin/AdminEmailManagement";
-import AdminCoupons from "./pages/admin/AdminCoupons";
-import AdminSuperAdmins from "./pages/admin/AdminSuperAdmins";
-import AdminSystemHealth from "./pages/admin/AdminSystemHealth";
+// Lazy-loaded page components
+const Register = React.lazy(() => import("./pages/Register"));
+const VerifyEmail = React.lazy(() => import("./pages/VerifyEmail"));
+const ForgotPassword = React.lazy(() => import("./pages/ForgotPassword"));
+const ResetPassword = React.lazy(() => import("./pages/ResetPassword"));
+const Dashboard = React.lazy(() => import("./pages/Dashboard"));
+const AccountSettings = React.lazy(() => import("./pages/AccountSettings"));
+const AccountManagement = React.lazy(() => import("./pages/AccountManagement"));
+const AcceptInvitation = React.lazy(() => import("./pages/AcceptInvitation"));
+const FamilyInvitation = React.lazy(() => import("./pages/FamilyInvitation"));
+const FamilyPhoneRegister = React.lazy(() => import("./pages/FamilyPhoneRegister"));
+const FamilyOtp = React.lazy(() => import("./pages/FamilyOtp"));
+const NotFound = React.lazy(() => import("./pages/NotFound"));
+const AddExpense = React.lazy(() => import("./pages/AddExpense"));
+const Children = React.lazy(() => import("./pages/Children"));
+const Expenses = React.lazy(() => import("./pages/Expenses"));
+const Reports = React.lazy(() => import("./pages/Reports"));
+const MonthlySettlement = React.lazy(() => import("./pages/MonthlySettlement"));
+const CustodyCalendar = React.lazy(() => import("./pages/CustodyCalendar"));
+const BirthdayProjects = React.lazy(() => import("./pages/BirthdayProjects"));
+const BirthdayProjectDetail = React.lazy(() => import("./pages/BirthdayProjectDetail"));
+const Privacy = React.lazy(() => import("./pages/Privacy"));
+const Terms = React.lazy(() => import("./pages/Terms"));
+const Pricing = React.lazy(() => import("./pages/Pricing"));
+const ChoosePlan = React.lazy(() => import("./pages/ChoosePlan"));
 
+// Lazy-loaded admin pages
+const AdminDashboard = React.lazy(() => import("./pages/admin/AdminDashboard"));
+const AdminPricing = React.lazy(() => import("./pages/admin/AdminPricing"));
+const AdminTenants = React.lazy(() => import("./pages/admin/AdminTenants"));
+const AdminEmailSettings = React.lazy(() => import("./pages/admin/AdminEmailSettings"));
+const AdminUnverifiedUsers = React.lazy(() => import("./pages/admin/AdminUnverifiedUsers"));
+const AdminSmsLogs = React.lazy(() => import("./pages/admin/AdminSmsLogs"));
+const AdminEmailManagement = React.lazy(() => import("./pages/admin/AdminEmailManagement"));
+const AdminCoupons = React.lazy(() => import("./pages/admin/AdminCoupons"));
+const AdminSuperAdmins = React.lazy(() => import("./pages/admin/AdminSuperAdmins"));
+const AdminSystemHealth = React.lazy(() => import("./pages/admin/AdminSystemHealth"));
+
+// Static imports (non-page components)
 import AuthLayout from "./components/AuthLayout";
 import AppLayout from "./components/AppLayout";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { AuthAwareThemeProvider } from "./components/AuthAwareThemeProvider";
+
+const LoadingSpinner = () => (
+  <div className="flex items-center justify-center min-h-screen">
+    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+  </div>
+);
 
 const queryClient = new QueryClient();
 
@@ -65,6 +76,7 @@ const App = () => (
             <Sonner position="top-center" closeButton />
             <NotificationPermissionPrompt />
             <AppRouter>
+            <Suspense fallback={<LoadingSpinner />}>
             <Routes>
               {/* Public routes */}
               <Route element={<AuthLayout />}>
@@ -129,6 +141,7 @@ const App = () => (
               {/* Catch all */}
               <Route path="*" element={<NotFound />} />
             </Routes>
+            </Suspense>
             </AppRouter>
           </ExpenseProvider>
         </NotificationProvider>

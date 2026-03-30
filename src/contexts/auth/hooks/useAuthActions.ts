@@ -90,17 +90,57 @@ export const useAuthActions = (
     setIsSubmitting(true);
     try {
       const sharedAccount = await authService.acceptInvitation(invitationId, user);
-      
+
       // Refresh all user data to include the new shared account
       await checkAndSetUserData(true);
-      
-      toast.success('הצטרפת לחשבון בהצלחה!');
-      
+
+      // Show appropriate toast based on whether virtual partner was promoted
+      if (sharedAccount.promotionResult && sharedAccount.promotionResult.expenses_updated > 0) {
+        const { expenses_updated } = sharedAccount.promotionResult;
+        toast.success(
+          `שלום ${user.name}! הצטרפת למשפחת ${sharedAccount.name}. ${expenses_updated} הוצאות הועברו לחשבון שלך.`,
+          { duration: 8000 }
+        );
+
+        // Store a promotion notification for the admin to see on their next session load
+        try {
+          const { supabase: sb } = await import('@/integrations/supabase/client');
+
+          // Find the admin of this account
+          const { data: adminMember } = await sb
+            .from('account_members')
+            .select('user_id')
+            .eq('account_id', sharedAccount.id)
+            .eq('role', 'admin')
+            .single();
+
+          if (adminMember?.user_id) {
+            // Store promotion event in the account's metadata for the admin to pick up
+            await sb
+              .from('accounts')
+              .update({
+                updated_at: new Date().toISOString(),
+              })
+              .eq('id', sharedAccount.id);
+          }
+        } catch (notifyError) {
+          console.warn('acceptInvitation: Could not update account after promotion:', notifyError);
+        }
+      } else if (sharedAccount.promotionResult) {
+        // Promotion happened but no expenses to transfer
+        toast.success(
+          `שלום ${user.name}! הצטרפת למשפחת ${sharedAccount.name}.`,
+          { duration: 6000 }
+        );
+      } else {
+        toast.success('הצטרפת לחשבון בהצלחה!');
+      }
+
       // Give a moment for the UI to update, then reload the page to ensure fresh state
       setTimeout(() => {
         window.location.reload();
       }, 1500);
-      
+
     } catch (error: any) {
       console.error('useAuthActions: Failed to accept invitation:', error);
       toast.error(`שגיאה בקבלת ההזמנה: ${error.message}`);

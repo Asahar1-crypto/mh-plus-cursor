@@ -80,9 +80,22 @@ export const hasPendingInvitations = async (currentUserEmail?: string, currentUs
       .is('accepted_at', null)
       .gt('expires_at', 'now()');
     
-    // Check by email OR phone
+    // Check by email OR phone — use separate queries to avoid filter injection
     if (currentUserEmail && currentUserPhone) {
-      query = query.or(`email.eq.${currentUserEmail.toLowerCase()},phone_number.eq.${currentUserPhone}`);
+      const { data: byEmail } = await supabase
+        .from('invitations')
+        .select('invitation_id')
+        .is('accepted_at', null)
+        .gt('expires_at', 'now()')
+        .eq('email', currentUserEmail.toLowerCase());
+      const { data: byPhone } = await supabase
+        .from('invitations')
+        .select('invitation_id')
+        .is('accepted_at', null)
+        .gt('expires_at', 'now()')
+        .eq('phone_number', currentUserPhone);
+      const combined = [...(byEmail || []), ...(byPhone || [])];
+      return combined.length > 0;
     } else if (currentUserEmail) {
       query = query.eq('email', currentUserEmail.toLowerCase());
     } else if (currentUserPhone) {

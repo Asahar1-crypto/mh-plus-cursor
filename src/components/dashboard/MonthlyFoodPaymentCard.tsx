@@ -29,8 +29,21 @@ export const MonthlyFoodPaymentCard: React.FC<MonthlyFoodPaymentCardProps> = ({ 
     enabled: !!account?.id
   });
   
+  // Virtual partner support: augment members list when solo user has virtual partner
+  const hasVirtualPartner = accountMembers?.length === 1 && !!account?.virtual_partner_name && !!account?.virtual_partner_id;
+  const effectiveMembers = useMemo(() => {
+    if (!accountMembers) return accountMembers;
+    if (hasVirtualPartner) {
+      return [
+        ...accountMembers,
+        { user_id: account!.virtual_partner_id!, user_name: account!.virtual_partner_name!, role: 'member' as const, joined_at: '' }
+      ];
+    }
+    return accountMembers;
+  }, [accountMembers, hasVirtualPartner, account?.virtual_partner_id, account?.virtual_partner_name]);
+
   const paymentBreakdown = useMemo(() => {
-    if (!accountMembers || accountMembers.length === 0) {
+    if (!effectiveMembers || effectiveMembers.length === 0) {
       return null;
     }
     
@@ -60,7 +73,7 @@ export const MonthlyFoodPaymentCard: React.FC<MonthlyFoodPaymentCardProps> = ({ 
     // 1. split_equally = true: Only the payer owes their half
     // 2. split_equally = false: The payer owes the full amount to the other person
     
-    const breakdown: PaymentBreakdown[] = accountMembers.map(member => {
+    const breakdown: PaymentBreakdown[] = effectiveMembers.map(member => {
       let totalOwes = 0;
       
       // Go through all expenses and see what this member owes
@@ -95,7 +108,7 @@ export const MonthlyFoodPaymentCard: React.FC<MonthlyFoodPaymentCardProps> = ({ 
       breakdown,
       selectedMonth: selectedMonth || `${targetYear}-${String(targetMonth + 1).padStart(2, '0')}`
     };
-  }, [expenses, accountMembers, selectedMonth]);
+  }, [expenses, effectiveMembers, selectedMonth]);
 
   // Helper to format the month label
   const monthLabel = useMemo(() => {

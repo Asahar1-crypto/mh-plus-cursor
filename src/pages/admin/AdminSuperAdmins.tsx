@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { ArrowLeft, Crown, Shield, UserPlus, Trash2, RefreshCw, Search, AlertCircle, Check, Loader2 } from 'lucide-react';
+import { ArrowRight, Crown, Shield, UserPlus, Trash2, RefreshCw, Search, AlertCircle, Check, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/auth';
@@ -260,7 +260,7 @@ const AdminSuperAdmins: React.FC = () => {
             size="sm"
             className="gap-2"
           >
-            <ArrowLeft className="h-4 w-4" />
+            <ArrowRight className="h-4 w-4" />
             <span className="hidden sm:inline">חזור</span>
           </Button>
           <div className="flex-1">

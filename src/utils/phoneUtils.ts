@@ -1,4 +1,4 @@
-import { parsePhoneNumber, PhoneNumber, CountryCode } from 'libphonenumber-js';
+import { parsePhoneNumber, PhoneNumber, CountryCode } from 'libphonenumber-js/min';
 
 /**
  * Phone number normalization and validation utility for Israeli phone numbers

@@ -2,36 +2,45 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Bell } from "lucide-react";
+import { Bell, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/auth';
 import { toast } from 'sonner';
 
+const POLL_INTERVAL_MS = 15_000;
+
 const PendingInvitationAlert = () => {
   const [dismissed, setDismissed] = useState(false);
   const [invitations, setInvitations] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [checkPerformed, setCheckPerformed] = useState(false);
-  const checkTimeoutRef = useRef<number | null>(null);
+  const [manualChecking, setManualChecking] = useState(false);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const navigate = useNavigate();
   const { user } = useAuth();
-  
+
   useEffect(() => {
-    if (user?.email && !checkPerformed) {
-      checkForInvitations();
-      setCheckPerformed(true);
-      setLoading(false);
-    } else if (!user) {
+    if (!user?.email) {
       setLoading(true);
+      setInvitations([]);
+      return;
     }
-    
+
+    // Initial check
+    checkForInvitations().then(() => setLoading(false));
+
+    // Poll every 15 seconds
+    intervalRef.current = setInterval(() => {
+      checkForInvitations();
+    }, POLL_INTERVAL_MS);
+
     return () => {
-      if (checkTimeoutRef.current) {
-        clearTimeout(checkTimeoutRef.current);
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
       }
     };
-  }, [user, checkPerformed]);
+  }, [user?.email, user?.id]);
   
   const checkForInvitations = async () => {
     if (!user?.email) return;
@@ -55,16 +64,43 @@ const PendingInvitationAlert = () => {
         .is('accepted_at', null)
         .gt('expires_at', 'now()');
       
-      // Check by email OR phone
+      // Check by email OR phone — use separate safe queries to avoid filter injection
+      let rawInvitations: any[] | null = null;
+      let error: any = null;
+
       if (user?.email && userPhone) {
-        query = query.or(`email.eq.${user.email.toLowerCase()},phone_number.eq.${userPhone}`);
+        const { data: byEmail, error: e1 } = await supabase
+          .from('invitations')
+          .select('*')
+          .is('accepted_at', null)
+          .gt('expires_at', 'now()')
+          .eq('email', user.email.toLowerCase());
+        const { data: byPhone, error: e2 } = await supabase
+          .from('invitations')
+          .select('*')
+          .is('accepted_at', null)
+          .gt('expires_at', 'now()')
+          .eq('phone_number', userPhone);
+        error = e1 || e2;
+        // Deduplicate by invitation_id
+        const map = new Map<string, any>();
+        [...(byEmail || []), ...(byPhone || [])].forEach(inv => map.set(inv.invitation_id, inv));
+        rawInvitations = Array.from(map.values());
       } else if (user?.email) {
         query = query.eq('email', user.email.toLowerCase());
+        const result = await query;
+        rawInvitations = result.data;
+        error = result.error;
       } else if (userPhone) {
         query = query.eq('phone_number', userPhone);
+        const result = await query;
+        rawInvitations = result.data;
+        error = result.error;
+      } else {
+        const result = await query;
+        rawInvitations = result.data;
+        error = result.error;
       }
-      
-      const { data: rawInvitations, error } = await query;
       
       if (error) {
         console.error('PendingInvitationAlert: Error fetching invitations:', error);
@@ -128,6 +164,12 @@ const PendingInvitationAlert = () => {
     }
   };
   
+  const handleManualCheck = async () => {
+    setManualChecking(true);
+    await checkForInvitations();
+    setManualChecking(false);
+  };
+
   if (!user || invitations.length === 0 || dismissed || loading) {
     return null;
   }
@@ -173,17 +215,28 @@ const PendingInvitationAlert = () => {
         </AlertDescription>
       </div>
       <div className="flex space-x-2 rtl:space-x-reverse">
-        <Button 
-          variant="outline" 
-          size="sm" 
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={handleManualCheck}
+          disabled={manualChecking}
+          className="text-blue-500 hover:bg-blue-100"
+          title="בדוק שוב"
+        >
+          <RefreshCw className={`h-4 w-4 ${manualChecking ? 'animate-spin' : ''}`} />
+          <span className="mr-1">בדוק שוב</span>
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
           onClick={handleDismiss}
           className="text-gray-500 border-gray-300 hover:bg-gray-100"
         >
           סגור
         </Button>
-        <Button 
-          variant="default" 
-          size="sm" 
+        <Button
+          variant="default"
+          size="sm"
           onClick={handleViewInvitation}
           className="bg-blue-500 hover:bg-blue-600"
         >

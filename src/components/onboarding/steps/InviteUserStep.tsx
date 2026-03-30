@@ -9,7 +9,7 @@ import { toast } from 'sonner';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { InternationalPhoneInput } from '@/components/ui/international-phone-input';
 import { normalizePhoneNumber } from '@/utils/phoneUtils';
-import { CountryCode } from 'libphonenumber-js';
+import { CountryCode } from 'libphonenumber-js/min';
 
 export const InviteUserStep: React.FC<OnboardingStepProps> = ({ onNext, onBack, onSkip }) => {
   const { account, user } = useAuth();
@@ -83,8 +83,7 @@ export const InviteUserStep: React.FC<OnboardingStepProps> = ({ onNext, onBack, 
         return;
       }
 
-      // Send SMS - always use production URL
-      const productionUrl = 'https://mhplus.online';
+      // Send SMS with current origin URL
       try {
         await supabase.functions.invoke('send-invitation-sms', {
           body: {
@@ -92,11 +91,12 @@ export const InviteUserStep: React.FC<OnboardingStepProps> = ({ onNext, onBack, 
             invitationId: invitationId,
             accountName: account.name,
             inviterName: user?.name || user?.email || 'מישהו',
-            baseUrl: productionUrl
+            baseUrl: window.location.origin
           }
         });
       } catch (smsError) {
-        // SMS sending failed, but invitation was still created
+        console.error('SMS sending failed:', smsError);
+        toast.error('שגיאה בשליחת ההזמנה ב-SMS');
       }
 
       setIsInvited(true);

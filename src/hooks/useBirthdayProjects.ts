@@ -63,10 +63,10 @@ export function useBirthdayProjects(accountId: string | undefined) {
   };
 }
 
-export function useBirthdayProject(projectId: string | undefined) {
+export function useBirthdayProject(projectId: string | undefined, accountId: string | undefined) {
   return useQuery<BirthdayProject>({
     queryKey: ['birthday-project', projectId],
-    queryFn: () => birthdayService.getProject(projectId!),
-    enabled: !!projectId,
+    queryFn: () => birthdayService.getProject(projectId!, accountId!),
+    enabled: !!projectId && !!accountId,
   });
 }

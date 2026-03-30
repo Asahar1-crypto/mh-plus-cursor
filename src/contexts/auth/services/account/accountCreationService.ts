@@ -68,7 +68,7 @@ export const accountCreationService = {
       const { data, error: createError } = await supabase.rpc(
         'create_account_with_admin',
         { 
-          account_name: `${userName}'s Family Account`,
+          account_name: `המשפחה של ${userName}`,
           admin_user_id: userId
         }
       );

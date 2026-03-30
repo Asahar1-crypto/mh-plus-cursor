@@ -21,25 +21,38 @@ const ResetPassword: React.FC = () => {
   // Store tokens from URL (do NOT verify on load - security: no session created until user submits)
   const [urlTokens, setUrlTokens] = useState<{ token?: string; type?: string; accessToken?: string; refreshToken?: string } | null>(null);
 
+  // Track whether we have an active session (from OTP-based flow in ForgotPassword)
+  const [hasActiveSession, setHasActiveSession] = useState(false);
+
   useEffect(() => {
-    const searchParams = new URLSearchParams(window.location.search);
-    const hashParams = new URLSearchParams(window.location.hash?.substring(1) || '');
-    
-    const token = searchParams.get('token') || hashParams.get('token');
-    const type = searchParams.get('type') || hashParams.get('type');
-    const accessToken = searchParams.get('access_token') || hashParams.get('access_token');
-    const refreshToken = searchParams.get('refresh_token') || hashParams.get('refresh_token');
-    
-    if (token && type === 'recovery') {
-      setUrlTokens({ token, type });
-      setIsValidToken(true);
-    } else if (accessToken && refreshToken) {
-      setUrlTokens({ accessToken, refreshToken });
-      setIsValidToken(true);
-    } else {
-      setIsValidToken(false);
-    }
-    setIsTokenChecking(false);
+    const checkTokensAndSession = async () => {
+      const searchParams = new URLSearchParams(window.location.search);
+      const hashParams = new URLSearchParams(window.location.hash?.substring(1) || '');
+
+      const token = searchParams.get('token') || hashParams.get('token');
+      const type = searchParams.get('type') || hashParams.get('type');
+      const accessToken = searchParams.get('access_token') || hashParams.get('access_token');
+      const refreshToken = searchParams.get('refresh_token') || hashParams.get('refresh_token');
+
+      if (token && type === 'recovery') {
+        setUrlTokens({ token, type });
+        setIsValidToken(true);
+      } else if (accessToken && refreshToken) {
+        setUrlTokens({ accessToken, refreshToken });
+        setIsValidToken(true);
+      } else {
+        // Check for existing session (from OTP-based forgot password flow)
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+          setHasActiveSession(true);
+          setIsValidToken(true);
+        } else {
+          setIsValidToken(false);
+        }
+      }
+      setIsTokenChecking(false);
+    };
+    checkTokensAndSession();
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -61,7 +74,7 @@ const ResetPassword: React.FC = () => {
       return;
     }
 
-    if (!urlTokens) {
+    if (!urlTokens && !hasActiveSession) {
       setError('הטוקן אינו תקף יותר. אנא בקש לינק חדש.');
       return;
     }
@@ -69,8 +82,10 @@ const ResetPassword: React.FC = () => {
     setIsLoading(true);
 
     try {
-      // SECURITY: Create session ONLY when user submits - minimal window for token exposure
-      if (urlTokens.token && urlTokens.type === 'recovery') {
+      // If we already have an active session (from OTP flow), skip token verification
+      if (hasActiveSession) {
+        // Session already set, proceed directly to password update
+      } else if (urlTokens?.token && urlTokens.type === 'recovery') {
         const { data, error: verifyError } = await supabase.auth.verifyOtp({
           token_hash: urlTokens.token,
           type: 'recovery'

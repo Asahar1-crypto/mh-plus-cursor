@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Activity, Database, Server, Clock, RefreshCw, CheckCircle, XCircle, AlertTriangle, Zap, Users, CreditCard, Mail } from 'lucide-react';
+import { ArrowRight, Activity, Database, Server, Clock, RefreshCw, CheckCircle, XCircle, AlertTriangle, Zap, Users, CreditCard, Mail } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/auth';
@@ -261,7 +261,7 @@ const AdminSystemHealth: React.FC = () => {
         {/* Header */}
         <div className="flex items-center gap-3 animate-fade-in">
           <Button onClick={() => window.history.back()} variant="ghost" size="sm" className="gap-2">
-            <ArrowLeft className="h-4 w-4" />
+            <ArrowRight className="h-4 w-4" />
             <span className="hidden sm:inline">חזור</span>
           </Button>
           <div className="flex-1">

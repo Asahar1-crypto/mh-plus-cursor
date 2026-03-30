@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Smartphone, Shield, Clock, RefreshCw, CheckCircle2 } from 'lucide-react';
+import { ArrowRight, Smartphone, Shield, Clock, RefreshCw, CheckCircle2 } from 'lucide-react';
 import { InputOTP, InputOTPGroup, InputOTPSlot, InputOTPSeparator } from '@/components/ui/input-otp';
 import { useAuth } from '@/contexts/auth';
 import { useNavigate } from 'react-router-dom';
@@ -249,7 +249,7 @@ const OtpVerification: React.FC<OtpVerificationProps> = ({
               onClick={onBack}
               className="w-full flex items-center gap-2 hover:bg-muted/50 transition-colors h-10 sm:h-11 text-sm sm:text-base"
             >
-              <ArrowLeft className="w-4 h-4" />
+              <ArrowRight className="w-4 h-4" />
               חזור להזנת מספר
             </Button>
           </div>

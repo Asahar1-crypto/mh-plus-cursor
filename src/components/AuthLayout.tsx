@@ -51,7 +51,7 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({ requiresAuth = false }) => {
     
     // Allow access to other auth pages that handle their own tokens
     // Include /register to allow celebration modal to show after successful registration
-    const allowedPages = ['/verify-email', '/register'];
+    const allowedPages = ['/verify-email', '/register', '/pricing', '/choose-plan'];
     const hasOtherAuthTokens = searchParams.has('access_token');
     
     if (allowedPages.includes(currentPath) || hasOtherAuthTokens) {

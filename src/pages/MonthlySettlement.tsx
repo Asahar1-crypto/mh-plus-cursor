@@ -17,8 +17,7 @@ import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Calendar as CalendarIcon, Calculator, CheckCircle, Clock, TrendingUp, RefreshCw, Check, DollarSign, Archive, ChevronDown, ChevronUp, FileText, Download, User, Receipt, ArrowRightLeft, Plus, Trash2, History, CreditCard, Banknote } from 'lucide-react';
-import confetti from 'canvas-confetti';
+import { Calendar as CalendarIcon, Calculator, CheckCircle, Clock, TrendingUp, RefreshCw, Check, DollarSign, Archive, ChevronDown, ChevronUp, FileText, Download, User, Receipt, ArrowRightLeft, Plus, Trash2, History, CreditCard, Banknote, Lock, LockOpen } from 'lucide-react';
 import { activityService } from '@/integrations/supabase/activityService';
 
 interface SettlementPayment {
@@ -66,6 +65,23 @@ const MonthlySettlement = () => {
   // State for selected month/year
   const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth());
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
+  const [isMonthLocked, setIsMonthLocked] = useState<boolean>(false);
+
+  // Check if selected month is locked
+  useEffect(() => {
+    const checkLock = async () => {
+      if (!account?.id) return;
+      const { data } = await supabase
+        .from('settlement_locks')
+        .select('id')
+        .eq('account_id', account.id)
+        .eq('year', selectedYear)
+        .eq('month', selectedMonth + 1) // JS 0-indexed → DB 1-indexed
+        .maybeSingle();
+      setIsMonthLocked(!!data);
+    };
+    checkLock();
+  }, [account?.id, selectedMonth, selectedYear]);
   
   // State for collapsible sections
   const [expandedSections, setExpandedSections] = useState<{[key: string]: boolean}>({
@@ -104,6 +120,19 @@ const MonthlySettlement = () => {
     loadAccountMembers();
   }, [account?.id]);
 
+  // Virtual partner support: when solo user has a virtual partner configured,
+  // create an effective members list that includes the virtual partner for settlement calculations
+  const hasVirtualPartner = accountMembers.length === 1 && !!account?.virtual_partner_name && !!account?.virtual_partner_id;
+  const effectiveMembers = useMemo(() => {
+    if (hasVirtualPartner) {
+      return [
+        ...accountMembers,
+        { user_id: account!.virtual_partner_id!, user_name: account!.virtual_partner_name! }
+      ];
+    }
+    return accountMembers;
+  }, [accountMembers, hasVirtualPartner, account?.virtual_partner_id, account?.virtual_partner_name]);
+
   // Load settlement payments
   const loadSettlementPayments = async () => {
     if (!account?.id) return;
@@ -125,6 +154,10 @@ const MonthlySettlement = () => {
     const amount = parseFloat(paymentAmount);
     if (isNaN(amount) || amount <= 0) {
       toast({ title: 'שגיאה', description: 'יש להזין סכום תקין', variant: 'destructive' });
+      return;
+    }
+    if (paymentFromUserId === paymentToUserId) {
+      toast({ title: 'שגיאה', description: 'לא ניתן לרשום תשלום מאותו משתמש לעצמו', variant: 'destructive' });
       return;
     }
 
@@ -170,9 +203,9 @@ const MonthlySettlement = () => {
   // Open payment dialog pre-filled with who owes whom
   const openPaymentDialog = (fromUserId?: string, toUserId?: string) => {
     if (fromUserId) setPaymentFromUserId(fromUserId);
-    else if (accountMembers.length >= 2) setPaymentFromUserId(accountMembers[0].user_id);
+    else if (effectiveMembers.length >= 2) setPaymentFromUserId(effectiveMembers[0].user_id);
     if (toUserId) setPaymentToUserId(toUserId);
-    else if (accountMembers.length >= 2) setPaymentToUserId(accountMembers[1].user_id);
+    else if (effectiveMembers.length >= 2) setPaymentToUserId(effectiveMembers[1].user_id);
     setPaymentDate(format(new Date(), 'yyyy-MM-dd'));
     setPaymentAmount('');
     setPaymentNotes('');
@@ -182,7 +215,7 @@ const MonthlySettlement = () => {
 
   // Helper to get user name from ID
   const getUserName = (userId: string) => {
-    const member = accountMembers.find(m => m.user_id === userId);
+    const member = effectiveMembers.find(m => m.user_id === userId);
     return member?.user_name || 'לא ידוע';
   };
   
@@ -210,7 +243,7 @@ const MonthlySettlement = () => {
     
     return {
       total: monthExpenses.length,
-      totalAmount: monthExpenses.reduce((sum, e) => sum + e.amount, 0),
+      totalAmount: monthExpenses.filter(e => e.status !== 'rejected').reduce((sum, e) => sum + e.amount, 0),
       pending: {
         count: pending.length,
         amount: pending.reduce((sum, e) => sum + e.amount, 0),
@@ -235,12 +268,13 @@ const MonthlySettlement = () => {
   }, [expenses, selectedMonth, selectedYear]);
 
   // Settlement summary: who owes whom this month
+  // Uses effectiveMembers (includes virtual partner when applicable)
   const settlementSummary = useMemo(() => {
-    if (accountMembers.length < 2) return null;
+    if (effectiveMembers.length < 2) return null;
 
     const calcOwes = (expenseList: typeof monthlyData.paid.expenses) => {
       const owes: { [userId: string]: number } = {};
-      accountMembers.forEach(m => { owes[m.user_id] = 0; });
+      effectiveMembers.forEach(m => { owes[m.user_id] = 0; });
       expenseList.forEach(expense => {
         if (expense.paidById && owes[expense.paidById] !== undefined) {
           owes[expense.paidById] += expense.splitEqually ? expense.amount / 2 : expense.amount;
@@ -252,8 +286,8 @@ const MonthlySettlement = () => {
     const paidOwes = calcOwes(monthlyData.paid.expenses);
     const approvedOwes = calcOwes(monthlyData.approved.expenses);
 
-    const memberA = accountMembers[0];
-    const memberB = accountMembers[1];
+    const memberA = effectiveMembers[0];
+    const memberB = effectiveMembers[1];
 
     const calcTransfer = (diff: number, nameA: string, nameB: string) => {
       if (Math.abs(diff) < 1) return { type: 'balanced' as const };
@@ -273,20 +307,21 @@ const MonthlySettlement = () => {
       outstanding: calcTransfer(approvedDiff, memberA.user_name, memberB.user_name),
       combined: calcTransfer(paidDiff + approvedDiff, memberA.user_name, memberB.user_name),
     };
-  }, [accountMembers, monthlyData]);
+  }, [effectiveMembers, monthlyData]);
 
   // Cumulative balance: all-time paid expenses minus recorded settlement payments
+  // Uses effectiveMembers (includes virtual partner when applicable)
   const cumulativeBalance = useMemo(() => {
-    if (accountMembers.length < 2) return null;
+    if (effectiveMembers.length < 2) return null;
 
-    const memberA = accountMembers[0];
-    const memberB = accountMembers[1];
+    const memberA = effectiveMembers[0];
+    const memberB = effectiveMembers[1];
 
     let aPaid = 0;
     let bPaid = 0;
 
     expenses
-      .filter(e => e.status === 'paid')
+      .filter(e => e.status === 'paid' || e.status === 'approved')
       .forEach(expense => {
         if (expense.paidById === memberA.user_id) {
           aPaid += expense.splitEqually ? expense.amount / 2 : expense.amount;
@@ -295,15 +330,15 @@ const MonthlySettlement = () => {
         }
       });
 
-    // Net: positive = B owes A
+    // Net: positive = A owes B, negative = B owes A
     let net = aPaid - bPaid;
 
-    // Subtract settlement payments already made
+    // Adjust for settlement payments already made
     settlementPayments.forEach(p => {
       if (p.from_user_id === memberB.user_id && p.to_user_id === memberA.user_id) {
-        net -= p.amount;
+        net += p.amount; // B paid A → B's debt decreases → net moves toward 0/positive
       } else if (p.from_user_id === memberA.user_id && p.to_user_id === memberB.user_id) {
-        net += p.amount;
+        net -= p.amount; // A paid B → A's debt decreases → net moves toward 0/negative
       }
     });
 
@@ -311,9 +346,9 @@ const MonthlySettlement = () => {
     const totalPaid = settlementPayments.reduce((s, p) => s + p.amount, 0);
 
     if (rounded < 1) return { type: 'balanced' as const, memberA: memberA.user_name, memberB: memberB.user_name, totalPaid };
-    if (net > 0) return { type: 'transfer' as const, from: memberB.user_name, fromId: memberB.user_id, to: memberA.user_name, toId: memberA.user_id, amount: rounded, totalPaid };
-    return { type: 'transfer' as const, from: memberA.user_name, fromId: memberA.user_id, to: memberB.user_name, toId: memberB.user_id, amount: rounded, totalPaid };
-  }, [expenses, accountMembers, settlementPayments]);
+    if (net > 0) return { type: 'transfer' as const, from: memberA.user_name, fromId: memberA.user_id, to: memberB.user_name, toId: memberB.user_id, amount: rounded, totalPaid };
+    return { type: 'transfer' as const, from: memberB.user_name, fromId: memberB.user_id, to: memberA.user_name, toId: memberA.user_id, amount: rounded, totalPaid };
+  }, [expenses, effectiveMembers, settlementPayments]);
 
   // Undo-before-execute state
   const [pendingAction, setPendingAction] = useState<{ label: string } | null>(null);
@@ -373,6 +408,7 @@ const MonthlySettlement = () => {
       await Promise.all(promises);
       
       // Celebration confetti
+      const confetti = (await import('canvas-confetti')).default;
       const duration = 2000;
       const animationEnd = Date.now() + duration;
       const colors = ['#10B981', '#8B5CF6', '#EC4899'];
@@ -421,6 +457,7 @@ const MonthlySettlement = () => {
       await Promise.all(promises);
       
       // Celebration confetti with gold colors
+      const confetti = (await import('canvas-confetti')).default;
       const duration = 2500;
       const animationEnd = Date.now() + duration;
       const colors = ['#F59E0B', '#FBBF24', '#FCD34D'];
@@ -472,25 +509,26 @@ const MonthlySettlement = () => {
         const approvePromises = monthlyData.pending.expenses.map(expense => approveExpense(expense.id));
         await Promise.all(approvePromises);
       }
-      
-      // Wait a bit for the data to update
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      await refreshData();
-      
-      // Then mark all approved as paid
-      const allApproved = expenses.filter(expense => {
-        const expenseDate = new Date(expense.date);
-        return expenseDate.getMonth() === selectedMonth && 
-               expenseDate.getFullYear() === selectedYear &&
-               expense.status === 'approved';
-      });
-      
-      if (allApproved.length > 0) {
-        const paidPromises = allApproved.map(expense => markAsPaid(expense.id));
+
+      // Query DB directly for all approved expenses in this month
+      // (avoids stale React state — the approvals above are already committed to DB)
+      const monthStart = new Date(selectedYear, selectedMonth, 1);
+      const monthEnd = new Date(selectedYear, selectedMonth + 1, 0); // last day of month
+      const { data: freshApproved } = await supabase
+        .from('expenses')
+        .select('id')
+        .eq('account_id', account!.id)
+        .eq('status', 'approved')
+        .gte('date', monthStart.toISOString().split('T')[0])
+        .lte('date', monthEnd.toISOString().split('T')[0]);
+
+      if (freshApproved && freshApproved.length > 0) {
+        const paidPromises = freshApproved.map(expense => markAsPaid(expense.id));
         await Promise.all(paidPromises);
       }
       
       // Epic celebration confetti for month close!
+      const confetti = (await import('canvas-confetti')).default;
       const duration = 4000;
       const animationEnd = Date.now() + duration;
       const colors = ['#8B5CF6', '#EC4899', '#10B981', '#F59E0B', '#3B82F6'];
@@ -532,9 +570,21 @@ const MonthlySettlement = () => {
         }
       }, 80);
       
+      // Lock the month to prevent backdating
+      if (account && user) {
+        await supabase
+          .from('settlement_locks')
+          .upsert({
+            account_id: account.id,
+            year: selectedYear,
+            month: selectedMonth + 1, // JS months are 0-indexed, DB is 1-indexed
+            locked_by: user.id,
+          }, { onConflict: 'account_id,year,month' });
+      }
+
       toast({
         title: "🎉 חודש נסגר בהצלחה!",
-        description: `כל ההוצאות של ${months[selectedMonth]} ${selectedYear} סומנו כשולמו`,
+        description: `כל ההוצאות של ${months[selectedMonth]} ${selectedYear} סומנו כשולמו. החודש ננעל.`,
       });
 
       if (account && user) {
@@ -593,8 +643,14 @@ const MonthlySettlement = () => {
                   <Calculator className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
                 </div>
                 <div>
-                  <h1 className="text-xl sm:text-2xl lg:text-3xl xl:text-4xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
+                  <h1 className="text-xl sm:text-2xl lg:text-3xl xl:text-4xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent flex items-center gap-2">
                     סגירת חודש
+                    {isMonthLocked && (
+                      <Badge variant="secondary" className="text-xs gap-1">
+                        <Lock className="h-3 w-3" />
+                        ננעל
+                      </Badge>
+                    )}
                   </h1>
                   <p className="text-sm sm:text-base text-muted-foreground mt-1">
                     ניהול והסדרת הוצאות החודש
@@ -654,9 +710,9 @@ const MonthlySettlement = () => {
         </div>
 
         {/* Stats Cards */}
-        <div className={`grid grid-cols-2 ${isPersonalPlan ? 'lg:grid-cols-3' : 'lg:grid-cols-4'} gap-2 sm:gap-4 mb-4 sm:mb-6`}>
-          {/* Pending Expenses - hidden for Personal plan */}
-          {!isPersonalPlan && (
+        <div className={`grid grid-cols-2 ${(isPersonalPlan && !hasVirtualPartner) ? 'lg:grid-cols-3' : 'lg:grid-cols-4'} gap-2 sm:gap-4 mb-4 sm:mb-6`}>
+          {/* Pending Expenses - hidden for Personal plan without virtual partner */}
+          {(!isPersonalPlan || hasVirtualPartner) && (
           <Card className="bg-gradient-to-br from-yellow-50 to-yellow-100 dark:from-yellow-900/20 dark:to-yellow-800/20 border-yellow-200 dark:border-yellow-800">
             <CardContent className="p-3 sm:p-4">
               <div className="flex items-center gap-2 sm:gap-3">
@@ -722,8 +778,8 @@ const MonthlySettlement = () => {
           </Card>
         </div>
 
-        {/* Settlement Summary Card - family plans only */}
-        {!isPersonalPlan && settlementSummary && (monthlyData.approved.count > 0 || monthlyData.paid.count > 0) && (
+        {/* Settlement Summary Card - family plans or virtual partner */}
+        {(!isPersonalPlan || hasVirtualPartner) && settlementSummary && (monthlyData.approved.count > 0 || monthlyData.paid.count > 0) && (
           <div className="mb-4 sm:mb-6">
             <Card className="bg-gradient-to-br from-card/90 to-card/95 backdrop-blur-lg border border-border/50 shadow-xl">
               <CardHeader className="pb-2 px-4 sm:px-6 pt-4">
@@ -791,8 +847,8 @@ const MonthlySettlement = () => {
           </div>
         )}
 
-        {/* Cumulative Balance & Payment History - family plans only */}
-        {!isPersonalPlan && accountMembers.length >= 2 && cumulativeBalance && (
+        {/* Cumulative Balance & Payment History - family plans or virtual partner */}
+        {(!isPersonalPlan || hasVirtualPartner) && effectiveMembers.length >= 2 && cumulativeBalance && (
           <div className="mb-4 sm:mb-6">
             <Card className="bg-gradient-to-br from-card/90 to-card/95 backdrop-blur-lg border border-border/50 shadow-xl">
               <CardHeader className="pb-2 px-4 sm:px-6 pt-4">
@@ -808,8 +864,8 @@ const MonthlySettlement = () => {
                     className="bg-violet-600 hover:bg-violet-700 text-white gap-1.5"
                     onClick={() =>
                       openPaymentDialog(
-                        cumulativeBalance.type === 'transfer' ? cumulativeBalance.fromId : accountMembers[0].user_id,
-                        cumulativeBalance.type === 'transfer' ? cumulativeBalance.toId : accountMembers[1].user_id,
+                        cumulativeBalance.type === 'transfer' ? cumulativeBalance.fromId : effectiveMembers[0].user_id,
+                        cumulativeBalance.type === 'transfer' ? cumulativeBalance.toId : effectiveMembers[1].user_id,
                       )
                     }
                   >
@@ -856,8 +912,8 @@ const MonthlySettlement = () => {
                     <CollapsibleContent className="mt-2">
                       <div className="space-y-2 max-h-72 overflow-y-auto">
                         {settlementPayments.map(payment => {
-                          const fromName = accountMembers.find(m => m.user_id === payment.from_user_id)?.user_name || 'לא ידוע';
-                          const toName = accountMembers.find(m => m.user_id === payment.to_user_id)?.user_name || 'לא ידוע';
+                          const fromName = effectiveMembers.find(m => m.user_id === payment.from_user_id)?.user_name || 'לא ידוע';
+                          const toName = effectiveMembers.find(m => m.user_id === payment.to_user_id)?.user_name || 'לא ידוע';
                           return (
                             <div key={payment.id} className="flex items-start justify-between gap-2 p-2.5 bg-background/80 rounded-lg border border-border/40">
                               <div className="flex-1 min-w-0">
@@ -944,8 +1000,8 @@ const MonthlySettlement = () => {
                   
                   {/* Action Buttons */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-4">
-                    {/* Approve All Button - hidden for Personal plan */}
-                    {!isPersonalPlan && monthlyData.pending.count > 0 && (
+                    {/* Approve All Button - shown for family plans and virtual partner (solo user approves) */}
+                    {(!isPersonalPlan || hasVirtualPartner) && monthlyData.pending.count > 0 && (
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
                           <Button className="w-full bg-yellow-600 hover:bg-yellow-700 text-white">
@@ -1001,7 +1057,7 @@ const MonthlySettlement = () => {
                     )}
 
                     {/* Close Month Button */}
-                    {(monthlyData.pending.count > 0 || monthlyData.approved.count > 0) && (
+                    {!isMonthLocked && (monthlyData.pending.count > 0 || monthlyData.approved.count > 0) && (
                       <AlertDialog open={closeMonthDialogOpen} onOpenChange={(open) => { setCloseMonthDialogOpen(open); if (!open) setCloseMonthChecked(false); }}>
                         <AlertDialogTrigger asChild>
                           <Button className="w-full bg-purple-600 hover:bg-purple-700 text-white" onClick={() => setCloseMonthDialogOpen(true)}>
@@ -1048,6 +1104,28 @@ const MonthlySettlement = () => {
                           </AlertDialogFooter>
                         </AlertDialogContent>
                       </AlertDialog>
+                    )}
+
+                    {/* Unlock Month Button */}
+                    {isMonthLocked && (
+                      <Button
+                        variant="outline"
+                        className="w-full border-orange-300 text-orange-700 hover:bg-orange-50"
+                        onClick={async () => {
+                          if (!account?.id) return;
+                          await supabase
+                            .from('settlement_locks')
+                            .delete()
+                            .eq('account_id', account.id)
+                            .eq('year', selectedYear)
+                            .eq('month', selectedMonth + 1);
+                          setIsMonthLocked(false);
+                          toast({ title: 'החודש נפתח מחדש', description: 'ניתן כעת להוסיף או לערוך הוצאות בחודש זה.' });
+                        }}
+                      >
+                        <LockOpen className="ml-2 h-4 w-4" />
+                        פתח חודש מחדש
+                      </Button>
                     )}
                   </div>
 
@@ -1288,7 +1366,7 @@ const MonthlySettlement = () => {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {accountMembers.map(m => (
+                    {effectiveMembers.map(m => (
                       <SelectItem key={m.user_id} value={m.user_id}>{m.user_name}</SelectItem>
                     ))}
                   </SelectContent>
@@ -1301,7 +1379,7 @@ const MonthlySettlement = () => {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {accountMembers.map(m => (
+                    {effectiveMembers.map(m => (
                       <SelectItem key={m.user_id} value={m.user_id}>{m.user_name}</SelectItem>
                     ))}
                   </SelectContent>

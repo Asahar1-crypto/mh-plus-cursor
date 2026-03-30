@@ -44,17 +44,21 @@ const FamilyOtp: React.FC = () => {
       }
 
       toast.success('הרישום הושלם בהצלחה! אתה כעת חבר בחשבון המשפחתי');
-      
-      // If we got a magic link, redirect to it for auto-login
-      if (registrationData.magicLink) {
+
+      // Set session directly using tokens from the edge function
+      if (registrationData.access_token && registrationData.refresh_token) {
+        await supabase.auth.setSession({
+          access_token: registrationData.access_token,
+          refresh_token: registrationData.refresh_token
+        });
         setTimeout(() => {
-          window.location.href = registrationData.magicLink;
+          navigate('/dashboard');
         }, 2000);
       } else {
         // Fallback to login page
         setTimeout(() => {
-          navigate('/login', { 
-            state: { 
+          navigate('/login', {
+            state: {
               email,
               message: 'הרישום הושלם בהצלחה! המייל שלך אומת אוטומטית. אנא התחבר'
             }

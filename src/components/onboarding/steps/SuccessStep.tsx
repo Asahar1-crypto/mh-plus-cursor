@@ -1,40 +1,55 @@
 import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { CheckCircle2, Sparkles, TrendingUp, Users, Calendar } from 'lucide-react';
+import { CheckCircle2, Sparkles, TrendingUp, Users, Calendar, SkipForward } from 'lucide-react';
 import { OnboardingStepProps } from '../types';
-import confetti from 'canvas-confetti';
 
-export const SuccessStep: React.FC<OnboardingStepProps> = ({ onNext }) => {
+// Step indices matching OnboardingModal
+const STEP_CHILDREN = 1;
+const STEP_BILLING = 2;
+const STEP_RECURRING = 3;
+const STEP_INVITE = 5;
+
+interface SuccessStepProps extends OnboardingStepProps {
+  completedSteps?: Set<number>;
+  skippedSteps?: Set<number>;
+}
+
+export const SuccessStep: React.FC<SuccessStepProps> = ({ onNext, completedSteps = new Set(), skippedSteps = new Set() }) => {
   const [show, setShow] = useState(false);
 
   useEffect(() => {
+    let interval: ReturnType<typeof setInterval>;
+
     // Trigger confetti animation
-    const duration = 3000;
-    const animationEnd = Date.now() + duration;
+    (async () => {
+      const confetti = (await import('canvas-confetti')).default;
+      const duration = 3000;
+      const animationEnd = Date.now() + duration;
 
-    const interval = setInterval(() => {
-      const timeLeft = animationEnd - Date.now();
+      interval = setInterval(() => {
+        const timeLeft = animationEnd - Date.now();
 
-      if (timeLeft <= 0) {
-        clearInterval(interval);
-        return;
-      }
+        if (timeLeft <= 0) {
+          clearInterval(interval);
+          return;
+        }
 
-      confetti({
-        particleCount: 3,
-        angle: 60,
-        spread: 55,
-        origin: { x: 0 },
-        colors: ['#8B5CF6', '#EC4899', '#10B981'],
-      });
-      confetti({
-        particleCount: 3,
-        angle: 120,
-        spread: 55,
-        origin: { x: 1 },
-        colors: ['#8B5CF6', '#EC4899', '#10B981'],
-      });
-    }, 50);
+        confetti({
+          particleCount: 3,
+          angle: 60,
+          spread: 55,
+          origin: { x: 0 },
+          colors: ['#8B5CF6', '#EC4899', '#10B981'],
+        });
+        confetti({
+          particleCount: 3,
+          angle: 120,
+          spread: 55,
+          origin: { x: 1 },
+          colors: ['#8B5CF6', '#EC4899', '#10B981'],
+        });
+      }, 50);
+    })();
 
     // Fade in animation
     setTimeout(() => setShow(true), 100);
@@ -76,47 +91,67 @@ export const SuccessStep: React.FC<OnboardingStepProps> = ({ onNext }) => {
           {
             icon: Users,
             title: 'ילדים',
-            description: 'נוספו למערכת',
+            stepIndex: STEP_CHILDREN,
+            completedDesc: 'נוספו למערכת',
             color: 'from-blue-500 to-cyan-500',
             delay: 'delay-[400ms]',
           },
           {
             icon: Calendar,
             title: 'מחזור חיוב',
-            description: 'הוגדר בהצלחה',
+            stepIndex: STEP_BILLING,
+            completedDesc: 'הוגדר בהצלחה',
             color: 'from-purple-500 to-pink-500',
             delay: 'delay-[500ms]',
           },
           {
             icon: TrendingUp,
             title: 'הוצאות קבועות',
-            description: 'מוכנות לשימוש',
+            stepIndex: STEP_RECURRING,
+            completedDesc: 'מוכנות לשימוש',
             color: 'from-green-500 to-emerald-500',
             delay: 'delay-[600ms]',
           },
           {
             icon: Sparkles,
             title: 'הזמנות',
-            description: 'נשלחו בהצלחה',
+            stepIndex: STEP_INVITE,
+            completedDesc: 'נשלחו בהצלחה',
             color: 'from-orange-500 to-red-500',
             delay: 'delay-[700ms]',
           },
-        ].map((item, index) => (
-          <div
-            key={index}
-            className={`group p-6 rounded-xl bg-gradient-to-br ${item.color} text-white hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-xl animate-in fade-in slide-in-from-bottom-2 ${item.delay}`}
-          >
-            <div className="flex items-center gap-4">
-              <div className="p-3 rounded-lg bg-white/20 backdrop-blur-sm">
-                <item.icon className="w-6 h-6" />
-              </div>
-              <div>
-                <h3 className="font-bold text-lg">{item.title}</h3>
-                <p className="text-sm text-white/80">{item.description}</p>
+        ].map((item, index) => {
+          const wasSkipped = skippedSteps.has(item.stepIndex) && !completedSteps.has(item.stepIndex);
+          return (
+            <div
+              key={index}
+              className={`group p-6 rounded-xl ${
+                wasSkipped
+                  ? 'bg-muted/60 text-muted-foreground border border-dashed'
+                  : `bg-gradient-to-br ${item.color} text-white shadow-lg hover:shadow-xl hover:scale-105`
+              } transition-all duration-300 animate-in fade-in slide-in-from-bottom-2 ${item.delay}`}
+            >
+              <div className="flex items-center gap-4">
+                <div className={`p-3 rounded-lg ${wasSkipped ? 'bg-muted-foreground/10' : 'bg-white/20 backdrop-blur-sm'}`}>
+                  {wasSkipped ? (
+                    <SkipForward className="w-6 h-6 text-muted-foreground" />
+                  ) : (
+                    <item.icon className="w-6 h-6" />
+                  )}
+                </div>
+                <div>
+                  <h3 className={`font-bold text-lg ${wasSkipped ? 'text-muted-foreground' : ''}`}>{item.title}</h3>
+                  <p className={`text-sm ${wasSkipped ? 'text-muted-foreground/70' : 'text-white/80'}`}>
+                    {wasSkipped ? 'דולג — ניתן להשלים מהגדרות' : item.completedDesc}
+                  </p>
+                </div>
+                {!wasSkipped && (
+                  <CheckCircle2 className="w-5 h-5 text-white/80 mr-auto" />
+                )}
               </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       {/* Next Steps */}

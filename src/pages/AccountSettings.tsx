@@ -22,6 +22,7 @@ import { supabase } from '@/integrations/supabase/client';
 import NotificationsCard from '@/components/account/NotificationsCard';
 import { CategoriesCard } from '@/components/account/CategoriesCard';
 import { IndexLinkingSettingsCard } from '@/components/account/IndexLinkingSettingsCard';
+import VirtualPartnerCard from '@/components/account/VirtualPartnerCard';
 
 const AppearanceCard = () => {
   const { theme, setTheme } = useTheme();
@@ -217,6 +218,7 @@ const AccountSettings = () => {
             {/* Tab 3: Family Members */}
             <TabsContent value="family" className="mt-4 sm:mt-6">
               <div className="max-w-2xl mx-auto space-y-4 sm:space-y-6 animate-fade-in">
+                <VirtualPartnerCard account={account} isAdmin={isAdmin || false} />
                 <PendingInvitationsCard />
                 <UsersListCard 
                   account={account} 

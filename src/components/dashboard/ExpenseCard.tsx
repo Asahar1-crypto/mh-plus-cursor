@@ -6,8 +6,8 @@ import { CheckCircle, Clock, CreditCard, XCircle } from 'lucide-react';
 import { AccountMember } from '@/contexts/auth/types';
 import { useSwipeAction } from '@/hooks/use-swipe';
 
-const WALLET_FATHER = '/avatars/wallets/father.png';
-const WALLET_MOTHER = '/avatars/wallets/mother.png';
+const WALLET_FATHER = '/avatars/roles/father.webp';
+const WALLET_MOTHER = '/avatars/roles/mother.webp';
 
 export interface ExpenseCardProps {
   expense: any;
@@ -43,10 +43,10 @@ export const ExpenseCard = ({ expense, accountMembers = [], onApprove, onReject,
       return (
         <div className="flex -space-x-2" title="חצי חצי">
           <div className="h-8 w-8 rounded-full flex items-center justify-center overflow-hidden">
-            <img src={WALLET_FATHER} alt="אבא" className="w-full h-full object-contain" />
+            <img src={WALLET_FATHER} alt="אבא" className="w-full h-full object-contain" loading="lazy" />
           </div>
           <div className="h-8 w-8 rounded-full flex items-center justify-center overflow-hidden">
-            <img src={WALLET_MOTHER} alt="אמא" className="w-full h-full object-contain" />
+            <img src={WALLET_MOTHER} alt="אמא" className="w-full h-full object-contain" loading="lazy" />
           </div>
         </div>
       );
@@ -56,7 +56,7 @@ export const ExpenseCard = ({ expense, accountMembers = [], onApprove, onReject,
       const alt = payerIndex === 0 ? 'אבא' : 'אמא';
       return (
         <div className="h-8 w-8 rounded-full flex items-center justify-center overflow-hidden" title={paidByName}>
-          <img src={src} alt={alt} className="w-full h-full object-contain" />
+          <img src={src} alt={alt} className="w-full h-full object-contain" loading="lazy" />
         </div>
       );
     }

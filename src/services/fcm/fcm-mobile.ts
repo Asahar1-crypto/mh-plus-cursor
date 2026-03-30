@@ -110,8 +110,11 @@ export async function initializePushNotifications(accountId: string): Promise<bo
 
       const data = action.notification.data;
       if (data?.actionUrl) {
-        // Navigate to the action URL
-        window.location.href = data.actionUrl;
+        // Validate URL is a safe relative path to prevent open redirect
+        const url = data.actionUrl.trim();
+        if (url.startsWith('/') && !url.startsWith('//') && !/javascript:|data:/i.test(url)) {
+          window.location.href = url;
+        }
       }
     });
 

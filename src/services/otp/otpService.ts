@@ -83,7 +83,8 @@ export class OTPService {
         success: true,
         verified: true,
         message: data?.message || 'הקוד אומת בהצלחה',
-        magicLink: data?.magicLink,
+        access_token: data?.access_token,
+        refresh_token: data?.refresh_token,
         userId: data?.userId,
         data
       };

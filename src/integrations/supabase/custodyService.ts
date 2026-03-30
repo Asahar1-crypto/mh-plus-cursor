@@ -148,14 +148,15 @@ export const custodyService = {
     }
   },
 
-  async updateNotes(assignmentId: string, notes: string): Promise<void> {
+  async updateNotes(assignmentId: string, accountId: string, notes: string): Promise<void> {
     const { error } = await supabase
       .from('custody_assignments')
       .update({
         notes,
         updated_at: new Date().toISOString(),
       })
-      .eq('id', assignmentId);
+      .eq('id', assignmentId)
+      .eq('account_id', accountId);
 
     if (error) {
       console.error('Error updating notes:', error);

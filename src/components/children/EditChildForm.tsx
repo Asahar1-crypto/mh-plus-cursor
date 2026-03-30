@@ -88,7 +88,7 @@ const EditChildForm: React.FC<EditChildFormProps> = ({ child, open, setOpen }) =
   };
 
   return (
-    <DialogContent className="sm:max-w-md">
+    <DialogContent className="w-[95vw] sm:max-w-md">
       <DialogHeader>
         <DialogTitle className="flex items-center gap-2">
           <User className="h-5 w-5" />
@@ -114,8 +114,8 @@ const EditChildForm: React.FC<EditChildFormProps> = ({ child, open, setOpen }) =
           <Label className="text-sm font-medium">בן / בת</Label>
           <div className="grid grid-cols-2 gap-3">
             {([
-              { value: 'son' as ChildGender, label: 'בן', image: '/avatars/roles/son.png' },
-              { value: 'daughter' as ChildGender, label: 'בת', image: '/avatars/roles/daughter.png' },
+              { value: 'son' as ChildGender, label: 'בן', image: '/avatars/roles/son.webp' },
+              { value: 'daughter' as ChildGender, label: 'בת', image: '/avatars/roles/daughter.webp' },
             ]).map((option) => (
               <button
                 key={option.value}
@@ -128,7 +128,7 @@ const EditChildForm: React.FC<EditChildFormProps> = ({ child, open, setOpen }) =
                 }`}
               >
                 <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full flex items-center justify-center overflow-hidden">
-                  <img src={option.image} alt={option.label} className="w-full h-full object-contain" />
+                  <img src={option.image} alt={option.label} className="w-full h-full object-contain" loading="lazy" />
                 </div>
                 <span>{option.label}</span>
               </button>

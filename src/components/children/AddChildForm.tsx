@@ -84,8 +84,8 @@ const AddChildForm: React.FC<AddChildFormProps> = ({ open, setOpen }) => {
             <Label className="text-sm font-medium">בן / בת</Label>
             <div className="grid grid-cols-2 gap-2 sm:gap-3">
               {([
-                { value: 'son' as const, label: 'בן', image: '/avatars/roles/son.png' },
-                { value: 'daughter' as const, label: 'בת', image: '/avatars/roles/daughter.png' },
+                { value: 'son' as const, label: 'בן', image: '/avatars/roles/son.webp' },
+                { value: 'daughter' as const, label: 'בת', image: '/avatars/roles/daughter.webp' },
               ]).map((option) => (
                 <button
                   key={option.value}
@@ -98,7 +98,7 @@ const AddChildForm: React.FC<AddChildFormProps> = ({ open, setOpen }) => {
                   }`}
                 >
                   <div className="w-10 h-10 sm:w-14 sm:h-14 rounded-full flex items-center justify-center overflow-hidden">
-                    <img src={option.image} alt={option.label} className="w-full h-full object-contain" />
+                    <img src={option.image} alt={option.label} className="w-full h-full object-contain" loading="lazy" />
                   </div>
                   <span>{option.label}</span>
                 </button>

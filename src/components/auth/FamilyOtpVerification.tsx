@@ -2,11 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { ArrowLeft, Smartphone, CheckCircle } from 'lucide-react';
+import { ArrowRight, Smartphone, CheckCircle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useConfetti } from '@/components/ui/confetti';
 import { CelebrationModal } from '@/components/ui/celebration-modal';
+import { useNavigate } from 'react-router-dom';
 
 interface FamilyOtpVerificationProps {
   phoneNumber: string;
@@ -34,6 +35,7 @@ const FamilyOtpVerification: React.FC<FamilyOtpVerificationProps> = ({
   const [countdown, setCountdown] = useState(0);
   const [showCelebration, setShowCelebration] = useState(false);
   const { isActive: confettiActive, fire: fireConfetti, ConfettiComponent } = useConfetti();
+  const navigate = useNavigate();
 
   useEffect(() => {
     // Start countdown for resend button
@@ -145,17 +147,32 @@ const FamilyOtpVerification: React.FC<FamilyOtpVerificationProps> = ({
         return;
       }
 
-      toast.success('הרישום הושלם בהצלחה! אתה כעת חבר בחשבון המשפחתי');
-      
-      // If we got a magic link, redirect to it for auto-login
-      if (registrationData.magicLink) {
+      // Show promotion-aware success message
+      // The RPC returns expenses_transferred; handle both key names for robustness
+      const promoExpenses = registrationData.promotionResult?.expenses_transferred || registrationData.promotionResult?.expenses_updated || 0;
+      if (promoExpenses > 0) {
+        const count = promoExpenses;
+        toast.success(
+          `שלום ${familyInfo.name}! הרישום הושלם בהצלחה. ${count} הוצאות הועברו לחשבון שלך.`,
+          { duration: 8000 }
+        );
+      } else {
+        toast.success('הרישום הושלם בהצלחה! אתה כעת חבר בחשבון המשפחתי');
+      }
+
+      // Set session directly using tokens from the edge function
+      if (registrationData.access_token && registrationData.refresh_token) {
+        await supabase.auth.setSession({
+          access_token: registrationData.access_token,
+          refresh_token: registrationData.refresh_token
+        });
         setTimeout(() => {
-          window.location.href = registrationData.magicLink;
+          navigate('/dashboard');
         }, 2000);
       } else {
         // Fallback to login page
         setTimeout(() => {
-          window.location.href = '/login';
+          navigate('/login');
         }, 2000);
       }
 
@@ -244,7 +261,7 @@ const FamilyOtpVerification: React.FC<FamilyOtpVerificationProps> = ({
               onClick={onBack}
               className="w-full flex items-center gap-2 hover:bg-muted/50 transition-colors"
             >
-              <ArrowLeft className="w-4 h-4" />
+              <ArrowRight className="w-4 h-4" />
               חזור לעריכת פרטים
             </Button>
           </div>

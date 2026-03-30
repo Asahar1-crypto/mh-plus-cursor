@@ -11,6 +11,7 @@ interface ExpensesTabsProps {
   pendingExpenses: any[];
   approvedExpenses: any[];
   paidExpenses: any[];
+  totalExpenses: number;
   onApprove: (id: string) => Promise<void>;
   onReject: (id: string) => Promise<void>;
   onMarkPaid: (id: string) => Promise<void>;
@@ -20,12 +21,16 @@ export const ExpensesTabs: React.FC<ExpensesTabsProps> = ({
   pendingExpenses,
   approvedExpenses,
   paidExpenses,
+  totalExpenses,
   onApprove,
   onReject,
   onMarkPaid
 }) => {
   const { account } = useAuth();
   const isPersonalPlan = account?.plan_slug === 'personal';
+  const hasVirtualPartner = !!account?.virtual_partner_name && !!account?.virtual_partner_id;
+  // Show pending/approval tab when it's a family plan OR solo user with virtual partner
+  const showApprovalFlow = !isPersonalPlan || hasVirtualPartner;
 
   const { data: accountMembers } = useQuery({
     queryKey: ['account-members', account?.id],
@@ -38,9 +43,9 @@ export const ExpensesTabs: React.FC<ExpensesTabsProps> = ({
       <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-accent/10 opacity-60 group-hover:opacity-90 transition-opacity duration-500"></div>
       <div className="absolute -bottom-24 -left-24 w-48 h-48 bg-accent/10 rounded-full blur-3xl group-hover:scale-150 transition-transform duration-700"></div>
       
-      <Tabs defaultValue={isPersonalPlan ? "approved" : "pending"} className="w-full relative z-10" dir="rtl">
-        <TabsList className={`w-full mb-4 sm:mb-6 grid ${isPersonalPlan ? 'grid-cols-2' : 'grid-cols-3'} h-auto min-h-[44px] bg-gradient-to-r from-background/80 to-background/60 backdrop-blur-sm border border-border/50 rounded-xl p-1`}>
-          {!isPersonalPlan && (
+      <Tabs defaultValue={showApprovalFlow ? "pending" : "approved"} className="w-full relative z-10" dir="rtl">
+        <TabsList className={`w-full mb-4 sm:mb-6 grid ${showApprovalFlow ? 'grid-cols-3' : 'grid-cols-2'} h-auto min-h-[44px] bg-gradient-to-r from-background/80 to-background/60 backdrop-blur-sm border border-border/50 rounded-xl p-1`}>
+          {showApprovalFlow && (
             <TabsTrigger 
               value="pending" 
               className="flex-1 text-xs sm:text-sm px-1.5 xs:px-2 sm:px-4 py-2 sm:py-3 data-[state=active]:bg-gradient-to-r data-[state=active]:from-amber-500/20 data-[state=active]:to-orange-500/20 data-[state=active]:text-amber-700 dark:data-[state=active]:text-amber-300 data-[state=active]:border data-[state=active]:border-amber-200 dark:data-[state=active]:border-amber-800 rounded-lg transition-all duration-300 hover:bg-amber-50 dark:hover:bg-amber-950/30 font-semibold"
@@ -77,7 +82,7 @@ export const ExpensesTabs: React.FC<ExpensesTabsProps> = ({
           </TabsTrigger>
         </TabsList>
       
-        {!isPersonalPlan && (
+        {showApprovalFlow && (
         <TabsContent value="pending" className="mt-6 space-y-4" dir="rtl">
           {pendingExpenses.length > 0 ? (
             <div className="space-y-4">
@@ -102,10 +107,10 @@ export const ExpensesTabs: React.FC<ExpensesTabsProps> = ({
               <div className="p-8 bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-950/30 dark:to-orange-950/30 rounded-xl border border-amber-200 dark:border-amber-800">
                 <Clock className="h-12 w-12 text-amber-500 mx-auto mb-4 animate-pulse" />
                 <div className="text-amber-700 dark:text-amber-300 font-semibold text-lg mb-2">
-                  אין הוצאות ממתינות לאישור
+                  {totalExpenses === 0 ? 'אין הוצאות עדיין' : 'אין הוצאות ממתינות לאישור'}
                 </div>
                 <div className="text-amber-600 dark:text-amber-400 text-sm">
-                  כל ההוצאות אושרו או ששולמו
+                  {totalExpenses === 0 ? 'הוסף הוצאה חדשה כדי להתחיל!' : 'כל ההוצאות אושרו או שולמו'}
                 </div>
               </div>
             </div>
@@ -137,10 +142,10 @@ export const ExpensesTabs: React.FC<ExpensesTabsProps> = ({
               <div className="p-8 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/30 rounded-xl border border-green-200 dark:border-green-800">
                 <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-4 animate-bounce" />
                 <div className="text-green-700 dark:text-green-300 font-semibold text-lg mb-2">
-                  אין הוצאות מאושרות
+                  {totalExpenses === 0 ? 'אין הוצאות עדיין' : 'אין הוצאות מאושרות'}
                 </div>
                 <div className="text-green-600 dark:text-green-400 text-sm">
-                  כל ההוצאות המאושרות כבר שולמו
+                  {totalExpenses === 0 ? 'הוסף הוצאה חדשה כדי להתחיל!' : 'כל ההוצאות המאושרות כבר שולמו'}
                 </div>
               </div>
             </div>
@@ -171,10 +176,10 @@ export const ExpensesTabs: React.FC<ExpensesTabsProps> = ({
               <div className="p-8 bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-blue-950/30 dark:to-cyan-950/30 rounded-xl border border-blue-200 dark:border-blue-800">
                 <CreditCard className="h-12 w-12 text-blue-500 mx-auto mb-4 animate-ping" />
                 <div className="text-blue-700 dark:text-blue-300 font-semibold text-lg mb-2">
-                  אין הוצאות ששולמו
+                  {totalExpenses === 0 ? 'אין הוצאות עדיין' : 'אין הוצאות ששולמו'}
                 </div>
                 <div className="text-blue-600 dark:text-blue-400 text-sm">
-                  עדיין לא שולמו הוצאות החודש
+                  {totalExpenses === 0 ? 'הוסף הוצאה חדשה כדי להתחיל!' : 'עדיין לא שולמו הוצאות החודש'}
                 </div>
               </div>
             </div>

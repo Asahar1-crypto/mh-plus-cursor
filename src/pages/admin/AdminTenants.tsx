@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { ArrowLeft, Search, Users, Calendar, DollarSign, MoreHorizontal, RefreshCw, Eye, Activity, Database, Trash2, UserMinus, UserPlus, MessageSquare, Crown, CreditCard } from 'lucide-react';
+import { ArrowRight, Search, Users, Calendar, DollarSign, MoreHorizontal, RefreshCw, Eye, Activity, Database, Trash2, UserMinus, UserPlus, MessageSquare, Crown, CreditCard } from 'lucide-react';
 import { InvitationsSection } from '@/components/admin/InvitationsSection';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -710,7 +710,7 @@ const AdminTenants: React.FC = () => {
             size="sm"
             className="gap-1 sm:gap-2"
           >
-            <ArrowLeft className="h-4 w-4" />
+            <ArrowRight className="h-4 w-4" />
             <span className="hidden sm:inline">חזור</span>
           </Button>
           <div className="flex-1 min-w-0">

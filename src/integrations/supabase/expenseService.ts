@@ -111,9 +111,11 @@ export const expenseService = {
     
     // Auto-approve if:
     // 1. User is adding expense for themselves, OR
-    // 2. Account is on Personal plan (single user, no partner to approve)
+    // 2. Account is on Personal plan (single user, no partner to approve), OR
+    // 3. Account has a virtual partner (no real second member to approve)
     const isPersonalPlan = account.plan_slug === 'personal';
-    const isAutoApproved = isPersonalPlan || user.id === expense.paidById;
+    const hasVirtualPartner = !!account.virtual_partner_name && !!account.virtual_partner_id;
+    const isAutoApproved = isPersonalPlan || user.id === expense.paidById || hasVirtualPartner;
     
     const expenseData = {
       amount: expense.amount,
@@ -315,6 +317,14 @@ export const expenseService = {
   },
 
   async deleteExpense(user: User, account: Account, expenseId: string): Promise<void> {
+    // Fetch receipt_id before deleting so we can clean up storage
+    const { data: expense } = await supabase
+      .from('expenses')
+      .select('receipt_id')
+      .eq('id', expenseId)
+      .eq('account_id', account.id)
+      .single();
+
     const { error } = await supabase
       .from('expenses')
       .delete()
@@ -324,6 +334,13 @@ export const expenseService = {
     if (error) {
       console.error('Error deleting expense:', error);
       throw error;
+    }
+
+    // Clean up receipt from storage (best-effort, don't fail delete if this errors)
+    if (expense?.receipt_id) {
+      supabase.storage.from('receipts').remove([expense.receipt_id]).catch(err => {
+        console.warn('Failed to clean up receipt from storage:', err);
+      });
     }
   },
 

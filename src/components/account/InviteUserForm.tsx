@@ -10,8 +10,7 @@ import { Account } from '@/contexts/auth/types';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { InternationalPhoneInput } from '@/components/ui/international-phone-input';
 import { normalizePhoneNumber } from '@/utils/phoneUtils';
-import { CountryCode } from 'libphonenumber-js';
-import confetti from 'canvas-confetti';
+import { CountryCode } from 'libphonenumber-js/min';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 
@@ -79,6 +78,7 @@ const InviteUserForm: React.FC<InviteUserFormProps> = ({ account, onInvite }) =>
       await onInvite(validationResult.data!.e164);
       
       // Celebration confetti
+      const confetti = (await import('canvas-confetti')).default;
       const duration = 2000;
       const animationEnd = Date.now() + duration;
       const colors = ['#8B5CF6', '#EC4899', '#3B82F6'];

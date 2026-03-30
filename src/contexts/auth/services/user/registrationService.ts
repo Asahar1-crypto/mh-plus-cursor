@@ -36,7 +36,6 @@ export const registrationService = {
           password,
           name,
           phoneNumber,
-          phoneVerified: !!phoneNumber
         }
       });
       

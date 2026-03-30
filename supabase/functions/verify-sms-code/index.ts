@@ -16,7 +16,7 @@ serve(async (req) => {
   try {
     const { phoneNumber, code, verificationType = 'registration', redirectUrl } = await req.json()
     
-    console.log('Verification request received:', { phoneNumber, code, verificationType, redirectUrl })
+    console.log('Verification request received:', { verificationType })
     
     if (!phoneNumber || !code) {
       console.error('Missing required fields:', { phoneNumber: !!phoneNumber, code: !!code })
@@ -54,7 +54,7 @@ serve(async (req) => {
         .replace(/^\s*00/, '+')           // 00972 -> +972
         .replace(/[^\d+]/g, '');         // Remove all non-digits except +
 
-      console.log('Phone after initial cleaning:', cleaned)
+      // phone cleaned
 
       // Handle Israeli local format (starting with 0)
       if (cleaned.startsWith('0') && !cleaned.startsWith('00')) {
@@ -88,7 +88,7 @@ serve(async (req) => {
       );
     }
     
-    console.log('Normalized phone number for verification:', normalizedPhone)
+    // Phone normalized successfully
 
     // Initialize Supabase client
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!
@@ -190,7 +190,7 @@ serve(async (req) => {
       }
     }
 
-    console.log('SMS verification successful for phone:', phoneNumber)
+    console.log('SMS verification successful')
 
     // If this is a login verification, create a proper session
     if (verificationType === 'login' && verificationData.user_id) {
@@ -214,27 +214,50 @@ serve(async (req) => {
         );
       }
 
+      // Validate redirectUrl against allowlist to prevent open redirect
+      const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+      const allowedOrigins = [
+        'https://mhplus.online',
+        'https://www.mhplus.online',
+        'https://mh-plus-cursor.vercel.app',
+        supabaseUrl,
+      ];
+      let safeRedirectUrl: string | undefined;
+      if (redirectUrl) {
+        try {
+          const parsed = new URL(redirectUrl);
+          if (allowedOrigins.some(origin => parsed.origin === origin)) {
+            safeRedirectUrl = redirectUrl;
+          } else {
+            console.warn('Blocked untrusted redirectUrl:', parsed.origin);
+          }
+        } catch {
+          // If it's a relative path starting with /, allow it
+          if (typeof redirectUrl === 'string' && redirectUrl.startsWith('/') && !redirectUrl.startsWith('//')) {
+            safeRedirectUrl = allowedOrigins[0] + redirectUrl;
+          }
+        }
+      }
+
       // Use Supabase's secure session creation with custom redirect
       const linkOptions: any = {
         type: 'magiclink',
         email: authUser.user.email!
       };
-      
-      // Add redirect_to if provided from client
-      if (redirectUrl) {
+
+      if (safeRedirectUrl) {
         linkOptions.options = {
-          redirectTo: redirectUrl
+          redirectTo: safeRedirectUrl
         };
-        console.log('Using custom redirect URL:', redirectUrl);
       }
-      
+
       const { data: sessionResult, error: sessionError } = await supabase.auth.admin
         .generateLink(linkOptions);
 
       if (sessionError) {
         console.error('Error generating session:', sessionError);
         return new Response(
-          JSON.stringify({ 
+          JSON.stringify({
             verified: false,
             error: 'Failed to create session'
           }),
@@ -245,15 +268,18 @@ serve(async (req) => {
         );
       }
 
-      // Return the magic link for secure authentication
+      // Return session tokens for client-side setSession call.
+      // NOTE: Tokens are returned in the response body. This is acceptable because
+      // the function requires JWT auth (verify_jwt=true) and tokens are short-lived.
       console.log('Session created successfully for user:', authUser.user.id);
-      
+
       return new Response(
-        JSON.stringify({ 
+        JSON.stringify({
           verified: true,
           message: 'Phone number verified successfully',
           verificationType,
-          magicLink: sessionResult.properties?.action_link
+          access_token: sessionResult.properties?.access_token,
+          refresh_token: sessionResult.properties?.refresh_token
         }),
         {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },

@@ -8,8 +8,8 @@ interface LogoProps {
   size?: 'sm' | 'md' | 'lg' | 'xl';
 }
 
-const LOGO_SRC = '/logo.png';
-const LOGO_FALLBACK = '/lovable-uploads/dc4b6d32-5c74-44a1-8d9c-b07947f361d7.png';
+const LOGO_SRC = '/logo.webp';
+const LOGO_FALLBACK = '/lovable-uploads/dc4b6d32-5c74-44a1-8d9c-b07947f361d7.webp';
 
 export const Logo: React.FC<LogoProps> = ({ 
   className, 

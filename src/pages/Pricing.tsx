@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
-import { Check, X, ArrowLeft, Crown, User, Users } from 'lucide-react';
+import { Check, X, ArrowRight, Crown, User, Users } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -114,7 +114,7 @@ const Pricing: React.FC = () => {
           </div>
           <div className="flex items-center gap-2">
             <Button variant="ghost" size="sm" onClick={() => navigate('/')}>
-              <ArrowLeft className="h-4 w-4 ml-1" />
+              <ArrowRight className="h-4 w-4 ml-1" />
               חזרה
             </Button>
             <Button variant="outline" size="sm" onClick={() => navigate('/login')}>

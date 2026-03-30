@@ -6,6 +6,7 @@ import { WelcomeStep } from './steps/WelcomeStep';
 import { ChildrenStep } from './steps/ChildrenStep';
 import { BillingCycleStep } from './steps/BillingCycleStep';
 import { RecurringExpensesStep } from './steps/RecurringExpensesStep';
+import { VirtualPartnerStep } from './steps/VirtualPartnerStep';
 import { InviteUserStep } from './steps/InviteUserStep';
 import { SuccessStep } from './steps/SuccessStep';
 import { useAuth } from '@/contexts/auth';
@@ -19,9 +20,18 @@ const STEP_TITLES = [
   'ילדים',
   'מחזור חיוב',
   'הוצאות קבועות',
+  'ניהול משותף',
   'הזמנת משתמש',
   'סיום',
 ];
+
+// Step indices for tracking completion
+const STEP_CHILDREN = 1;
+const STEP_BILLING = 2;
+const STEP_RECURRING = 3;
+const STEP_INVITE = 5;
+
+const SESSION_DISMISSED_KEY = 'onboarding_dismissed';
 
 export const OnboardingModal: React.FC = () => {
   const { user, profile, refreshProfile } = useAuth();
@@ -29,6 +39,11 @@ export const OnboardingModal: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
   const [isReady, setIsReady] = useState(false);
+  // When the user picks "manage alone" in VirtualPartnerStep, skip InviteUserStep
+  const [skipInviteStep, setSkipInviteStep] = useState(false);
+  // Track which steps were completed (user clicked "next") vs skipped
+  const [completedSteps, setCompletedSteps] = useState<Set<number>>(new Set());
+  const [skippedSteps, setSkippedSteps] = useState<Set<number>>(new Set());
 
   // ?test-onboarding=1 – הצגת אונבורדינג לבדיקה (גם אם הושלם)
   const forceTestOnboarding = searchParams.get('test-onboarding') === '1';
@@ -37,9 +52,13 @@ export const OnboardingModal: React.FC = () => {
     // Wait for profile to be fully loaded before checking
     if (profile !== null && profile !== undefined) {
       setIsReady(true);
-      
+
       // Check if onboarding is needed (or forced for testing)
       if (!profile.onboarding_completed || forceTestOnboarding) {
+        // If user dismissed during this session, don't re-show
+        if (sessionStorage.getItem(SESSION_DISMISSED_KEY) && !forceTestOnboarding) {
+          return;
+        }
         // Small delay to ensure everything is mounted
         const timer = setTimeout(() => {
           setIsOpen(true);
@@ -51,25 +70,48 @@ export const OnboardingModal: React.FC = () => {
 
   const handleNext = () => {
     if (currentStep < STEP_TITLES.length - 1) {
+      // Mark current step as completed (not skipped)
+      setCompletedSteps((prev) => new Set(prev).add(currentStep));
       setCurrentStep((prev) => prev + 1);
     } else {
-      // Complete onboarding
+      // Complete onboarding (user clicked "סיום" on SuccessStep)
       completeOnboarding();
     }
   };
 
   const handleBack = () => {
     if (currentStep > 0) {
+      // When going back from SuccessStep and invite was skipped,
+      // go back to VirtualPartnerStep (skip InviteUserStep)
+      if (skipInviteStep && currentStep === 6) {
+        setCurrentStep(4); // VirtualPartnerStep
+        return;
+      }
       setCurrentStep((prev) => prev - 1);
     }
   };
 
   const handleSkip = () => {
-    handleNext();
+    // Mark current step as skipped
+    setSkippedSteps((prev) => new Set(prev).add(currentStep));
+    if (currentStep < STEP_TITLES.length - 1) {
+      setCurrentStep((prev) => prev + 1);
+    }
+  };
+
+  // Called when user picks "manage alone" in VirtualPartnerStep
+  const handleChooseSolo = () => {
+    setSkipInviteStep(true);
+    setCompletedSteps((prev) => new Set(prev).add(currentStep));
+    // Mark InviteUserStep as skipped since we're jumping over it
+    setSkippedSteps((prev) => new Set(prev).add(STEP_INVITE));
+    // Jump from VirtualPartnerStep (4) directly to SuccessStep (6), skipping InviteUserStep (5)
+    setCurrentStep(6);
   };
 
   const handleClose = () => {
-    // Do NOT mark as completed - user must finish onboarding to complete it
+    // Just dismiss the modal for this session — don't update DB
+    sessionStorage.setItem(SESSION_DISMISSED_KEY, '1');
     setIsOpen(false);
   };
 
@@ -86,7 +128,7 @@ export const OnboardingModal: React.FC = () => {
 
       // Refresh profile to update the state
       await refreshProfile();
-      
+
       setIsOpen(false);
       toast.success('ההגדרות הראשוניות הושלמו בהצלחה!');
     } catch (error) {
@@ -114,9 +156,22 @@ export const OnboardingModal: React.FC = () => {
       case 3:
         return <RecurringExpensesStep {...stepProps} />;
       case 4:
-        return <InviteUserStep {...stepProps} />;
+        return (
+          <VirtualPartnerStep
+            {...stepProps}
+            onChooseSolo={handleChooseSolo}
+          />
+        );
       case 5:
-        return <SuccessStep {...stepProps} />;
+        return <InviteUserStep {...stepProps} />;
+      case 6:
+        return (
+          <SuccessStep
+            {...stepProps}
+            completedSteps={completedSteps}
+            skippedSteps={skippedSteps}
+          />
+        );
       default:
         return null;
     }
@@ -135,7 +190,7 @@ export const OnboardingModal: React.FC = () => {
         className="w-[95vw] max-w-3xl max-h-[90vh] overflow-y-auto p-0"
       >
         {/* Close Button */}
-        {currentStep > 0 && (
+        {(
           <Button
             variant="ghost"
             size="icon"

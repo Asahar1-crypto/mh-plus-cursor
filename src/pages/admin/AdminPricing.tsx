@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { 
-  ArrowLeft, Save, DollarSign, Calendar, Globe, Crown, User, Users, 
+  ArrowRight, Save, DollarSign, Calendar, Globe, Crown, User, Users,
   Plus, Trash2, RefreshCw, Check, X, Loader2, AlertCircle, Settings2, Edit2 
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
@@ -290,7 +290,7 @@ const AdminPricing: React.FC = () => {
         {/* Header */}
         <div className="flex items-center gap-3 animate-fade-in">
           <Button onClick={() => window.history.back()} variant="ghost" size="sm" className="gap-2">
-            <ArrowLeft className="h-4 w-4" />
+            <ArrowRight className="h-4 w-4" />
             <span className="hidden sm:inline">חזור</span>
           </Button>
           <div className="flex-1">

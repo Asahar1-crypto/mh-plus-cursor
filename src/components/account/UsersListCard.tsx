@@ -146,7 +146,7 @@ const UsersListCard: React.FC<UsersListCardProps> = ({ account, user, onRemovePa
                     <Button 
                       variant="outline" 
                       size="sm" 
-                      className="text-destructive border-destructive hover:bg-destructive/10 flex-1 xs:flex-none h-8 text-xs"
+                      className="text-destructive border-destructive hover:bg-destructive/10 flex-1 xs:flex-none h-10 sm:h-8 text-xs"
                       disabled={isRemoving || isLoading}
                       onClick={() => {
                         setMemberToRemove(member);

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Home, CreditCard, Calculator, BarChart3, Menu } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useExpense } from '@/contexts/ExpenseContext';
@@ -18,6 +18,7 @@ const navItems = [
 
 const BottomNavBar: React.FC<BottomNavBarProps> = ({ onMoreClick }) => {
   const location = useLocation();
+  const navigate = useNavigate();
   const { getPendingExpenses } = useExpense();
 
   const pendingCount = getPendingExpenses().length;
@@ -44,7 +45,15 @@ const BottomNavBar: React.FC<BottomNavBarProps> = ({ onMoreClick }) => {
               <div className="relative">
                 <Icon className={cn('h-5 w-5 transition-transform duration-200', isActive && 'scale-110')} />
                 {showBadge && pendingCount > 0 && (
-                  <span className="absolute -top-1.5 -right-2 min-w-[18px] h-[18px] flex items-center justify-center rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold px-1 leading-none">
+                  <span
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      hapticSelection();
+                      navigate('/expenses?status=pending&month=all');
+                    }}
+                    className="absolute -top-1.5 -right-2 min-w-[18px] h-[18px] flex items-center justify-center rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold px-1 leading-none cursor-pointer"
+                  >
                     {pendingCount > 99 ? '99+' : pendingCount}
                   </span>
                 )}

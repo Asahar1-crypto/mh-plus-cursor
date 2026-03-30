@@ -52,6 +52,22 @@ serve(async (req) => {
     // Initialize Supabase client
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
+    // Rate limiting: max 5 SMS per phone number per hour
+    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+    const { count: smsCount, error: countError } = await supabase
+      .from('sms_verification_codes')
+      .select('*', { count: 'exact', head: true })
+      .eq('phone_number', phoneNumber)
+      .gte('created_at', oneHourAgo);
+
+    if (!countError && smsCount !== null && smsCount >= 5) {
+      console.warn(`OTP Send: Rate limit exceeded for ${phoneNumber}: ${smsCount} requests in last hour`);
+      return new Response(
+        JSON.stringify({ error: 'יותר מדי בקשות. אנא נסה שוב מאוחר יותר.' }),
+        { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     // Check for existing valid code first
     const { data: existingCode } = await supabase
       .from('sms_verification_codes')

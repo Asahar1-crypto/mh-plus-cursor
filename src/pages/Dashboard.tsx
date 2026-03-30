@@ -8,15 +8,21 @@ import { MonthlyFoodPaymentCard } from '@/components/dashboard/MonthlyFoodPaymen
 import PendingInvitationAlert from '@/components/invitation/PendingInvitationAlert';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent } from '@/components/ui/card';
-import { CalendarIcon } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { CalendarIcon, PlusCircle } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { OnboardingModal } from '@/components/onboarding/OnboardingModal';
 import { DashboardSkeleton } from '@/components/dashboard/DashboardSkeleton';
 import { ActivityLog } from '@/components/ActivityLog';
-import confetti from 'canvas-confetti';
 import { toast } from '@/hooks/use-toast';
+import { usePromotionNotice } from '@/hooks/usePromotionNotice';
 
 const Dashboard = () => {
+  const navigate = useNavigate();
   const { user, account } = useAuth();
+
+  // Detect and notify admin when a virtual partner has been promoted to a real user
+  usePromotionNotice(account, user?.id ?? null);
   const { 
     getPendingExpenses,
     getApprovedExpenses,
@@ -74,7 +80,7 @@ const Dashboard = () => {
 
   // Calculate filtered data for current month
   const { filteredPending, filteredApproved, filteredPaid, pendingTotal, approvedTotal, paidTotal } = useMemo(() => {
-    const pending = filteredExpenses.filter(exp => exp.status === 'pending');
+    const pending = filteredExpenses.filter(exp => exp.status === 'pending' && !exp.isRecurring);
     const approved = filteredExpenses.filter(exp => exp.status === 'approved');
     const paid = filteredExpenses.filter(exp => exp.status === 'paid');
     
@@ -99,6 +105,7 @@ const Dashboard = () => {
       await markAsPaid(id);
       
       // Celebration confetti with gold colors
+      const confetti = (await import('canvas-confetti')).default;
       const duration = 2500;
       const animationEnd = Date.now() + duration;
       const colors = ['#F59E0B', '#FBBF24', '#FCD34D'];
@@ -204,14 +211,41 @@ const Dashboard = () => {
         </div>
 
         <div className="animate-fade-in [animation-delay:400ms]">
-          <ExpensesTabs
-            pendingExpenses={filteredPending}
-            approvedExpenses={filteredApproved}
-            paidExpenses={filteredPaid}
-            onApprove={approveExpense}
-            onReject={rejectExpense}
-            onMarkPaid={handleMarkAsPaidWithCelebration}
-          />
+          {filteredExpenses.length === 0 ? (
+            <Card className="liquid-glass-subtle border-border/30 overflow-hidden">
+              <CardContent className="flex flex-col items-center justify-center py-12 sm:py-16 text-center space-y-4">
+                <div className="p-4 rounded-full bg-primary/10">
+                  <PlusCircle className="h-10 w-10 sm:h-12 sm:w-12 text-primary" />
+                </div>
+                <div className="space-y-2">
+                  <h3 className="text-lg sm:text-xl font-bold text-foreground">
+                    אין הוצאות בחודש הנבחר
+                  </h3>
+                  <p className="text-sm sm:text-base text-muted-foreground max-w-md">
+                    הוסף את ההוצאה הראשונה שלך כדי להתחיל לנהל את התקציב המשפחתי
+                  </p>
+                </div>
+                <Button
+                  size="lg"
+                  className="mt-2 gap-2 text-base"
+                  onClick={() => navigate('/add-expense')}
+                >
+                  <PlusCircle className="h-5 w-5" />
+                  הוסף הוצאה חדשה
+                </Button>
+              </CardContent>
+            </Card>
+          ) : (
+            <ExpensesTabs
+              pendingExpenses={filteredPending}
+              approvedExpenses={filteredApproved}
+              paidExpenses={filteredPaid}
+              totalExpenses={filteredExpenses.length}
+              onApprove={approveExpense}
+              onReject={rejectExpense}
+              onMarkPaid={handleMarkAsPaidWithCelebration}
+            />
+          )}
         </div>
 
         <div className="animate-fade-in [animation-delay:500ms]">

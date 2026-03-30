@@ -3,14 +3,15 @@
  * Auto-detects platform and delegates to the correct implementation
  */
 import { Capacitor } from '@capacitor/core';
-import {
-  isPushSupported,
-  requestNotificationPermission as webRequestPermission,
-  getPermissionStatus,
-  getFCMToken,
-  onForegroundMessage,
-  unregisterToken,
-} from './fcm-web';
+// fcm-web is dynamically imported to avoid loading Firebase SDK at module level
+type FcmWebModule = typeof import('./fcm-web');
+let _fcmWeb: FcmWebModule | null = null;
+async function loadFcmWeb(): Promise<FcmWebModule> {
+  if (!_fcmWeb) {
+    _fcmWeb = await import('./fcm-web');
+  }
+  return _fcmWeb;
+}
 import {
   initializePushNotifications,
   getBadgeCount,
@@ -23,11 +24,12 @@ export type PushPlatform = 'web' | 'android' | 'ios' | 'unsupported';
 /**
  * Detect the current push notification platform
  */
-export function detectPlatform(): PushPlatform {
+export async function detectPlatform(): Promise<PushPlatform> {
   if (Capacitor.isNativePlatform()) {
     return Capacitor.getPlatform() as 'android' | 'ios';
   }
-  if (isPushSupported()) {
+  const fcmWeb = await loadFcmWeb();
+  if (fcmWeb.isPushSupported()) {
     return 'web';
   }
   return 'unsupported';
@@ -41,16 +43,17 @@ export async function initializePush(accountId: string): Promise<{
   platform: PushPlatform;
   token?: string | null;
 }> {
-  const platform = detectPlatform();
+  const platform = await detectPlatform();
 
   if (platform === 'unsupported') {
     return { success: false, platform };
   }
 
   if (platform === 'web') {
-    const hasPermission = getPermissionStatus() === 'granted';
+    const fcmWeb = await loadFcmWeb();
+    const hasPermission = fcmWeb.getPermissionStatus() === 'granted';
     if (hasPermission) {
-      const token = await getFCMToken(accountId);
+      const token = await fcmWeb.getFCMToken(accountId);
       return { success: !!token, platform, token };
     }
     return { success: false, platform };
@@ -65,13 +68,14 @@ export async function initializePush(accountId: string): Promise<{
  * Request notification permission (platform-agnostic)
  */
 export async function requestPermission(accountId: string): Promise<boolean> {
-  const platform = detectPlatform();
+  const platform = await detectPlatform();
   if (platform === 'unsupported') return false;
 
   if (platform === 'web') {
-    const granted = await webRequestPermission();
+    const fcmWeb = await loadFcmWeb();
+    const granted = await fcmWeb.requestNotificationPermission();
     if (granted) {
-      await getFCMToken(accountId);
+      await fcmWeb.getFCMToken(accountId);
     }
     return granted;
   }
@@ -83,10 +87,11 @@ export async function requestPermission(accountId: string): Promise<boolean> {
 /**
  * Check if the user has granted notification permission
  */
-export function hasPermission(): boolean {
-  const platform = detectPlatform();
+export async function hasPermission(): Promise<boolean> {
+  const platform = await detectPlatform();
   if (platform === 'web') {
-    return getPermissionStatus() === 'granted';
+    const fcmWeb = await loadFcmWeb();
+    return fcmWeb.getPermissionStatus() === 'granted';
   }
   if (platform === 'android' || platform === 'ios') {
     // On mobile, if we successfully registered, permission was granted
@@ -96,13 +101,30 @@ export function hasPermission(): boolean {
   return false;
 }
 
-// Re-export platform-specific utilities
+// Re-export web utilities as async loaders to preserve lazy loading
+export async function isPushSupported(): Promise<boolean> {
+  const fcmWeb = await loadFcmWeb();
+  return fcmWeb.isPushSupported();
+}
+export async function getPermissionStatus(): Promise<string> {
+  const fcmWeb = await loadFcmWeb();
+  return fcmWeb.getPermissionStatus();
+}
+export async function getFCMToken(accountId: string): Promise<string | null> {
+  const fcmWeb = await loadFcmWeb();
+  return fcmWeb.getFCMToken(accountId);
+}
+export async function onForegroundMessage(callback: (payload: unknown) => void): Promise<() => void> {
+  const fcmWeb = await loadFcmWeb();
+  return fcmWeb.onForegroundMessage(callback);
+}
+export async function unregisterToken(): Promise<void> {
+  const fcmWeb = await loadFcmWeb();
+  return fcmWeb.unregisterToken();
+}
+
+// Re-export mobile utilities (no Firebase dependency, safe to import statically)
 export {
-  isPushSupported,
-  getPermissionStatus,
-  getFCMToken,
-  onForegroundMessage,
-  unregisterToken,
   getBadgeCount,
   clearBadge,
   isMobilePushAvailable,

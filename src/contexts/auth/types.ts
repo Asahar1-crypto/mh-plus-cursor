@@ -29,6 +29,8 @@ export interface Account {
   billing_cycle_start_day?: number | null;
   avatar_set?: string | null;
   index_linking_enabled?: boolean | null;
+  virtual_partner_name?: string | null;
+  virtual_partner_id?: string | null;
   /**
    * @deprecated Use `userRole === 'member'` to check if the current user is a member (not owner).
    * Use `members` array to derive partner names. Will be removed in a future refactor.
@@ -49,6 +51,8 @@ export interface Account {
   // New member-based fields
   members?: AccountMember[];
   userRole?: 'admin' | 'member';
+  /** Present only when a virtual partner was promoted during invitation acceptance */
+  promotionResult?: VirtualPartnerPromotionResult;
 }
 
 export interface AccountMember {
@@ -56,6 +60,14 @@ export interface AccountMember {
   user_name: string;
   role: 'admin' | 'member';
   joined_at: string;
+}
+
+/** Result returned when a virtual partner is promoted to a real user */
+export interface VirtualPartnerPromotionResult {
+  status: string;
+  virtual_name: string;
+  expenses_updated: number;
+  settlements_updated: number;
 }
 
 export interface UserAccounts {

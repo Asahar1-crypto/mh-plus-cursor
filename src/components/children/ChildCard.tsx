@@ -107,9 +107,10 @@ const ChildCard: React.FC<ChildCardProps> = ({ child }) => {
           <div className="flex items-center gap-2.5 flex-1 min-w-0">
             <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center shrink-0 overflow-hidden">
               <img
-                src={child.gender === 'daughter' ? '/avatars/roles/daughter.png' : '/avatars/roles/son.png'}
+                src={child.gender === 'daughter' ? '/avatars/roles/daughter.webp' : '/avatars/roles/son.webp'}
                 alt={child.gender === 'daughter' ? 'בת' : 'בן'}
                 className="w-full h-full object-contain"
+                loading="lazy"
               />
             </div>
             <div className="min-w-0">

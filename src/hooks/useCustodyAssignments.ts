@@ -102,8 +102,9 @@ export function useCustodyAssignments() {
   }, []);
 
   const updateNotes = useCallback(async (assignmentId: string, notes: string) => {
+    if (!accountId) return;
     try {
-      await custodyService.updateNotes(assignmentId, notes);
+      await custodyService.updateNotes(assignmentId, accountId, notes);
       setAssignments((prev) =>
         prev.map((a) =>
           a.id === assignmentId ? { ...a, notes } : a
@@ -112,7 +113,7 @@ export function useCustodyAssignments() {
     } catch {
       toast.error('שגיאה בעדכון הערות — נסה שוב');
     }
-  }, []);
+  }, [accountId]);
 
   const deleteAssignment = useCallback(async (assignmentId: string) => {
     if (!accountId) return;

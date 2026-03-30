@@ -59,7 +59,7 @@ export const OTPVerification: React.FC<OTPVerificationProps> = ({
 
   const handleCelebrationClose = () => {
     setShowCelebration(false);
-    onVerificationComplete(true, { magicLink: '' }); // Pass any data from verification
+    onVerificationComplete(true); // Verification complete
   };
 
   const handleResendOTP = async () => {

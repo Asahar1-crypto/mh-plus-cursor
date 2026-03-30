@@ -12,7 +12,6 @@ interface RegisterRequest {
   password: string;
   name: string;
   phoneNumber?: string;
-  phoneVerified?: boolean;
 }
 
 const handler = async (req: Request): Promise<Response> => {
@@ -22,7 +21,7 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const { email, password, name, phoneNumber, phoneVerified }: RegisterRequest = await req.json();
+    const { email, password, name, phoneNumber }: RegisterRequest = await req.json();
 
     console.log(`Registering user: ${email}`);
 
@@ -37,13 +36,32 @@ const handler = async (req: Request): Promise<Response> => {
     // Create admin client
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    
+
     const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
       auth: {
         autoRefreshToken: false,
         persistSession: false,
       },
     });
+
+    // Server-side phone verification check — never trust the client
+    let phoneVerified = false;
+    if (phoneNumber) {
+      const { data: verificationRecord } = await supabaseAdmin
+        .from("sms_verification_codes")
+        .select("id")
+        .eq("phone_number", phoneNumber)
+        .eq("verification_type", "registration")
+        .eq("verified", true)
+        .gte("created_at", new Date(Date.now() - 15 * 60 * 1000).toISOString()) // last 15 min
+        .is("user_id", null)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      phoneVerified = !!verificationRecord;
+      console.log(`Phone ${phoneNumber} verification status: ${phoneVerified}`);
+    }
 
     // Create user with admin API - this bypasses email confirmation
     const { data: userData, error: createError } = await supabaseAdmin.auth.admin.createUser({

@@ -55,24 +55,20 @@ export const phoneAuthService = {
   /**
    * Verify OTP for phone login
    */
-  verifyPhoneLoginOtp: async (phoneNumber: string, code: string): Promise<{ success: boolean; magicLink?: string }> => {
+  verifyPhoneLoginOtp: async (phoneNumber: string, code: string): Promise<{ success: boolean; access_token?: string; refresh_token?: string }> => {
     try {
-      
+
       // Normalize phone number before verifying
       const normalizationResult = normalizeILPhoneNumber(phoneNumber);
       if (!normalizationResult.success) {
         throw new Error(normalizationResult.error || 'Invalid phone number format');
       }
-      
-      // Get current origin for redirect
-      const redirectUrl = window.location.origin;
-      
+
       const { data, error } = await supabase.functions.invoke('verify-sms-code', {
-        body: { 
-          phoneNumber: normalizationResult.data!.e164, 
+        body: {
+          phoneNumber: normalizationResult.data!.e164,
           code,
-          verificationType: 'login',
-          redirectUrl
+          verificationType: 'login'
         }
       });
 
@@ -87,7 +83,8 @@ export const phoneAuthService = {
 
       return {
         success: true,
-        magicLink: data.magicLink
+        access_token: data.access_token,
+        refresh_token: data.refresh_token
       };
     } catch (error: any) {
       console.error('Verify phone login OTP failed:', error);
@@ -107,27 +104,27 @@ export const phoneAuthService = {
 
   phoneLogin: async (phoneNumber: string, otp: string): Promise<{ userId: string; email: string }> => {
     try {
-      
+
       const result = await phoneAuthService.verifyPhoneLoginOtp(phoneNumber, otp);
-      
+
       if (!result.success) {
         throw new Error('Failed to verify OTP');
       }
 
-      // If we got a magic link, navigate to it securely
-      if (result.magicLink) {
-        
-        // Navigate to the magic link which will establish the session securely
-        window.location.href = result.magicLink;
-        
+      // Set session directly using tokens from the edge function
+      if (result.access_token && result.refresh_token) {
+        await supabase.auth.setSession({
+          access_token: result.access_token,
+          refresh_token: result.refresh_token
+        });
         return {
           userId: 'authenticated',
           email: 'authenticated'
         };
       }
-      
-      throw new Error('No authentication method received');
-      
+
+      throw new Error('No authentication tokens received');
+
     } catch (error: any) {
       console.error('Phone login failed:', error);
       throw error;

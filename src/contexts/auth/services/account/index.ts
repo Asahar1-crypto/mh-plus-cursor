@@ -16,17 +16,17 @@ export const accountService = {
         .select(`
           account_id,
           role,
-          accounts:account_id(id, name, billing_cycle_start_day, avatar_set, index_linking_enabled)
+          accounts:account_id(id, name, billing_cycle_start_day, avatar_set, index_linking_enabled, virtual_partner_name, virtual_partner_id)
         `)
         .eq('user_id', userId)
         .order('role', { ascending: false }) // admins first
         .order('joined_at', { ascending: true }); // oldest first
-      
+
       if (error) {
         console.error('Error getting user memberships:', error);
         throw error;
       }
-      
+
       // If user has accounts, return the first one (prioritizing admin accounts)
       if (memberships && memberships.length > 0) {
         const membership = memberships[0];
@@ -38,6 +38,8 @@ export const accountService = {
           billing_cycle_start_day: acc.billing_cycle_start_day ?? undefined,
           avatar_set: acc.avatar_set ?? undefined,
           index_linking_enabled: acc.index_linking_enabled ?? undefined,
+          virtual_partner_name: acc.virtual_partner_name ?? undefined,
+          virtual_partner_id: acc.virtual_partner_id ?? undefined,
         };
       }
       
@@ -70,17 +72,17 @@ export const accountService = {
           account_id,
           role,
           joined_at,
-          accounts:account_id(id, name, billing_cycle_start_day, avatar_set, index_linking_enabled)
+          accounts:account_id(id, name, billing_cycle_start_day, avatar_set, index_linking_enabled, virtual_partner_name, virtual_partner_id)
         `)
         .eq('user_id', userId)
         .order('role', { ascending: false }) // admins first
         .order('joined_at', { ascending: true }); // oldest first
-      
+
       if (error) {
         console.error('Error getting user memberships:', error);
         throw error;
       }
-      
+
       if (!memberships) {
         return {
           ownedAccounts: [],
@@ -101,6 +103,8 @@ export const accountService = {
           billing_cycle_start_day: acc.billing_cycle_start_day ?? undefined,
           avatar_set: acc.avatar_set ?? undefined,
           index_linking_enabled: acc.index_linking_enabled ?? undefined,
+          virtual_partner_name: acc.virtual_partner_name ?? undefined,
+          virtual_partner_id: acc.virtual_partner_id ?? undefined,
         };
         
         if (membership.role === 'admin') {

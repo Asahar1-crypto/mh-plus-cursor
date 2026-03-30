@@ -42,7 +42,6 @@ import {
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/auth';
 import { memberService } from '@/contexts/auth/services/account/memberService';
-import confetti from 'canvas-confetti';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { EditExpenseModal } from './EditExpenseModal';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -182,6 +181,7 @@ export const ExpensesTable: React.FC<ExpensesTableProps> = ({
       await Promise.all(selectedPendingExpenses.map(id => approveExpense(id)));
       
       // Celebration confetti
+      const confetti = (await import('canvas-confetti')).default;
       const duration = 2000;
       const animationEnd = Date.now() + duration;
       const colors = ['#10B981', '#8B5CF6', '#EC4899'];
@@ -226,6 +226,7 @@ export const ExpensesTable: React.FC<ExpensesTableProps> = ({
       await Promise.all(selectedApprovedExpenses.map(id => markAsPaid(id)));
       
       // Celebration confetti with gold colors
+      const confetti = (await import('canvas-confetti')).default;
       const duration = 2500;
       const animationEnd = Date.now() + duration;
       const colors = ['#F59E0B', '#FBBF24', '#FCD34D'];
@@ -282,7 +283,8 @@ export const ExpensesTable: React.FC<ExpensesTableProps> = ({
     }
   };
 
-  const fireApproveConfetti = () => {
+  const fireApproveConfetti = async () => {
+    const confetti = (await import('canvas-confetti')).default;
     const duration = 2000;
     const animationEnd = Date.now() + duration;
     const colors = ['#10B981', '#8B5CF6', '#EC4899'];
@@ -329,6 +331,7 @@ export const ExpensesTable: React.FC<ExpensesTableProps> = ({
       await approveAllRecurring(targetId);
       
       // Extra celebration confetti for recurring approval
+      const confetti = (await import('canvas-confetti')).default;
       const duration = 2500;
       const animationEnd = Date.now() + duration;
       const colors = ['#10B981', '#8B5CF6', '#EC4899', '#F59E0B'];
@@ -374,6 +377,7 @@ export const ExpensesTable: React.FC<ExpensesTableProps> = ({
       await markAsPaid(id);
       
       // Celebration confetti with gold colors
+      const confetti = (await import('canvas-confetti')).default;
       const duration = 2500;
       const animationEnd = Date.now() + duration;
       const colors = ['#F59E0B', '#FBBF24', '#FCD34D'];
@@ -402,7 +406,7 @@ export const ExpensesTable: React.FC<ExpensesTableProps> = ({
           ticks: 200,
         });
       }, 40);
-      
+
     } catch (error) {
       toast.error('שגיאה בסימון ההוצאה כשולמה — נסה שוב');
     }
@@ -462,7 +466,7 @@ export const ExpensesTable: React.FC<ExpensesTableProps> = ({
                   variant={allPendingSelected ? "default" : "outline"}
                   size="sm"
                   onClick={toggleAllPending}
-                  className="flex items-center gap-1.5 h-8 text-xs"
+                  className="flex items-center gap-1.5 h-10 sm:h-8 text-xs"
                 >
                   {allPendingSelected ? <CheckSquare className="h-3 w-3" /> : <Square className="h-3 w-3" />}
                   <span className="hidden xs:inline">כל הממתינות</span>
@@ -474,7 +478,7 @@ export const ExpensesTable: React.FC<ExpensesTableProps> = ({
                     onClick={bulkApprove}
                     disabled={isPerformingBulkAction}
                     size="sm"
-                    className="bg-green-600 hover:bg-green-700 text-white h-8 text-xs"
+                    className="bg-green-600 hover:bg-green-700 text-white h-10 sm:h-8 text-xs"
                   >
                     <Check className="h-3 w-3 ml-1" />
                     אשר ({selectedPendingExpenses.length})
@@ -489,7 +493,7 @@ export const ExpensesTable: React.FC<ExpensesTableProps> = ({
                   variant={allApprovedSelected ? "default" : "outline"}
                   size="sm"
                   onClick={toggleAllApproved}
-                  className="flex items-center gap-1.5 h-8 text-xs"
+                  className="flex items-center gap-1.5 h-10 sm:h-8 text-xs"
                 >
                   {allApprovedSelected ? <CheckSquare className="h-3 w-3" /> : <Square className="h-3 w-3" />}
                   <span className="hidden xs:inline">כל המאושרות</span>
@@ -501,7 +505,7 @@ export const ExpensesTable: React.FC<ExpensesTableProps> = ({
                     onClick={bulkMarkAsPaid}
                     disabled={isPerformingBulkAction}
                     size="sm"
-                    className="bg-blue-600 hover:bg-blue-700 text-white h-8 text-xs"
+                    className="bg-blue-600 hover:bg-blue-700 text-white h-10 sm:h-8 text-xs"
                   >
                     סמן כשולם ({selectedApprovedExpenses.length})
                   </Button>
@@ -514,7 +518,7 @@ export const ExpensesTable: React.FC<ExpensesTableProps> = ({
                 onClick={() => setBulkDeleteDialogOpen(true)}
                 disabled={isPerformingBulkAction}
                 size="sm"
-                className="bg-red-600 hover:bg-red-700 text-white h-8 text-xs"
+                className="bg-red-600 hover:bg-red-700 text-white h-10 sm:h-8 text-xs"
               >
                 <Trash2 className="h-3 w-3 ml-1" />
                 מחק נבחרים ({selectedPendingExpenses.length + selectedApprovedExpenses.length})
@@ -877,7 +881,7 @@ export const ExpensesTable: React.FC<ExpensesTableProps> = ({
                   size="sm"
                   onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                   disabled={currentPage === 1}
-                  className="h-8 w-8 p-0"
+                  className="h-10 w-10 sm:h-8 sm:w-8 p-0"
                 >
                   <ChevronRight className="h-4 w-4" />
                 </Button>
@@ -889,7 +893,7 @@ export const ExpensesTable: React.FC<ExpensesTableProps> = ({
                   size="sm"
                   onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
                   disabled={currentPage === totalPages}
-                  className="h-8 w-8 p-0"
+                  className="h-10 w-10 sm:h-8 sm:w-8 p-0"
                 >
                   <ChevronLeft className="h-4 w-4" />
                 </Button>

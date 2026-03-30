@@ -3,7 +3,7 @@ import { Expense } from './types';
 import { EXPENSE_STATUS } from './constants';
 
 export const getPendingExpenses = (expenses: Expense[]): Expense[] =>
-  expenses.filter(e => e.status === EXPENSE_STATUS.PENDING);
+  expenses.filter(e => e.status === EXPENSE_STATUS.PENDING && !e.isRecurring);
 
 export const getApprovedExpenses = (expenses: Expense[]): Expense[] =>
   expenses.filter(e => e.status === EXPENSE_STATUS.APPROVED);

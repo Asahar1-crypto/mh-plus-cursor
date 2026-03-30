@@ -342,6 +342,7 @@ export const ReceiptUpload: React.FC<ReceiptUploadProps> = ({ onScanComplete, on
                   src={previewUrl}
                   alt="תצוגה מקדימה"
                   className="max-w-full h-auto max-h-48 sm:max-h-64 rounded-lg border"
+                  loading="lazy"
                 />
               </div>
             )}

@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { 
   Users, DollarSign, Calendar, AlertCircle, TrendingUp, Settings, 
   Mail, MessageSquare, Crown, CreditCard, Tag, UserCog, Activity,
-  Shield, ArrowLeft, RefreshCw, ChevronLeft
+  Shield, RefreshCw, ChevronLeft
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';

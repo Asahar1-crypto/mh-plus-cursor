@@ -1,7 +1,7 @@
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { AlertTriangle, KeyRound, ArrowLeft } from 'lucide-react';
+import { AlertTriangle, KeyRound, ArrowRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 interface PhoneExistsAlertProps {
@@ -62,7 +62,7 @@ const PhoneExistsAlert: React.FC<PhoneExistsAlertProps> = ({
             onClick={onBack}
             className="w-full gap-2"
           >
-            <ArrowLeft className="h-4 w-4" />
+            <ArrowRight className="h-4 w-4" />
             חזור להרשמה עם מספר אחר
           </Button>
         </div>
