@@ -51,7 +51,7 @@ const ExpensesPage = () => {
     selectedPayer, setSelectedPayer,
     activeTab, setActiveTab,
     applyFilters,
-  } = useExpenseFilters();
+  } = useExpenseFilters(account?.billing_cycle_start_day ?? 1);
   
   const {
     expenses,

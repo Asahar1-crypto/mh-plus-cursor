@@ -54,7 +54,7 @@ const ExpenseProviderInner = ({ children }: ExpenseProviderProps) => {
     getExpensesByCategory,
     getExpensesByMonth,
     getMonthlyBalance
-  } = useExpenseQueries(expenses);
+  } = useExpenseQueries(expenses, account?.billing_cycle_start_day ?? 1);
 
   // Memoize the context value to prevent unnecessary re-renders of consumers
   const contextValue = useMemo<ExpenseContextType>(() => ({

@@ -35,15 +35,16 @@ function getCategoryColor(category: string, index: number): string {
 interface CategoryExpensesChartProps {
   periodFilter: PeriodFilter;
   onCategoryClick?: (category: string) => void;
+  billingDay?: number;
 }
 
-export const CategoryExpensesChart: React.FC<CategoryExpensesChartProps> = ({ periodFilter, onCategoryClick }) => {
+export const CategoryExpensesChart: React.FC<CategoryExpensesChartProps> = ({ periodFilter, onCategoryClick, billingDay = 1 }) => {
   const { expenses } = useExpense();
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
 
   const categoryData = useMemo(() => {
     const validExpenses = expenses.filter(expense => expense.status !== 'rejected');
-    const filtered = filterExpensesByPeriod(validExpenses, periodFilter);
+    const filtered = filterExpensesByPeriod(validExpenses, periodFilter, billingDay);
     
     const categoryMap = new Map<string, { amount: number; count: number }>();
     
@@ -85,7 +86,7 @@ export const CategoryExpensesChart: React.FC<CategoryExpensesChartProps> = ({ pe
     }
     if (!prevFilter) return null;
     const valid = expenses.filter(e => e.status !== 'rejected');
-    const prevFiltered = filterExpensesByPeriod(valid, prevFilter);
+    const prevFiltered = filterExpensesByPeriod(valid, prevFilter, billingDay);
     const map = new Map<string, number>();
     prevFiltered.forEach(e => {
       const cat = e.category || 'אחר';

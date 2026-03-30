@@ -1,5 +1,6 @@
 import type { Budget } from '@/integrations/supabase/budgetService';
 import type { Expense } from '@/contexts/expense/types';
+import { getCycleRangeISO } from '@/utils/billingCycleUtils';
 
 export type BudgetAlertStatus = 'warning_90' | 'exceeded';
 
@@ -18,18 +19,16 @@ export function getBudgetAlertsForMonth(
   budgets: Budget[],
   expenses: Expense[],
   month: number,
-  year: number
+  year: number,
+  billingDay = 1
 ): BudgetAlert[] {
-  const monthStart = new Date(year, month - 1, 1);
-  const monthEnd = new Date(year, month, 0);
-  const monthStartStr = monthStart.toISOString().slice(0, 10);
-  const monthEndStr = monthEnd.toISOString().slice(0, 10);
+  const { startISO, endISO } = getCycleRangeISO(billingDay, month, year);
 
   const relevantExpenses = expenses.filter(
     (e) =>
       ['approved', 'paid'].includes(e.status || '') &&
-      e.date >= monthStartStr &&
-      e.date <= monthEndStr
+      e.date >= startISO &&
+      e.date <= endISO
   );
 
   const alerts: BudgetAlert[] = [];

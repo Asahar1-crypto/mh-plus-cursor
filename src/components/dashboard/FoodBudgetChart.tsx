@@ -5,6 +5,7 @@ import { useExpense } from '@/contexts/ExpenseContext';
 import { useAuth } from '@/contexts/auth';
 import { useQuery } from '@tanstack/react-query';
 import { budgetService } from '@/integrations/supabase/budgetService';
+import { isDateInCycle, getCycleDayInfo } from '@/utils/billingCycleUtils';
 
 interface FoodBudgetData {
   name: string;
@@ -18,13 +19,14 @@ const FOOD_CATEGORIES = ['מזון', 'מזונות'];
 export const FoodBudgetChart: React.FC = () => {
   const { expenses } = useExpense();
   const { account } = useAuth();
+  const billingDay = account?.billing_cycle_start_day ?? 1;
   const currentDate = new Date();
-  const currentMonth = currentDate.getMonth() + 1; // 1-12 for DB
+  const currentMonthNum = currentDate.getMonth() + 1; // 1-12 for DB
   const currentYear = currentDate.getFullYear();
 
   const { data: budgets = [] } = useQuery({
-    queryKey: ['budgets', account?.id, currentMonth, currentYear],
-    queryFn: () => budgetService.getBudgets(account!, currentMonth, currentYear),
+    queryKey: ['budgets', account?.id, currentMonthNum, currentYear],
+    queryFn: () => budgetService.getBudgets(account!, currentMonthNum, currentYear),
     enabled: !!account?.id,
   });
 
@@ -38,43 +40,35 @@ export const FoodBudgetChart: React.FC = () => {
   
   const foodBudgetData = useMemo(() => {
     const now = new Date();
-    const currentMonthJs = now.getMonth(); // 0-11
-    const currentYearJs = now.getFullYear();
-    const previousMonth = currentMonthJs === 0 ? 11 : currentMonthJs - 1;
-    const previousYear = currentMonthJs === 0 ? currentYearJs - 1 : currentYearJs;
-    
-    // סינון הוצאות מזון לחודש הנוכחי
-    const currentMonthFoodExpenses = expenses.filter(expense => {
-      const expenseDate = new Date(expense.date);
-      return (
-        expenseDate.getMonth() === currentMonthJs &&
-        expenseDate.getFullYear() === currentYearJs &&
-        (expense.category === 'מזון' || expense.category === 'מזונות') &&
-        expense.status !== 'rejected'
-      );
-    });
-    
-    // סינון הוצאות מזון לחודש קודם
-    const previousMonthFoodExpenses = expenses.filter(expense => {
-      const expenseDate = new Date(expense.date);
-      return (
-        expenseDate.getMonth() === previousMonth &&
-        expenseDate.getFullYear() === previousYear &&
-        (expense.category === 'מזון' || expense.category === 'מזונות') &&
-        expense.status !== 'rejected'
-      );
-    });
-    
-    // חישוב סכום הוצאות
+    const curMonth = now.getMonth() + 1; // 1-based
+    const curYear = now.getFullYear();
+    const prevMonth = curMonth === 1 ? 12 : curMonth - 1;
+    const prevYear = curMonth === 1 ? curYear - 1 : curYear;
+
+    // Filter food expenses for the current billing cycle
+    const currentMonthFoodExpenses = expenses.filter(expense =>
+      isDateInCycle(expense.date, billingDay, curMonth, curYear) &&
+      (expense.category === 'מזון' || expense.category === 'מזונות') &&
+      expense.status !== 'rejected'
+    );
+
+    // Filter food expenses for the previous billing cycle
+    const previousMonthFoodExpenses = expenses.filter(expense =>
+      isDateInCycle(expense.date, billingDay, prevMonth, prevYear) &&
+      (expense.category === 'מזון' || expense.category === 'מזונות') &&
+      expense.status !== 'rejected'
+    );
+
+    // Calculate totals
     const currentMonthSpent = currentMonthFoodExpenses.reduce((sum, expense) => sum + expense.amount, 0);
     const previousMonthSpent = previousMonthFoodExpenses.reduce((sum, expense) => sum + expense.amount, 0);
-    
-    // חישוב תחזית לסוף החודש
-    const daysInMonth = new Date(currentYearJs, currentMonthJs + 1, 0).getDate();
-    const daysPassed = Math.max(1, now.getDate());
-    const averageDaily = currentMonthSpent / daysPassed;
-    const forecasted = averageDaily * daysInMonth;
-    
+
+    // Forecast using billing cycle day info
+    const { totalDays, daysPassed } = getCycleDayInfo(billingDay, curMonth, curYear);
+    const safeDaysPassed = Math.max(1, daysPassed);
+    const averageDaily = currentMonthSpent / safeDaysPassed;
+    const forecasted = averageDaily * totalDays;
+
     const data: FoodBudgetData[] = [
       {
         name: 'חודש קודם',
@@ -89,9 +83,9 @@ export const FoodBudgetChart: React.FC = () => {
         תחזית: forecasted
       }
     ];
-    
+
     return data;
-  }, [expenses, monthlyBudget]);
+  }, [expenses, monthlyBudget, billingDay]);
   
   const getBarColor = (spent: number, budget: number, forecast: number) => {
     if (forecast > budget) return '#ef4444'; // אדום - חריגה מהתקציב

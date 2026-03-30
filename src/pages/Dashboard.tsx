@@ -16,14 +16,17 @@ import { DashboardSkeleton } from '@/components/dashboard/DashboardSkeleton';
 import { ActivityLog } from '@/components/ActivityLog';
 import { toast } from '@/hooks/use-toast';
 import { usePromotionNotice } from '@/hooks/usePromotionNotice';
+import { isDateInCycle, getCycleLabelHebrew } from '@/utils/billingCycleUtils';
 
 const Dashboard = () => {
   const navigate = useNavigate();
   const { user, account } = useAuth();
 
+  const billingDay = account?.billing_cycle_start_day ?? 1;
+
   // Detect and notify admin when a virtual partner has been promoted to a real user
   usePromotionNotice(account, user?.id ?? null);
-  const { 
+  const {
     getPendingExpenses,
     getApprovedExpenses,
     getPaidExpenses,
@@ -46,37 +49,38 @@ const Dashboard = () => {
   const monthOptions = useMemo(() => {
     const options = [];
     const now = new Date();
-    
+
     // Add previous 12 months
     for (let i = 11; i >= 0; i--) {
       const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
       const value = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-      const label = date.toLocaleDateString('he-IL', { year: 'numeric', month: 'long' });
+      const label = billingDay > 1
+        ? getCycleLabelHebrew(billingDay, date.getMonth() + 1, date.getFullYear())
+        : date.toLocaleDateString('he-IL', { year: 'numeric', month: 'long' });
       options.push({ value, label });
     }
-    
+
     // Add next 6 months
     for (let i = 1; i <= 6; i++) {
       const date = new Date(now.getFullYear(), now.getMonth() + i, 1);
       const value = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-      const label = date.toLocaleDateString('he-IL', { year: 'numeric', month: 'long' });
+      const label = billingDay > 1
+        ? getCycleLabelHebrew(billingDay, date.getMonth() + 1, date.getFullYear())
+        : date.toLocaleDateString('he-IL', { year: 'numeric', month: 'long' });
       options.push({ value, label });
     }
-    
-    return options;
-  }, []);
 
-  // Filter expenses by selected month
+    return options;
+  }, [billingDay]);
+
+  // Filter expenses by selected month (billing cycle aware)
   const filteredExpenses = useMemo(() => {
     if (!selectedMonth) return expenses;
-    
+
     const [year, month] = selectedMonth.split('-').map(Number);
-    
-    return expenses.filter(expense => {
-      const expenseDate = new Date(expense.date);
-      return expenseDate.getFullYear() === year && expenseDate.getMonth() === month - 1;
-    });
-  }, [expenses, selectedMonth]);
+
+    return expenses.filter(expense => isDateInCycle(expense.date, billingDay, month, year));
+  }, [expenses, selectedMonth, billingDay]);
 
   // Calculate filtered data for current month
   const { filteredPending, filteredApproved, filteredPaid, pendingTotal, approvedTotal, paidTotal } = useMemo(() => {
@@ -197,7 +201,7 @@ const Dashboard = () => {
         </div>
 
         <div className="animate-fade-in [animation-delay:200ms]">
-          <MonthlyFoodPaymentCard selectedMonth={selectedMonth} />
+          <MonthlyFoodPaymentCard selectedMonth={selectedMonth} billingDay={billingDay} />
         </div>
 
         <div className="animate-fade-in [animation-delay:300ms]">
@@ -207,6 +211,7 @@ const Dashboard = () => {
             paidExpenses={filteredPaid}
             selectedMonth={selectedMonth}
             allApprovedExpenses={allApprovedExpenses}
+            billingDay={billingDay}
           />
         </div>
 

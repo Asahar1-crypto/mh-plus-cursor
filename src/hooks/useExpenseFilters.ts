@@ -1,13 +1,14 @@
 import { useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Expense } from '@/contexts/expense/types';
+import { isDateInCycle } from '@/utils/billingCycleUtils';
 
 /**
  * Central hook that manages all expense filter state via URL search params.
  * Syncing filters to the URL means users can share/bookmark filtered views,
  * and the browser back-button restores the previous filter selection.
  */
-export const useExpenseFilters = () => {
+export const useExpenseFilters = (billingDay = 1) => {
   const [searchParams, setSearchParams] = useSearchParams();
 
   // Read current filter values from the URL
@@ -62,15 +63,15 @@ export const useExpenseFilters = () => {
         .filter(e => (selectedStatus ? e.status === selectedStatus : true))
         .filter(e => {
           if (showAllMonths) return true;
-          const d = new Date(e.date);
-          return d.getMonth() === selectedMonth && d.getFullYear() === selectedYear;
+          // selectedMonth is 0-based; isDateInCycle expects 1-based month
+          return isDateInCycle(e.date, billingDay, selectedMonth + 1, selectedYear);
         })
         .filter(e => {
           if (!selectedPayer) return true;
           if (selectedPayer === 'split') return e.splitEqually;
           return e.paidById === selectedPayer;
         }),
-    [selectedCategory, selectedChild, selectedStatus, selectedMonth, selectedYear, selectedPayer, showAllMonths]
+    [selectedCategory, selectedChild, selectedStatus, selectedMonth, selectedYear, selectedPayer, showAllMonths, billingDay]
   );
 
   return {

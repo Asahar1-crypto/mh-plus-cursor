@@ -5,6 +5,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/auth';
 import { memberService } from '@/contexts/auth/services/account/memberService';
 import { Wallet, ArrowLeft, CheckCircle } from 'lucide-react';
+import { isDateInCycle } from '@/utils/billingCycleUtils';
 
 interface PaymentBreakdown {
   userId: string;
@@ -16,9 +17,10 @@ interface PaymentBreakdown {
 
 interface MonthlyFoodPaymentCardProps {
   selectedMonth?: string;
+  billingDay?: number;
 }
 
-export const MonthlyFoodPaymentCard: React.FC<MonthlyFoodPaymentCardProps> = ({ selectedMonth }) => {
+export const MonthlyFoodPaymentCard: React.FC<MonthlyFoodPaymentCardProps> = ({ selectedMonth, billingDay = 1 }) => {
   const { expenses } = useExpense();
   const { account } = useAuth();
   
@@ -48,25 +50,24 @@ export const MonthlyFoodPaymentCard: React.FC<MonthlyFoodPaymentCardProps> = ({ 
     }
     
     // Parse selected month or use current month as fallback
-    let targetMonth: number;
+    let targetMonth: number; // 1-based
     let targetYear: number;
-    
+
     if (selectedMonth) {
       const [year, month] = selectedMonth.split('-').map(Number);
-      targetMonth = month - 1; // Convert to 0-based month
+      targetMonth = month;
       targetYear = year;
     } else {
       const currentDate = new Date();
-      targetMonth = currentDate.getMonth();
+      targetMonth = currentDate.getMonth() + 1;
       targetYear = currentDate.getFullYear();
     }
-    
-    // Filter expenses for the selected month - only approved expenses (not paid ones)
+
+    // Filter expenses for the selected billing cycle - only approved expenses (not paid ones)
     const selectedMonthExpenses = expenses.filter(expense => {
-      const expenseDate = new Date(expense.date);
-      const isSelectedMonth = expenseDate.getMonth() === targetMonth && expenseDate.getFullYear() === targetYear;
+      const inCycle = isDateInCycle(expense.date, billingDay, targetMonth, targetYear);
       const isRelevant = expense.status === 'approved'; // Only approved, not paid
-      return isSelectedMonth && isRelevant;
+      return inCycle && isRelevant;
     });
     
     // Calculate what each person owes based on the rules:
@@ -106,9 +107,9 @@ export const MonthlyFoodPaymentCard: React.FC<MonthlyFoodPaymentCardProps> = ({ 
     return {
       totalExpenses,
       breakdown,
-      selectedMonth: selectedMonth || `${targetYear}-${String(targetMonth + 1).padStart(2, '0')}`
+      selectedMonth: selectedMonth || `${targetYear}-${String(targetMonth).padStart(2, '0')}`
     };
-  }, [expenses, effectiveMembers, selectedMonth]);
+  }, [expenses, effectiveMembers, selectedMonth, billingDay]);
 
   // Helper to format the month label
   const monthLabel = useMemo(() => {

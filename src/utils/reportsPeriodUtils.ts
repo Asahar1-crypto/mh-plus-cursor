@@ -1,5 +1,6 @@
 import { format } from 'date-fns';
 import { he } from 'date-fns/locale';
+import { isDateInCycle } from '@/utils/billingCycleUtils';
 
 export type PeriodType = 'all' | 'month' | 'quarter' | 'year' | 'range';
 
@@ -14,7 +15,8 @@ export interface PeriodFilter {
 
 export function filterExpensesByPeriod<T extends { date: string }>(
   expenses: T[],
-  period: PeriodFilter
+  period: PeriodFilter,
+  billingDay = 1
 ): T[] {
   if (period.type === 'all') return expenses;
 
@@ -25,7 +27,8 @@ export function filterExpensesByPeriod<T extends { date: string }>(
 
     switch (period.type) {
       case 'month':
-        return period.year === expYear && period.month === expMonth;
+        // period.month is 1-based, matching isDateInCycle expectation
+        return isDateInCycle(exp.date, billingDay, period.month!, period.year!);
 
       case 'quarter':
         if (!period.year || !period.quarter) return true;

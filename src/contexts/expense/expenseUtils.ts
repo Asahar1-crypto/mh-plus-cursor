@@ -1,6 +1,7 @@
 
 import { Expense } from './types';
 import { EXPENSE_STATUS } from './constants';
+import { isDateInCycle, getCurrentCycle } from '@/utils/billingCycleUtils';
 
 export const getPendingExpenses = (expenses: Expense[]): Expense[] =>
   expenses.filter(e => e.status === EXPENSE_STATUS.PENDING && !e.isRecurring);
@@ -26,22 +27,21 @@ export const getExpensesByChild = (expenses: Expense[], childId: string): Expens
 export const getExpensesByCategory = (expenses: Expense[], category: string): Expense[] => 
   expenses.filter(e => e.category === category);
 
-export const getExpensesByMonth = (expenses: Expense[], month: number, year: number): Expense[] => {
+export const getExpensesByMonth = (expenses: Expense[], month: number, year: number, billingDay = 1): Expense[] => {
   return expenses.filter(expense => {
-    const expenseDate = new Date(expense.date);
-    return expenseDate.getMonth() === month && expenseDate.getFullYear() === year;
+    // month is 0-based from callers; isDateInCycle expects 1-based
+    return isDateInCycle(expense.date, billingDay, month + 1, year);
   });
 };
 
-export const getMonthlyBalance = (expenses: Expense[]): number => {
-  const currentDate = new Date();
-  const currentMonth = currentDate.getMonth();
-  const currentYear = currentDate.getFullYear();
-  
+export const getMonthlyBalance = (expenses: Expense[], billingDay = 1): number => {
+  const { month, year } = getCurrentCycle(billingDay);
+  // getCurrentCycle returns 1-based month; getExpensesByMonth expects 0-based
   return getExpensesByMonth(
     getApprovedExpenses(expenses).filter(e => e.includeInMonthlyBalance),
-    currentMonth,
-    currentYear
+    month - 1,
+    year,
+    billingDay
   ).reduce((acc, curr) => acc + curr.amount, 0);
 };
 

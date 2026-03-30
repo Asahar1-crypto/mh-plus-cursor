@@ -27,7 +27,7 @@ export interface ExpenseQueries {
   getMonthlyBalance: () => number;
 }
 
-export const useExpenseQueries = (expenses: Expense[]): ExpenseQueries => {
+export const useExpenseQueries = (expenses: Expense[], billingDay = 1): ExpenseQueries => {
   const getPendingExpenses = useCallback(() => getFilteredPendingExpenses(expenses), [expenses]);
   const getApprovedExpenses = useCallback(() => getFilteredApprovedExpenses(expenses), [expenses]);
   const getPaidExpenses = useCallback(() => getFilteredPaidExpenses(expenses), [expenses]);
@@ -36,8 +36,8 @@ export const useExpenseQueries = (expenses: Expense[]): ExpenseQueries => {
   const getTotalApproved = useCallback(() => calculateTotalApproved(expenses), [expenses]);
   const getExpensesByChild = useCallback((childId: string) => filterExpensesByChild(expenses, childId), [expenses]);
   const getExpensesByCategory = useCallback((category: string) => filterExpensesByCategory(expenses, category), [expenses]);
-  const getExpensesByMonth = useCallback((month: number, year: number) => filterExpensesByMonth(expenses, month, year), [expenses]);
-  const getMonthlyBalance = useCallback(() => calculateMonthlyBalance(expenses), [expenses]);
+  const getExpensesByMonth = useCallback((month: number, year: number) => filterExpensesByMonth(expenses, month, year, billingDay), [expenses, billingDay]);
+  const getMonthlyBalance = useCallback(() => calculateMonthlyBalance(expenses, billingDay), [expenses, billingDay]);
 
   return {
     getPendingExpenses,

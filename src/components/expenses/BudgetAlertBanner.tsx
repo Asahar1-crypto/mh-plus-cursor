@@ -7,6 +7,7 @@ import { useExpense } from '@/contexts/ExpenseContext';
 import { budgetService } from '@/integrations/supabase/budgetService';
 import { useQuery } from '@tanstack/react-query';
 import { getBudgetAlertsForMonth, type BudgetAlert } from '@/utils/budgetAlertUtils';
+import { getCycleLabelHebrew } from '@/utils/billingCycleUtils';
 
 interface BudgetAlertBannerProps {
   selectedMonth: number;
@@ -24,6 +25,7 @@ export const BudgetAlertBanner: React.FC<BudgetAlertBannerProps> = ({
 }) => {
   const { account } = useAuth();
   const { expenses } = useExpense();
+  const billingDay = account?.billing_cycle_start_day ?? 1;
 
   const { data: budgets } = useQuery({
     queryKey: ['budgets', account?.id, selectedMonth, selectedYear],
@@ -33,8 +35,8 @@ export const BudgetAlertBanner: React.FC<BudgetAlertBannerProps> = ({
 
   const alerts = useMemo(() => {
     if (!budgets || budgets.length === 0) return [];
-    return getBudgetAlertsForMonth(budgets, expenses, selectedMonth + 1, selectedYear);
-  }, [budgets, expenses, selectedMonth, selectedYear]);
+    return getBudgetAlertsForMonth(budgets, expenses, selectedMonth + 1, selectedYear, billingDay);
+  }, [budgets, expenses, selectedMonth, selectedYear, billingDay]);
 
   if (alerts.length === 0) return null;
 
@@ -65,7 +67,9 @@ export const BudgetAlertBanner: React.FC<BudgetAlertBannerProps> = ({
       </AlertTitle>
       <AlertDescription>
         <span className="block mb-1">
-          {MONTH_NAMES[selectedMonth]} {selectedYear}:
+          {billingDay > 1
+            ? getCycleLabelHebrew(billingDay, selectedMonth + 1, selectedYear)
+            : `${MONTH_NAMES[selectedMonth]} ${selectedYear}`}:
         </span>
         {exceeded.length > 0 && (
           <span className="block text-destructive font-medium">

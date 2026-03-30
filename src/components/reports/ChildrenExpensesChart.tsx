@@ -21,14 +21,15 @@ const CHILD_COLORS = [
 
 interface ChildrenExpensesChartProps {
   periodFilter: PeriodFilter;
+  billingDay?: number;
 }
 
-export const ChildrenExpensesChart: React.FC<ChildrenExpensesChartProps> = ({ periodFilter }) => {
+export const ChildrenExpensesChart: React.FC<ChildrenExpensesChartProps> = ({ periodFilter, billingDay = 1 }) => {
   const { expenses } = useExpense();
 
   const childrenData = useMemo(() => {
     const validExpenses = expenses.filter(expense => expense.status !== 'rejected');
-    const filtered = filterExpensesByPeriod(validExpenses, periodFilter);
+    const filtered = filterExpensesByPeriod(validExpenses, periodFilter, billingDay);
     
     const childMap = new Map<string, { amount: number; count: number }>();
     

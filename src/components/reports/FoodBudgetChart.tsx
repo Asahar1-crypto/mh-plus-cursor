@@ -6,8 +6,9 @@ import { budgetService } from '@/integrations/supabase/budgetService';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer } from 'recharts';
-import { format, startOfMonth, endOfMonth, subMonths } from 'date-fns';
+import { format, subMonths } from 'date-fns';
 import { he } from 'date-fns/locale';
+import { isDateInCycle, getCycleDayInfo, getCycleLabelHebrew, getCurrentCycle } from '@/utils/billingCycleUtils';
 
 interface BudgetData {
   month: string;
@@ -22,12 +23,11 @@ const FOOD_CATEGORIES = ['מזון', 'מזונות'];
 const FoodBudgetChart = () => {
   const { account } = useAuth();
   const { expenses } = useExpense();
-  const currentDate = new Date();
-  const currentMonth = currentDate.getMonth() + 1;
-  const currentYear = currentDate.getFullYear();
-  const lastMonth = subMonths(currentDate, 1);
-  const lastMonthNum = lastMonth.getMonth() + 1;
-  const lastMonthYear = lastMonth.getFullYear();
+  const billingDay = account?.billing_cycle_start_day ?? 1;
+  const { month: currentMonth, year: currentYear } = getCurrentCycle(billingDay);
+  let lastMonthNum = currentMonth - 1;
+  let lastMonthYear = currentYear;
+  if (lastMonthNum < 1) { lastMonthNum = 12; lastMonthYear -= 1; }
 
   const { data: currentBudgets = [] } = useQuery({
     queryKey: ['budgets', account?.id, currentMonth, currentYear],
@@ -53,41 +53,39 @@ const FoodBudgetChart = () => {
       .filter(foodFilter)
       .reduce((sum, b) => sum + b.monthly_amount, 0) || 3000;
 
-    const currentMonthExpenses = expenses.filter(exp => {
-      const d = new Date(exp.date);
-      return d.getMonth() === currentDate.getMonth() && d.getFullYear() === currentYear &&
-        FOOD_CATEGORIES.includes(exp.category) && exp.status !== 'rejected';
-    });
-    const lastMonthExpenses = expenses.filter(exp => {
-      const d = new Date(exp.date);
-      return d.getMonth() === lastMonth.getMonth() && d.getFullYear() === lastMonthYear &&
-        FOOD_CATEGORIES.includes(exp.category) && exp.status !== 'rejected';
-    });
+    const currentMonthExpenses = expenses.filter(exp =>
+      isDateInCycle(exp.date, billingDay, currentMonth, currentYear) &&
+      FOOD_CATEGORIES.includes(exp.category) && exp.status !== 'rejected'
+    );
+    const lastMonthExpenses = expenses.filter(exp =>
+      isDateInCycle(exp.date, billingDay, lastMonthNum, lastMonthYear) &&
+      FOOD_CATEGORIES.includes(exp.category) && exp.status !== 'rejected'
+    );
 
     const currentSpent = currentMonthExpenses.reduce((sum, exp) => sum + exp.amount, 0);
     const lastSpent = lastMonthExpenses.reduce((sum, exp) => sum + exp.amount, 0);
 
-    const daysInMonth = endOfMonth(currentDate).getDate();
-    const daysPassed = Math.max(1, currentDate.getDate());
-    const currentProjection = (currentSpent / daysPassed) * daysInMonth;
+    const { totalDays, daysPassed } = getCycleDayInfo(billingDay, currentMonth, currentYear);
+    const safeDaysPassed = Math.max(1, daysPassed);
+    const currentProjection = (currentSpent / safeDaysPassed) * totalDays;
 
     return [
       {
-        month: format(lastMonth, 'MMMM yyyy', { locale: he }),
+        month: getCycleLabelHebrew(billingDay, lastMonthNum, lastMonthYear),
         budget: lastBudget,
         spent: lastSpent,
         projection: lastSpent,
         difference: lastBudget - lastSpent
       },
       {
-        month: format(currentDate, 'MMMM yyyy', { locale: he }),
+        month: getCycleLabelHebrew(billingDay, currentMonth, currentYear),
         budget: currentBudget,
         spent: currentSpent,
         projection: currentProjection,
         difference: currentBudget - currentProjection
       }
     ] as BudgetData[];
-  }, [expenses, currentBudgets, lastBudgets, currentDate, lastMonth, currentYear, lastMonthYear]);
+  }, [expenses, currentBudgets, lastBudgets, billingDay, currentMonth, currentYear, lastMonthNum, lastMonthYear]);
 
   const chartConfig = {
     budget: {

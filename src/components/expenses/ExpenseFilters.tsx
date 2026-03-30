@@ -10,6 +10,7 @@ const DEFAULT_CATEGORIES = ['חינוך', 'רפואה', 'פנאי', 'ביגוד'
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/auth';
 import { memberService } from '@/contexts/auth/services/account/memberService';
+import { getCycleLabelHebrew } from '@/utils/billingCycleUtils';
 
 interface ExpenseFiltersProps {
   selectedCategory: string | null;
@@ -54,6 +55,8 @@ export const ExpenseFilters: React.FC<ExpenseFiltersProps> = ({
   });
 
   const categories = categoriesList.length > 0 ? categoriesList.map(c => c.name) : DEFAULT_CATEGORIES;
+
+  const billingDay = account?.billing_cycle_start_day ?? 1;
 
   // Generate months for dropdown
   const months = [
@@ -173,7 +176,11 @@ export const ExpenseFilters: React.FC<ExpenseFiltersProps> = ({
               </SelectTrigger>
               <SelectContent className="bg-background/95 backdrop-blur-lg border border-border/50">
                 {months.map((month, index) => (
-                  <SelectItem key={index} value={index.toString()}>{month}</SelectItem>
+                  <SelectItem key={index} value={index.toString()}>
+                    {billingDay > 1
+                      ? getCycleLabelHebrew(billingDay, index + 1, selectedYear)
+                      : month}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>

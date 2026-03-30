@@ -8,6 +8,8 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { format } from 'date-fns';
 import { he } from 'date-fns/locale';
 import type { PeriodFilter, PeriodType } from '@/utils/reportsPeriodUtils';
+import { useAuth } from '@/contexts/auth';
+import { getCycleLabelHebrew } from '@/utils/billingCycleUtils';
 
 interface ReportsPeriodFilterProps {
   value: PeriodFilter;
@@ -18,6 +20,8 @@ export const ReportsPeriodFilter: React.FC<ReportsPeriodFilterProps> = ({ value,
   const now = new Date();
   const isMobile = useIsMobile();
   const currentYear = now.getFullYear();
+  const { account } = useAuth();
+  const billingDay = account?.billing_cycle_start_day ?? 1;
 
   const periodTypeOptions: { value: PeriodType; label: string }[] = [
     { value: 'all', label: 'כל התקופה' },
@@ -31,15 +35,19 @@ export const ReportsPeriodFilter: React.FC<ReportsPeriodFilterProps> = ({ value,
     const options = [];
     for (let i = 0; i < 24; i++) {
       const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const m = date.getMonth() + 1;
+      const y = date.getFullYear();
       options.push({
-        value: `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`,
-        label: format(date, 'MMMM yyyy', { locale: he }),
-        year: date.getFullYear(),
-        month: date.getMonth() + 1,
+        value: `${y}-${String(m).padStart(2, '0')}`,
+        label: billingDay > 1
+          ? getCycleLabelHebrew(billingDay, m, y)
+          : format(date, 'MMMM yyyy', { locale: he }),
+        year: y,
+        month: m,
       });
     }
     return options;
-  }, []);
+  }, [billingDay]);
 
   const quarterOptions = useMemo(() => {
     const options = [];

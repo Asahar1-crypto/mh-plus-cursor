@@ -19,6 +19,7 @@ import { cn } from '@/lib/utils';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Calendar as CalendarIcon, Calculator, CheckCircle, Clock, TrendingUp, RefreshCw, Check, DollarSign, Archive, ChevronDown, ChevronUp, FileText, Download, User, Receipt, ArrowRightLeft, Plus, Trash2, History, CreditCard, Banknote, Lock, LockOpen } from 'lucide-react';
 import { activityService } from '@/integrations/supabase/activityService';
+import { isDateInCycle, getCycleRangeISO, getCycleLabelHebrew } from '@/utils/billingCycleUtils';
 
 interface SettlementPayment {
   id: string;
@@ -43,6 +44,7 @@ const PAYMENT_METHOD_LABELS: Record<string, string> = {
 
 const MonthlySettlement = () => {
   const { user, account, isLoading } = useAuth();
+  const billingDay = account?.billing_cycle_start_day ?? 1;
   const isPersonalPlan = account?.plan_slug === 'personal';
   const { expenses, isLoading: expensesLoading, refreshData, approveExpense, markAsPaid } = useExpense();
   const { toast } = useToast();
@@ -231,9 +233,7 @@ const MonthlySettlement = () => {
   // Calculate expenses data for selected month
   const monthlyData = useMemo(() => {
     const monthExpenses = expenses.filter(expense => {
-      const expenseDate = new Date(expense.date);
-      return expenseDate.getMonth() === selectedMonth && 
-             expenseDate.getFullYear() === selectedYear;
+      return isDateInCycle(expense.date, billingDay, selectedMonth + 1, selectedYear);
     });
     
     const pending = monthExpenses.filter(e => e.status === 'pending');
@@ -265,7 +265,7 @@ const MonthlySettlement = () => {
         expenses: rejected
       }
     };
-  }, [expenses, selectedMonth, selectedYear]);
+  }, [expenses, selectedMonth, selectedYear, billingDay]);
 
   // Settlement summary: who owes whom this month
   // Uses effectiveMembers (includes virtual partner when applicable)
@@ -510,17 +510,16 @@ const MonthlySettlement = () => {
         await Promise.all(approvePromises);
       }
 
-      // Query DB directly for all approved expenses in this month
+      // Query DB directly for all approved expenses in this billing cycle
       // (avoids stale React state — the approvals above are already committed to DB)
-      const monthStart = new Date(selectedYear, selectedMonth, 1);
-      const monthEnd = new Date(selectedYear, selectedMonth + 1, 0); // last day of month
+      const { startISO, endISO } = getCycleRangeISO(billingDay, selectedMonth + 1, selectedYear);
       const { data: freshApproved } = await supabase
         .from('expenses')
         .select('id')
         .eq('account_id', account!.id)
         .eq('status', 'approved')
-        .gte('date', monthStart.toISOString().split('T')[0])
-        .lte('date', monthEnd.toISOString().split('T')[0]);
+        .gte('date', startISO)
+        .lte('date', endISO);
 
       if (freshApproved && freshApproved.length > 0) {
         const paidPromises = freshApproved.map(expense => markAsPaid(expense.id));
@@ -687,7 +686,7 @@ const MonthlySettlement = () => {
                 <SelectContent>
                   {months.map((month, index) => (
                     <SelectItem key={index} value={index.toString()}>
-                      {month}
+                      {billingDay > 1 ? getCycleLabelHebrew(billingDay, index + 1, selectedYear) : month}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -1300,9 +1299,7 @@ const MonthlySettlement = () => {
                             year: selectedYear,
                             summary: monthlyData,
                             expenses: expenses.filter(expense => {
-                              const expenseDate = new Date(expense.date);
-                              return expenseDate.getMonth() === selectedMonth && 
-                                     expenseDate.getFullYear() === selectedYear;
+                              return isDateInCycle(expense.date, billingDay, selectedMonth + 1, selectedYear);
                             })
                           };
                           

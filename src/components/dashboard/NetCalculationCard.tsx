@@ -5,10 +5,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { ArrowRightLeft, CheckCircle, Calculator } from 'lucide-react';
 import { memberService } from '@/contexts/auth/services/account';
 import type { Expense } from '@/contexts/expense/types';
+import { isDateInCycle } from '@/utils/billingCycleUtils';
 
 interface NetCalculationCardProps {
   approvedExpenses: Expense[];
   selectedMonth?: string;
+  billingDay?: number;
 }
 
 interface UserBalance {
@@ -18,9 +20,10 @@ interface UserBalance {
   balance: number; // positive = needs to pay more, negative = overpaid
 }
 
-export const NetCalculationCard: React.FC<NetCalculationCardProps> = ({ 
-  approvedExpenses, 
-  selectedMonth 
+export const NetCalculationCard: React.FC<NetCalculationCardProps> = ({
+  approvedExpenses,
+  selectedMonth,
+  billingDay = 1
 }) => {
   const { account } = useAuth();
   
@@ -44,21 +47,18 @@ export const NetCalculationCard: React.FC<NetCalculationCardProps> = ({
     return rawAccountMembers;
   }, [rawAccountMembers, account?.virtual_partner_name, account?.virtual_partner_id]);
 
-  // Filter approved expenses by selected month if provided
+  // Filter approved expenses by selected month (billing cycle aware)
   const filteredApprovedExpenses = useMemo(() => {
     if (!selectedMonth || !approvedExpenses) return approvedExpenses || [];
-    
+
     const [year, month] = selectedMonth.split('-').map(Number);
-    const targetMonth = month - 1; // Convert to 0-based month
-    const targetYear = year;
-    
+
     return approvedExpenses.filter(expense => {
-      const expenseDate = new Date(expense.date);
-      const isSelectedMonth = expenseDate.getMonth() === targetMonth && expenseDate.getFullYear() === targetYear;
+      const inCycle = isDateInCycle(expense.date, billingDay, month, year);
       const isRelevant = expense.status === 'approved'; // Only approved, not paid
-      return isSelectedMonth && isRelevant;
+      return inCycle && isRelevant;
     });
-  }, [approvedExpenses, selectedMonth]);
+  }, [approvedExpenses, selectedMonth, billingDay]);
 
   // Calculate breakdown using the same logic as MonthlyFoodPaymentCard
   const breakdown = useMemo(() => {

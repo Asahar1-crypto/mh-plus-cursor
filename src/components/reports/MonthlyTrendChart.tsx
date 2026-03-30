@@ -14,6 +14,8 @@ import {
 import { TrendingUp, TrendingDown } from 'lucide-react';
 import { format } from 'date-fns';
 import { he } from 'date-fns/locale';
+import { useAuth } from '@/contexts/auth';
+import { isDateInCycle, getCycleLabelHebrew, getCurrentCycle } from '@/utils/billingCycleUtils';
 
 const MONTHS_TO_SHOW = 6;
 
@@ -39,25 +41,27 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 
 export const MonthlyTrendChart: React.FC = () => {
   const { expenses } = useExpense();
+  const { account } = useAuth();
+  const billingDay = account?.billing_cycle_start_day ?? 1;
 
   const trendData = useMemo((): MonthPoint[] => {
-    const now = new Date();
+    const { month: curMonth, year: curYear } = getCurrentCycle(billingDay);
     return Array.from({ length: MONTHS_TO_SHOW }, (_, i) => {
-      const d = new Date(now.getFullYear(), now.getMonth() - (MONTHS_TO_SHOW - 1 - i), 1);
-      const month = d.getMonth();
-      const year = d.getFullYear();
+      const offset = MONTHS_TO_SHOW - 1 - i;
+      let m = curMonth - offset;
+      let y = curYear;
+      while (m < 1) { m += 12; y -= 1; }
       const monthExpenses = expenses.filter(exp => {
         if (exp.status === 'rejected') return false;
-        const expDate = new Date(exp.date);
-        return expDate.getMonth() === month && expDate.getFullYear() === year;
+        return isDateInCycle(exp.date, billingDay, m, y);
       });
       return {
-        label: format(d, 'MMM yy', { locale: he }),
+        label: getCycleLabelHebrew(billingDay, m, y),
         amount: Math.round(monthExpenses.reduce((sum, e) => sum + e.amount, 0)),
         count: monthExpenses.length,
       };
     });
-  }, [expenses]);
+  }, [expenses, billingDay]);
 
   const avgAmount = trendData.length > 0
     ? Math.round(trendData.reduce((s, d) => s + d.amount, 0) / trendData.length)

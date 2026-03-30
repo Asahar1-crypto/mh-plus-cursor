@@ -7,6 +7,7 @@ import { budgetService, Budget } from '@/integrations/supabase/budgetService';
 import { Wallet, Settings } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
+import { isDateInCycle } from '@/utils/billingCycleUtils';
 
 function budgetAppliesToCategory(b: Budget, category: string): boolean {
   if (b.categories && b.categories.length > 0) {
@@ -17,9 +18,10 @@ function budgetAppliesToCategory(b: Budget, category: string): boolean {
 
 interface BudgetOverviewCardProps {
   selectedMonth: string;
+  billingDay?: number;
 }
 
-export const BudgetOverviewCard: React.FC<BudgetOverviewCardProps> = ({ selectedMonth }) => {
+export const BudgetOverviewCard: React.FC<BudgetOverviewCardProps> = ({ selectedMonth, billingDay = 1 }) => {
   const { account } = useAuth();
   const { expenses } = useExpense();
 
@@ -53,10 +55,7 @@ export const BudgetOverviewCard: React.FC<BudgetOverviewCardProps> = ({ selected
           (e) =>
             e.category === cat &&
             e.status !== 'rejected' &&
-            (() => {
-              const d = new Date(e.date);
-              return d.getMonth() === monthNum - 1 && d.getFullYear() === year;
-            })()
+            isDateInCycle(e.date, billingDay, monthNum, year)
         )
         .reduce((s, e) => s + e.amount, 0);
 
@@ -64,7 +63,7 @@ export const BudgetOverviewCard: React.FC<BudgetOverviewCardProps> = ({ selected
     });
 
     return result.sort((a, b) => b.budget - a.budget);
-  }, [budgets, expenses, monthNum, year]);
+  }, [budgets, expenses, monthNum, year, billingDay]);
 
   if (isLoading) {
     return (

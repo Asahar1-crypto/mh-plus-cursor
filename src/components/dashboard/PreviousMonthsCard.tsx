@@ -5,10 +5,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Clock, Calendar, CheckCircle } from 'lucide-react';
 import { memberService } from '@/contexts/auth/services/account';
 import type { Expense } from '@/contexts/expense/types';
+import { getCycleRange } from '@/utils/billingCycleUtils';
 
 interface PreviousMonthsCardProps {
   approvedExpenses: Expense[];
   selectedMonth?: string;
+  billingDay?: number;
 }
 
 interface UserBalance {
@@ -17,9 +19,10 @@ interface UserBalance {
   count: number;
 }
 
-export const PreviousMonthsCard: React.FC<PreviousMonthsCardProps> = ({ 
-  approvedExpenses, 
-  selectedMonth 
+export const PreviousMonthsCard: React.FC<PreviousMonthsCardProps> = ({
+  approvedExpenses,
+  selectedMonth,
+  billingDay = 1
 }) => {
   const { account } = useAuth();
   
@@ -30,25 +33,25 @@ export const PreviousMonthsCard: React.FC<PreviousMonthsCardProps> = ({
     enabled: !!account?.id
   });
 
-  // Filter approved expenses from previous months
+  // Filter approved expenses from before the selected billing cycle
   const previousMonthsExpenses = useMemo(() => {
     if (!selectedMonth || !approvedExpenses) {
       return [];
     }
-    
+
     const [year, month] = selectedMonth.split('-').map(Number);
-    const selectedDate = new Date(year, month - 1, 1); // First day of selected month
-    
+    const { start: cycleStart } = getCycleRange(billingDay, month, year);
+
     const filtered = approvedExpenses.filter(expense => {
       const expenseDate = new Date(expense.date);
-      const isBeforeSelectedMonth = expenseDate < selectedDate;
+      const isBeforeCycle = expenseDate < cycleStart;
       const isApproved = expense.status === 'approved';
-      
-      return isBeforeSelectedMonth && isApproved;
+
+      return isBeforeCycle && isApproved;
     });
-    
+
     return filtered;
-  }, [approvedExpenses, selectedMonth]);
+  }, [approvedExpenses, selectedMonth, billingDay]);
 
   // Calculate breakdown by user
   const breakdown = useMemo(() => {

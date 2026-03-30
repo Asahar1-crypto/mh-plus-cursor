@@ -16,14 +16,16 @@ interface ExpensesSummaryProps {
   paidExpenses: Expense[];
   selectedMonth?: string;
   allApprovedExpenses?: Expense[];
+  billingDay?: number;
 }
 
 export const ExpensesSummary: React.FC<ExpensesSummaryProps> = ({
   pendingExpenses,
-  approvedExpenses, 
+  approvedExpenses,
   paidExpenses,
   selectedMonth,
-  allApprovedExpenses
+  allApprovedExpenses,
+  billingDay = 1
 }) => {
   const { account } = useAuth();
   
@@ -228,15 +230,17 @@ export const ExpensesSummary: React.FC<ExpensesSummaryProps> = ({
       </Card>
       
       {/* Net Calculation Card */}
-      <NetCalculationCard 
+      <NetCalculationCard
         approvedExpenses={approvedExpenses}
         selectedMonth={selectedMonth}
+        billingDay={billingDay}
       />
       
       {/* Previous Months Card */}
-      <PreviousMonthsCard 
+      <PreviousMonthsCard
         approvedExpenses={allApprovedExpenses || approvedExpenses}
         selectedMonth={selectedMonth}
+        billingDay={billingDay}
       />
     </div>
   );

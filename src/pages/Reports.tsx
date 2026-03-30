@@ -12,6 +12,7 @@ import { ReportsSkeleton } from '@/components/reports/ReportsSkeleton';
 import { MonthlyTrendChart } from '@/components/reports/MonthlyTrendChart';
 import BudgetDeviationChart from '@/components/reports/BudgetDeviationChart';
 import { filterExpensesByPeriod, type PeriodFilter } from '@/utils/reportsPeriodUtils';
+import { isDateInCycle, getCurrentCycle } from '@/utils/billingCycleUtils';
 
 const Reports = () => {
   const navigate = useNavigate();
@@ -30,8 +31,8 @@ const Reports = () => {
 
   const filteredExpenses = useMemo(() => {
     const valid = expenses.filter(exp => exp.status !== 'rejected');
-    return filterExpensesByPeriod(valid, periodFilter);
-  }, [expenses, periodFilter]);
+    return filterExpensesByPeriod(valid, periodFilter, account?.billing_cycle_start_day ?? 1);
+  }, [expenses, periodFilter, account?.billing_cycle_start_day]);
 
   // Calculate overview stats based on filtered period
   const overviewStats = useMemo(() => {
@@ -43,18 +44,19 @@ const Reports = () => {
     const categories = new Set(filteredExpenses.map(exp => exp.category || 'אחר'));
     const children = new Set(filteredExpenses.map(exp => exp.childName).filter(Boolean));
 
-    // Current month vs previous month comparison (from all valid expenses)
-    const now = new Date();
-    const currentMonthExpenses = validExpenses.filter(exp => {
-      const d = new Date(exp.date);
-      return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
-    });
-    const prevMonthExpenses = validExpenses.filter(exp => {
-      const d = new Date(exp.date);
-      const prevMonth = now.getMonth() === 0 ? 11 : now.getMonth() - 1;
-      const prevYear = now.getMonth() === 0 ? now.getFullYear() - 1 : now.getFullYear();
-      return d.getMonth() === prevMonth && d.getFullYear() === prevYear;
-    });
+    // Current cycle vs previous cycle comparison (billing-day aware)
+    const billingDay = account?.billing_cycle_start_day ?? 1;
+    const { month: curCycleMonth, year: curCycleYear } = getCurrentCycle(billingDay);
+    let prevCycleMonth = curCycleMonth - 1;
+    let prevCycleYear = curCycleYear;
+    if (prevCycleMonth < 1) { prevCycleMonth = 12; prevCycleYear -= 1; }
+
+    const currentMonthExpenses = validExpenses.filter(exp =>
+      isDateInCycle(exp.date, billingDay, curCycleMonth, curCycleYear)
+    );
+    const prevMonthExpenses = validExpenses.filter(exp =>
+      isDateInCycle(exp.date, billingDay, prevCycleMonth, prevCycleYear)
+    );
 
     const currentTotal = currentMonthExpenses.reduce((sum, exp) => sum + exp.amount, 0);
     const prevTotal = prevMonthExpenses.reduce((sum, exp) => sum + exp.amount, 0);
@@ -244,12 +246,12 @@ const Reports = () => {
 
           {/* Category Expenses Chart */}
           <div className="animate-fade-in [animation-delay:400ms]">
-            <CategoryExpensesChart periodFilter={periodFilter} onCategoryClick={handleCategoryClick} />
+            <CategoryExpensesChart periodFilter={periodFilter} onCategoryClick={handleCategoryClick} billingDay={account?.billing_cycle_start_day ?? 1} />
           </div>
 
           {/* Children Expenses Chart */}
           <div className="animate-fade-in [animation-delay:600ms]">
-            <ChildrenExpensesChart periodFilter={periodFilter} />
+            <ChildrenExpensesChart periodFilter={periodFilter} billingDay={account?.billing_cycle_start_day ?? 1} />
           </div>
         </div>
       </div>
