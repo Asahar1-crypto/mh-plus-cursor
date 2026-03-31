@@ -13,6 +13,7 @@ import { CalendarIcon, PlusCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { OnboardingModal } from '@/components/onboarding/OnboardingModal';
 import { DashboardSkeleton } from '@/components/dashboard/DashboardSkeleton';
+import { ErrorState } from '@/components/ui/state-views';
 import { ActivityLog } from '@/components/ActivityLog';
 import { toast } from '@/hooks/use-toast';
 import { usePromotionNotice } from '@/hooks/usePromotionNotice';
@@ -36,7 +37,9 @@ const Dashboard = () => {
     rejectExpense,
     markAsPaid,
     isLoading,
-    expenses
+    error,
+    expenses,
+    refreshData
   } = useExpense();
 
   // State for selected month - default to current month
@@ -149,14 +152,37 @@ const Dashboard = () => {
   };
 
   if (!user || !account) {
-    return <DashboardSkeleton />;
+    return (
+      <>
+        <OnboardingModal />
+        <DashboardSkeleton />
+      </>
+    );
   }
 
   if (isLoading) {
-    return <DashboardSkeleton />;
+    return (
+      <>
+        <OnboardingModal />
+        <DashboardSkeleton />
+      </>
+    );
   }
 
-  
+  if (error) {
+    return (
+      <>
+        <OnboardingModal />
+        <div className="w-full max-w-7xl mx-auto p-3 sm:p-4 md:p-6">
+          <ErrorState
+            title="שגיאה בטעינת הנתונים"
+            message="לא הצלחנו לטעון את ההוצאות. נסה שוב."
+            onRetry={refreshData}
+          />
+        </div>
+      </>
+    );
+  }
 
   return (
     <div className="bg-gradient-to-br from-background via-background to-primary/5 animate-fade-in">

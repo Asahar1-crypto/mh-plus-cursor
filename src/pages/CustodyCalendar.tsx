@@ -9,12 +9,14 @@ import CustodyFilters, { CustodyFilterState } from '@/components/custody/Custody
 import CustodySummary from '@/components/custody/CustodySummary';
 import EmptyCustodyState from '@/components/custody/EmptyCustodyState';
 import { Button } from '@/components/ui/button';
+import { LoadingState, ErrorState } from '@/components/ui/state-views';
 
 const CustodyCalendar: React.FC = () => {
   const { user, account } = useAuth();
   const {
     assignments,
     isLoading,
+    error,
     isFetchingAI,
     members,
     fetchHolidays,
@@ -23,6 +25,7 @@ const CustodyCalendar: React.FC = () => {
     updateNotes,
     deleteAssignment,
     bulkAssignParent,
+    reload,
   } = useCustodyAssignments();
 
   const [filters, setFilters] = useState<CustodyFilterState>({
@@ -79,25 +82,15 @@ const CustodyCalendar: React.FC = () => {
   }, [assignments, filters]);
 
   if (!user || !account) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent mx-auto mb-4" />
-          <p>טוען נתונים...</p>
-        </div>
-      </div>
-    );
+    return <LoadingState text="טוען נתונים..." fullPage className="min-h-screen" />;
   }
 
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="text-center">
-          <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent mx-auto mb-4" />
-          <p>טוען נתוני משמורת...</p>
-        </div>
-      </div>
-    );
+    return <LoadingState text="טוען נתוני משמורת..." fullPage />;
+  }
+
+  if (error) {
+    return <ErrorState message={error} onRetry={reload} className="min-h-[60vh]" />;
   }
 
   return (

@@ -10,6 +10,7 @@ export function useCustodyAssignments() {
   const [assignments, setAssignments] = useState<CustodyAssignment[]>([]);
   const [members, setMembers] = useState<AccountMember[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [isFetchingAI, setIsFetchingAI] = useState(false);
 
   const accountId = account?.id;
@@ -28,11 +29,13 @@ export function useCustodyAssignments() {
   const loadAssignments = useCallback(async () => {
     if (!accountId) return;
     setIsLoading(true);
+    setError(null);
     try {
       const data = await custodyService.getAssignments(accountId);
       setAssignments(data);
     } catch (err) {
       console.error('Failed to load assignments:', err);
+      setError('שגיאה בטעינת נתוני המשמורת');
       toast.error('שגיאה בטעינת נתוני המשמורת — רענן את הדף');
     } finally {
       setIsLoading(false);
@@ -146,6 +149,7 @@ export function useCustodyAssignments() {
   return {
     assignments,
     isLoading,
+    error,
     isFetchingAI,
     members,
     fetchHolidays,

@@ -14,6 +14,7 @@ export interface ExpenseStorage {
   categoriesList: Category[];
   setCategoriesList: React.Dispatch<React.SetStateAction<Category[]>>;
   isLoading: boolean;
+  error: string | null;
   refreshData: () => Promise<void>;
 }
 
@@ -22,6 +23,7 @@ export const useExpenseStorage = (user: User | null, account: Account | null, au
   const [childrenList, setChildrenList] = useState<Child[]>([]);
   const [categoriesList, setCategoriesList] = useState<Category[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const currentAccountRef = useRef<string | null>(null);
 
   const refreshData = async () => {
@@ -34,6 +36,7 @@ export const useExpenseStorage = (user: User | null, account: Account | null, au
     }
     
     setIsLoading(true);
+    setError(null);
     // Refreshing data for current account
     
     // Add timeout to prevent infinite loading
@@ -61,8 +64,9 @@ export const useExpenseStorage = (user: User | null, account: Account | null, au
       
       // Update the current account reference
       currentAccountRef.current = account.id;
-    } catch (error) {
-      console.error('Failed to load data:', error);
+    } catch (err) {
+      console.error('Failed to load data:', err);
+      setError(err instanceof Error ? err.message : 'Failed to load data');
       setExpenses([]);
       setChildrenList([]);
       setCategoriesList([]);
@@ -128,6 +132,7 @@ export const useExpenseStorage = (user: User | null, account: Account | null, au
     categoriesList,
     setCategoriesList,
     isLoading,
+    error,
     refreshData
   };
 };

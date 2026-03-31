@@ -61,6 +61,7 @@ export interface ExpenseContextType {
   childrenList: Child[];
   categoriesList: Category[];
   isLoading: boolean;
+  error: string | null;
   isSubmitting: boolean;
   addExpense: (expense: Omit<Expense, 'id' | 'createdBy' | 'creatorName' | 'status' | 'approvedBy' | 'approvedAt'>) => Promise<void>;
   updateExpense: (id: string, updates: Partial<Pick<Expense, 'amount' | 'description' | 'date' | 'category' | 'childId' | 'paidById' | 'splitEqually'>>) => Promise<void>;

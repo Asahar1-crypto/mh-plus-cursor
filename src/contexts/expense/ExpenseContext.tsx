@@ -25,6 +25,7 @@ const ExpenseProviderInner = ({ children }: ExpenseProviderProps) => {
     categoriesList,
     setCategoriesList,
     isLoading,
+    error,
     refreshData
   } = useExpenseStorage(user, account, authReady);
 
@@ -63,6 +64,7 @@ const ExpenseProviderInner = ({ children }: ExpenseProviderProps) => {
     childrenList,
     categoriesList,
     isLoading,
+    error,
     isSubmitting,
     addExpense,
     updateExpense,
@@ -89,7 +91,7 @@ const ExpenseProviderInner = ({ children }: ExpenseProviderProps) => {
     refreshData
   }), [
     expenses, childrenList, categoriesList,
-    isLoading, isSubmitting,
+    isLoading, error, isSubmitting,
     addExpense, updateExpense,
     approveExpense, approveAllRecurring, rejectExpense, markAsPaid,
     updateExpenseStatus, deleteExpense, updateRecurringActive,

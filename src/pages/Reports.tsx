@@ -2,6 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/auth';
 import { useExpense } from '@/contexts/ExpenseContext';
+import { ErrorState } from '@/components/ui/state-views';
 import { Card, CardContent } from '@/components/ui/card';
 import { CategoryExpensesChart } from '@/components/reports/CategoryExpensesChart';
 import { ChildrenExpensesChart } from '@/components/reports/ChildrenExpensesChart';
@@ -17,7 +18,7 @@ import { isDateInCycle, getCurrentCycle } from '@/utils/billingCycleUtils';
 const Reports = () => {
   const navigate = useNavigate();
   const { user, account, isLoading } = useAuth();
-  const { expenses } = useExpense();
+  const { expenses, error: expenseError, refreshData } = useExpense();
   const [periodFilter, setPeriodFilter] = useState<PeriodFilter>({ type: 'all' });
 
   const handleCategoryClick = (category: string) => {
@@ -72,10 +73,22 @@ const Reports = () => {
   if (!account) {
     return (
       <div className="container mx-auto p-6">
-        <div className="text-center">
-          <h2 className="text-2xl font-bold mb-4">לא נבחר חשבון</h2>
-          <p className="text-muted-foreground">יש לבחור חשבון כדי לצפות בדוחות</p>
-        </div>
+        <ErrorState
+          title="לא נבחר חשבון"
+          message="יש לבחור חשבון כדי לצפות בדוחות"
+        />
+      </div>
+    );
+  }
+
+  if (expenseError) {
+    return (
+      <div className="container mx-auto p-6">
+        <ErrorState
+          title="שגיאה בטעינת נתונים"
+          message={expenseError}
+          onRetry={refreshData}
+        />
       </div>
     );
   }

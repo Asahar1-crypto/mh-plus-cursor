@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogTrigger } from '@/components/ui/dialog';
+import { LoadingState, ErrorState } from '@/components/ui/state-views';
 import { useExpense } from '@/contexts/ExpenseContext';
 import { useAuth } from '@/contexts/AuthContext';
 import ChildCard from '@/components/children/ChildCard';
@@ -10,30 +11,20 @@ import AddChildForm from '@/components/children/AddChildForm';
 import EmptyChildrenState from '@/components/children/EmptyChildrenState';
 
 const Children = () => {
-  const { childrenList, isLoading } = useExpense();
+  const { childrenList, isLoading, error, refreshData } = useExpense();
   const { user, account } = useAuth();
   const [open, setOpen] = useState(false);
 
   if (!user || !account) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent mx-auto mb-4"></div>
-          <p>טוען נתוני המשתמש...</p>
-        </div>
-      </div>
-    );
+    return <LoadingState text="טוען נתוני המשתמש..." fullPage />;
   }
 
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent mx-auto mb-4"></div>
-          <p>טוען נתונים עבור {account.name}...</p>
-        </div>
-      </div>
-    );
+    return <LoadingState text={`טוען נתונים עבור ${account.name}...`} fullPage />;
+  }
+
+  if (error) {
+    return <ErrorState message={error} onRetry={refreshData} />;
   }
 
   return (

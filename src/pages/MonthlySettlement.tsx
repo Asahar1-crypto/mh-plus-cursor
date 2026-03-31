@@ -20,6 +20,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Calendar as CalendarIcon, Calculator, CheckCircle, Clock, TrendingUp, RefreshCw, Check, DollarSign, Archive, ChevronDown, ChevronUp, FileText, Download, User, Receipt, ArrowRightLeft, Plus, Trash2, History, CreditCard, Banknote, Lock, LockOpen } from 'lucide-react';
 import { activityService } from '@/integrations/supabase/activityService';
 import { isDateInCycle, getCycleRangeISO, getCycleLabelHebrew } from '@/utils/billingCycleUtils';
+import { ErrorState } from '@/components/ui/state-views';
 
 interface SettlementPayment {
   id: string;
@@ -46,7 +47,7 @@ const MonthlySettlement = () => {
   const { user, account, isLoading } = useAuth();
   const billingDay = account?.billing_cycle_start_day ?? 1;
   const isPersonalPlan = account?.plan_slug === 'personal';
-  const { expenses, isLoading: expensesLoading, refreshData, approveExpense, markAsPaid } = useExpense();
+  const { expenses, isLoading: expensesLoading, error: expenseError, refreshData, approveExpense, markAsPaid } = useExpense();
   const { toast } = useToast();
   
   // State for account members
@@ -616,10 +617,22 @@ const MonthlySettlement = () => {
   if (!account) {
     return (
       <div className="container mx-auto p-6">
-        <div className="text-center">
-          <h2 className="text-2xl font-bold mb-4">לא נבחר חשבון</h2>
-          <p className="text-muted-foreground">יש לבחור חשבון כדי לבצע סגירת חודש</p>
-        </div>
+        <ErrorState
+          title="לא נבחר חשבון"
+          message="יש לבחור חשבון כדי לבצע סגירת חודש"
+        />
+      </div>
+    );
+  }
+
+  if (expenseError) {
+    return (
+      <div className="container mx-auto p-6">
+        <ErrorState
+          title="שגיאה בטעינת נתונים"
+          message={expenseError}
+          onRetry={refreshData}
+        />
       </div>
     );
   }
