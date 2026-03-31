@@ -98,9 +98,7 @@ const ChildCard: React.FC<ChildCardProps> = ({ child }) => {
   }
   
   return (
-    <Card className="group hover:scale-105 hover:shadow-2xl transition-all duration-500 animate-fade-in overflow-hidden relative bg-gradient-to-br from-card/90 to-card/95 backdrop-blur-lg border border-border/50">
-      <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-accent/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-      <div className="absolute -top-20 -right-20 w-40 h-40 bg-primary/10 rounded-full blur-3xl group-hover:scale-150 transition-transform duration-700"></div>
+    <Card className="group hover:shadow-2xl transition-all duration-500 animate-fade-in overflow-hidden relative bg-card border border-border/50">
       
       <CardHeader className="pb-2 sm:pb-3 p-3 sm:p-4 relative z-10">
         <div className="flex items-start justify-between">
@@ -139,16 +137,16 @@ const ChildCard: React.FC<ChildCardProps> = ({ child }) => {
       
       <CardContent className="pb-2 sm:pb-3 p-3 sm:p-4 relative z-10">
         <div className="space-y-1.5 sm:space-y-2">
-          <div className="flex items-center justify-between p-2 bg-gradient-to-r from-background/50 to-background/30 backdrop-blur-sm rounded-lg border border-border/30 group-hover:border-primary/30 transition-colors duration-300">
+          <div className="flex items-center justify-between p-2 bg-gradient-to-r from-background/50 to-background/30 rounded-lg border border-border/30 group-hover:border-primary/30 transition-colors duration-300">
             <span className="text-xs sm:text-sm text-muted-foreground flex items-center gap-1">
-              <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></div>
+              <div className="w-1.5 h-1.5 rounded-full bg-primary"></div>
               הוצאות החודש:
             </span>
             <span className="text-xs sm:text-sm font-semibold">₪{oneTimeTotal.toLocaleString('he-IL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
           </div>
-          <div className="flex items-center justify-between p-2 bg-gradient-to-r from-background/50 to-background/30 backdrop-blur-sm rounded-lg border border-border/30 group-hover:border-primary/30 transition-colors duration-300">
+          <div className="flex items-center justify-between p-2 bg-gradient-to-r from-background/50 to-background/30 rounded-lg border border-border/30 group-hover:border-primary/30 transition-colors duration-300">
             <span className="text-xs sm:text-sm text-muted-foreground flex items-center gap-1">
-              <div className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse"></div>
+              <div className="w-1.5 h-1.5 rounded-full bg-accent"></div>
               הוצאות קבועות:
             </span>
             <span className="text-xs sm:text-sm font-semibold">₪{recurringTotal.toLocaleString('he-IL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} / חודש</span>

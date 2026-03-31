@@ -626,19 +626,13 @@ const MonthlySettlement = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background/95 to-muted/30" dir="rtl">
-      {/* Background decorative elements */}
-      <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-20 -right-20 w-96 h-96 bg-primary/5 rounded-full blur-3xl animate-pulse"></div>
-        <div className="absolute -bottom-20 -left-20 w-96 h-96 bg-secondary/5 rounded-full blur-3xl animate-pulse [animation-delay:2s]"></div>
-      </div>
-
-      <div className="relative z-10 w-full max-w-7xl mx-auto py-4 sm:py-8 px-4 sm:px-6">
+      <div className="w-full max-w-7xl mx-auto py-4 sm:py-8 px-4 sm:px-6">
         {/* Header */}
         <div className="mb-6 sm:mb-8 animate-fade-in">
           <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4 sm:gap-6">
             <div className="space-y-1 sm:space-y-2">
               <div className="flex items-center gap-2 sm:gap-3">
-                <div className="p-2 sm:p-3 bg-gradient-to-br from-primary/20 to-primary/10 rounded-xl backdrop-blur-sm border border-primary/20">
+                <div className="p-2 sm:p-3 bg-gradient-to-br from-primary/20 to-primary/10 rounded-xl border border-primary/20">
                   <Calculator className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
                 </div>
                 <div>
@@ -676,7 +670,7 @@ const MonthlySettlement = () => {
 
         {/* Month/Year Selector - moved to top */}
         <div className="mb-4 sm:mb-6 flex justify-center">
-          <div className="flex flex-col xs:flex-row items-center gap-2 xs:gap-4 p-3 sm:p-4 bg-card/80 backdrop-blur-sm rounded-lg border border-border/50 shadow-lg w-full xs:w-auto">
+          <div className="flex flex-col xs:flex-row items-center gap-2 xs:gap-4 p-3 sm:p-4 bg-card/80 rounded-lg border border-border/50 shadow-lg w-full xs:w-auto">
             <CalendarIcon className="h-5 w-5 text-primary hidden xs:block" />
             <div className="flex items-center gap-2 w-full xs:w-auto">
               <Select value={selectedMonth.toString()} onValueChange={(value) => setSelectedMonth(parseInt(value))}>
@@ -780,7 +774,7 @@ const MonthlySettlement = () => {
         {/* Settlement Summary Card - family plans or virtual partner */}
         {(!isPersonalPlan || hasVirtualPartner) && settlementSummary && (monthlyData.approved.count > 0 || monthlyData.paid.count > 0) && (
           <div className="mb-4 sm:mb-6">
-            <Card className="bg-gradient-to-br from-card/90 to-card/95 backdrop-blur-lg border border-border/50 shadow-xl">
+            <Card className="bg-card border border-border/50 shadow-xl">
               <CardHeader className="pb-2 px-4 sm:px-6 pt-4">
                 <div className="flex items-center gap-2">
                   <div className="p-2 bg-orange-500/10 rounded-lg">
@@ -849,7 +843,7 @@ const MonthlySettlement = () => {
         {/* Cumulative Balance & Payment History - family plans or virtual partner */}
         {(!isPersonalPlan || hasVirtualPartner) && effectiveMembers.length >= 2 && cumulativeBalance && (
           <div className="mb-4 sm:mb-6">
-            <Card className="bg-gradient-to-br from-card/90 to-card/95 backdrop-blur-lg border border-border/50 shadow-xl">
+            <Card className="bg-card border border-border/50 shadow-xl">
               <CardHeader className="pb-2 px-4 sm:px-6 pt-4">
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2">
@@ -971,7 +965,7 @@ const MonthlySettlement = () => {
 
         {/* Main Content */}
         <div className="space-y-6">
-          <Card className="bg-gradient-to-br from-card/90 to-card/80 backdrop-blur-lg border border-border/50 shadow-2xl">
+          <Card className="bg-card border border-border/50 shadow-2xl">
             <CardHeader className="text-center px-3 sm:px-6">
               <CardTitle className="text-lg sm:text-2xl">סיכום חודש {months[selectedMonth]} {selectedYear}</CardTitle>
               <CardDescription className="text-xs sm:text-sm">

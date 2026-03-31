@@ -123,8 +123,8 @@ export const MonthlyFoodPaymentCard: React.FC<MonthlyFoodPaymentCardProps> = ({ 
   // Loading state
   if (!paymentBreakdown) {
     return (
-      <Card className="bg-gradient-to-br from-card/90 to-card/95 backdrop-blur-lg border border-border/50 shadow-xl overflow-hidden relative group transition-all duration-300 hover:shadow-2xl">
-        <div className="absolute inset-0 bg-gradient-to-br from-violet-500/5 to-purple-500/10 opacity-60"></div>
+      <Card className="bg-card border border-violet-200/50 dark:border-violet-800/30 shadow-md overflow-hidden relative group transition-shadow duration-300 hover:shadow-lg">
+        <div className="absolute inset-0 bg-gradient-to-br from-violet-500/5 to-purple-500/10"></div>
         <CardContent className="p-4 sm:p-6 relative z-10">
           <div className="flex items-center gap-3 mb-4">
             <div className="p-2 bg-violet-500/15 rounded-xl">
@@ -172,15 +172,14 @@ export const MonthlyFoodPaymentCard: React.FC<MonthlyFoodPaymentCardProps> = ({ 
   };
   
   return (
-    <Card className="bg-gradient-to-br from-card/90 to-card/95 backdrop-blur-lg border border-border/50 shadow-xl overflow-hidden relative group transition-all duration-300 hover:shadow-2xl">
-      <div className="absolute inset-0 bg-gradient-to-br from-violet-500/5 to-purple-500/10 opacity-60 group-hover:opacity-80 transition-opacity duration-300"></div>
-      <div className="absolute -top-20 -left-20 w-40 h-40 bg-violet-400/10 rounded-full blur-3xl"></div>
-      
+    <Card className="bg-card border border-violet-200/50 dark:border-violet-800/30 shadow-md overflow-hidden relative group transition-shadow duration-300 hover:shadow-lg">
+      <div className="absolute inset-0 bg-gradient-to-br from-violet-500/5 to-purple-500/10"></div>
+
       <CardContent className="p-4 sm:p-6 relative z-10 space-y-4">
         {/* Header row: icon + title + total */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-violet-500/15 rounded-xl group-hover:bg-violet-500/25 transition-colors duration-300">
+            <div className="p-2 bg-violet-500/15 rounded-xl">
               <Wallet className="h-5 w-5 text-violet-600 dark:text-violet-400" />
             </div>
             <div>
@@ -204,7 +203,7 @@ export const MonthlyFoodPaymentCard: React.FC<MonthlyFoodPaymentCardProps> = ({ 
             return (
               <div 
                 key={person.userId} 
-                className={`rounded-xl p-3 sm:p-4 border ${colors.border} ${colors.bg} transition-all duration-200 hover:scale-[1.02]`}
+                className={`rounded-xl p-3 sm:p-4 border ${colors.border} ${colors.bg} transition-shadow duration-200 hover:shadow-md`}
               >
                 <div className="flex items-center gap-2 mb-2">
                   <div className={`w-2 h-2 rounded-full ${person.balance > 0 ? 'bg-red-500' : person.balance < 0 ? 'bg-emerald-500' : 'bg-blue-500'}`}></div>

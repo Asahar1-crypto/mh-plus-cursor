@@ -41,12 +41,6 @@ const Home = () => {
     <div className="min-h-screen bg-background overflow-hidden">
       {/* Hero Section with animated gradient background */}
       <section className="relative pt-8 pb-12 sm:pt-16 sm:pb-24 md:py-32 text-center overflow-hidden">
-        {/* Animated gradient orbs */}
-        <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
-          <div className="absolute top-10 right-[10%] w-72 h-72 bg-primary/15 rounded-full blur-3xl animate-float" />
-          <div className="absolute bottom-10 left-[15%] w-56 h-56 bg-secondary/15 rounded-full blur-3xl animate-float [animation-delay:2s]" />
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-accent/10 rounded-full blur-3xl animate-pulse-slow" />
-        </div>
 
         <div className="container mx-auto px-4 relative z-10">
           <div className="animate-fade-in">

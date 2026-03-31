@@ -83,34 +83,33 @@ export const PreviousMonthsCard: React.FC<PreviousMonthsCardProps> = ({
   const totalCount = previousMonthsExpenses.length;
 
   return (
-    <Card className="bg-gradient-to-br from-card/90 to-card/95 backdrop-blur-lg border border-border/50 shadow-xl hover:shadow-2xl overflow-hidden relative group hover:scale-105 transition-all duration-500">
-      <div className="absolute inset-0 bg-gradient-to-br from-amber-500/10 to-orange-500/15 opacity-60 group-hover:opacity-90 transition-opacity duration-300"></div>
-      <div className="absolute -top-20 -right-20 w-40 h-40 bg-amber-400/20 rounded-full blur-3xl group-hover:scale-150 transition-transform duration-700"></div>
-      
+    <Card className="bg-card border border-amber-200/50 dark:border-amber-800/30 shadow-md hover:shadow-lg overflow-hidden relative group transition-shadow duration-300">
+      <div className="absolute inset-0 bg-gradient-to-br from-amber-500/5 to-orange-500/10"></div>
+
       <CardHeader className="pb-3 p-4 sm:p-6 relative z-10">
         <div className="flex items-center justify-between">
           <CardDescription className="text-xs sm:text-sm font-semibold text-amber-700 dark:text-amber-300 bg-amber-100/50 dark:bg-amber-900/30 px-2 sm:px-3 py-1 rounded-full">
             הוצאות מחודשים קודמים
           </CardDescription>
-          <div className="p-2 bg-amber-500/20 rounded-full group-hover:bg-amber-500/30 transition-colors duration-300">
-            <Calendar className="h-5 w-5 text-amber-600 dark:text-amber-400 animate-pulse group-hover:animate-ping transition-all duration-300" />
+          <div className="p-2 bg-amber-500/20 rounded-full">
+            <Calendar className="h-5 w-5 text-amber-600 dark:text-amber-400" />
           </div>
         </div>
-        <CardTitle className="text-2xl sm:text-3xl md:text-4xl font-bold bg-gradient-to-r from-amber-600 to-orange-600 bg-clip-text text-transparent group-hover:scale-110 transition-transform duration-300 origin-left">
+        <CardTitle className="text-2xl sm:text-3xl md:text-4xl font-bold bg-gradient-to-r from-amber-600 to-orange-600 bg-clip-text text-transparent">
           ₪{totalAmount.toFixed(0)}
         </CardTitle>
       </CardHeader>
-      
+
       <CardContent className="p-4 sm:p-6 pt-0 space-y-3 relative z-10">
         <div className="flex items-center gap-3">
-          <div className="w-3 h-3 bg-amber-500 rounded-full animate-pulse shadow-lg shadow-amber-500/50"></div>
+          <div className="w-3 h-3 bg-amber-500 rounded-full"></div>
           <span className="text-sm font-medium text-muted-foreground">
             {totalCount} הוצאות ממתינות לתשלום
           </span>
         </div>
 
         {totalCount === 0 ? (
-          <div className="text-xs space-y-2 mt-4 pt-4 border-t border-green-200/50 bg-green-100/30 dark:bg-green-900/20 backdrop-blur-sm rounded-lg p-3">
+          <div className="text-xs space-y-2 mt-4 pt-4 border-t border-green-200/30 dark:border-green-800/30 bg-green-100/30 dark:bg-green-900/20 rounded-lg p-3">
             <div className="flex items-center justify-center gap-2">
               <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
               <span className="text-green-700 dark:text-green-300 font-medium">
@@ -120,7 +119,7 @@ export const PreviousMonthsCard: React.FC<PreviousMonthsCardProps> = ({
           </div>
         ) : (
           breakdown.length > 0 && (
-            <div className="text-xs space-y-2 mt-4 pt-4 border-t border-amber-200/50 bg-background/30 backdrop-blur-sm rounded-lg p-3">
+            <div className="text-xs space-y-2 mt-4 pt-4 border-t border-amber-200/30 dark:border-amber-800/30 rounded-lg p-3">
               {breakdown.map((user, index) => (
                 <div key={index} className="flex justify-between items-center text-muted-foreground hover:text-foreground transition-colors duration-200">
                   <span className="font-semibold">{user.userName}:</span>

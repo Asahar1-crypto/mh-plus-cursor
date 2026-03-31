@@ -102,15 +102,11 @@ const CustodyCalendar: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background/95 to-muted/30 animate-fade-in">
-      <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-20 -right-20 w-72 h-72 sm:w-96 sm:h-96 bg-primary/5 rounded-full blur-3xl animate-pulse" />
-        <div className="absolute -bottom-20 -left-20 w-72 h-72 sm:w-96 sm:h-96 bg-accent/5 rounded-full blur-3xl animate-pulse [animation-delay:2s]" />
-      </div>
 
-      <div className="relative z-10 w-full max-w-7xl mx-auto px-2 sm:px-4 md:px-6 py-3 sm:py-6 space-y-3 sm:space-y-6">
+      <div className="w-full max-w-7xl mx-auto px-2 sm:px-4 md:px-6 py-3 sm:py-6 space-y-3 sm:space-y-6">
         {/* Header */}
         <div className="flex items-center gap-2 sm:gap-3 animate-fade-in">
-          <div className="p-2 sm:p-3 bg-gradient-to-br from-primary/20 to-primary/10 rounded-xl backdrop-blur-sm border border-primary/20">
+          <div className="p-2 sm:p-3 bg-gradient-to-br from-primary/20 to-primary/10 rounded-xl border border-primary/20">
             <CalendarDays className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
           </div>
           <div className="min-w-0">

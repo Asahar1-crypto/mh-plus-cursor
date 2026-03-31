@@ -14,7 +14,8 @@ interface ExpenseProviderProps {
 
 // Inner component so all hooks are called unconditionally
 const ExpenseProviderInner = ({ children }: ExpenseProviderProps) => {
-  const { user, account } = useAuth();
+  const { user, account, isLoading: authLoading } = useAuth();
+  const authReady = !authLoading;
 
   const {
     expenses,
@@ -25,7 +26,7 @@ const ExpenseProviderInner = ({ children }: ExpenseProviderProps) => {
     setCategoriesList,
     isLoading,
     refreshData
-  } = useExpenseStorage(user, account);
+  } = useExpenseStorage(user, account, authReady);
 
   const {
     addExpense,

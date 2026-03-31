@@ -67,7 +67,7 @@ export const BudgetOverviewCard: React.FC<BudgetOverviewCardProps> = ({ selected
 
   if (isLoading) {
     return (
-      <Card className="bg-gradient-to-br from-card/90 to-card/95 backdrop-blur-lg border border-border/50">
+      <Card className="bg-card border border-border/50 shadow-md">
         <CardContent className="p-6">
           <div className="flex items-center justify-center py-8">
             <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
@@ -79,7 +79,7 @@ export const BudgetOverviewCard: React.FC<BudgetOverviewCardProps> = ({ selected
 
   if (categoryData.length === 0) {
     return (
-      <Card className="bg-gradient-to-br from-card/90 to-card/95 backdrop-blur-lg border border-border/50">
+      <Card className="bg-card border border-border/50 shadow-md">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Wallet className="h-5 w-5" />
@@ -103,7 +103,7 @@ export const BudgetOverviewCard: React.FC<BudgetOverviewCardProps> = ({ selected
   }
 
   return (
-    <Card className="bg-gradient-to-br from-card/90 to-card/95 backdrop-blur-lg border border-border/50">
+    <Card className="bg-card border border-border/50 shadow-md">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Wallet className="h-5 w-5" />

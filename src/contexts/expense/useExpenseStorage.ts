@@ -17,7 +17,7 @@ export interface ExpenseStorage {
   refreshData: () => Promise<void>;
 }
 
-export const useExpenseStorage = (user: User | null, account: Account | null): ExpenseStorage => {
+export const useExpenseStorage = (user: User | null, account: Account | null, authReady = false): ExpenseStorage => {
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [childrenList, setChildrenList] = useState<Child[]>([]);
   const [categoriesList, setCategoriesList] = useState<Category[]>([]);
@@ -72,11 +72,13 @@ export const useExpenseStorage = (user: User | null, account: Account | null): E
     }
   };
 
-  // Load data when user or account changes
+  // Load data when user or account changes - only after auth is fully ready
   useEffect(() => {
+    if (!authReady) return; // Wait for auth initialization + token refresh
+
     // Check if account actually changed
     const accountChanged = account?.id !== currentAccountRef.current;
-    
+
     if (user && account) {
       if (accountChanged || currentAccountRef.current === null) {
         setExpenses([]);
@@ -90,7 +92,7 @@ export const useExpenseStorage = (user: User | null, account: Account | null): E
       setCategoriesList([]);
       currentAccountRef.current = null;
     }
-  }, [user?.id, account?.id]);
+  }, [user?.id, account?.id, authReady]);
 
   // Add visibility change listener for auto-refresh when returning to tab
   // Skip refresh if was hidden < 2s (file picker, camera dialog - avoid replacing modal with skeleton)

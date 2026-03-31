@@ -36,7 +36,7 @@ const AppearanceCard = () => {
   ] as const;
 
   return (
-    <Card className="bg-gradient-to-br from-card/80 to-card/60 backdrop-blur-sm border border-border/50">
+    <Card className="bg-card border border-border/50">
       <CardHeader className="pb-3">
         <CardTitle className="text-base flex items-center gap-2">
           <Sun className="h-4 w-4 text-primary" />
@@ -124,13 +124,7 @@ const AccountSettings = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background/95 to-muted/30 animate-fade-in">
-      {/* Background decorative elements */}
-      <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-20 -right-20 w-96 h-96 bg-primary/5 rounded-full blur-3xl animate-pulse"></div>
-        <div className="absolute -bottom-20 -left-20 w-96 h-96 bg-secondary/5 rounded-full blur-3xl animate-pulse [animation-delay:2s]"></div>
-      </div>
-
-      <div className="relative z-10 container mx-auto p-3 sm:p-4 md:p-6 space-y-4 sm:space-y-6">
+      <div className="container mx-auto p-3 sm:p-4 md:p-6 space-y-4 sm:space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between animate-fade-in">
           <h1 className="text-xl sm:text-2xl md:text-3xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
@@ -146,7 +140,7 @@ const AccountSettings = () => {
         {/* Tabs Navigation */}
         <div className="animate-fade-in [animation-delay:400ms]">
           <Tabs defaultValue="profile" dir="rtl" className="w-full">
-            <TabsList className="w-full h-auto flex-wrap gap-1 bg-card/80 backdrop-blur-sm border border-border/50 rounded-xl p-1 sm:p-1.5 shadow-sm">
+            <TabsList className="w-full h-auto flex-wrap gap-1 bg-card/80 border border-border/50 rounded-xl p-1 sm:p-1.5 shadow-sm">
               <TabsTrigger 
                 value="profile" 
                 className="flex-1 min-w-[80px] gap-1.5 sm:gap-2 rounded-lg py-2 sm:py-2.5 px-2 sm:px-3 text-[11px] sm:text-sm font-medium transition-all data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md"

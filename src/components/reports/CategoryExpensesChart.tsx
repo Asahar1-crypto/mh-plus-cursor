@@ -139,29 +139,29 @@ export const CategoryExpensesChart: React.FC<CategoryExpensesChartProps> = ({ pe
   // Summary stats grid component
   const SummaryStats = () => (
     <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3">
-      <div className="text-center p-2.5 sm:p-3.5 bg-gradient-to-br from-blue-500/10 to-cyan-500/10 backdrop-blur-sm rounded-xl border border-blue-200/30 dark:border-blue-800/30 hover:border-blue-400/50 transition-all duration-300 hover:scale-105 group/stat">
-        <div className="p-1.5 bg-blue-500/15 rounded-lg w-fit mx-auto mb-1.5 group-hover/stat:bg-blue-500/25 transition-colors duration-300">
+      <div className="text-center p-2.5 sm:p-3.5 bg-gradient-to-br from-blue-500/10 to-cyan-500/10 rounded-xl border border-blue-200/30 dark:border-blue-800/30 hover:border-blue-400/50 transition-colors duration-300">
+        <div className="p-1.5 bg-blue-500/15 rounded-lg w-fit mx-auto mb-1.5">
           <Wallet className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-blue-600 dark:text-blue-400" />
         </div>
         <div className="text-base sm:text-xl md:text-2xl font-bold bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">₪{totalAmount.toLocaleString()}</div>
         <div className="text-[10px] sm:text-xs text-muted-foreground mt-0.5">סה"כ הוצאות</div>
       </div>
-      <div className="text-center p-2.5 sm:p-3.5 bg-gradient-to-br from-violet-500/10 to-purple-500/10 backdrop-blur-sm rounded-xl border border-violet-200/30 dark:border-violet-800/30 hover:border-violet-400/50 transition-all duration-300 hover:scale-105 group/stat">
-        <div className="p-1.5 bg-violet-500/15 rounded-lg w-fit mx-auto mb-1.5 group-hover/stat:bg-violet-500/25 transition-colors duration-300">
+      <div className="text-center p-2.5 sm:p-3.5 bg-gradient-to-br from-violet-500/10 to-purple-500/10 rounded-xl border border-violet-200/30 dark:border-violet-800/30 hover:border-violet-400/50 transition-colors duration-300">
+        <div className="p-1.5 bg-violet-500/15 rounded-lg w-fit mx-auto mb-1.5">
           <Hash className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-violet-600 dark:text-violet-400" />
         </div>
         <div className="text-base sm:text-xl md:text-2xl font-bold bg-gradient-to-r from-violet-600 to-purple-600 bg-clip-text text-transparent">{totalCount}</div>
         <div className="text-[10px] sm:text-xs text-muted-foreground mt-0.5">סה"כ עסקאות</div>
       </div>
-      <div className="text-center p-2.5 sm:p-3.5 bg-gradient-to-br from-emerald-500/10 to-green-500/10 backdrop-blur-sm rounded-xl border border-emerald-200/30 dark:border-emerald-800/30 hover:border-emerald-400/50 transition-all duration-300 hover:scale-105 group/stat">
-        <div className="p-1.5 bg-emerald-500/15 rounded-lg w-fit mx-auto mb-1.5 group-hover/stat:bg-emerald-500/25 transition-colors duration-300">
+      <div className="text-center p-2.5 sm:p-3.5 bg-gradient-to-br from-emerald-500/10 to-green-500/10 rounded-xl border border-emerald-200/30 dark:border-emerald-800/30 hover:border-emerald-400/50 transition-colors duration-300">
+        <div className="p-1.5 bg-emerald-500/15 rounded-lg w-fit mx-auto mb-1.5">
           <Layers className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-emerald-600 dark:text-emerald-400" />
         </div>
         <div className="text-base sm:text-xl md:text-2xl font-bold bg-gradient-to-r from-emerald-600 to-green-600 bg-clip-text text-transparent">{categoryData.length}</div>
         <div className="text-[10px] sm:text-xs text-muted-foreground mt-0.5">קטגוריות פעילות</div>
       </div>
-      <div className="text-center p-2.5 sm:p-3.5 bg-gradient-to-br from-amber-500/10 to-orange-500/10 backdrop-blur-sm rounded-xl border border-amber-200/30 dark:border-amber-800/30 hover:border-amber-400/50 transition-all duration-300 hover:scale-105 group/stat">
-        <div className="p-1.5 bg-amber-500/15 rounded-lg w-fit mx-auto mb-1.5 group-hover/stat:bg-amber-500/25 transition-colors duration-300">
+      <div className="text-center p-2.5 sm:p-3.5 bg-gradient-to-br from-amber-500/10 to-orange-500/10 rounded-xl border border-amber-200/30 dark:border-amber-800/30 hover:border-amber-400/50 transition-colors duration-300">
+        <div className="p-1.5 bg-amber-500/15 rounded-lg w-fit mx-auto mb-1.5">
           <TrendingUp className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-amber-600 dark:text-amber-400" />
         </div>
         <div className="text-base sm:text-xl md:text-2xl font-bold bg-gradient-to-r from-amber-600 to-orange-600 bg-clip-text text-transparent">
@@ -204,7 +204,7 @@ export const CategoryExpensesChart: React.FC<CategoryExpensesChartProps> = ({ pe
 
   if (categoryData.length === 0) {
     return (
-      <Card className="bg-gradient-to-br from-card/90 to-card/95 backdrop-blur-lg border border-border/50 shadow-xl">
+      <Card className="bg-card border border-border/50 shadow-md">
         <CardHeader className="p-4 sm:p-6">
           <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
             <div className="p-1.5 sm:p-2 bg-primary/20 rounded-lg">
@@ -219,7 +219,7 @@ export const CategoryExpensesChart: React.FC<CategoryExpensesChartProps> = ({ pe
         <CardContent className="p-4 sm:p-6">
           <div className="text-center py-8 sm:py-12 text-muted-foreground">
             <div className="p-4 bg-muted/30 rounded-full w-fit mx-auto mb-4">
-              <PieChartIcon className="h-10 w-10 sm:h-12 sm:w-12 opacity-50 animate-pulse" />
+              <PieChartIcon className="h-10 w-10 sm:h-12 sm:w-12 opacity-50" />
             </div>
             <p className="text-base sm:text-lg font-semibold">אין נתונים לתקופה זו</p>
             <p className="text-xs sm:text-sm mt-2 text-muted-foreground/70">
@@ -234,16 +234,14 @@ export const CategoryExpensesChart: React.FC<CategoryExpensesChartProps> = ({ pe
   }
 
   return (
-    <Card className="bg-gradient-to-br from-card/90 to-card/95 backdrop-blur-lg border border-border/50 shadow-xl hover:shadow-2xl transition-all duration-500 group overflow-hidden">
-      <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-accent/10 opacity-60 group-hover:opacity-90 transition-opacity duration-300"></div>
-      <div className="absolute -top-24 -right-24 w-48 h-48 bg-primary/10 rounded-full blur-3xl group-hover:scale-150 transition-transform duration-700"></div>
-      <div className="absolute -bottom-24 -left-24 w-48 h-48 bg-accent/10 rounded-full blur-3xl group-hover:scale-125 transition-transform duration-700"></div>
-      
+    <Card className="bg-card border border-border/50 shadow-md hover:shadow-lg transition-shadow duration-300 overflow-hidden">
+      <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-accent/10 pointer-events-none"></div>
+
       <CardHeader className="relative z-10 p-4 sm:p-6">
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4">
           <div className="space-y-1 sm:space-y-2">
             <CardTitle className="flex items-center gap-2 sm:gap-3 text-lg sm:text-xl">
-              <div className="p-1.5 sm:p-2 bg-gradient-to-br from-primary/20 to-primary/10 rounded-xl border border-primary/20 group-hover:from-primary/30 group-hover:to-primary/20 transition-all duration-300">
+              <div className="p-1.5 sm:p-2 bg-gradient-to-br from-primary/20 to-primary/10 rounded-xl border border-primary/20">
                 <PieChartIcon className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
               </div>
               <span className="bg-gradient-to-r from-foreground to-primary bg-clip-text text-transparent font-bold">
@@ -260,7 +258,7 @@ export const CategoryExpensesChart: React.FC<CategoryExpensesChartProps> = ({ pe
       
       <CardContent className="relative z-10 p-4 sm:p-6 space-y-4 sm:space-y-6">
         <Tabs defaultValue="pie" className="space-y-4 sm:space-y-5">
-          <TabsList className="grid w-full grid-cols-3 bg-muted/50 backdrop-blur-sm h-10 sm:h-11">
+          <TabsList className="grid w-full grid-cols-3 bg-muted/50 h-10 sm:h-11">
             <TabsTrigger value="pie" className="flex items-center gap-1.5 sm:gap-2 data-[state=active]:bg-background data-[state=active]:shadow-lg transition-all duration-300 text-xs sm:text-sm font-medium">
               <PieChartIcon className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
               <span className="hidden xs:inline">תרשים עוגה</span>
@@ -324,7 +322,7 @@ export const CategoryExpensesChart: React.FC<CategoryExpensesChartProps> = ({ pe
 
               {/* Legend */}
               <div className="w-full lg:w-2/5">
-                <div className="bg-background/30 backdrop-blur-sm rounded-xl border border-border/20 p-3 sm:p-4">
+                <div className="bg-background/30 rounded-xl border border-border/20 p-3 sm:p-4">
                   <h4 className="text-xs sm:text-sm font-semibold text-muted-foreground mb-3 flex items-center gap-1.5">
                     <Layers className="h-3.5 w-3.5" />
                     פירוט קטגוריות
@@ -339,7 +337,7 @@ export const CategoryExpensesChart: React.FC<CategoryExpensesChartProps> = ({ pe
           </TabsContent>
 
           <TabsContent value="bar" className="space-y-4 sm:space-y-6 animate-fade-in">
-            <div className="bg-background/20 backdrop-blur-sm rounded-xl border border-border/20 p-2 sm:p-4">
+            <div className="bg-background/20 rounded-xl border border-border/20 p-2 sm:p-4">
               <ResponsiveContainer width="100%" height={300} className="sm:!h-[400px]">
                 <BarChart data={categoryData} margin={{ top: 20, right: 10, left: 10, bottom: 60 }}>
                   <CartesianGrid strokeDasharray="3 3" className="opacity-20" />

@@ -35,7 +35,7 @@ export const ActivityLog: React.FC<{ limit?: number }> = ({ limit = 30 }) => {
   if (!account || (logs.length === 0 && !isLoading)) return null;
 
   return (
-    <Card className="bg-gradient-to-br from-card/90 to-card/95 backdrop-blur-lg border border-border/50 shadow-xl">
+    <Card className="bg-card border border-border/50 shadow-xl">
       <Collapsible open={isOpen} onOpenChange={setIsOpen}>
         <CollapsibleTrigger asChild>
           <CardHeader className="cursor-pointer pb-2 hover:bg-muted/20 transition-colors rounded-t-lg">

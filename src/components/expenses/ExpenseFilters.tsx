@@ -81,7 +81,7 @@ export const ExpenseFilters: React.FC<ExpenseFiltersProps> = ({
   };
 
   return (
-    <Card className="bg-gradient-to-br from-card/90 to-card/80 backdrop-blur-sm border border-border/50 shadow-lg animate-fade-in">
+    <Card className="bg-card border border-border/50 shadow-lg animate-fade-in">
       <CardHeader className="pb-3 sm:pb-4">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-0">
           <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
@@ -113,10 +113,10 @@ export const ExpenseFilters: React.FC<ExpenseFiltersProps> = ({
               קטגוריה
             </div>
             <Select value={selectedCategory || 'all'} onValueChange={(value) => setSelectedCategory(value === 'all' ? null : value)}>
-              <SelectTrigger className="bg-background/50 backdrop-blur-sm border border-border/50 hover:border-primary/30 transition-colors duration-200 min-h-[44px]">
+              <SelectTrigger className="bg-background/50 border border-border/50 hover:border-primary/30 transition-colors duration-200 min-h-[44px]">
                 <SelectValue placeholder="כל הקטגוריות" />
               </SelectTrigger>
-              <SelectContent className="bg-background/95 backdrop-blur-lg border border-border/50">
+              <SelectContent className="bg-background/95 border border-border/50">
                 <SelectItem value="all">כל הקטגוריות</SelectItem>
                 {categories.map(category => (
                   <SelectItem key={category} value={category}>{category}</SelectItem>
@@ -132,10 +132,10 @@ export const ExpenseFilters: React.FC<ExpenseFiltersProps> = ({
               ילד
             </div>
             <Select value={selectedChild || 'all'} onValueChange={(value) => setSelectedChild(value === 'all' ? null : value)}>
-              <SelectTrigger className="bg-background/50 backdrop-blur-sm border border-border/50 hover:border-primary/30 transition-colors duration-200 min-h-[44px]">
+              <SelectTrigger className="bg-background/50 border border-border/50 hover:border-primary/30 transition-colors duration-200 min-h-[44px]">
                 <SelectValue placeholder="כל הילדים" />
               </SelectTrigger>
-              <SelectContent className="bg-background/95 backdrop-blur-lg border border-border/50">
+              <SelectContent className="bg-background/95 border border-border/50">
                 <SelectItem value="all">כל הילדים</SelectItem>
                 {childrenList.map(child => (
                   <SelectItem key={child.id} value={child.id}>{child.name}</SelectItem>
@@ -151,10 +151,10 @@ export const ExpenseFilters: React.FC<ExpenseFiltersProps> = ({
               סטטוס
             </div>
             <Select value={selectedStatus || 'all'} onValueChange={(value) => setSelectedStatus(value === 'all' ? null : (value as Expense['status']))}>
-              <SelectTrigger className="bg-background/50 backdrop-blur-sm border border-border/50 hover:border-primary/30 transition-colors duration-200 min-h-[44px]">
+              <SelectTrigger className="bg-background/50 border border-border/50 hover:border-primary/30 transition-colors duration-200 min-h-[44px]">
                 <SelectValue placeholder="כל הסטטוסים" />
               </SelectTrigger>
-              <SelectContent className="bg-background/95 backdrop-blur-lg border border-border/50">
+              <SelectContent className="bg-background/95 border border-border/50">
                 <SelectItem value="all">כל הסטטוסים</SelectItem>
                 <SelectItem value="pending">ממתין לאישור</SelectItem>
                 <SelectItem value="approved">מאושר</SelectItem>
@@ -171,10 +171,10 @@ export const ExpenseFilters: React.FC<ExpenseFiltersProps> = ({
               חודש
             </div>
             <Select value={selectedMonth.toString()} onValueChange={(value) => setSelectedMonth(parseInt(value))}>
-              <SelectTrigger className="bg-background/50 backdrop-blur-sm border border-border/50 hover:border-primary/30 transition-colors duration-200 min-h-[44px]">
+              <SelectTrigger className="bg-background/50 border border-border/50 hover:border-primary/30 transition-colors duration-200 min-h-[44px]">
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent className="bg-background/95 backdrop-blur-lg border border-border/50">
+              <SelectContent className="bg-background/95 border border-border/50">
                 {months.map((month, index) => (
                   <SelectItem key={index} value={index.toString()}>
                     {billingDay > 1
@@ -193,10 +193,10 @@ export const ExpenseFilters: React.FC<ExpenseFiltersProps> = ({
               שנה
             </div>
             <Select value={selectedYear.toString()} onValueChange={(value) => setSelectedYear(parseInt(value))}>
-              <SelectTrigger className="bg-background/50 backdrop-blur-sm border border-border/50 hover:border-primary/30 transition-colors duration-200 min-h-[44px]">
+              <SelectTrigger className="bg-background/50 border border-border/50 hover:border-primary/30 transition-colors duration-200 min-h-[44px]">
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent className="bg-background/95 backdrop-blur-lg border border-border/50">
+              <SelectContent className="bg-background/95 border border-border/50">
                 {years.map(year => (
                   <SelectItem key={year} value={year.toString()}>{year}</SelectItem>
                 ))}
@@ -211,10 +211,10 @@ export const ExpenseFilters: React.FC<ExpenseFiltersProps> = ({
               משלם
             </div>
             <Select value={selectedPayer || 'all'} onValueChange={(value) => setSelectedPayer(value === 'all' ? null : value)}>
-              <SelectTrigger className="bg-background/50 backdrop-blur-sm border border-border/50 hover:border-primary/30 transition-colors duration-200 min-h-[44px]">
+              <SelectTrigger className="bg-background/50 border border-border/50 hover:border-primary/30 transition-colors duration-200 min-h-[44px]">
                 <SelectValue placeholder="כל המשלמים" />
               </SelectTrigger>
-              <SelectContent className="bg-background/95 backdrop-blur-lg border border-border/50">
+              <SelectContent className="bg-background/95 border border-border/50">
                 <SelectItem value="all">כל המשלמים</SelectItem>
                 <SelectItem value="split">הוצאות משותפות</SelectItem>
                 {accountMembers?.map(member => (

@@ -95,7 +95,7 @@ const BudgetDeviationChart: React.FC<BudgetDeviationChartProps> = ({ periodFilte
 
   if (deviationData.length === 0) {
     return (
-      <Card className="bg-gradient-to-br from-card/90 to-card/95 backdrop-blur-lg border border-border/50 shadow-xl">
+      <Card className="bg-card border border-border/50 shadow-md">
         <CardHeader className="p-4 sm:p-6">
           <CardTitle className="flex items-center gap-2 sm:gap-3 text-lg sm:text-xl">
             <div className="p-1.5 sm:p-2 bg-gradient-to-br from-primary/20 to-primary/10 rounded-xl border border-primary/20">
@@ -112,9 +112,8 @@ const BudgetDeviationChart: React.FC<BudgetDeviationChartProps> = ({ periodFilte
   }
 
   return (
-    <Card className="bg-gradient-to-br from-card/90 to-card/95 backdrop-blur-lg border border-border/50 shadow-xl hover:shadow-2xl transition-all duration-500 group overflow-hidden">
-      <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-accent/10 opacity-60 group-hover:opacity-90 transition-opacity duration-300 pointer-events-none" />
-      <div className="absolute -top-24 -right-24 w-48 h-48 bg-primary/10 rounded-full blur-3xl group-hover:scale-150 transition-transform duration-700 pointer-events-none" />
+    <Card className="bg-card border border-border/50 shadow-md hover:shadow-lg transition-shadow duration-300 overflow-hidden">
+      <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-accent/10 pointer-events-none" />
 
       <CardHeader className="relative z-10 p-4 sm:p-6">
         <CardTitle className="flex items-center gap-2 sm:gap-3 text-lg sm:text-xl">
