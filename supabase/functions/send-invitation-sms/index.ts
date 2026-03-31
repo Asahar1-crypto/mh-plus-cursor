@@ -51,14 +51,25 @@ serve(async (req) => {
       );
     }
 
+    // Normalize phone number BEFORE any DB queries (rate limiting must use normalized form)
+    let normalizedPhone;
+    try {
+      const parsed = parsePhoneNumber(phoneNumber, 'IL');
+      normalizedPhone = parsed ? parsed.format('E.164') : phoneNumber;
+      console.log('Phone normalization:', { original: phoneNumber, normalized: normalizedPhone });
+    } catch (error) {
+      console.log('Phone parsing failed, using original:', phoneNumber);
+      normalizedPhone = phoneNumber;
+    }
+
     // Initialize Supabase client for validation
     const supabase = createClient(supabaseUrl, supabaseServiceRoleKey);
 
     // Validate invitation exists and is still pending
     const { data: invitation, error: invError } = await supabase
       .from('invitations')
-      .select('id, status, expires_at')
-      .eq('id', invitationId)
+      .select('id, invitation_id, accepted_at, expires_at')
+      .eq('invitation_id', invitationId)
       .maybeSingle();
 
     if (invError || !invitation) {
@@ -69,50 +80,39 @@ serve(async (req) => {
       );
     }
 
-    if (invitation.status !== 'pending') {
-      console.warn(`Invitation ${invitationId} already used (status: ${invitation.status})`);
+    if (invitation.accepted_at !== null) {
+      console.warn(`Invitation ${invitationId} already accepted at ${invitation.accepted_at}`);
       return new Response(
         JSON.stringify({ error: 'ההזמנה כבר מומשה' }),
         { status: 410, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
+    // Check if invitation has expired
+    if (invitation.expires_at && new Date(invitation.expires_at) < new Date()) {
+      console.warn(`Invitation ${invitationId} expired at ${invitation.expires_at}`);
+      return new Response(
+        JSON.stringify({ error: 'ההזמנה פגה תוקף' }),
+        { status: 410, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     // Rate limiting: max 3 invitation SMS per phone per hour
+    // Query the invitations table directly (sms_verification_codes has a CHECK constraint
+    // that only allows 'registration' and 'login' verification types)
     const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
     const { count: recentCount } = await supabase
-      .from('sms_verification_codes')
+      .from('invitations')
       .select('*', { count: 'exact', head: true })
-      .eq('phone_number', phoneNumber)
-      .eq('verification_type', 'invitation')
+      .eq('phone_number', normalizedPhone)
       .gte('created_at', oneHourAgo);
 
     if (recentCount !== null && recentCount >= 3) {
-      console.warn(`Invitation SMS rate limit exceeded for ${phoneNumber}`);
+      console.warn(`Invitation SMS rate limit exceeded for ${normalizedPhone}`);
       return new Response(
         JSON.stringify({ error: 'יותר מדי הזמנות נשלחו. אנא נסה שוב מאוחר יותר.' }),
         { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
-    }
-
-    // Log the invitation SMS for rate limiting
-    await supabase.from('sms_verification_codes').insert({
-      phone_number: phoneNumber,
-      code: invitationId.substring(0, 6),
-      verification_type: 'invitation',
-      expires_at: new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString(),
-      verified: false,
-      attempts: 0
-    });
-
-    // Normalize phone number using libphonenumber-js
-    let normalizedPhone;
-    try {
-      const parsed = parsePhoneNumber(phoneNumber, 'IL');
-      normalizedPhone = parsed ? parsed.format('E.164') : phoneNumber;
-      console.log('Phone normalization:', { original: phoneNumber, normalized: normalizedPhone });
-    } catch (error) {
-      console.log('Phone parsing failed, using original:', phoneNumber);
-      normalizedPhone = phoneNumber;
     }
 
     // Create invitation URL - default to production domain
@@ -147,33 +147,49 @@ serve(async (req) => {
     
     console.log('Vonage response:', JSON.stringify(vonageResult));
     
-    // Vonage returns status in messages array
-    if (vonageResult.messages && vonageResult.messages[0]?.status === '0') {
-      console.log(`Invitation SMS sent successfully. Message ID: ${vonageResult.messages[0]['message-id']}`);
-      
+    // Validate Vonage response structure
+    if (!vonageResult?.messages || !Array.isArray(vonageResult.messages) || vonageResult.messages.length === 0) {
+      console.error('Unexpected Vonage response structure:', JSON.stringify(vonageResult));
       return new Response(
-        JSON.stringify({ 
-          success: true, 
+        JSON.stringify({
+          error: 'Failed to send SMS',
+          details: 'Unexpected response from SMS provider',
+          vonageError: vonageResult
+        }),
+        {
+          status: 502,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
+    }
+
+    // Vonage returns status in messages array
+    if (vonageResult.messages[0]?.status === '0') {
+      console.log(`Invitation SMS sent successfully. Message ID: ${vonageResult.messages[0]['message-id']}`);
+
+      return new Response(
+        JSON.stringify({
+          success: true,
           messageId: vonageResult.messages[0]['message-id'],
           status: 'sent'
         }),
-        { 
-          status: 200, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        {
+          status: 200,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         }
       );
     } else {
-      const errorText = vonageResult.messages?.[0]?.['error-text'] || 'Unknown error';
+      const errorText = vonageResult.messages[0]?.['error-text'] || 'Unknown error';
       console.error('Vonage error:', errorText);
       return new Response(
-        JSON.stringify({ 
-          error: 'Failed to send SMS', 
+        JSON.stringify({
+          error: 'Failed to send SMS',
           details: errorText,
           vonageError: vonageResult
         }),
-        { 
-          status: 400, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         }
       );
     }

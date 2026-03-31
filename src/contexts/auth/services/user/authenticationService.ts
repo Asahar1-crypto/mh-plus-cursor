@@ -63,11 +63,30 @@ export const authenticationService = {
   // Logout function
   logout: async (): Promise<void> => {
     try {
-      
+
+      // Deactivate all device tokens for this user (fire-and-forget)
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user?.id) {
+          supabase
+            .from('device_tokens')
+            .update({ is_active: false })
+            .eq('user_id', user.id)
+            .then(({ error: tokenError }) => {
+              if (tokenError) {
+                console.warn('Could not deactivate device tokens on logout:', tokenError.message);
+              }
+            });
+        }
+      } catch (tokenErr) {
+        // Don't block logout if token deactivation fails
+        console.warn('Error deactivating device tokens:', tokenErr);
+      }
+
       // Clear session storage and localStorage before signOut
       sessionStorage.clear();
       localStorage.removeItem('supabase.auth.token');
-      
+
       const { error } = await supabase.auth.signOut({
         scope: 'global' // This ensures complete logout
       });

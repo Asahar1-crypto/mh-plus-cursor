@@ -6,6 +6,16 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+/** Escape user-provided strings before embedding in HTML */
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -108,6 +118,24 @@ serve(async (req) => {
 
     console.log(`📋 Expense: status=${expense.status}, amount=${expense.amount}, paid_by=${expense.paid_by_id}, created_by=${expense.created_by_id}`);
 
+    // Idempotency check: skip if a notification for this expense was already sent
+    const { data: existingNotification } = await supabase
+      .from('notification_logs')
+      .select('id')
+      .eq('notification_type', 'expense_pending_approval')
+      .eq('status', 'sent')
+      .eq('data->>expenseId', expense_id)
+      .limit(1)
+      .maybeSingle();
+
+    if (existingNotification) {
+      console.log(`🔁 Notification already sent for expense ${expense_id}, skipping`);
+      return new Response(
+        JSON.stringify({ skipped: true, reason: 'already_notified' }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     // Only send notification for pending expenses
     if (expense.status !== 'pending') {
       console.log(`⚠️ Expense is "${expense.status}" not "pending" - skipping`);
@@ -135,32 +163,6 @@ serve(async (req) => {
       );
     }
 
-    const recipientUserId = members[0].user_id;
-    console.log(`📤 Recipient: ${recipientUserId}`);
-
-    // Get recipient's profile
-    const { data: recipientProfile, error: profileError } = await supabase
-      .from('profiles')
-      .select('name, phone_e164, phone_number')
-      .eq('id', recipientUserId)
-      .single();
-
-    if (profileError || !recipientProfile) {
-      console.error('Recipient profile not found:', profileError);
-      return new Response(
-        JSON.stringify({ error: 'Recipient not found' }),
-        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    // Get recipient's notification preferences (מה שהמשתמש הגדיר ב"ערוצי התראות")
-    const { data: recipientPrefs } = await supabase
-      .from('notification_preferences')
-      .select('sms_enabled, email_enabled, preferences')
-      .eq('user_id', recipientUserId)
-      .eq('account_id', account_id)
-      .maybeSingle();
-
     // Get the creator's name for the notification message
     const { data: creatorProfile } = await supabase
       .from('profiles')
@@ -169,240 +171,386 @@ serve(async (req) => {
       .single();
 
     const creatorName = creatorProfile?.name || 'משתמש';
-    const recipientName = recipientProfile.name || 'משתמש';
     const amount = expense.amount.toLocaleString('he-IL');
     const description = expense.description || 'הוצאה';
     const appUrl = Deno.env.get('APP_URL') || 'https://mhplus.online';
 
-    // ============================================================
-    // 1. PUSH NOTIFICATION
-    // ============================================================
-    let pushResult: { success: boolean; reason?: string; fallback?: string } = { success: false, reason: 'not_attempted' };
-    try {
-      const pushPayload = {
-        userId: recipientUserId,
-        accountId: account_id,
-        type: 'expense_pending_approval',
-        title: `הוצאה חדשה לאישור`,
-        body: `${creatorName} הוסיף/ה הוצאה: ${amount} ₪ - ${description}`,
-        data: { expenseId: expense_id },
-        actionUrl: appUrl,
-      };
-
-      console.log('📲 Sending push notification...');
-      const pushResponse = await supabase.functions.invoke('send-push-notification', {
-        body: pushPayload,
-      });
-
-      if (pushResponse.error) {
-        console.error('❌ Push error:', pushResponse.error);
-        pushResult = { success: false, reason: pushResponse.error.message };
-      } else {
-        pushResult = pushResponse.data || { success: true };
-        console.log('📲 Push result:', JSON.stringify(pushResult));
-      }
-    } catch (pushError) {
-      console.error('❌ Push exception:', pushError);
-      pushResult = { success: false, reason: 'exception' };
-    }
+    // HTML-escaped versions of user-provided data for email templates
+    const safeCreatorName = escapeHtml(creatorName);
+    const safeAmount = escapeHtml(amount);
+    const safeDescription = escapeHtml(description);
+    const safeAccountName = escapeHtml(account.name);
 
     // ============================================================
-    // 2. SMS NOTIFICATION (fallback only)
-    // SMS is sent only when push could not reach the user:
-    //   - no active device tokens (push returns { fallback: 'sms' })
-    //   - push globally disabled for the user
-    //   - push threw an exception
-    // OTP, login, registration, password reset are always sent - handled elsewhere.
+    // Process ALL recipients
     // ============================================================
-    const shouldSendSMS = recipientPrefs?.sms_enabled ?? true; // user's channel preference
+    const allResults: Array<{
+      recipientUserId: string;
+      push: { success: boolean; reason?: string; fallback?: string };
+      sms: { success: boolean; messageId?: string; error?: string; reason?: string };
+      email: { success: boolean; error?: string; reason?: string };
+    }> = [];
 
-    // Determine whether push actually reached the user
-    const noActiveTokens = pushResult?.fallback === 'sms';
-    const pushGloballyDisabled = pushResult?.success === false && pushResult?.reason === 'Push notifications disabled';
-    const pushException = pushResult?.success === false && pushResult?.reason === 'exception';
-    const shouldAttemptSms = (noActiveTokens || pushGloballyDisabled || pushException) && shouldSendSMS;
+    for (const member of members) {
+      const recipientUserId = member.user_id;
+      console.log(`📤 Processing recipient: ${recipientUserId}`);
 
-    let smsResult: { success: boolean; messageId?: string; error?: string; reason?: string } = { success: false, reason: 'not_attempted' };
-
-    if (!shouldAttemptSms) {
-      const skipReason = !shouldSendSMS ? 'sms_disabled_by_user' : 'push_delivered';
-      console.log(`📵 SMS skipped (${skipReason})`);
-      smsResult = { success: false, reason: skipReason };
-    } else {
-      console.log(`📱 Push did not reach user – attempting SMS fallback`);
-
-      // Check if SMS already sent
-      const { data: existingNotification } = await supabase
-        .from('expense_notifications')
-        .select('id')
-        .eq('expense_id', expense_id)
-        .eq('notification_type', 'sms')
+      // Get recipient's profile
+      const { data: recipientProfile, error: profileError } = await supabase
+        .from('profiles')
+        .select('name, phone_e164, phone_number')
+        .eq('id', recipientUserId)
         .single();
 
-      if (existingNotification) {
-        console.log('📱 SMS already sent for this expense');
-        smsResult = { success: false, reason: 'already_sent' };
-      } else {
-        const recipientPhone = recipientProfile.phone_e164 || recipientProfile.phone_number;
+      if (profileError || !recipientProfile) {
+        console.error(`Recipient profile not found for ${recipientUserId}:`, profileError);
+        allResults.push({
+          recipientUserId,
+          push: { success: false, reason: 'profile_not_found' },
+          sms: { success: false, reason: 'profile_not_found' },
+          email: { success: false, reason: 'profile_not_found' },
+        });
+        continue;
+      }
 
-        if (!recipientPhone) {
-          console.log('📱 No phone number for recipient');
-          smsResult = { success: false, error: 'No phone number' };
-        } else if (!vonageApiKey || !vonageApiSecret || !vonageFromNumber) {
-          console.error('📱 Vonage not configured');
-          smsResult = { success: false, error: 'SMS service not configured' };
+      // Get recipient's notification preferences
+      const { data: recipientPrefs } = await supabase
+        .from('notification_preferences')
+        .select('sms_enabled, email_enabled, preferences')
+        .eq('user_id', recipientUserId)
+        .eq('account_id', account_id)
+        .maybeSingle();
+
+      const recipientName = recipientProfile.name || 'משתמש';
+      const safeRecipientName = escapeHtml(recipientName);
+
+      // ============================================================
+      // 1. PUSH NOTIFICATION
+      // ============================================================
+      let pushResult: { success: boolean; reason?: string; fallback?: string } = { success: false, reason: 'not_attempted' };
+      try {
+        const pushPayload = {
+          userId: recipientUserId,
+          accountId: account_id,
+          type: 'expense_pending_approval',
+          title: `הוצאה חדשה לאישור`,
+          body: `${creatorName} הוסיף/ה הוצאה: ${amount} ₪ - ${description}`,
+          data: { expenseId: expense_id },
+          actionUrl: appUrl,
+        };
+
+        console.log(`📲 Sending push notification to ${recipientUserId}...`);
+        const pushResponse = await supabase.functions.invoke('send-push-notification', {
+          body: pushPayload,
+        });
+
+        if (pushResponse.error) {
+          console.error('❌ Push error:', pushResponse.error);
+          pushResult = { success: false, reason: pushResponse.error.message };
         } else {
-          const smsMessage = `היי ${recipientName},\n${creatorName} הוסיף/ה הוצאה חדשה לאישור: ${amount} ₪\n${description}\nלאישור: ${appUrl}`;
+          pushResult = pushResponse.data || { success: true };
+          console.log('📲 Push result:', JSON.stringify(pushResult));
+        }
+      } catch (pushError) {
+        console.error('❌ Push exception:', pushError);
+        pushResult = { success: false, reason: 'exception' };
+      }
 
-          console.log(`📱 Sending SMS to ${recipientPhone}...`);
-          const cleanPhone = recipientPhone.replace(/^\+/, '');
+      // ============================================================
+      // 2. SMS NOTIFICATION (fallback only)
+      // ============================================================
+      const shouldSendSMS = recipientPrefs?.sms_enabled ?? true;
 
+      const noActiveTokens = pushResult?.fallback === 'sms';
+      const pushGloballyDisabled = pushResult?.success === false && pushResult?.reason === 'Push notifications disabled';
+      const pushException = pushResult?.success === false && pushResult?.reason === 'exception';
+      const shouldAttemptSms = (noActiveTokens || pushGloballyDisabled || pushException) && shouldSendSMS;
+
+      let smsResult: { success: boolean; messageId?: string; error?: string; reason?: string } = { success: false, reason: 'not_attempted' };
+
+      if (!shouldAttemptSms) {
+        const skipReason = !shouldSendSMS ? 'sms_disabled_by_user' : 'push_delivered';
+        console.log(`📵 SMS skipped for ${recipientUserId} (${skipReason})`);
+        smsResult = { success: false, reason: skipReason };
+      } else {
+        console.log(`📱 Push did not reach ${recipientUserId} – attempting SMS fallback`);
+
+        // Check if SMS already sent for this recipient
+        const { data: existingNotification } = await supabase
+          .from('expense_notifications')
+          .select('id')
+          .eq('expense_id', expense_id)
+          .eq('notification_type', 'sms')
+          .eq('recipient_user_id', recipientUserId)
+          .maybeSingle();
+
+        if (existingNotification) {
+          console.log(`📱 SMS already sent to ${recipientUserId} for this expense`);
+          smsResult = { success: false, reason: 'already_sent' };
+        } else {
+          const recipientPhone = recipientProfile.phone_e164 || recipientProfile.phone_number;
+
+          if (!recipientPhone) {
+            console.log('📱 No phone number for recipient');
+            smsResult = { success: false, error: 'No phone number' };
+          } else if (!vonageApiKey || !vonageApiSecret || !vonageFromNumber) {
+            console.error('📱 Vonage not configured');
+            smsResult = { success: false, error: 'SMS service not configured' };
+          } else {
+            const smsMessage = `היי ${recipientName},\n${creatorName} הוסיף/ה הוצאה חדשה לאישור: ${amount} ₪\n${description}\nלאישור: ${appUrl}`;
+
+            console.log(`📱 Sending SMS to ${recipientPhone}...`);
+            const cleanPhone = recipientPhone.replace(/^\+/, '');
+
+            try {
+              const vonageResponse = await fetch('https://rest.nexmo.com/sms/json', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  api_key: vonageApiKey,
+                  api_secret: vonageApiSecret,
+                  from: vonageFromNumber,
+                  to: cleanPhone,
+                  text: smsMessage,
+                  type: 'unicode'
+                }),
+              });
+
+              const vonageResult = await vonageResponse.json();
+              console.log('📱 Vonage response:', JSON.stringify(vonageResult));
+
+              if (!vonageResult?.messages || !Array.isArray(vonageResult.messages) || vonageResult.messages.length === 0) {
+                console.error('📱 Unexpected Vonage response structure:', JSON.stringify(vonageResult));
+                await supabase.from('expense_notifications').insert({
+                  expense_id,
+                  notification_type: 'sms',
+                  recipient_user_id: recipientUserId,
+                  recipient_phone: recipientPhone,
+                  status: 'failed',
+                  error_message: 'Unexpected response from SMS provider'
+                });
+                smsResult = { success: false, error: 'Unexpected response from SMS provider' };
+              } else if (vonageResult.messages[0]?.status === '0') {
+                await supabase.from('expense_notifications').insert({
+                  expense_id,
+                  notification_type: 'sms',
+                  recipient_user_id: recipientUserId,
+                  recipient_phone: recipientPhone,
+                  status: 'sent'
+                });
+                console.log('✅ SMS sent successfully');
+                smsResult = { success: true, messageId: vonageResult.messages[0]['message-id'] };
+              } else {
+                const errorText = vonageResult.messages?.[0]?.['error-text'] || 'Unknown error';
+                await supabase.from('expense_notifications').insert({
+                  expense_id,
+                  notification_type: 'sms',
+                  recipient_user_id: recipientUserId,
+                  recipient_phone: recipientPhone,
+                  status: 'failed',
+                  error_message: errorText
+                });
+                console.error('❌ SMS error:', errorText);
+                smsResult = { success: false, error: errorText };
+              }
+            } catch (smsError) {
+              console.error('❌ SMS exception:', smsError);
+              smsResult = { success: false, error: 'Exception sending SMS' };
+            }
+          }
+        }
+      }
+
+      // ============================================================
+      // 3. EMAIL NOTIFICATION
+      // Independent channel – sent alongside push (not a fallback).
+      // ============================================================
+      const emailMasterEnabled = recipientPrefs?.email_enabled ?? true;
+      const perTypeEmailEnabled = (recipientPrefs?.preferences as Record<string, { push: boolean; sms: boolean; email: boolean }> | null)?.['expense_pending_approval']?.email ?? true;
+      const shouldSendEmail = emailMasterEnabled && perTypeEmailEnabled;
+
+      let emailResult: { success: boolean; error?: string; reason?: string } = { success: false, reason: 'not_attempted' };
+
+      if (!shouldSendEmail) {
+        console.log(`📧 Email skipped for ${recipientUserId} (disabled by user)`);
+        emailResult = { success: false, reason: 'email_disabled_by_user' };
+      } else {
+        // Get recipient email address from auth
+        const { data: authUserData, error: authUserError } = await supabase.auth.admin.getUserById(recipientUserId);
+        const recipientEmail = authUserData?.user?.email;
+
+        if (authUserError || !recipientEmail) {
+          console.log(`📧 No email address for recipient ${recipientUserId}`);
+          emailResult = { success: false, reason: 'no_email_address' };
+        } else {
+          const emailHtml = `<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+<body style="margin: 0; padding: 0; background-color: #f0f4f8; font-family: 'Heebo', Arial, sans-serif; direction: rtl;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color: #f0f4f8; padding: 24px 0;">
+<tr><td align="center">
+<table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width: 600px; width: 100%; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 24px rgba(0,0,0,0.08);">
+
+<!-- Header with gradient -->
+<tr>
+<td style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 32px 40px; text-align: center;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+<tr>
+<td align="center">
+<img src="https://mhplus.online/logo.png" alt="מחציות פלוס" width="48" height="48" style="display: block; margin: 0 auto 12px; border-radius: 12px;" />
+<p style="margin: 0; font-size: 22px; font-weight: 700; color: #ffffff; font-family: 'Heebo', Arial, sans-serif;">מחציות פלוס</p>
+</td>
+</tr>
+</table>
+</td>
+</tr>
+
+<!-- Body -->
+<tr>
+<td style="background-color: #ffffff; padding: 40px 40px 32px;">
+
+<!-- Status pill -->
+<table role="presentation" cellpadding="0" cellspacing="0" style="margin: 0 auto 28px;">
+<tr>
+<td style="background-color: #FFF3E0; border-radius: 50px; padding: 8px 20px;">
+<span style="font-size: 15px; font-weight: 600; color: #E65100; font-family: 'Heebo', Arial, sans-serif;">&#x1F514; הוצאה חדשה לאישור</span>
+</td>
+</tr>
+</table>
+
+<!-- Greeting -->
+<p style="font-size: 17px; color: #2d3748; margin: 0 0 8px; font-family: 'Heebo', Arial, sans-serif;">היי ${safeRecipientName},</p>
+<p style="font-size: 15px; color: #4a5568; margin: 0 0 28px; line-height: 1.6; font-family: 'Heebo', Arial, sans-serif;"><strong>${safeCreatorName}</strong> הוסיף/ה הוצאה חדשה הדורשת את אישורך:</p>
+
+<!-- Expense details card -->
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color: #f8fafc; border-radius: 16px; border: 1px solid #e2e8f0; overflow: hidden; margin-bottom: 32px;">
+<!-- Amount row -->
+<tr>
+<td style="padding: 24px 28px; text-align: center; border-bottom: 1px solid #e2e8f0;">
+<p style="margin: 0 0 4px; font-size: 13px; color: #718096; font-family: 'Heebo', Arial, sans-serif;">סכום</p>
+<p style="margin: 0; font-size: 36px; font-weight: 800; color: #0EA5E9; font-family: 'Heebo', Arial, sans-serif;">${safeAmount} &#8362;</p>
+</td>
+</tr>
+<!-- Description row -->
+<tr>
+<td style="padding: 16px 28px; border-bottom: 1px solid #e2e8f0;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+<tr>
+<td style="font-size: 13px; color: #718096; padding-bottom: 2px; font-family: 'Heebo', Arial, sans-serif;">תיאור</td>
+</tr>
+<tr>
+<td style="font-size: 16px; color: #2d3748; font-weight: 600; font-family: 'Heebo', Arial, sans-serif;">${safeDescription}</td>
+</tr>
+</table>
+</td>
+</tr>
+<!-- Account row -->
+<tr>
+<td style="padding: 16px 28px;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+<tr>
+<td style="font-size: 13px; color: #718096; padding-bottom: 2px; font-family: 'Heebo', Arial, sans-serif;">חשבון</td>
+</tr>
+<tr>
+<td style="font-size: 16px; color: #2d3748; font-weight: 600; font-family: 'Heebo', Arial, sans-serif;">${safeAccountName}</td>
+</tr>
+</table>
+</td>
+</tr>
+</table>
+
+<!-- CTA Button -->
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+<tr>
+<td align="center" style="padding-bottom: 8px;">
+<a href="${appUrl}" target="_blank" style="display: inline-block; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: #ffffff; font-size: 17px; font-weight: 700; text-decoration: none; padding: 16px 48px; border-radius: 50px; font-family: 'Heebo', Arial, sans-serif;">&#x2192; לאישור ההוצאה</a>
+</td>
+</tr>
+</table>
+
+</td>
+</tr>
+
+<!-- Footer -->
+<tr>
+<td style="background-color: #f8fafc; padding: 28px 40px; border-top: 1px solid #e2e8f0;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+<tr>
+<td align="center">
+<img src="https://mhplus.online/logo.png" alt="מחציות פלוס" width="32" height="32" style="display: block; margin: 0 auto 8px; border-radius: 8px; opacity: 0.7;" />
+<p style="margin: 0 0 4px; font-size: 14px; font-weight: 600; color: #4a5568; font-family: 'Heebo', Arial, sans-serif;">מחציות פלוס</p>
+<p style="margin: 0 0 16px; font-size: 12px; color: #a0aec0; font-family: 'Heebo', Arial, sans-serif;">ניהול הוצאות משותפות בין הורים</p>
+<p style="margin: 0; font-size: 12px; color: #a0aec0; font-family: 'Heebo', Arial, sans-serif;">
+<a href="${appUrl}/account-settings" style="color: #667eea; text-decoration: none;">הגדרות התראות</a>
+<span style="color: #cbd5e0; margin: 0 8px;">|</span>
+<a href="${appUrl}/account-settings" style="color: #667eea; text-decoration: none;">ביטול הרשמה</a>
+</p>
+</td>
+</tr>
+</table>
+</td>
+</tr>
+
+</table>
+</td></tr>
+</table>
+</body>
+</html>`;
+
+          console.log(`📧 Sending email to ${recipientEmail}...`);
           try {
-            const vonageResponse = await fetch('https://rest.nexmo.com/sms/json', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                api_key: vonageApiKey,
-                api_secret: vonageApiSecret,
-                from: vonageFromNumber,
-                to: cleanPhone,
-                text: smsMessage,
-                type: 'unicode'
-              }),
+            const emailResponse = await supabase.functions.invoke('send-email', {
+              body: {
+                to: recipientEmail,
+                subject: `הוצאה חדשה לאישור: ${amount} ₪ - ${description}`,
+                html: emailHtml,
+              },
             });
 
-            const vonageResult = await vonageResponse.json();
-            console.log('📱 Vonage response:', JSON.stringify(vonageResult));
-
-            if (vonageResult.messages?.[0]?.status === '0') {
-              await supabase.from('expense_notifications').insert({
-                expense_id,
-                notification_type: 'sms',
-                recipient_user_id: recipientUserId,
-                recipient_phone: recipientPhone,
-                status: 'sent'
-              });
-              console.log('✅ SMS sent successfully');
-              smsResult = { success: true, messageId: vonageResult.messages[0]['message-id'] };
+            if (emailResponse.error) {
+              console.error('❌ Email invocation error:', emailResponse.error);
+              emailResult = { success: false, error: emailResponse.error.message };
+            } else if (emailResponse.data?.success === false) {
+              console.error('❌ Email send failed:', emailResponse.data.error);
+              emailResult = { success: false, error: emailResponse.data.error };
+            } else if (emailResponse.data?.success === true) {
+              console.log('✅ Email sent successfully');
+              emailResult = { success: true };
             } else {
-              const errorText = vonageResult.messages?.[0]?.['error-text'] || 'Unknown error';
-              await supabase.from('expense_notifications').insert({
-                expense_id,
-                notification_type: 'sms',
-                recipient_user_id: recipientUserId,
-                recipient_phone: recipientPhone,
-                status: 'failed',
-                error_message: errorText
-              });
-              console.error('❌ SMS error:', errorText);
-              smsResult = { success: false, error: errorText };
+              console.warn('⚠️ Email unexpected response:', JSON.stringify(emailResponse.data));
+              emailResult = { success: false, error: 'Unexpected response from send-email' };
             }
-          } catch (smsError) {
-            console.error('❌ SMS exception:', smsError);
-            smsResult = { success: false, error: 'Exception sending SMS' };
+          } catch (emailError) {
+            console.error('❌ Email exception:', emailError);
+            emailResult = { success: false, error: 'Exception sending email' };
           }
-        }
-      }
-    }
 
-    // ============================================================
-    // 3. EMAIL NOTIFICATION
-    // Independent channel – sent alongside push (not a fallback).
-    // Respects: email_enabled master toggle + per-type email preference.
-    // ============================================================
-    const emailMasterEnabled = recipientPrefs?.email_enabled ?? true;
-    const perTypeEmailEnabled = (recipientPrefs?.preferences as Record<string, { push: boolean; sms: boolean; email: boolean }> | null)?.['expense_pending_approval']?.email ?? true;
-    const shouldSendEmail = emailMasterEnabled && perTypeEmailEnabled;
-
-    let emailResult: { success: boolean; error?: string; reason?: string } = { success: false, reason: 'not_attempted' };
-
-    if (!shouldSendEmail) {
-      console.log('📧 Email skipped (disabled by user)');
-      emailResult = { success: false, reason: 'email_disabled_by_user' };
-    } else {
-      // Get recipient email address from auth
-      const { data: authUserData, error: authUserError } = await supabase.auth.admin.getUserById(recipientUserId);
-      const recipientEmail = authUserData?.user?.email;
-
-      if (authUserError || !recipientEmail) {
-        console.log('📧 No email address for recipient');
-        emailResult = { success: false, reason: 'no_email_address' };
-      } else {
-        const emailHtml = `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; direction: rtl;">
-            <h2 style="color: #4a5568;">הוצאה חדשה ממתינה לאישורך</h2>
-            <p>היי ${recipientName},</p>
-            <p><strong>${creatorName}</strong> הוסיף/ה הוצאה חדשה הדורשת את אישורך:</p>
-            <table style="width: 100%; border-collapse: collapse; margin: 16px 0;">
-              <tr style="background: #f7fafc;">
-                <td style="padding: 10px; border: 1px solid #e2e8f0; font-weight: bold;">סכום</td>
-                <td style="padding: 10px; border: 1px solid #e2e8f0;">${amount} ₪</td>
-              </tr>
-              <tr>
-                <td style="padding: 10px; border: 1px solid #e2e8f0; font-weight: bold;">תיאור</td>
-                <td style="padding: 10px; border: 1px solid #e2e8f0;">${description}</td>
-              </tr>
-              <tr style="background: #f7fafc;">
-                <td style="padding: 10px; border: 1px solid #e2e8f0; font-weight: bold;">חשבון</td>
-                <td style="padding: 10px; border: 1px solid #e2e8f0;">${account.name}</td>
-              </tr>
-            </table>
-            <p style="margin: 25px 0;">
-              <a href="${appUrl}" style="background-color: #3182ce; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px;">לאישור ההוצאה</a>
-            </p>
-            <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 20px 0;" />
-            <p style="color: #718096; font-size: 14px;">מחציות פלוס - ניהול הוצאות משותפות</p>
-          </div>
-        `;
-
-        console.log(`📧 Sending email to ${recipientEmail}...`);
-        try {
-          const emailResponse = await supabase.functions.invoke('send-email', {
-            body: {
-              to: recipientEmail,
-              subject: `הוצאה חדשה לאישור: ${amount} ₪ - ${description}`,
-              html: emailHtml,
-            },
+          // Log to notification_logs regardless of outcome
+          await supabase.from('notification_logs').insert({
+            user_id: recipientUserId,
+            account_id: account_id,
+            notification_type: 'expense_pending_approval',
+            channel: 'email',
+            title: `הוצאה חדשה לאישור: ${amount} ₪ - ${description}`,
+            body: `${creatorName} הוסיף/ה הוצאה חדשה הדורשת את אישורך`,
+            data: { expenseId: expense_id },
+            status: emailResult.success ? 'sent' : 'failed',
+            error_message: emailResult.error || null,
           });
-
-          if (emailResponse.error) {
-            console.error('❌ Email error:', emailResponse.error);
-            emailResult = { success: false, error: emailResponse.error.message };
-          } else if (emailResponse.data?.warning) {
-            console.warn('⚠️ Email warning (SendGrid):', emailResponse.data.warning);
-            emailResult = { success: false, error: emailResponse.data.warning };
-          } else {
-            console.log('✅ Email sent successfully');
-            emailResult = { success: true };
-          }
-        } catch (emailError) {
-          console.error('❌ Email exception:', emailError);
-          emailResult = { success: false, error: 'Exception sending email' };
         }
-
-        // Log to notification_logs regardless of outcome
-        await supabase.from('notification_logs').insert({
-          user_id: recipientUserId,
-          account_id: account_id,
-          notification_type: 'expense_pending_approval',
-          channel: 'email',
-          title: `הוצאה חדשה לאישור: ${amount} ₪ - ${description}`,
-          body: `${creatorName} הוסיף/ה הוצאה חדשה הדורשת את אישורך`,
-          data: { expenseId: expense_id },
-          status: emailResult.success ? 'sent' : 'failed',
-          error_message: emailResult.error || null,
-        });
       }
+
+      allResults.push({ recipientUserId, push: pushResult, sms: smsResult, email: emailResult });
+      console.log(`📊 Results for ${recipientUserId}: push=${JSON.stringify(pushResult)}, sms=${JSON.stringify(smsResult)}, email=${JSON.stringify(emailResult)}`);
     }
 
-    console.log(`📊 Final: push=${JSON.stringify(pushResult)}, sms=${JSON.stringify(smsResult)}, email=${JSON.stringify(emailResult)}`);
+    const anySuccess = allResults.some(r => r.push.success || r.sms.success || r.email.success);
+    console.log(`📊 Final: ${allResults.length} recipients processed, anySuccess=${anySuccess}`);
 
     return new Response(
       JSON.stringify({
-        success: pushResult.success || smsResult.success || emailResult.success,
-        push: pushResult,
-        sms: smsResult,
-        email: emailResult,
+        success: anySuccess,
+        recipients: allResults,
       }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );

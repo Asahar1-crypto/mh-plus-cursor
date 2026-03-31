@@ -116,7 +116,7 @@ export async function getFCMToken(accountId: string): Promise<string | null> {
     });
 
     if (token) {
-      
+
       const { data, error } = await supabase.functions.invoke('register-device-token', {
         body: {
           token,
@@ -131,7 +131,8 @@ export async function getFCMToken(accountId: string): Promise<string | null> {
       });
 
       if (error) {
-        console.error('[FCM] Error registering device token:', error);
+        console.error('[FCM] Error registering device token with backend - token not saved:', error);
+        return null;
       }
 
       return token;

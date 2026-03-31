@@ -23,9 +23,9 @@ if (!sendgridApiKey) {
 
 sgMail.setApiKey(sendgridApiKey || "");
 
-// Define CORS headers
+// Define CORS headers – restricted to the app domain
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Origin": "https://mhplus.online",
   "Access-Control-Allow-Headers":
     "authorization, x-client-info, apikey, content-type",
 };
@@ -94,10 +94,42 @@ serve(async (req) => {
   }
 
   try {
+    // 🔒 SECURITY: Require authentication (valid JWT or service_role key)
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader?.startsWith('Bearer ')) {
+      console.error('❌ No authorization header');
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const token = authHeader.replace('Bearer ', '');
+    const isServiceRole = token === supabaseServiceKey;
+
+    if (!isServiceRole) {
+      // Verify JWT is valid using the anon key client
+      const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
+      const anonClient = createClient(supabaseUrl, supabaseAnonKey, {
+        auth: { persistSession: false }
+      });
+      const { data: userData, error: authError } = await anonClient.auth.getUser(token);
+      if (authError || !userData?.user) {
+        console.error('❌ Authentication failed:', authError?.message);
+        return new Response(
+          JSON.stringify({ error: 'Authentication failed' }),
+          { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      console.log('✅ User authenticated:', userData.user.id);
+    } else {
+      console.log('✅ Service role authenticated');
+    }
+
     console.log("Received request to send email");
     console.log("SendGrid API Key available:", !!sendgridApiKey);
     console.log("SendGrid API Key starts with SG:", sendgridApiKey?.startsWith("SG."));
-    
+
     // Parse request body
     let requestBody;
     try {
@@ -201,6 +233,10 @@ serve(async (req) => {
       subject,
       text,
       html,
+      headers: {
+        'List-Unsubscribe': '<https://mhplus.online/account-settings>',
+        'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+      },
     };
 
     // If using a template, add template ID and data
@@ -238,17 +274,15 @@ serve(async (req) => {
       );
     } catch (sendError: any) {
       console.error("Error sending email with SendGrid:", sendError);
-      
-      // Create a fallback response indicating the email wasn't sent but the invitation was created
+
       return new Response(
         JSON.stringify({
-          warning: "Failed to send email via SendGrid, but invitation was created",
-          details: "User can still access invitation via the app",
+          success: false,
           error: sendError.message,
           code: sendError.code,
         }),
         {
-          status: 200, // Return 200 so the invitation process continues
+          status: 502,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         }
       );

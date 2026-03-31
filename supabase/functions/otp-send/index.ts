@@ -52,16 +52,29 @@ serve(async (req) => {
     // Initialize Supabase client
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
+    // Normalize phone number to E.164 before rate limiting and DB queries
+    let normalizedPhone: string;
+    try {
+      // Dynamic import for libphonenumber-js
+      const { parsePhoneNumber } = await import('https://esm.sh/libphonenumber-js@1.10.51');
+      const parsed = parsePhoneNumber(phoneNumber, 'IL');
+      normalizedPhone = parsed ? parsed.format('E.164') : phoneNumber;
+      console.log('OTP Send: Phone normalization:', { original: phoneNumber, normalized: normalizedPhone });
+    } catch (error) {
+      console.log('OTP Send: Phone parsing failed, using original:', phoneNumber);
+      normalizedPhone = phoneNumber;
+    }
+
     // Rate limiting: max 5 SMS per phone number per hour
     const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
     const { count: smsCount, error: countError } = await supabase
       .from('sms_verification_codes')
       .select('*', { count: 'exact', head: true })
-      .eq('phone_number', phoneNumber)
+      .eq('phone_number', normalizedPhone)
       .gte('created_at', oneHourAgo);
 
     if (!countError && smsCount !== null && smsCount >= 5) {
-      console.warn(`OTP Send: Rate limit exceeded for ${phoneNumber}: ${smsCount} requests in last hour`);
+      console.warn(`OTP Send: Rate limit exceeded for ${normalizedPhone}: ${smsCount} requests in last hour`);
       return new Response(
         JSON.stringify({ error: 'יותר מדי בקשות. אנא נסה שוב מאוחר יותר.' }),
         { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -72,7 +85,7 @@ serve(async (req) => {
     const { data: existingCode } = await supabase
       .from('sms_verification_codes')
       .select('code, expires_at')
-      .eq('phone_number', phoneNumber)
+      .eq('phone_number', normalizedPhone)
       .eq('verification_type', type)
       .eq('verified', false)
       .gte('expires_at', new Date().toISOString())
@@ -87,7 +100,7 @@ serve(async (req) => {
       // Use existing valid code
       otpCode = existingCode.code;
       expiresAt = existingCode.expires_at;
-      console.log(`OTP Send: Using existing code for ${phoneNumber}`);
+      console.log(`OTP Send: Using existing code for ${normalizedPhone}`);
     } else {
       // Generate new code
       otpCode = generateOTPCode();
@@ -98,7 +111,7 @@ serve(async (req) => {
       const { error: insertError } = await supabase
         .from('sms_verification_codes')
         .insert({
-          phone_number: phoneNumber,
+          phone_number: normalizedPhone,
           code: otpCode,
           verification_type: type,
           expires_at: expiresAt,
@@ -118,14 +131,14 @@ serve(async (req) => {
         );
       }
 
-      console.log(`OTP Send: Created new code for ${phoneNumber}`);
+      console.log(`OTP Send: Created new code for ${normalizedPhone}`);
     }
 
     // Send SMS via Vonage
     const smsMessage = `קוד האימות שלך: ${otpCode}\nתוקף: 10 דקות`;
     
     // Remove '+' from phone number for Vonage
-    const cleanPhoneNumber = phoneNumber.replace(/^\+/, '');
+    const cleanPhoneNumber = normalizedPhone.replace(/^\+/, '');
     
     const vonageResponse = await fetch('https://rest.nexmo.com/sms/json', {
       method: 'POST',
@@ -148,7 +161,7 @@ serve(async (req) => {
     
     // Vonage returns status in messages array
     if (vonageResult.messages && vonageResult.messages[0]?.status === '0') {
-      console.log(`OTP Send: SMS sent successfully to ${phoneNumber}. Message ID: ${vonageResult.messages[0]['message-id']}`);
+      console.log(`OTP Send: SMS sent successfully to ${normalizedPhone}. Message ID: ${vonageResult.messages[0]['message-id']}`);
       
       return new Response(
         JSON.stringify({ 

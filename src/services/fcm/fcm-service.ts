@@ -118,9 +118,9 @@ export async function onForegroundMessage(callback: (payload: unknown) => void):
   const fcmWeb = await loadFcmWeb();
   return fcmWeb.onForegroundMessage(callback);
 }
-export async function unregisterToken(): Promise<void> {
+export async function unregisterToken(token: string): Promise<void> {
   const fcmWeb = await loadFcmWeb();
-  return fcmWeb.unregisterToken();
+  return fcmWeb.unregisterToken(token);
 }
 
 // Re-export mobile utilities (no Firebase dependency, safe to import statically)

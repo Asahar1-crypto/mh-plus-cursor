@@ -81,6 +81,21 @@ serve(async (req) => {
       );
     }
 
+    // Deactivate all other tokens for this user + account + platform
+    // This prevents accumulation of stale tokens when FCM rotates tokens
+    const { error: deactivateError } = await supabase
+      .from('device_tokens')
+      .update({ is_active: false })
+      .eq('user_id', userId)
+      .eq('account_id', payload.accountId)
+      .eq('platform', payload.platform)
+      .neq('token', payload.token)
+      .eq('is_active', true);
+
+    if (deactivateError) {
+      console.warn('Warning: Could not deactivate old tokens:', deactivateError.message);
+    }
+
     // Upsert device token
     const { data, error } = await supabase
       .from('device_tokens')

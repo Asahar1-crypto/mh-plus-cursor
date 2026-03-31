@@ -29,7 +29,7 @@ const sendExpenseNotification = async (expenseId: string, accountId: string): Pr
     const { data, error } = await supabase.functions.invoke('notify-expense-approval', {
       body: { expense_id: expenseId, account_id: accountId }
     });
-    
+
     if (error) {
       console.error('Error sending expense notification:', error);
       return `ERROR: ${JSON.stringify(error)}`;
@@ -39,6 +39,22 @@ const sendExpenseNotification = async (expenseId: string, accountId: string): Pr
   } catch (error) {
     console.error('Failed to send expense notification:', error);
     return `EXCEPTION: ${error}`;
+  }
+};
+
+// Helper function to send notification when expense status changes (approved/rejected/paid)
+const sendStatusChangeNotification = async (
+  expenseId: string,
+  accountId: string,
+  newStatus: string,
+  changedBy: string,
+): Promise<void> => {
+  try {
+    await supabase.functions.invoke('notify-expense-status-change', {
+      body: { expense_id: expenseId, account_id: accountId, new_status: newStatus, changed_by: changedBy }
+    });
+  } catch (error) {
+    console.error('Error sending status change notification:', error);
   }
 };
 
@@ -72,6 +88,16 @@ export const useExpenseActions = (
       if (result.isPending) {
         await sendExpenseNotification(result.id, account.id);
       }
+
+      // Check budget alerts (fire-and-forget)
+      supabase.functions.invoke('check-budget-before-expense', {
+        body: {
+          accountId: account.id,
+          category: newExpense.category,
+          amount: newExpense.amount,
+          expenseDate: newExpense.date,
+        }
+      }).catch(err => console.error('Budget check failed:', err));
 
       activityService.log({
         accountId: account.id, userId: user.id, userName: user.name,
@@ -197,6 +223,11 @@ export const useExpenseActions = (
       await expenseService.updateExpenseStatus(user, account, id, status);
       await refreshData(); // Refresh data to show updated status
 
+      // Fire-and-forget notification for status changes
+      if (['approved', 'rejected', 'paid'].includes(status)) {
+        sendStatusChangeNotification(id, account.id, status, user.id).catch(() => {});
+      }
+
       const expense = expenses.find(e => e.id === id);
       const expenseLabel = expense ? `${expense.description} ₪${expense.amount}` : id;
       let actionLabel = '';
@@ -278,6 +309,10 @@ export const useExpenseActions = (
     try {
       await expenseService.approveAllRecurring(user, account, id);
       await refreshData();
+
+      // Fire-and-forget notification for approval
+      sendStatusChangeNotification(id, account.id, 'approved', user.id).catch(() => {});
+
       toast.success('🎉 ההוצאה אושרה! כל ההוצאות העתידיות יאושרו אוטומטית');
     } catch (error) {
       console.error('Failed to approve all recurring:', error);

@@ -90,17 +90,40 @@ Deno.serve(async (req) => {
 
     // data is an array with one row: [{ generated, skipped, errors }]
     const result = Array.isArray(data) ? data[0] : data
+    const generatedCount = result?.generated ?? 0
 
     const summary = {
       success:   true,
-      message:   `Generated ${result?.generated ?? 0} recurring expenses for ${currentMonth}/${currentYear}`,
-      generated: result?.generated ?? 0,
+      message:   `Generated ${generatedCount} recurring expenses for ${currentMonth}/${currentYear}`,
+      generated: generatedCount,
       skipped:   result?.skipped   ?? 0,
       errors:    result?.errors    ?? 0,
       period:    { month: currentMonth, year: currentYear },
+      notifications: null as { total_notified: number; accounts: unknown[] } | null,
     }
 
-    console.log(`🎉 Done:`, summary)
+    console.log(`🎉 Generation done:`, { generated: summary.generated, skipped: summary.skipped, errors: summary.errors })
+
+    // ── Notify about pending recurring expenses ────────────────────
+    // Only attempt if at least one expense was generated.
+    if (generatedCount > 0) {
+      try {
+        console.log(`🔔 Triggering notifications for pending recurring expenses...`)
+        const notifyResponse = await supabase.functions.invoke('notify-pending-recurring', {
+          body: { month: currentMonth, year: currentYear },
+        })
+
+        if (notifyResponse.error) {
+          console.error('⚠️ notify-pending-recurring error:', notifyResponse.error)
+        } else {
+          summary.notifications = notifyResponse.data
+          console.log(`🔔 Notification result:`, JSON.stringify(notifyResponse.data))
+        }
+      } catch (notifyError) {
+        // Notification failure should NOT fail the entire generation
+        console.error('⚠️ notify-pending-recurring exception (non-fatal):', notifyError)
+      }
+    }
 
     return new Response(
       JSON.stringify(summary),

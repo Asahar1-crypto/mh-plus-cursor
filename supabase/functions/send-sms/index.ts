@@ -190,34 +190,50 @@ serve(async (req) => {
     
     console.log('Vonage response:', JSON.stringify(vonageResult));
     
-    // Vonage returns status in messages array
-    if (vonageResult.messages && vonageResult.messages[0]?.status === '0') {
-      console.log(`SMS sent successfully via Vonage. Message ID: ${vonageResult.messages[0]['message-id']}`);
-      
+    // Validate Vonage response structure
+    if (!vonageResult?.messages || !Array.isArray(vonageResult.messages) || vonageResult.messages.length === 0) {
+      console.error('Unexpected Vonage response structure:', JSON.stringify(vonageResult));
       return new Response(
-        JSON.stringify({ 
-          success: true, 
+        JSON.stringify({
+          error: 'Failed to send SMS',
+          details: 'Unexpected response from SMS provider',
+          vonageError: vonageResult
+        }),
+        {
+          status: 502,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
+    }
+
+    // Vonage returns status in messages array
+    if (vonageResult.messages[0]?.status === '0') {
+      console.log(`SMS sent successfully via Vonage. Message ID: ${vonageResult.messages[0]['message-id']}`);
+
+      return new Response(
+        JSON.stringify({
+          success: true,
           messageId: vonageResult.messages[0]['message-id'],
           status: 'sent'
         }),
-        { 
-          status: 200, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        {
+          status: 200,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         }
       );
     } else {
-      const errorText = vonageResult.messages?.[0]?.['error-text'] || 'Unknown error';
+      const errorText = vonageResult.messages[0]?.['error-text'] || 'Unknown error';
       console.error('Vonage error:', errorText);
-      console.error('Vonage response status:', vonageResult.messages?.[0]?.status);
+      console.error('Vonage response status:', vonageResult.messages[0]?.status);
       return new Response(
-        JSON.stringify({ 
-          error: 'Failed to send SMS', 
+        JSON.stringify({
+          error: 'Failed to send SMS',
           details: errorText,
           vonageError: vonageResult
         }),
-        { 
-          status: 400, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         }
       );
     }

@@ -46,11 +46,19 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
   const [hasPermission, setHasPermission] = useState(false);
   const [platform, setPlatform] = useState<PushPlatform>('unsupported');
   const [preferences, setPreferences] = useState<NotificationPreferences | null>(null);
-  const [unreadCount, setUnreadCount] = useState(0);
+  const [unreadCount, setUnreadCount] = useState(() => {
+    const stored = sessionStorage.getItem('notification_unread_count');
+    return stored ? parseInt(stored, 10) || 0 : 0;
+  });
   const [isInitializing, setIsInitializing] = useState(true);
 
   const unsubscribeRef = useRef<(() => void) | null>(null);
   const initializedRef = useRef(false);
+
+  // Sync unreadCount to sessionStorage
+  useEffect(() => {
+    sessionStorage.setItem('notification_unread_count', String(unreadCount));
+  }, [unreadCount]);
 
   // Detect platform on mount
   useEffect(() => {
@@ -58,13 +66,15 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
   }, []);
 
   // Initialize notifications when user and account are available
+  // Re-runs on every mount (no initializedRef gate) so that FCM token
+  // is refreshed even if Firebase rotated it since the last session.
   useEffect(() => {
     if (!user || !account?.id) {
       setIsInitializing(false);
       return;
     }
 
-    // Avoid double initialization
+    // Avoid double initialization within the same mount cycle
     if (initializedRef.current) return;
     initializedRef.current = true;
 
