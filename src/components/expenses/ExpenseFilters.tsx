@@ -236,7 +236,8 @@ export const ExpenseFilters: React.FC<ExpenseFiltersProps> = ({
                 קטגוריה: {selectedCategory}
                 <button
                   onClick={() => setSelectedCategory(null)}
-                  className="ml-1 hover:text-destructive"
+                  className="ml-1 hover:text-destructive focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-sm"
+                  aria-label={`הסר סינון קטגוריה: ${selectedCategory}`}
                 >
                   ×
                 </button>
@@ -247,7 +248,8 @@ export const ExpenseFilters: React.FC<ExpenseFiltersProps> = ({
                 ילד: {childrenList.find(c => c.id === selectedChild)?.name}
                 <button
                   onClick={() => setSelectedChild(null)}
-                  className="ml-1 hover:text-destructive"
+                  className="ml-1 hover:text-destructive focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-sm"
+                  aria-label="הסר סינון ילד"
                 >
                   ×
                 </button>
@@ -258,7 +260,8 @@ export const ExpenseFilters: React.FC<ExpenseFiltersProps> = ({
                 סטטוס: {selectedStatus === 'pending' ? 'ממתין' : selectedStatus === 'approved' ? 'מאושר' : selectedStatus === 'paid' ? 'שולם' : 'נדחה'}
                 <button
                   onClick={() => setSelectedStatus(null)}
-                  className="ml-1 hover:text-destructive"
+                  className="ml-1 hover:text-destructive focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-sm"
+                  aria-label="הסר סינון סטטוס"
                 >
                   ×
                 </button>
@@ -269,7 +272,8 @@ export const ExpenseFilters: React.FC<ExpenseFiltersProps> = ({
                 משלם: {selectedPayer === 'split' ? 'משותף' : accountMembers?.find(m => m.user_id === selectedPayer)?.user_name}
                 <button
                   onClick={() => setSelectedPayer(null)}
-                  className="ml-1 hover:text-destructive"
+                  className="ml-1 hover:text-destructive focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-sm"
+                  aria-label="הסר סינון משלם"
                 >
                   ×
                 </button>

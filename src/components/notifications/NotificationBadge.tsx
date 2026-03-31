@@ -219,14 +219,15 @@ export function NotificationBadge({
             <div className="flex items-center gap-1">
               <button
                 onClick={loadNotifications}
-                className="p-1 rounded hover:bg-muted transition-colors"
-                title="רענן"
+                className="p-1 rounded hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                aria-label="רענן התראות"
               >
                 <RefreshCw className={cn('h-3.5 w-3.5', loading && 'animate-spin')} />
               </button>
               <button
                 onClick={() => setIsOpen(false)}
-                className="p-1 rounded hover:bg-muted transition-colors"
+                className="p-1 rounded hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                aria-label="סגור התראות"
               >
                 <X className="h-3.5 w-3.5" />
               </button>

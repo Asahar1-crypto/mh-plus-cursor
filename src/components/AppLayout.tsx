@@ -94,10 +94,20 @@ const AppLayout = () => {
             onMenuClick={() => setIsMobileSidebarOpen(!isMobileSidebarOpen)}
             isMobile={isMobile}
           />
-          <main className={cn(
-            "flex-1 min-h-0 overflow-y-auto overflow-x-hidden p-3 sm:p-6 lg:p-8 bg-gradient-to-br from-background to-accent/20",
-            isMobile && "pb-20"
-          )}>
+          {/* Skip to content - accessibility */}
+          <a
+            href="#main-content"
+            className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:right-2 focus:z-50 focus:px-4 focus:py-2 focus:bg-primary focus:text-primary-foreground focus:rounded-md focus:shadow-lg"
+          >
+            דלג לתוכן הראשי
+          </a>
+          <main
+            id="main-content"
+            className={cn(
+              "flex-1 min-h-0 overflow-y-auto overflow-x-hidden p-3 sm:p-6 lg:p-8 bg-gradient-to-br from-background to-accent/20",
+              isMobile && "pb-20"
+            )}
+          >
             <TrialStatusBanner />
             <PageTransition>
               <Outlet />
