@@ -123,14 +123,14 @@ export const MonthlyFoodPaymentCard: React.FC<MonthlyFoodPaymentCardProps> = ({ 
   // Loading state
   if (!paymentBreakdown) {
     return (
-      <Card className="bg-card border border-violet-200/50 dark:border-violet-800/30 shadow-md overflow-hidden relative group transition-shadow duration-300 hover:shadow-lg">
-        <div className="absolute inset-0 bg-gradient-to-br from-violet-500/5 to-purple-500/10"></div>
+      <Card className="bg-card border border-primary/20 shadow-md overflow-hidden relative group transition-shadow duration-300 hover:shadow-lg">
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-secondary/10"></div>
         <CardContent className="p-4 sm:p-6 relative z-10">
           <div className="flex items-center gap-3 mb-4">
-            <div className="p-2 bg-violet-500/15 rounded-xl">
-              <Wallet className="h-5 w-5 text-violet-600 dark:text-violet-400" />
+            <div className="p-2 bg-primary/10 rounded-xl">
+              <Wallet className="h-5 w-5 text-primary" />
             </div>
-            <span className="font-bold text-lg">חלוקת תשלומים</span>
+            <span className="type-h3">חלוקת תשלומים</span>
           </div>
           <div className="flex items-center justify-center py-6">
             <div className="h-6 w-6 animate-spin rounded-full border-3 border-primary border-t-transparent"></div>
@@ -149,49 +149,57 @@ export const MonthlyFoodPaymentCard: React.FC<MonthlyFoodPaymentCardProps> = ({ 
   const hasNetCalc = userA && userB;
   const netDifference = hasNetCalc ? userA.balance - userB.balance : 0;
 
-  // Color helpers for balance status
+  // Color helpers for balance status — aligned with Deep Teal + Amber palette.
+  // "חייב" (owes) uses amber: it's an action item, not a failure — warm, not alarming.
+  // "זכאי" (owed): emerald (success/positive).
+  // "מאוזן" (balanced): teal primary (on-brand neutral/resolved).
   const getBalanceColor = (balance: number) => {
     if (balance > 0) return {
-      bg: 'bg-red-500/10 dark:bg-red-500/15',
-      border: 'border-red-200/60 dark:border-red-800/40',
-      text: 'text-red-700 dark:text-red-400',
+      bg: 'bg-gradient-to-br from-amber-50/80 to-orange-50/40 dark:from-amber-950/30 dark:to-orange-950/20',
+      border: 'border-amber-200/60 dark:border-amber-800/40',
+      text: 'text-amber-800 dark:text-amber-300',
+      dot: 'bg-amber-500',
       label: 'חייב'
     };
     if (balance < 0) return {
-      bg: 'bg-emerald-500/10 dark:bg-emerald-500/15',
+      bg: 'bg-gradient-to-br from-emerald-50/80 to-green-50/40 dark:from-emerald-950/30 dark:to-green-950/20',
       border: 'border-emerald-200/60 dark:border-emerald-800/40',
-      text: 'text-emerald-700 dark:text-emerald-400',
+      text: 'text-emerald-800 dark:text-emerald-300',
+      dot: 'bg-emerald-500',
       label: 'זכאי'
     };
     return {
-      bg: 'bg-blue-500/10 dark:bg-blue-500/15',
-      border: 'border-blue-200/60 dark:border-blue-800/40',
-      text: 'text-blue-700 dark:text-blue-400',
+      bg: 'bg-primary/5',
+      border: 'border-primary/20',
+      text: 'text-primary',
+      dot: 'bg-primary',
       label: 'מאוזן'
     };
   };
-  
+
   return (
-    <Card className="bg-card border border-violet-200/50 dark:border-violet-800/30 shadow-md overflow-hidden relative group transition-shadow duration-300 hover:shadow-lg">
-      <div className="absolute inset-0 bg-gradient-to-br from-violet-500/5 to-purple-500/10"></div>
+    <Card className="bg-card border border-primary/20 shadow-md overflow-hidden relative group transition-shadow duration-300 hover:shadow-lg">
+      {/* Very subtle brand wash — teal→amber at low opacity */}
+      <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-secondary/10"></div>
 
       <CardContent className="p-4 sm:p-6 relative z-10 space-y-4">
         {/* Header row: icon + title + total */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-violet-500/15 rounded-xl">
-              <Wallet className="h-5 w-5 text-violet-600 dark:text-violet-400" />
+            <div className="p-2 bg-primary/10 rounded-xl">
+              <Wallet className="h-5 w-5 text-primary" />
             </div>
             <div>
-              <h3 className="font-bold text-base sm:text-lg leading-tight">חלוקת תשלומים</h3>
-              <span className="text-xs text-muted-foreground">{monthLabel}</span>
+              <h3 className="type-h3 leading-tight">חלוקת תשלומים</h3>
+              <span className="type-caption">{monthLabel}</span>
             </div>
           </div>
           <div className="text-left">
-            <div className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-violet-600 to-purple-600 dark:from-violet-400 dark:to-purple-400 bg-clip-text text-transparent leading-tight">
+            {/* Brand signature gradient — teal→amber from --gradient-accent */}
+            <div className="type-num text-2xl sm:text-3xl font-extrabold bg-[image:var(--gradient-accent)] bg-clip-text text-transparent leading-tight">
               ₪{Math.round(totalExpenses).toLocaleString()}
             </div>
-            <div className="text-[10px] sm:text-xs text-muted-foreground text-left">סה״כ הוצאות</div>
+            <div className="type-caption text-left">סה״כ הוצאות</div>
           </div>
         </div>
 
@@ -201,15 +209,15 @@ export const MonthlyFoodPaymentCard: React.FC<MonthlyFoodPaymentCardProps> = ({ 
             const colors = getBalanceColor(person.balance);
             const amount = Math.round(Math.abs(person.balance));
             return (
-              <div 
-                key={person.userId} 
+              <div
+                key={person.userId}
                 className={`rounded-xl p-3 sm:p-4 border ${colors.border} ${colors.bg} transition-shadow duration-200 hover:shadow-md`}
               >
                 <div className="flex items-center gap-2 mb-2">
-                  <div className={`w-2 h-2 rounded-full ${person.balance > 0 ? 'bg-red-500' : person.balance < 0 ? 'bg-emerald-500' : 'bg-blue-500'}`}></div>
-                  <span className="font-semibold text-sm truncate">{person.userName}</span>
+                  <div className={`w-2 h-2 rounded-full ${colors.dot}`}></div>
+                  <span className="type-label truncate">{person.userName}</span>
                 </div>
-                <div className={`${colors.text} font-bold text-lg sm:text-xl leading-tight`}>
+                <div className={`${colors.text} type-num text-lg sm:text-xl font-bold leading-tight`}>
                   ₪{amount.toLocaleString()}
                 </div>
                 <div className={`${colors.text} text-[10px] sm:text-xs font-medium opacity-80 mt-0.5`}>
@@ -220,29 +228,29 @@ export const MonthlyFoodPaymentCard: React.FC<MonthlyFoodPaymentCardProps> = ({ 
           })}
         </div>
 
-        {/* Net result banner */}
+        {/* Net result banner — frosted liquid-glass with full brand gradient flow */}
         {hasNetCalc && (
-          <div className={`rounded-xl p-3 sm:p-4 text-center transition-all duration-200 ${
+          <div className={`rounded-xl p-3 sm:p-4 text-center transition-all duration-200 liquid-glass-subtle ${
             Math.abs(netDifference) < 1
-              ? 'bg-emerald-500/10 dark:bg-emerald-500/15 border border-emerald-200/60 dark:border-emerald-800/40'
-              : 'bg-amber-500/10 dark:bg-amber-500/15 border border-amber-200/60 dark:border-amber-800/40'
+              ? 'bg-gradient-to-l from-emerald-500/10 via-primary/10 to-emerald-500/10 border border-emerald-200/40 dark:border-emerald-800/30'
+              : 'bg-gradient-to-l from-amber-500/10 via-primary/10 to-emerald-500/10 border border-primary/20'
           }`}>
             {Math.abs(netDifference) < 1 ? (
               <div className="flex items-center justify-center gap-2">
                 <CheckCircle className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
-                <span className="font-bold text-emerald-700 dark:text-emerald-400 text-sm sm:text-base">החשבון מאוזן!</span>
+                <span className="type-h3 text-emerald-700 dark:text-emerald-400">החשבון מאוזן!</span>
               </div>
             ) : (
               <div className="flex items-center justify-center gap-2 flex-wrap">
-                <span className="font-bold text-sm sm:text-base text-amber-800 dark:text-amber-300">
+                <span className="type-label text-sm sm:text-base font-bold text-foreground">
                   {netDifference > 0 ? userA.userName : userB.userName}
                 </span>
-                <ArrowLeft className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0" />
-                <span className="font-bold text-sm sm:text-base bg-gradient-to-r from-amber-600 to-orange-600 dark:from-amber-400 dark:to-orange-400 bg-clip-text text-transparent">
+                <ArrowLeft className="h-4 w-4 text-primary shrink-0" />
+                <span className="type-num text-sm sm:text-base font-bold bg-[image:var(--gradient-accent)] bg-clip-text text-transparent">
                   ₪{Math.round(Math.abs(netDifference)).toLocaleString()}
                 </span>
-                <ArrowLeft className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0" />
-                <span className="font-bold text-sm sm:text-base text-amber-800 dark:text-amber-300">
+                <ArrowLeft className="h-4 w-4 text-primary shrink-0" />
+                <span className="type-label text-sm sm:text-base font-bold text-foreground">
                   {netDifference > 0 ? userB.userName : userA.userName}
                 </span>
               </div>
