@@ -196,7 +196,7 @@ const AdminDashboard: React.FC = () => {
       label: 'הגדרות מייל',
       description: 'הגדר תבניות מייל ושליחה',
       path: '/admin/email-settings',
-      color: 'from-cyan-500/20 to-cyan-600/10 text-cyan-700 dark:text-cyan-300',
+      color: 'from-teal-500/20 to-teal-600/10 text-teal-700 dark:text-teal-300',
     },
     {
       icon: Mail,

@@ -78,11 +78,11 @@ export const ChildrenExpensesChart: React.FC<ChildrenExpensesChartProps> = ({ pe
   // Summary stats grid component
   const SummaryStats = () => (
     <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3">
-      <div className="text-center p-2.5 sm:p-3.5 bg-gradient-to-br from-cyan-500/10 to-teal-500/10 rounded-xl border border-cyan-200/30 dark:border-cyan-800/30 hover:border-cyan-400/50 transition-colors duration-300">
-        <div className="p-1.5 bg-cyan-500/15 rounded-lg w-fit mx-auto mb-1.5">
-          <Wallet className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-cyan-600 dark:text-cyan-400" />
+      <div className="text-center p-2.5 sm:p-3.5 bg-gradient-to-br from-teal-500/10 to-emerald-500/10 rounded-xl border border-teal-200/30 dark:border-teal-800/30 hover:border-teal-400/50 transition-colors duration-300">
+        <div className="p-1.5 bg-teal-500/15 rounded-lg w-fit mx-auto mb-1.5">
+          <Wallet className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-teal-600 dark:text-teal-400" />
         </div>
-        <div className="text-base sm:text-xl md:text-2xl font-bold bg-gradient-to-r from-cyan-600 to-teal-600 bg-clip-text text-transparent">₪{totalAmount.toLocaleString()}</div>
+        <div className="text-base sm:text-xl md:text-2xl font-bold bg-gradient-to-r from-teal-600 to-emerald-600 bg-clip-text text-transparent">₪{totalAmount.toLocaleString()}</div>
         <div className="text-[10px] sm:text-xs text-muted-foreground mt-0.5">סה"כ הוצאות</div>
       </div>
       <div className="text-center p-2.5 sm:p-3.5 bg-gradient-to-br from-indigo-500/10 to-blue-500/10 rounded-xl border border-indigo-200/30 dark:border-indigo-800/30 hover:border-indigo-400/50 transition-colors duration-300">

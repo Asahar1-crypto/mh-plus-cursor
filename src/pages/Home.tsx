@@ -93,12 +93,12 @@ const Home = () => {
           <h2 className="text-xl sm:text-3xl font-bold text-center mb-6 sm:mb-12">למה להשתמש במחציות פלוס?</h2>
           <div ref={featuresRef} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-8 scroll-reveal">
             {[
-              { icon: Wallet, title: 'ניהול הוצאות פשוט', desc: 'הזנה מהירה של הוצאות, שיוך לילדים ספציפיים וסיווג לפי קטגוריות', color: 'from-cyan-500 to-blue-500' },
+              { icon: Wallet, title: 'ניהול הוצאות פשוט', desc: 'הזנה מהירה של הוצאות, שיוך לילדים ספציפיים וסיווג לפי קטגוריות', color: 'from-teal-600 to-teal-400' },
               { icon: Users, title: 'שיתוף ושקיפות', desc: 'שיתוף מלא בין ההורים, תיעוד כל פעולה, ושקיפות מלאה בכל ההוצאות', color: 'from-violet-500 to-purple-500' },
               { icon: BarChart3, title: 'התחשבנות פשוטה', desc: 'מעקב אחר תשלומים, חישוב חלוקת הוצאות הוגנת, דוחות התחשבנות חודשיים', color: 'from-emerald-500 to-teal-500' },
               { icon: RefreshCw, title: 'ניהול הוצאות קבועות', desc: 'הגדרת הוצאות חוזרות, תזכורות אוטומטיות, ומעקב אחר תשלומים שוטפים', color: 'from-amber-500 to-orange-500' },
               { icon: ShieldCheck, title: 'אישור הוצאות', desc: 'תהליך אישור הוצאות מובנה, מאפשר לכל הורה לאשר או לדחות הוצאות לפני התשלום', color: 'from-rose-500 to-pink-500' },
-              { icon: PieChart, title: 'סטטיסטיקות וניתוחים', desc: 'גרפים ודוחות מפורטים, ניתוח מגמות הוצאות, והתראות על חריגות', color: 'from-sky-500 to-indigo-500' },
+              { icon: PieChart, title: 'סטטיסטיקות וניתוחים', desc: 'גרפים ודוחות מפורטים, ניתוח מגמות הוצאות, והתראות על חריגות', color: 'from-amber-500 to-orange-600' },
             ].map(({ icon: Icon, title, desc, color }, i) => (
               <div
                 key={title}

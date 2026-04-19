@@ -302,8 +302,8 @@
 }
 
 @keyframes glow {
-  from { box-shadow: 0 0 20px hsl(195 100% 49% / 0.2); }
-  to { box-shadow: 0 0 30px hsl(195 100% 49% / 0.4); }
+  from { box-shadow: 0 0 20px hsl(var(--primary) / 0.2); }
+  to { box-shadow: 0 0 30px hsl(var(--primary) / 0.4); }
 }
 
 @keyframes confetti-fall {

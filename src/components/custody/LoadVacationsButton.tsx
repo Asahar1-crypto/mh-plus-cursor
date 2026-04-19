@@ -75,7 +75,7 @@ const LoadVacationsButton: React.FC<LoadVacationsButtonProps> = ({ onLoad, isLoa
         onClick={() => onLoad(selectedYear, selectedLevel)}
         disabled={isLoading}
         size="sm"
-        className="bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white shadow-md text-xs sm:text-sm h-9 flex-shrink-0"
+        className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-md hover:shadow-lg hover:shadow-primary/20 text-xs sm:text-sm h-9 flex-shrink-0"
       >
         {isLoading ? (
           <Loader2 className="ml-1.5 sm:ml-2 h-3.5 w-3.5 sm:h-4 sm:w-4 animate-spin" />
