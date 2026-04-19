@@ -3,6 +3,12 @@ import { createRoot } from 'react-dom/client';
 import App from './App.tsx';
 import './index.css';
 import { initializeApp } from './lib/capacitor-init';
+import { initSentry } from './lib/sentry';
+
+// Initialize Sentry error monitoring BEFORE anything else, so early crashes
+// (including capacitor-init failures) are captured. Fire-and-forget — init is
+// async but we don't need to block app startup on it.
+void initSentry();
 
 // Initialize Capacitor platform-specific features
 initializeApp();
