@@ -12,6 +12,7 @@ const FamilyInvitation = () => {
   const [searchParams] = useSearchParams();
   const invitationId = searchParams.get('invitationId');
   const { status, invitationDetails, errorMessage } = useInvitationDetails(invitationId);
+  const { isAuthenticated } = useAuth();
 
   if (status === 'loading') {
     return (
@@ -38,8 +39,6 @@ const FamilyInvitation = () => {
   const expiresAt = new Date(invitationDetails.expires_at);
   const now = new Date();
   const hoursLeft = Math.max(0, Math.ceil((expiresAt.getTime() - now.getTime()) / (1000 * 60 * 60)));
-
-  const { isAuthenticated } = useAuth();
 
   // Determine if invitation is phone-based or email-based
   const isPhoneInvitation = !!invitationDetails.phoneNumber;
