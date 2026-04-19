@@ -98,7 +98,14 @@ export const ExpenseCard = ({ expense, accountMembers = [], onApprove, onReject,
             </div>
           </div>
           <div className="text-right">
-            <div className="text-lg sm:text-xl font-semibold">₪{expense.amount.toFixed(2)}</div>
+            {expense.pendingChanges?.amount ? (
+              <div className="flex items-center gap-1.5 justify-end">
+                <span className="text-sm line-through text-muted-foreground">₪{Number(expense.pendingChanges.amount).toFixed(2)}</span>
+                <span className="text-lg sm:text-xl font-semibold text-orange-600">₪{expense.amount.toFixed(2)}</span>
+              </div>
+            ) : (
+              <div className="text-lg sm:text-xl font-semibold">₪{expense.amount.toFixed(2)}</div>
+            )}
             <div className="text-xs text-muted-foreground">{expense.date}</div>
           </div>
         </div>
@@ -108,6 +115,16 @@ export const ExpenseCard = ({ expense, accountMembers = [], onApprove, onReject,
             <span>← דחה</span>
             <span className="mx-3">|</span>
             <span>אשר →</span>
+          </div>
+        )}
+        {/* Template edit banner */}
+        {expense.pendingChanges && (
+          <div className="flex items-center gap-2 px-3 py-2 bg-amber-50 dark:bg-amber-950/30 border-b border-amber-200 dark:border-amber-800 text-xs sm:text-sm text-amber-800 dark:text-amber-300">
+            <span>✏️</span>
+            <span className="font-medium">שינוי בהוצאה מתחדשת ממתין לאישור</span>
+            {expense.pendingChanges.amount && (
+              <span className="mr-auto text-amber-600">₪{Number(expense.pendingChanges.amount).toFixed(2)} → ₪{expense.amount.toFixed(2)}</span>
+            )}
           </div>
         )}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between p-3 sm:p-4 bg-muted/20 gap-3 sm:gap-2">
@@ -127,11 +144,11 @@ export const ExpenseCard = ({ expense, accountMembers = [], onApprove, onReject,
               <>
                 <Button variant="ghost" size="sm" onClick={onReject} className="text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/30 h-9 sm:h-8 min-w-[70px] text-xs sm:text-sm transition-colors duration-200">
                   <XCircle className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1" />
-                  <span>דחה</span>
+                  <span>{expense.pendingChanges ? 'דחה שינוי' : 'דחה'}</span>
                 </Button>
                 <Button variant="ghost" size="sm" onClick={onApprove} className="text-green-500 hover:text-green-700 hover:bg-green-50 dark:hover:bg-green-950/30 h-9 sm:h-8 min-w-[70px] text-xs sm:text-sm transition-colors duration-200">
                   <CheckCircle className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1" />
-                  <span>אשר</span>
+                  <span>{expense.pendingChanges ? 'אשר שינוי' : 'אשר'}</span>
                 </Button>
               </>
             )}

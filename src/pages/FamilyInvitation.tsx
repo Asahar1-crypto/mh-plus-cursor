@@ -1,6 +1,7 @@
 import React from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { useInvitationDetails } from '@/hooks/useInvitationDetails';
+import { useAuth } from '@/contexts/auth';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import LoadingState from '@/components/invitation/LoadingState';
@@ -38,10 +39,16 @@ const FamilyInvitation = () => {
   const now = new Date();
   const hoursLeft = Math.max(0, Math.ceil((expiresAt.getTime() - now.getTime()) / (1000 * 60 * 60)));
 
+  const { isAuthenticated } = useAuth();
+
   // Determine if invitation is phone-based or email-based
   const isPhoneInvitation = !!invitationDetails.phoneNumber;
-  // Both phone and email invitations go to /family-register (FamilyPhoneRegister component)
-  const registerPath = `/family-register?invitationId=${invitationId}`;
+
+  // If user is already logged in, send to AcceptInvitation page (no need to register again)
+  // Otherwise, send to registration flow
+  const actionPath = isAuthenticated
+    ? `/invitation/${invitationId}`
+    : `/family-register?invitationId=${invitationId}`;
 
   return (
     <div className="container mx-auto py-6 sm:py-10 px-3 sm:px-4 flex flex-col items-center justify-center min-h-[calc(100vh-4rem)]" dir="rtl">
@@ -100,9 +107,9 @@ const FamilyInvitation = () => {
           {/* Action Buttons */}
           <div className="space-y-3">
             {hoursLeft > 0 ? (
-              <Link to={registerPath} className="w-full">
+              <Link to={actionPath} className="w-full">
                 <Button className="w-full" size="lg">
-                  הצטרף למשפחה
+                  {isAuthenticated ? 'קבל הזמנה' : 'הצטרף למשפחה'}
                 </Button>
               </Link>
             ) : (

@@ -28,15 +28,14 @@ export const ExpensesTabs: React.FC<ExpensesTabsProps> = ({
 }) => {
   const { account } = useAuth();
   const isPersonalPlan = account?.plan_slug === 'personal';
-  const hasVirtualPartner = !!account?.virtual_partner_name && !!account?.virtual_partner_id;
-  // Show pending/approval tab when it's a family plan OR solo user with virtual partner
-  const showApprovalFlow = !isPersonalPlan || hasVirtualPartner;
-
   const { data: accountMembers } = useQuery({
     queryKey: ['account-members', account?.id],
     queryFn: () => memberService.getAccountMembers(account!.id),
     enabled: !!account?.id
   });
+  const hasVirtualPartner = accountMembers?.length === 1 && !!account?.virtual_partner_name && !!account?.virtual_partner_id;
+  // Show pending/approval tab when it's a family plan OR solo user with virtual partner
+  const showApprovalFlow = !isPersonalPlan || hasVirtualPartner;
 
   return (
     <div className="bg-card border border-border/50 shadow-md hover:shadow-lg rounded-xl p-4 sm:p-6 transition-shadow duration-300 overflow-hidden animate-fade-in">

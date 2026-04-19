@@ -29,6 +29,15 @@ export interface Expense {
   recurringAutoApproved?: boolean;
   recurringApprovedBy?: string;
   recurringActive?: boolean;
+  // Template edit approval
+  pendingChanges?: {
+    amount?: number;
+    description?: string;
+    category?: string;
+    paid_by_id?: string;
+    split_equally?: boolean;
+  } | null;
+  editedById?: string;
   // CPI index linking
   isIndexLinked?: boolean;
   baseAmount?: number;

@@ -74,6 +74,9 @@ export const expenseService = {
         indexUpdateFrequency: expense.index_update_frequency as 'monthly' | 'quarterly' | 'yearly' | undefined,
         floorEnabled: expense.floor_enabled ?? true,
         lastCalculatedAmount: expense.last_calculated_amount ?? undefined,
+        // Template edit approval
+        pendingChanges: expense.pending_changes ?? null,
+        editedById: expense.edited_by_id ?? undefined,
       };
     });
 
@@ -112,10 +115,19 @@ export const expenseService = {
     // Auto-approve if:
     // 1. User is adding expense for themselves, OR
     // 2. Account is on Personal plan (single user, no partner to approve), OR
-    // 3. Account has a virtual partner (no real second member to approve)
+    // 3. Account has a virtual partner AND no real second member
     const isPersonalPlan = account.plan_slug === 'personal';
-    const hasVirtualPartner = !!account.virtual_partner_name && !!account.virtual_partner_id;
-    const isAutoApproved = isPersonalPlan || user.id === expense.paidById || hasVirtualPartner;
+
+    // Check if the account has a virtual partner with no real second member
+    let hasOnlyVirtualPartner = false;
+    if (account.virtual_partner_name && account.virtual_partner_id) {
+      const { count } = await supabase
+        .from('account_members')
+        .select('*', { count: 'exact', head: true })
+        .eq('account_id', account.id);
+      hasOnlyVirtualPartner = (count ?? 0) < 2;
+    }
+    const isAutoApproved = isPersonalPlan || user.id === expense.paidById || hasOnlyVirtualPartner;
     
     const expenseData = {
       amount: expense.amount,
@@ -204,17 +216,135 @@ export const expenseService = {
     }
   },
 
-  async updateExpenseStatus(user: User, account: Account, expenseId: string, status: 'pending' | 'approved' | 'rejected' | 'paid'): Promise<void> {
+  async updateRecurringTemplate(
+    user: User,
+    account: Account,
+    templateId: string,
+    updates: Partial<{
+      amount: number;
+      description: string;
+      category: string;
+      paidById: string;
+      splitEqually: boolean;
+      frequency: string;
+      hasEndDate: boolean;
+      endDate: string | null;
+      isIndexLinked: boolean;
+      baseAmount: number | null;
+      baseIndexPeriod: string | null;
+      indexUpdateFrequency: string | null;
+      floorEnabled: boolean | null;
+    }>
+  ): Promise<{ isPending: boolean }> {
+    // 1. Fetch current template values
+    const { data: current, error: fetchError } = await supabase
+      .from('expenses')
+      .select('amount, description, category, paid_by_id, split_equally, pending_changes, status')
+      .eq('id', templateId)
+      .eq('account_id', account.id)
+      .single();
+
+    if (fetchError || !current) {
+      console.error('Error fetching template:', fetchError);
+      throw fetchError || new Error('Template not found');
+    }
+
+    // Check if this is a personal plan or self-expense (no approval needed)
+    const isPersonalPlan = account.plan_slug === 'personal';
+    let hasOnlyVirtualPartner = false;
+    if (account.virtual_partner_name && account.virtual_partner_id) {
+      const { count } = await supabase
+        .from('account_members')
+        .select('*', { count: 'exact', head: true })
+        .eq('account_id', account.id);
+      hasOnlyVirtualPartner = (count ?? 0) < 2;
+    }
+    const paidById = updates.paidById ?? current.paid_by_id;
+    const needsApproval = !isPersonalPlan && !hasOnlyVirtualPartner && user.id !== paidById;
+
+    // 2. Build pending_changes from current (original) values
+    // If already has pending_changes (double edit), preserve the ORIGINAL values
+    const pendingChanges: Record<string, unknown> = current.pending_changes ?? {};
+
+    if (updates.amount !== undefined && !('amount' in pendingChanges)) {
+      pendingChanges.amount = current.amount;
+    }
+    if (updates.description !== undefined && !('description' in pendingChanges)) {
+      pendingChanges.description = current.description;
+    }
+    if (updates.category !== undefined && !('category' in pendingChanges)) {
+      pendingChanges.category = current.category;
+    }
+    if (updates.paidById !== undefined && !('paid_by_id' in pendingChanges)) {
+      pendingChanges.paid_by_id = current.paid_by_id;
+    }
+    if (updates.splitEqually !== undefined && !('split_equally' in pendingChanges)) {
+      pendingChanges.split_equally = current.split_equally;
+    }
+
+    // 3. Build update data
+    const updateData: Record<string, unknown> = {
+      updated_at: new Date().toISOString(),
+    };
+    if (updates.amount !== undefined) updateData.amount = updates.amount;
+    if (updates.description !== undefined) updateData.description = updates.description;
+    if (updates.category !== undefined) updateData.category = updates.category;
+    if (updates.paidById !== undefined) updateData.paid_by_id = updates.paidById;
+    if (updates.splitEqually !== undefined) updateData.split_equally = updates.splitEqually;
+    if (updates.frequency !== undefined) updateData.frequency = updates.frequency;
+    if (updates.hasEndDate !== undefined) updateData.has_end_date = updates.hasEndDate;
+    if (updates.endDate !== undefined) updateData.end_date = updates.endDate;
+    if (updates.isIndexLinked !== undefined) updateData.is_index_linked = updates.isIndexLinked;
+    if (updates.baseAmount !== undefined) updateData.base_amount = updates.baseAmount;
+    if (updates.baseIndexPeriod !== undefined) updateData.base_index_period = updates.baseIndexPeriod;
+    if (updates.indexUpdateFrequency !== undefined) updateData.index_update_frequency = updates.indexUpdateFrequency;
+    if (updates.floorEnabled !== undefined) updateData.floor_enabled = updates.floorEnabled;
+
+    if (needsApproval && current.status === 'approved') {
+      // Template edit requiring approval
+      updateData.pending_changes = pendingChanges;
+      updateData.edited_by_id = user.id;
+      updateData.status = 'pending';
+      updateData.approved_by = null;
+      updateData.approved_at = null;
+    }
+    // If template is already pending or doesn't need approval, just update fields directly
+
+    const { error } = await supabase
+      .from('expenses')
+      .update(updateData)
+      .eq('id', templateId)
+      .eq('account_id', account.id);
+
+    if (error) {
+      console.error('Error updating recurring template:', error);
+      throw error;
+    }
+
+    return { isPending: needsApproval && current.status === 'approved' };
+  },
+
+  async updateExpenseStatus(user: User, account: Account, expenseId: string, status: 'pending' | 'approved' | 'rejected' | 'paid'): Promise<{ hadPendingChanges: boolean }> {
     // Updating expense status
-    
+
+    // Check if expense has pending_changes before updating (for rollback detection)
+    const { data: before } = await supabase
+      .from('expenses')
+      .select('pending_changes')
+      .eq('id', expenseId)
+      .eq('account_id', account.id)
+      .single();
+
+    const hadPendingChanges = !!before?.pending_changes;
+
     const updateData: any = { status };
-    
+
     // Add approved by and approved at for approved status
     if (status === 'approved') {
       updateData.approved_by = user.id;
       updateData.approved_at = new Date().toISOString();
     }
-    
+
     const { error } = await supabase
       .from('expenses')
       .update(updateData)
@@ -225,6 +355,8 @@ export const expenseService = {
       console.error('Error updating expense status:', error);
       throw error;
     }
+
+    return { hadPendingChanges };
   },
 
   async approveAllRecurring(user: User, account: Account, expenseId: string): Promise<void> {

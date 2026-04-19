@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { OnboardingProgress } from './OnboardingProgress';
@@ -32,18 +32,32 @@ const STEP_RECURRING = 3;
 const STEP_INVITE = 5;
 
 const SESSION_DISMISSED_KEY = 'onboarding_dismissed';
+const SESSION_STEP_KEY = 'onboarding_current_step';
 
 export const OnboardingModal: React.FC = () => {
   const { user, profile, refreshProfile } = useAuth();
   const [searchParams] = useSearchParams();
   const [isOpen, setIsOpen] = useState(false);
-  const [currentStep, setCurrentStep] = useState(0);
+  // Restore step from sessionStorage so remounts don't reset progress
+  const [currentStep, setCurrentStepRaw] = useState(() => {
+    const saved = sessionStorage.getItem(SESSION_STEP_KEY);
+    return saved ? parseInt(saved, 10) : 0;
+  });
   const [isReady, setIsReady] = useState(false);
   // When the user picks "manage alone" in VirtualPartnerStep, skip InviteUserStep
   const [skipInviteStep, setSkipInviteStep] = useState(false);
   // Track which steps were completed (user clicked "next") vs skipped
   const [completedSteps, setCompletedSteps] = useState<Set<number>>(new Set());
   const [skippedSteps, setSkippedSteps] = useState<Set<number>>(new Set());
+
+  // Wrap setCurrentStep to also persist to sessionStorage
+  const setCurrentStep = useCallback((valueOrUpdater: number | ((prev: number) => number)) => {
+    setCurrentStepRaw(prev => {
+      const next = typeof valueOrUpdater === 'function' ? valueOrUpdater(prev) : valueOrUpdater;
+      sessionStorage.setItem(SESSION_STEP_KEY, String(next));
+      return next;
+    });
+  }, []);
 
   // ?test-onboarding=1 – הצגת אונבורדינג לבדיקה (גם אם הושלם)
   const forceTestOnboarding = searchParams.get('test-onboarding') === '1';
@@ -112,6 +126,7 @@ export const OnboardingModal: React.FC = () => {
   const handleClose = () => {
     // Just dismiss the modal for this session — don't update DB
     sessionStorage.setItem(SESSION_DISMISSED_KEY, '1');
+    sessionStorage.removeItem(SESSION_STEP_KEY);
     setIsOpen(false);
   };
 
@@ -129,6 +144,7 @@ export const OnboardingModal: React.FC = () => {
       // Refresh profile to update the state
       await refreshProfile();
 
+      sessionStorage.removeItem(SESSION_STEP_KEY);
       setIsOpen(false);
       toast.success('ההגדרות הראשוניות הושלמו בהצלחה!');
     } catch (error) {

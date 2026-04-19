@@ -101,10 +101,10 @@ serve(async (req) => {
 
     console.log(`📋 Account: "${account.name}"`);
 
-    // Get expense details
+    // Get expense details (including pending_changes for template edits)
     const { data: expense, error: expenseError } = await supabase
       .from('expenses')
-      .select('id, amount, description, paid_by_id, status, created_by_id')
+      .select('id, amount, description, paid_by_id, status, created_by_id, pending_changes, edited_by_id, is_recurring, recurring_parent_id')
       .eq('id', expense_id)
       .single();
 
@@ -118,18 +118,23 @@ serve(async (req) => {
 
     console.log(`📋 Expense: status=${expense.status}, amount=${expense.amount}, paid_by=${expense.paid_by_id}, created_by=${expense.created_by_id}`);
 
+    // Determine if this is a template edit notification
+    const isTemplateEdit = !!expense.pending_changes && !!expense.edited_by_id;
+    const notificationType = isTemplateEdit ? 'expense_template_edit' : 'expense_pending_approval';
+
     // Idempotency check: skip if a notification for this expense was already sent
+    // For template edits, use a different notification_type so re-notifications work
     const { data: existingNotification } = await supabase
       .from('notification_logs')
       .select('id')
-      .eq('notification_type', 'expense_pending_approval')
+      .eq('notification_type', notificationType)
       .eq('status', 'sent')
       .eq('data->>expenseId', expense_id)
       .limit(1)
       .maybeSingle();
 
     if (existingNotification) {
-      console.log(`🔁 Notification already sent for expense ${expense_id}, skipping`);
+      console.log(`🔁 Notification already sent for expense ${expense_id} (${notificationType}), skipping`);
       return new Response(
         JSON.stringify({ skipped: true, reason: 'already_notified' }),
         { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -146,14 +151,14 @@ serve(async (req) => {
     }
 
     // Find the person who should be notified:
-    // The expense was created by one person but paid_by is someone else.
-    // We want to notify the person who DIDN'T create the expense - i.e., the one who needs to approve.
-    // In the current logic, paid_by_id is the person who "owes" - so we notify all members except the creator.
+    // For template edits: notify everyone except the editor (edited_by_id)
+    // For new expenses: notify everyone except the creator (created_by_id)
+    const initiatorId = isTemplateEdit ? expense.edited_by_id : expense.created_by_id;
     const { data: members, error: membersError } = await supabase
       .from('account_members')
       .select('user_id')
       .eq('account_id', account_id)
-      .neq('user_id', expense.created_by_id);
+      .neq('user_id', initiatorId);
 
     if (membersError || !members || members.length === 0) {
       console.log('⚠️ No other members to notify');
@@ -163,23 +168,38 @@ serve(async (req) => {
       );
     }
 
-    // Get the creator's name for the notification message
-    const { data: creatorProfile } = await supabase
+    // Get the initiator's name for the notification message
+    const { data: initiatorProfile } = await supabase
       .from('profiles')
       .select('name')
-      .eq('id', expense.created_by_id)
+      .eq('id', initiatorId)
       .single();
 
-    const creatorName = creatorProfile?.name || 'משתמש';
+    const creatorName = initiatorProfile?.name || 'משתמש';
     const amount = expense.amount.toLocaleString('he-IL');
     const description = expense.description || 'הוצאה';
     const appUrl = Deno.env.get('APP_URL') || 'https://mhplus.online';
+
+    // Build change summary for template edits
+    let editSummary = '';
+    if (isTemplateEdit && expense.pending_changes) {
+      const changes: string[] = [];
+      if (expense.pending_changes.amount !== undefined) {
+        const oldAmount = Number(expense.pending_changes.amount).toLocaleString('he-IL');
+        changes.push(`סכום: ₪${oldAmount} → ₪${amount}`);
+      }
+      if (expense.pending_changes.description !== undefined) {
+        changes.push(`תיאור: ${expense.pending_changes.description} → ${description}`);
+      }
+      editSummary = changes.join(', ');
+    }
 
     // HTML-escaped versions of user-provided data for email templates
     const safeCreatorName = escapeHtml(creatorName);
     const safeAmount = escapeHtml(amount);
     const safeDescription = escapeHtml(description);
     const safeAccountName = escapeHtml(account.name);
+    const safeEditSummary = escapeHtml(editSummary);
 
     // ============================================================
     // Process ALL recipients
@@ -232,9 +252,11 @@ serve(async (req) => {
         const pushPayload = {
           userId: recipientUserId,
           accountId: account_id,
-          type: 'expense_pending_approval',
-          title: `הוצאה חדשה לאישור`,
-          body: `${creatorName} הוסיף/ה הוצאה: ${amount} ₪ - ${description}`,
+          type: notificationType,
+          title: isTemplateEdit ? `עדכון הוצאה מתחדשת לאישור` : `הוצאה חדשה לאישור`,
+          body: isTemplateEdit
+            ? `${creatorName} עדכן/ה הוצאה מתחדשת: ${editSummary || description}`
+            : `${creatorName} הוסיף/ה הוצאה: ${amount} ₪ - ${description}`,
           data: { expenseId: expense_id },
           actionUrl: appUrl,
         };
@@ -297,7 +319,9 @@ serve(async (req) => {
             console.error('📱 Vonage not configured');
             smsResult = { success: false, error: 'SMS service not configured' };
           } else {
-            const smsMessage = `היי ${recipientName},\n${creatorName} הוסיף/ה הוצאה חדשה לאישור: ${amount} ₪\n${description}\nלאישור: ${appUrl}`;
+            const smsMessage = isTemplateEdit
+              ? `היי ${recipientName},\n${creatorName} עדכן/ה הוצאה מתחדשת: ${editSummary || description}\nלאישור: ${appUrl}`
+              : `היי ${recipientName},\n${creatorName} הוסיף/ה הוצאה חדשה לאישור: ${amount} ₪\n${description}\nלאישור: ${appUrl}`;
 
             console.log(`📱 Sending SMS to ${recipientPhone}...`);
             const cleanPhone = recipientPhone.replace(/^\+/, '');
@@ -413,14 +437,15 @@ serve(async (req) => {
 <table role="presentation" cellpadding="0" cellspacing="0" style="margin: 0 auto 28px;">
 <tr>
 <td style="background-color: #FFF3E0; border-radius: 50px; padding: 8px 20px;">
-<span style="font-size: 15px; font-weight: 600; color: #E65100; font-family: 'Heebo', Arial, sans-serif;">&#x1F514; הוצאה חדשה לאישור</span>
+<span style="font-size: 15px; font-weight: 600; color: #E65100; font-family: 'Heebo', Arial, sans-serif;">&#x1F514; ${isTemplateEdit ? 'עדכון הוצאה מתחדשת לאישור' : 'הוצאה חדשה לאישור'}</span>
 </td>
 </tr>
 </table>
 
 <!-- Greeting -->
 <p style="font-size: 17px; color: #2d3748; margin: 0 0 8px; font-family: 'Heebo', Arial, sans-serif;">היי ${safeRecipientName},</p>
-<p style="font-size: 15px; color: #4a5568; margin: 0 0 28px; line-height: 1.6; font-family: 'Heebo', Arial, sans-serif;"><strong>${safeCreatorName}</strong> הוסיף/ה הוצאה חדשה הדורשת את אישורך:</p>
+<p style="font-size: 15px; color: #4a5568; margin: 0 0 28px; line-height: 1.6; font-family: 'Heebo', Arial, sans-serif;"><strong>${safeCreatorName}</strong> ${isTemplateEdit ? 'עדכן/ה הוצאה מתחדשת הדורשת את אישורך' : 'הוסיף/ה הוצאה חדשה הדורשת את אישורך'}:</p>
+${isTemplateEdit && safeEditSummary ? `<p style="font-size: 14px; color: #E65100; margin: 0 0 16px; font-family: 'Heebo', Arial, sans-serif;">&#x1F4DD; ${safeEditSummary}</p>` : ''}
 
 <!-- Expense details card -->
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color: #f8fafc; border-radius: 16px; border: 1px solid #e2e8f0; overflow: hidden; margin-bottom: 32px;">
@@ -502,7 +527,9 @@ serve(async (req) => {
             const emailResponse = await supabase.functions.invoke('send-email', {
               body: {
                 to: recipientEmail,
-                subject: `הוצאה חדשה לאישור: ${amount} ₪ - ${description}`,
+                subject: isTemplateEdit
+                  ? `עדכון הוצאה מתחדשת: ${editSummary || description}`
+                  : `הוצאה חדשה לאישור: ${amount} ₪ - ${description}`,
                 html: emailHtml,
               },
             });
@@ -529,10 +556,14 @@ serve(async (req) => {
           await supabase.from('notification_logs').insert({
             user_id: recipientUserId,
             account_id: account_id,
-            notification_type: 'expense_pending_approval',
+            notification_type: notificationType,
             channel: 'email',
-            title: `הוצאה חדשה לאישור: ${amount} ₪ - ${description}`,
-            body: `${creatorName} הוסיף/ה הוצאה חדשה הדורשת את אישורך`,
+            title: isTemplateEdit
+              ? `עדכון הוצאה מתחדשת: ${editSummary || description}`
+              : `הוצאה חדשה לאישור: ${amount} ₪ - ${description}`,
+            body: isTemplateEdit
+              ? `${creatorName} עדכן/ה הוצאה מתחדשת הדורשת את אישורך`
+              : `${creatorName} הוסיף/ה הוצאה חדשה הדורשת את אישורך`,
             data: { expenseId: expense_id },
             status: emailResult.success ? 'sent' : 'failed',
             error_message: emailResult.error || null,

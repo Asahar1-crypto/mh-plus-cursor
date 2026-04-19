@@ -51,10 +51,13 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({ requiresAuth = false }) => {
     
     // Allow access to other auth pages that handle their own tokens
     // Include /register to allow celebration modal to show after successful registration
-    const allowedPages = ['/verify-email', '/register', '/pricing', '/choose-plan'];
+    const allowedPages = ['/verify-email', '/register', '/pricing', '/choose-plan', '/family-invitation'];
+
+    // Also allow /invitation/:id paths
+    const isInvitationPage = currentPath.startsWith('/invitation/') || currentPath === '/accept-invitation';
     const hasOtherAuthTokens = searchParams.has('access_token');
     
-    if (allowedPages.includes(currentPath) || hasOtherAuthTokens) {
+    if (allowedPages.includes(currentPath) || isInvitationPage || hasOtherAuthTokens) {
       // Allow access to these pages even if authenticated
     } else {
       return <Navigate to="/dashboard" />;

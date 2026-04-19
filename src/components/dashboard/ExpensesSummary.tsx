@@ -60,7 +60,7 @@ export const ExpensesSummary: React.FC<ExpensesSummaryProps> = ({
   }, [pendingExpenses, approvedExpenses, paidExpenses, accountMembers]);
 
   const isPersonalPlan = account?.plan_slug === 'personal';
-  const hasVirtualPartner = !!account?.virtual_partner_name && !!account?.virtual_partner_id;
+  const hasVirtualPartner = (rawAccountMembers?.length ?? 0) < 2 && !!account?.virtual_partner_name && !!account?.virtual_partner_id;
   // Show settlement UI when it's a family plan OR solo user with virtual partner
   const showSettlementUI = !isPersonalPlan || hasVirtualPartner;
 

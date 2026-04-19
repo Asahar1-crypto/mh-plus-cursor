@@ -3,6 +3,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Routes, Route, Navigate } from "react-router-dom";
+import { Capacitor } from "@capacitor/core";
 import { AppRouter } from "@/lib/capacitor-router";
 import { AuthProvider } from "@/contexts/auth";
 import { ExpenseProvider } from "@/contexts/ExpenseContext";
@@ -80,7 +81,14 @@ const App = () => (
             <Routes>
               {/* Public routes */}
               <Route element={<AuthLayout />}>
-                <Route path="/" element={<Home />} />
+                <Route
+                  path="/"
+                  element={
+                    Capacitor.isNativePlatform()
+                      ? <Navigate to="/login" replace />
+                      : <Home />
+                  }
+                />
                 {/* Add explicit redirect for /index to prevent issues */}
                 <Route path="/index" element={<Navigate to="/" replace />} />
               </Route>

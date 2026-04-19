@@ -19,6 +19,7 @@ import { useAuth } from '@/contexts/auth';
 import { useExpense } from '@/contexts/ExpenseContext';
 import { memberService } from '@/contexts/auth/services/account/memberService';
 import { supabase } from '@/integrations/supabase/client';
+import { expenseService } from '@/integrations/supabase/expenseService';
 
 const editRecurringExpenseSchema = z.object({
   amount: z.number().min(0.01, 'הסכום חייב להיות גדול מ-0'),
@@ -177,30 +178,23 @@ export const EditRecurringExpenseModal: React.FC<EditRecurringExpenseModalProps>
       }
 
       const isIndexLinked = indexLinkingAvailable && data.frequency === 'monthly' && data.isIndexLinked === true;
-      const updateData: any = {
+
+      // Use the new updateRecurringTemplate service which handles pending_changes & approval
+      const result = await expenseService.updateRecurringTemplate(user, account, expense.id, {
         amount: data.amount,
         description: data.description,
         category: data.category,
-        paid_by_id: paidById,
-        split_equally: splitEqually,
+        paidById: paidById,
+        splitEqually: splitEqually,
         frequency: data.frequency,
-        has_end_date: data.hasEndDate,
-        end_date: data.hasEndDate ? data.endDate : null,
-        updated_at: new Date().toISOString(),
-        is_index_linked: isIndexLinked,
-        base_amount: isIndexLinked ? data.amount : null,
-        base_index_period: isIndexLinked ? data.baseIndexPeriod || null : null,
-        index_update_frequency: isIndexLinked ? (data.indexUpdateFrequency || 'monthly') : null,
-        floor_enabled: isIndexLinked ? (data.floorEnabled ?? true) : null,
-      };
-
-      const { error } = await supabase
-        .from('expenses')
-        .update(updateData)
-        .eq('id', expense.id)
-        .eq('account_id', account.id);
-
-      if (error) throw error;
+        hasEndDate: data.hasEndDate,
+        endDate: data.hasEndDate ? data.endDate : null,
+        isIndexLinked: isIndexLinked,
+        baseAmount: isIndexLinked ? data.amount : null,
+        baseIndexPeriod: isIndexLinked ? data.baseIndexPeriod || null : null,
+        indexUpdateFrequency: isIndexLinked ? (data.indexUpdateFrequency || 'monthly') : null,
+        floorEnabled: isIndexLinked ? (data.floorEnabled ?? true) : null,
+      });
 
       // Update child association using expense_children table
       // First, delete existing associations
@@ -214,13 +208,21 @@ export const EditRecurringExpenseModal: React.FC<EditRecurringExpenseModalProps>
         const { error: childError } = await supabase
           .from('expense_children')
           .insert({ expense_id: expense.id, child_id: data.childId });
-        
+
         if (childError) {
           console.error('Error adding child association:', childError);
         }
       }
 
-      toast.success('הוצאה חוזרת עודכנה בהצלחה - השינויים יחולו על חודשים עתידיים בלבד');
+      // Send notification if the edit requires approval
+      if (result.isPending) {
+        supabase.functions.invoke('notify-expense-approval', {
+          body: { expense_id: expense.id, account_id: account.id }
+        }).catch(err => console.error('Failed to send edit notification:', err));
+        toast.success('ההוצאה עודכנה ונשלחה לאישור השותף/ה');
+      } else {
+        toast.success('הוצאה חוזרת עודכנה בהצלחה');
+      }
       await onSuccess();
       onClose();
     } catch (error) {

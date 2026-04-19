@@ -220,12 +220,14 @@ export const useExpenseActions = (
 
     setIsSubmitting(true);
     try {
-      await expenseService.updateExpenseStatus(user, account, id, status);
-      await refreshData(); // Refresh data to show updated status
+      const result = await expenseService.updateExpenseStatus(user, account, id, status);
+      await refreshData(); // Refresh data to show updated status (trigger may have changed values)
 
       // Fire-and-forget notification for status changes
       if (['approved', 'rejected', 'paid'].includes(status)) {
-        sendStatusChangeNotification(id, account.id, status, user.id).catch(() => {});
+        // For template edit rejections, send 'edit_rejected' notification type
+        const notifyStatus = (status === 'rejected' && result.hadPendingChanges) ? 'edit_rejected' : status;
+        sendStatusChangeNotification(id, account.id, notifyStatus, user.id).catch(() => {});
       }
 
       const expense = expenses.find(e => e.id === id);
@@ -246,12 +248,18 @@ export const useExpenseActions = (
           metadata: { expense_id: id, status },
         });
       }
-      const statusToastText: Record<string, string> = {
-        approved: 'ההוצאה אושרה בהצלחה',
-        rejected: 'ההוצאה נדחתה בהצלחה',
-        paid: 'ההוצאה סומנה כשולמה בהצלחה',
-      };
-      toast.success(statusToastText[status] ?? 'ההוצאה עודכנה בהצלחה');
+
+      // Show appropriate toast based on whether this was a template edit rejection (rollback)
+      if (status === 'rejected' && result.hadPendingChanges) {
+        toast.success('השינוי נדחה, הסכום הקודם נשמר');
+      } else {
+        const statusToastText: Record<string, string> = {
+          approved: 'ההוצאה אושרה בהצלחה',
+          rejected: 'ההוצאה נדחתה בהצלחה',
+          paid: 'ההוצאה סומנה כשולמה בהצלחה',
+        };
+        toast.success(statusToastText[status] ?? 'ההוצאה עודכנה בהצלחה');
+      }
     } catch (error) {
       // Revert optimistic update on failure
       setExpenses(previousExpenses);
@@ -272,26 +280,29 @@ export const useExpenseActions = (
     
     // Personal plan: single user, allow self-approval
     const isPersonalPlan = account?.plan_slug === 'personal';
-    if (!isPersonalPlan && user && expenseToApprove.createdBy === user.id) {
-      toast.error('לא ניתן לאשר הוצאה שהוספת בעצמך');
+    // Check against editedById (for template edits) or createdBy (for new expenses)
+    const initiator = expenseToApprove.editedById || expenseToApprove.createdBy;
+    if (!isPersonalPlan && user && initiator === user.id) {
+      toast.error('לא ניתן לאשר הוצאה שהוספת או ערכת בעצמך');
       return;
     }
-    
+
     await updateExpenseStatus(id, 'approved');
   };
 
   const approveAllRecurring = async (id: string): Promise<void> => {
     const expenseToApprove = expenses.find(expense => expense.id === id);
-      
+
     if (!expenseToApprove) {
       toast.error('ההוצאה לא נמצאה');
       return;
     }
-    
+
     // Personal plan: single user, allow self-approval
     const isPersonalPlan = account?.plan_slug === 'personal';
-    if (!isPersonalPlan && user && expenseToApprove.createdBy === user.id) {
-      toast.error('לא ניתן לאשר הוצאה שהוספת בעצמך');
+    const initiatorR = expenseToApprove.editedById || expenseToApprove.createdBy;
+    if (!isPersonalPlan && user && initiatorR === user.id) {
+      toast.error('לא ניתן לאשר הוצאה שהוספת או ערכת בעצמך');
       return;
     }
 

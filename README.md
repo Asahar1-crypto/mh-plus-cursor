@@ -1,73 +1,82 @@
-# Welcome to your Lovable project
+# מחציות פלוס – Family Finance Plus
 
-## Project info
+אפליקציית ניהול הוצאות משפחתיות לזוגות הורים, עם תמיכה בהוצאות משותפות, הוצאות מתחדשות ומערכת אישורים.
 
-**URL**: https://lovable.dev/projects/e01ecbfb-5c0d-44e9-b818-1374636e60ff
+## תכונות עיקריות
 
-## How can I edit this code?
+- **הוצאות משותפות** – כל הוצאה דורשת אישור שני ההורים לפני תשלום
+- **הוצאות מתחדשות** – תשלומים חודשיים/שבועיים/שנתיים שמיוצרים אוטומטית לפי יום חיוב חשבון
+- **עריכת תבנית עם אישור** – שינוי סכום בהוצאה מתחדשת חוזר לסטטוס "ממתין לאישור" ומשמר את הסכום הישן עד לאישור
+- **התראות Push / SMS / Email** – שליחת התראה לשותף/ה בכל בקשת אישור
+- **RTL / עברית** – ממשק מלא בעברית, כיוון RTL
+- **דשבורד** – סיכום חודשי, הוצאות ממתינות, מאושרות, נדחות ושולמו
+- **דוחות** – גרפים ופילוח לפי קטגוריה, ילד, חודש
 
-There are several ways of editing your application.
+## טכנולוגיות
 
-**Use Lovable**
+| שכבה | טכנולוגיה |
+|------|-----------|
+| Frontend | React 18 + TypeScript + Vite |
+| UI | Tailwind CSS + shadcn/ui |
+| State | TanStack Query v5 + Context API |
+| Backend | Supabase (PostgreSQL + Auth + Edge Functions) |
+| Cron | Supabase Cron (`generate-monthly-recurring-expenses`) |
+| Push | Web Push + FCM (Android) + APNs (iOS) |
+| SMS | Twilio (fallback כאשר push נכשל) |
+| Routing | react-router-dom v6 |
+| Forms | react-hook-form + zod |
+| Tests | Vitest |
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/e01ecbfb-5c0d-44e9-b818-1374636e60ff) and start prompting.
+## התקנה מקומית
 
-Changes made via Lovable will be committed automatically to this repo.
-
-**Use your preferred IDE**
-
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
+```bash
+# 1. שכפל את הריפו
 git clone <YOUR_GIT_URL>
+cd family-finance-plus
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+# 2. התקן תלויות
+npm install
 
-# Step 3: Install the necessary dependencies.
-npm i
+# 3. הגדר משתני סביבה
+cp .env.example .env.local
+# ערוך את .env.local עם מפתחות Supabase שלך
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+# 4. הרץ שרת פיתוח
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+## בדיקות
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+```bash
+npm test           # הרץ את כל הבדיקות
+npm run test:watch # מצב watch
+```
 
-**Use GitHub Codespaces**
+## ארכיטקטורה
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+```
+src/
+  pages/           # נתיבי דפים (Dashboard, Reports, Settings…)
+  components/
+    dashboard/     # ExpenseCard, ExpensesTabs, ExpensesSummary…
+    expenses/      # EditRecurringExpenseModal, AddExpenseDialog…
+    ui/            # shadcn components
+  contexts/
+    expense/       # ExpenseContext – מאגר המידע המרכזי
+  hooks/           # useSwipeAction, useExpenseFilters…
+  integrations/
+    supabase/      # expenseService, authService…
 
-## What technologies are used for this project?
+supabase/
+  functions/       # Edge Functions (notify-expense-approval…)
+  migrations/      # כל מיגרציות DB לפי סדר כרונולוגי
+```
 
-This project is built with:
+## הפצה
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+האפליקציה מופצת ב-Vercel (Frontend) + Supabase (Backend).
 
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/e01ecbfb-5c0d-44e9-b818-1374636e60ff) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+```bash
+# Edge Functions
+supabase functions deploy notify-expense-approval
+```
