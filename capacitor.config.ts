@@ -38,12 +38,8 @@ const config: CapacitorConfig = {
   },
 
   android: {
-    allowMixedContent: true,
+    allowMixedContent: false,
     backgroundColor: '#0F172A',
-    buildOptions: {
-      keystorePath: undefined,
-      keystoreAlias: undefined,
-    },
   },
 
   ios: {

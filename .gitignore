@@ -46,6 +46,8 @@ ios/App/build/
 ios/DerivedData/
 *.keystore
 *.jks
+android/keystore.properties
+android/app/release.keystore
 
 # Supabase cache
 supabase/.temp/
