@@ -5,44 +5,49 @@
 
 @layer base {
   :root {
-    /* שמירה על הצבעים הקיימים אבל עם שיפורים מודרניים */
-    --background: 200 100% 99%;
-    --foreground: 195 70% 7%;
+    /* ============================================================
+       Palette: Deep Teal + Amber
+       Primary — deep teal (hsl 185 80% 32%, ≈ #0F8F95)
+       Secondary — warm amber (hsl 38 92% 55%, ≈ #F5A623)
+       Status quartet (amber/green/blue/red) stays per design spec.
+       ============================================================ */
+    --background: 200 60% 99%;
+    --foreground: 190 60% 8%;
     --card: 0 0% 100%;
-    --card-foreground: 195 70% 7%;
+    --card-foreground: 190 60% 8%;
     --popover: 0 0% 100%;
-    --popover-foreground: 195 70% 7%;
-    --primary: 195 100% 49%;
+    --popover-foreground: 190 60% 8%;
+    --primary: 185 80% 32%;           /* deep teal */
     --primary-foreground: 0 0% 100%;
-    --primary-glow: 195 100% 65%;
-    --secondary: 180 70% 55%;
-    --secondary-foreground: 195 70% 7%;
-    --muted: 195 10% 92%;
-    --muted-foreground: 195 10% 40%;
-    --accent: 180 70% 94%;
-    --accent-foreground: 195 70% 15%;
+    --primary-glow: 185 65% 50%;      /* lighter teal halo */
+    --secondary: 38 92% 55%;          /* amber */
+    --secondary-foreground: 30 50% 12%;
+    --muted: 185 10% 92%;
+    --muted-foreground: 185 10% 40%;
+    --accent: 185 55% 94%;            /* pale teal for hover */
+    --accent-foreground: 185 70% 15%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 100%;
-    --border: 195 20% 85%;
-    --input: 195 20% 85%;
-    --ring: 195 100% 49%;
+    --border: 185 20% 85%;
+    --input: 185 20% 85%;
+    --ring: 185 80% 32%;
     --radius: 1rem;
 
-    /* גרדיאנטים מודרניים - עיצוב חדשני */
+    /* Decorative gradients — accent is the brand signature (teal→amber) */
     --gradient-primary: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     --gradient-secondary: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-    --gradient-accent: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-    --gradient-background: linear-gradient(135deg, hsl(200 100% 99%), hsl(195 50% 97%));
+    --gradient-accent: linear-gradient(135deg, hsl(185 80% 32%) 0%, hsl(38 92% 55%) 100%);
+    --gradient-background: linear-gradient(135deg, hsl(200 60% 99%), hsl(185 40% 97%));
     --gradient-glass: linear-gradient(135deg, rgba(255,255,255,0.25), rgba(255,255,255,0.1));
-    
-    /* צללים מודרניים */
+
+    /* Shadows */
     --shadow-soft: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
     --shadow-medium: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
     --shadow-large: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
-    --shadow-glow: 0 0 40px hsl(195 100% 49% / 0.3);
-    --shadow-card: 0 8px 32px rgba(14, 165, 233, 0.1);
-    
-    /* אפקטי זכוכית מתקדמים */
+    --shadow-glow: 0 0 40px hsl(185 80% 32% / 0.3);
+    --shadow-card: 0 8px 32px rgba(15, 143, 149, 0.10);
+
+    /* Glass */
     --glass-bg: rgba(255, 255, 255, 0.1);
     --glass-border: rgba(255, 255, 255, 0.2);
     --glass-backdrop: blur(20px);
@@ -53,44 +58,96 @@
     --liquid-glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.8);
     --liquid-glass-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.9), inset 0 -1px 0 rgba(255, 255, 255, 0.1);
 
-    /* סיידבאר */
-    --sidebar-background: 200 100% 99%;
-    --sidebar-foreground: 195 40% 30%;
-    --sidebar-primary: 195 100% 49%;
+    /* Sidebar */
+    --sidebar-background: 200 60% 99%;
+    --sidebar-foreground: 185 40% 30%;
+    --sidebar-primary: 185 80% 32%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 195 30% 95%;
-    --sidebar-accent-foreground: 195 70% 15%;
-    --sidebar-border: 195 20% 90%;
-    --sidebar-ring: 195 100% 49%;
+    --sidebar-accent: 185 30% 95%;
+    --sidebar-accent-foreground: 185 70% 15%;
+    --sidebar-border: 185 20% 90%;
+    --sidebar-ring: 185 80% 32%;
+
+    /* ============================================================
+       Design-system explicit tokens (from colors_and_type.css)
+       ============================================================ */
+
+    /* Semantic status tones (expense lifecycle) */
+    --status-pending-bg:    254 243 199;   /* amber-100 */
+    --status-pending-fg:    146 64 14;     /* amber-800 */
+    --status-pending-ring:  251 191 36;    /* amber-400 */
+    --status-approved-bg:   220 252 231;   /* green-100 */
+    --status-approved-fg:   22 101 52;     /* green-800 */
+    --status-approved-ring: 34 197 94;     /* green-500 */
+    --status-paid-bg:       219 234 254;   /* blue-100 */
+    --status-paid-fg:       30 64 175;     /* blue-800 */
+    --status-paid-ring:     59 130 246;    /* blue-500 */
+    --status-rejected-bg:   254 226 226;   /* red-100 */
+    --status-rejected-fg:   153 27 27;     /* red-800 */
+    --status-rejected-ring: 239 68 68;     /* red-500 */
+
+    /* Typography tokens (Heebo everywhere) */
+    --font-sans: 'Heebo', system-ui, -apple-system, 'Segoe UI', sans-serif;
+    --font-weight-light:     300;
+    --font-weight-regular:   400;
+    --font-weight-medium:    500;
+    --font-weight-semibold:  600;
+    --font-weight-bold:      700;
+    --font-weight-extrabold: 800;
+
+    --text-2xs:  0.625rem;   /* 10px — badge count, footer micro */
+    --text-xs:   0.75rem;    /* 12px — helper text, nav labels */
+    --text-sm:   0.875rem;   /* 14px — body small */
+    --text-base: 1rem;       /* 16px — body */
+    --text-lg:   1.125rem;   /* 18px */
+    --text-xl:   1.25rem;    /* 20px — card title md */
+    --text-2xl:  1.5rem;     /* 24px — card title lg */
+    --text-3xl:  1.875rem;   /* 30px */
+    --text-4xl:  2.25rem;    /* 36px — hero mobile */
+    --text-5xl:  3rem;       /* 48px — hero desktop */
+    --text-6xl:  3.75rem;    /* 60px — hero XL */
+
+    --leading-tight:   1.15;
+    --leading-snug:    1.3;
+    --leading-normal:  1.5;
+    --leading-relaxed: 1.625;
+
+    /* Radius scale (derived from --radius) */
+    --radius-sm:   calc(var(--radius) - 4px);  /* 12px */
+    --radius-md:   calc(var(--radius) - 2px);  /* 14px */
+    --radius-lg:   var(--radius);              /* 16px */
+    --radius-xl:   1.25rem;                    /* 20px — modern-button lg */
+    --radius-2xl:  1.5rem;                     /* 24px — hero cards */
+    --radius-full: 9999px;                     /* pills, status chips */
   }
 
   .dark {
-    --background: 195 50% 5%;
-    --foreground: 195 10% 90%;
-    --card: 195 50% 7%;
-    --card-foreground: 195 10% 90%;
-    --popover: 195 50% 7%;
-    --popover-foreground: 195 10% 90%;
-    --primary: 195 100% 49%;
+    --background: 190 45% 5%;
+    --foreground: 185 10% 90%;
+    --card: 190 45% 7%;
+    --card-foreground: 185 10% 90%;
+    --popover: 190 45% 7%;
+    --popover-foreground: 185 10% 90%;
+    --primary: 185 75% 42%;            /* slightly brighter teal on dark */
     --primary-foreground: 0 0% 100%;
-    --primary-glow: 195 100% 65%;
-    --secondary: 180 70% 40%;
-    --secondary-foreground: 0 0% 100%;
-    --muted: 195 30% 15%;
-    --muted-foreground: 195 10% 60%;
-    --accent: 195 30% 15%;
-    --accent-foreground: 195 10% 90%;
+    --primary-glow: 185 70% 58%;
+    --secondary: 38 85% 55%;           /* amber stays warm in dark */
+    --secondary-foreground: 30 60% 10%;
+    --muted: 185 25% 15%;
+    --muted-foreground: 185 10% 65%;
+    --accent: 185 25% 15%;
+    --accent-foreground: 185 10% 90%;
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 0 0% 100%;
-    --border: 195 20% 25%;
-    --input: 195 20% 25%;
-    --ring: 195 100% 49%;
-    
-    /* אפקטים מודרניים למצב כהה */
-    --gradient-background: linear-gradient(135deg, hsl(195 50% 5%), hsl(195 40% 8%));
+    --border: 185 20% 25%;
+    --input: 185 20% 25%;
+    --ring: 185 75% 42%;
+
+    --gradient-background: linear-gradient(135deg, hsl(190 45% 5%), hsl(185 35% 8%));
+    --gradient-accent: linear-gradient(135deg, hsl(185 75% 42%) 0%, hsl(38 85% 55%) 100%);
     --glass-bg: rgba(255, 255, 255, 0.05);
     --glass-border: rgba(255, 255, 255, 0.1);
-    --shadow-glow: 0 0 40px hsl(195 100% 49% / 0.2);
+    --shadow-glow: 0 0 40px hsl(185 75% 42% / 0.2);
 
     /* Liquid Glass dark */
     --liquid-glass-bg: rgba(255, 255, 255, 0.06);
@@ -98,14 +155,14 @@
     --liquid-glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.08);
     --liquid-glass-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.1), inset 0 -1px 0 rgba(255, 255, 255, 0.02);
 
-    --sidebar-background: 195 50% 7%;
-    --sidebar-foreground: 195 10% 80%;
-    --sidebar-primary: 195 100% 49%;
+    --sidebar-background: 190 45% 7%;
+    --sidebar-foreground: 185 10% 80%;
+    --sidebar-primary: 185 75% 42%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 195 30% 15%;
-    --sidebar-accent-foreground: 195 10% 90%;
-    --sidebar-border: 195 30% 15%;
-    --sidebar-ring: 195 100% 49%;
+    --sidebar-accent: 185 25% 15%;
+    --sidebar-accent-foreground: 185 10% 90%;
+    --sidebar-border: 185 25% 15%;
+    --sidebar-ring: 185 75% 42%;
   }
 }
 
@@ -438,4 +495,85 @@ body {
 .scroll-reveal.is-visible .scroll-reveal-item {
   opacity: 1;
   transform: translateY(0);
+}
+
+/* =========================================================================
+   Semantic type classes — Mehatziyot Plus design system
+   Use these in place of ad-hoc Tailwind text sizing for consistent hierarchy.
+   All assume Heebo (already the font-sans default) and RTL context.
+   ========================================================================= */
+
+.type-hero {
+  font-family: var(--font-sans);
+  font-weight: var(--font-weight-extrabold);
+  font-size: clamp(2rem, 5vw + 1rem, 3.75rem);
+  line-height: var(--leading-tight);
+  letter-spacing: -0.01em;
+}
+
+.type-h1 {
+  font-family: var(--font-sans);
+  font-weight: var(--font-weight-bold);
+  font-size: var(--text-3xl);
+  line-height: var(--leading-tight);
+}
+
+.type-h2 {
+  font-family: var(--font-sans);
+  font-weight: var(--font-weight-bold);
+  font-size: var(--text-2xl);
+  line-height: var(--leading-snug);
+}
+
+.type-h3 {
+  font-family: var(--font-sans);
+  font-weight: var(--font-weight-semibold);
+  font-size: var(--text-xl);
+  line-height: var(--leading-snug);
+}
+
+.type-body {
+  font-family: var(--font-sans);
+  font-weight: var(--font-weight-regular);
+  font-size: var(--text-base);
+  line-height: var(--leading-normal);
+}
+
+.type-body-sm {
+  font-family: var(--font-sans);
+  font-weight: var(--font-weight-regular);
+  font-size: var(--text-sm);
+  line-height: var(--leading-normal);
+}
+
+.type-label {
+  font-family: var(--font-sans);
+  font-weight: var(--font-weight-semibold);
+  font-size: var(--text-xs);
+  letter-spacing: 0.02em;
+}
+
+.type-caption {
+  font-family: var(--font-sans);
+  font-weight: var(--font-weight-medium);
+  font-size: var(--text-2xs);
+  color: hsl(var(--muted-foreground));
+}
+
+/* Currency display — tabular numerals so digit widths line up in columns. */
+.type-num {
+  font-family: var(--font-sans);
+  font-weight: var(--font-weight-bold);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
+/* Gradient text accent — used on hero headlines and big currency values. */
+.type-gradient {
+  background: linear-gradient(90deg,
+    hsl(var(--foreground)) 0%,
+    hsl(var(--primary)) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
 }

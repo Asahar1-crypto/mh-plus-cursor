@@ -84,7 +84,7 @@ export const ExpensesSummary: React.FC<ExpensesSummaryProps> = ({
               <Clock className="h-4 w-4 sm:h-5 sm:w-5 text-amber-600 dark:text-amber-400" />
             </div>
           </div>
-          <CardTitle className="text-2xl sm:text-3xl md:text-4xl font-bold bg-gradient-to-r from-amber-600 to-orange-600 bg-clip-text text-transparent">
+          <CardTitle className="type-num text-2xl sm:text-3xl md:text-4xl bg-gradient-to-r from-amber-600 to-orange-600 bg-clip-text text-transparent">
             ₪{animatedPending.toLocaleString()}
           </CardTitle>
         </CardHeader>
@@ -124,7 +124,7 @@ export const ExpensesSummary: React.FC<ExpensesSummaryProps> = ({
               <CheckCircle className="h-4 w-4 sm:h-5 sm:w-5 text-green-600 dark:text-green-400" />
             </div>
           </div>
-          <CardTitle className="text-2xl sm:text-3xl md:text-4xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
+          <CardTitle className="type-num text-2xl sm:text-3xl md:text-4xl bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
             ₪{animatedApproved.toLocaleString()}
           </CardTitle>
         </CardHeader>
@@ -163,7 +163,7 @@ export const ExpensesSummary: React.FC<ExpensesSummaryProps> = ({
               <CreditCard className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600 dark:text-blue-400" />
             </div>
           </div>
-          <CardTitle className="text-2xl sm:text-3xl md:text-4xl font-bold bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">
+          <CardTitle className="type-num text-2xl sm:text-3xl md:text-4xl bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">
             ₪{animatedPaid.toLocaleString()}
           </CardTitle>
         </CardHeader>

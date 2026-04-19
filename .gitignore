@@ -52,6 +52,9 @@ android/app/release.keystore
 # Supabase cache
 supabase/.temp/
 
+# Local design-system import bundles (from Claude Design handoffs)
+.design-import/
+
 # Database backups and dumps (NEVER commit user data)
 *.sql.bak
 *backup*.sql

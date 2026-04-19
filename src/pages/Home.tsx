@@ -44,7 +44,7 @@ const Home = () => {
 
         <div className="container mx-auto px-4 relative z-10">
           <div className="animate-fade-in">
-            <h1 className="text-2xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold mb-3 sm:mb-4 leading-tight">
+            <h1 className="type-hero mb-3 sm:mb-4">
               נהל{' '}
               <span className="bg-gradient-to-l from-primary via-secondary to-primary bg-[length:200%_auto] bg-clip-text text-transparent animate-gradient-x">
                 הוצאות משותפות

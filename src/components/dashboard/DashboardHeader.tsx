@@ -25,7 +25,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({ userName }) =>
         <div className="flex flex-col md:flex-row items-start justify-between gap-4 sm:gap-6">
           <div className="space-y-2 sm:space-y-3">
             <div className="flex items-center gap-2 sm:gap-3">
-              <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold bg-gradient-to-r from-foreground to-primary bg-clip-text text-transparent">
+              <h2 className="type-h1 md:text-4xl type-gradient">
                 {greeting}, {userName || 'משתמש'}!
               </h2>
               <Sparkles className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
