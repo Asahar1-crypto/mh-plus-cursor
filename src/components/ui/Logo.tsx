@@ -9,7 +9,7 @@ interface LogoProps {
 }
 
 const LOGO_SRC = '/logo.webp';
-const LOGO_FALLBACK = '/lovable-uploads/dc4b6d32-5c74-44a1-8d9c-b07947f361d7.webp';
+const LOGO_FALLBACK = '/logo.png';
 
 export const Logo: React.FC<LogoProps> = ({ 
   className, 
