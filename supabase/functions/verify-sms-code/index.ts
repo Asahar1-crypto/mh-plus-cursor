@@ -14,8 +14,8 @@ serve(async (req) => {
   }
 
   try {
-    const { phoneNumber, code, verificationType = 'registration', redirectUrl } = await req.json()
-    
+    const { phoneNumber, code, verificationType = 'registration' } = await req.json()
+
     console.log('Verification request received:', { verificationType })
     
     if (!phoneNumber || !code) {
@@ -171,10 +171,10 @@ serve(async (req) => {
     // Update user profile with verified phone number for registration verifications
     if (verificationType === 'registration' && verificationData.user_id) {
       console.log('Updating profile with verified phone for user:', verificationData.user_id);
-      
+
       const { error: profileError } = await supabase
         .from('profiles')
-        .update({ 
+        .update({
           phone_number: normalizedPhone,
           phone_e164: normalizedPhone,
           phone_verified: true,
@@ -190,101 +190,53 @@ serve(async (req) => {
       }
     }
 
+    // For login verification: ensure phone_verified is true (idempotent)
+    if (verificationType === 'login' && verificationData.user_id) {
+      await supabase
+        .from('profiles')
+        .update({ phone_verified: true })
+        .eq('id', verificationData.user_id);
+    }
+
     console.log('SMS verification successful')
 
-    // If this is a login verification, create a proper session
+    // If this is a login verification, return a single-use token_hash so the
+    // client can call supabase.auth.verifyOtp({ token_hash, type:'magiclink' })
+    // and let supabase-js create the session natively (atomic, lock-safe).
     if (verificationType === 'login' && verificationData.user_id) {
-      console.log('Creating session for login verification...');
-      
-      // Get user data from auth.users
       const { data: authUser, error: authError } = await supabase.auth.admin
         .getUserById(verificationData.user_id);
 
-      if (authError || !authUser.user) {
-        console.error('Error getting auth user:', authError);
+      if (authError || !authUser.user?.email) {
+        console.error('Error getting auth user or missing email:', authError);
         return new Response(
-          JSON.stringify({ 
-            verified: false,
-            error: 'User authentication failed'
-          }),
-          {
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-            status: 400,
-          },
+          JSON.stringify({ verified: false, error: 'User authentication failed' }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 },
         );
       }
 
-      // Validate redirectUrl against allowlist to prevent open redirect
-      const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-      const allowedOrigins = [
-        'https://mhplus.online',
-        'https://www.mhplus.online',
-        'https://mh-plus-cursor.vercel.app',
-        supabaseUrl,
-      ];
-      let safeRedirectUrl: string | undefined;
-      if (redirectUrl) {
-        try {
-          const parsed = new URL(redirectUrl);
-          if (allowedOrigins.some(origin => parsed.origin === origin)) {
-            safeRedirectUrl = redirectUrl;
-          } else {
-            console.warn('Blocked untrusted redirectUrl:', parsed.origin);
-          }
-        } catch {
-          // If it's a relative path starting with /, allow it
-          if (typeof redirectUrl === 'string' && redirectUrl.startsWith('/') && !redirectUrl.startsWith('//')) {
-            safeRedirectUrl = allowedOrigins[0] + redirectUrl;
-          }
-        }
-      }
+      const { data: linkData, error: linkError } = await supabase.auth.admin
+        .generateLink({ type: 'magiclink', email: authUser.user.email });
 
-      // Use Supabase's secure session creation with custom redirect
-      const linkOptions: any = {
-        type: 'magiclink',
-        email: authUser.user.email!
-      };
-
-      if (safeRedirectUrl) {
-        linkOptions.options = {
-          redirectTo: safeRedirectUrl
-        };
-      }
-
-      const { data: sessionResult, error: sessionError } = await supabase.auth.admin
-        .generateLink(linkOptions);
-
-      if (sessionError) {
-        console.error('Error generating session:', sessionError);
+      if (linkError || !linkData?.properties?.hashed_token) {
+        console.error('Error generating magic link token:', linkError);
         return new Response(
-          JSON.stringify({
-            verified: false,
-            error: 'Failed to create session'
-          }),
-          {
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-            status: 500,
-          },
+          JSON.stringify({ verified: false, error: 'Failed to create session' }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 },
         );
       }
 
-      // Return session tokens for client-side setSession call.
-      // NOTE: Tokens are returned in the response body. This is acceptable because
-      // the function requires JWT auth (verify_jwt=true) and tokens are short-lived.
-      console.log('Session created successfully for user:', authUser.user.id);
+      console.log('Magic-link token_hash issued for user:', authUser.user.id);
 
       return new Response(
         JSON.stringify({
           verified: true,
           message: 'Phone number verified successfully',
           verificationType,
-          access_token: sessionResult.properties?.access_token,
-          refresh_token: sessionResult.properties?.refresh_token
+          token_hash: linkData.properties.hashed_token,
+          email: authUser.user.email,
         }),
-        {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 200,
-        },
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 },
       );
     }
 

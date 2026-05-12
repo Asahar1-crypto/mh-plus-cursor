@@ -160,21 +160,21 @@ const FamilyOtpVerification: React.FC<FamilyOtpVerificationProps> = ({
         toast.success('הרישום הושלם בהצלחה! אתה כעת חבר בחשבון המשפחתי');
       }
 
-      // Set session directly using tokens from the edge function
-      if (registrationData.access_token && registrationData.refresh_token) {
-        await supabase.auth.setSession({
-          access_token: registrationData.access_token,
-          refresh_token: registrationData.refresh_token
+      // Consume the magic-link token_hash to create the session.
+      if (registrationData.token_hash) {
+        const { error: verifyOtpError } = await supabase.auth.verifyOtp({
+          token_hash: registrationData.token_hash,
+          type: 'magiclink',
         });
-        setTimeout(() => {
-          navigate('/dashboard');
-        }, 2000);
-      } else {
-        // Fallback to login page
-        setTimeout(() => {
-          navigate('/login');
-        }, 2000);
+        if (verifyOtpError) {
+          console.error('verifyOtp failed after family registration:', verifyOtpError);
+        }
       }
+
+      const hasSession = !!(await supabase.auth.getSession()).data.session;
+      setTimeout(() => {
+        navigate(hasSession ? '/dashboard' : '/login');
+      }, 2000);
 
     } catch (error: any) {
       console.error('Registration completion error:', error);

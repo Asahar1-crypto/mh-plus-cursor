@@ -242,18 +242,15 @@ serve(async (req) => {
       // Don't fail the registration — promotion is best-effort
     }
 
-    // 4. Generate a one-time sign-in link for the user
-    const appUrl = Deno.env.get('APP_URL') || 'https://mhplus.online';
-    const redirectTo = `${appUrl}/dashboard`;
+    // 4. Issue a magic-link token_hash. Client calls
+    //    supabase.auth.verifyOtp({ token_hash, type:'magiclink' }) to create
+    //    the session natively (generateLink itself does not return tokens).
     const { data: signInData, error: signInError } = await supabaseAdmin.auth.admin.generateLink({
       type: 'magiclink',
       email: email,
-      options: {
-        redirectTo
-      }
     });
 
-    if (signInError) {
+    if (signInError || !signInData?.properties?.hashed_token) {
       console.error('Error generating magic link:', signInError);
     }
 
@@ -263,16 +260,15 @@ serve(async (req) => {
         userId: userId,
         email: email,
         isExistingUser: isExistingUser,
-        access_token: signInData?.properties?.access_token,
-        refresh_token: signInData?.properties?.refresh_token,
+        token_hash: signInData?.properties?.hashed_token,
         promotionResult: promotionResult || undefined,
         message: isExistingUser
           ? 'המשתמש נוסף לחשבון המשפחתי בהצלחה!'
           : 'הרישום הושלם בהצלחה! המשתמש נוסף לחשבון המשפחתי'
       }),
-      { 
-        status: 200, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      {
+        status: 200,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       }
     );
 

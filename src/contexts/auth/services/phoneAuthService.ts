@@ -53,12 +53,12 @@ export const phoneAuthService = {
   },
 
   /**
-   * Verify OTP for phone login
+   * Verify OTP for phone login. Server returns a single-use magic-link
+   * token_hash which the client consumes via supabase.auth.verifyOtp to
+   * obtain a real session (admin.generateLink itself never returns tokens).
    */
-  verifyPhoneLoginOtp: async (phoneNumber: string, code: string): Promise<{ success: boolean; access_token?: string; refresh_token?: string }> => {
+  verifyPhoneLoginOtp: async (phoneNumber: string, code: string): Promise<{ success: boolean; token_hash?: string; email?: string }> => {
     try {
-
-      // Normalize phone number before verifying
       const normalizationResult = normalizeILPhoneNumber(phoneNumber);
       if (!normalizationResult.success) {
         throw new Error(normalizationResult.error || 'Invalid phone number format');
@@ -83,13 +83,12 @@ export const phoneAuthService = {
 
       return {
         success: true,
-        access_token: data.access_token,
-        refresh_token: data.refresh_token
+        token_hash: data.token_hash,
+        email: data.email,
       };
     } catch (error: any) {
       console.error('Verify phone login OTP failed:', error);
-      
-      // Handle specific error messages
+
       if (error.message?.includes('Invalid or expired')) {
         toast.error('קוד אימות שגוי או פג תוקף');
       } else if (error.message?.includes('User authentication failed')) {
@@ -97,37 +96,31 @@ export const phoneAuthService = {
       } else {
         toast.error('שגיאה באימות הקוד');
       }
-      
+
       throw error;
     }
   },
 
   phoneLogin: async (phoneNumber: string, otp: string): Promise<{ userId: string; email: string }> => {
-    try {
+    const result = await phoneAuthService.verifyPhoneLoginOtp(phoneNumber, otp);
 
-      const result = await phoneAuthService.verifyPhoneLoginOtp(phoneNumber, otp);
-
-      if (!result.success) {
-        throw new Error('Failed to verify OTP');
-      }
-
-      // Set session directly using tokens from the edge function
-      if (result.access_token && result.refresh_token) {
-        await supabase.auth.setSession({
-          access_token: result.access_token,
-          refresh_token: result.refresh_token
-        });
-        return {
-          userId: 'authenticated',
-          email: 'authenticated'
-        };
-      }
-
-      throw new Error('No authentication tokens received');
-
-    } catch (error: any) {
-      console.error('Phone login failed:', error);
-      throw error;
+    if (!result.success || !result.token_hash) {
+      throw new Error('No verification token received');
     }
+
+    const { data, error } = await supabase.auth.verifyOtp({
+      token_hash: result.token_hash,
+      type: 'magiclink',
+    });
+
+    if (error || !data.session) {
+      console.error('verifyOtp failed:', error);
+      throw error ?? new Error('Failed to establish session');
+    }
+
+    return {
+      userId: data.user?.id ?? 'authenticated',
+      email: data.user?.email ?? result.email ?? '',
+    };
   }
 };

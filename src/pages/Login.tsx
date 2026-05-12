@@ -24,7 +24,7 @@ const loginSchema = z.object({
 });
 
 const Login = () => {
-  const { login, isLoading } = useAuth();
+  const { login, isLoading, refreshProfile } = useAuth();
   const navigate = useNavigate();
   const [authMethod, setAuthMethod] = useState<'email' | 'phone'>(() => {
     const phoneLoginInProgress = sessionStorage.getItem('phoneLoginInProgress');
@@ -117,10 +117,13 @@ const Login = () => {
       });
 
       if (error || !data?.verified) {
-        setEmailOtpError('קוד שגוי או פג תוקף. נסה שנית.');
+        setEmailOtpError(data?.error || 'קוד שגוי או פג תוקף. נסה שנית.');
         setEmailOtpValue('');
         return;
       }
+
+      // Pick up the freshly-set email_verified flag (set by the edge function).
+      await refreshProfile();
 
       toast.success('האימייל אומת בהצלחה!');
       navigate('/dashboard');

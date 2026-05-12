@@ -172,107 +172,65 @@ serve(async (req) => {
     }
 
     if (type === 'login' || type === 'email_verification') {
-      // Update profiles.email_verified = true
-      const { error: profileError } = await supabaseAdmin
-        .from('profiles')
-        .update({ email_verified: true })
-        .eq('email', normalizedEmail);
-
-      if (profileError) {
-        console.error('Error updating email_verified on profile:', profileError);
-        // Don't fail the whole flow if profile update fails
-      } else {
-        console.log(`Email OTP Verify: Updated email_verified for ${normalizedEmail}`);
-      }
-
-      // Generate session tokens via admin generateLink (magiclink type returns access_token + refresh_token)
+      // Generate magic-link token_hash; linkData.user gives us the id for the
+      // profile update (the profiles table has no `email` column, only `id`).
       const { data: linkData, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
         type: 'magiclink',
         email: normalizedEmail,
       });
 
-      if (linkError) {
+      if (linkError || !linkData?.properties?.hashed_token) {
         console.error('Error generating magic link:', linkError);
         return new Response(
           JSON.stringify({
             verified: true,
             error: 'אימות הצליח אך נכשל ביצירת הפעלה. אנא נסה להתחבר שוב.',
           }),
-          {
-            status: 500,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          }
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
 
-      // Extract tokens from the generated link properties
-      const accessToken = linkData?.properties?.access_token;
-      const refreshToken = linkData?.properties?.refresh_token;
-
-      if (!accessToken || !refreshToken) {
-        console.error('generateLink did not return tokens for email/login verification');
-        return new Response(
-          JSON.stringify({
-            verified: true,
-            error: 'אימות הצליח אך נכשל ביצירת הפעלה. אנא נסה להתחבר שוב.',
-          }),
-          {
-            status: 500,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          }
-        );
+      // Mark email verified at both the Supabase auth level and the profile mirror.
+      if (linkData.user?.id) {
+        const { error: profileError } = await supabaseAdmin
+          .from('profiles')
+          .update({ email_verified: true })
+          .eq('id', linkData.user.id);
+        if (profileError) {
+          console.error('Error updating email_verified on profile:', profileError);
+        }
+        // Idempotent: confirms email at the auth.users level so RLS/JWT claims reflect it.
+        await supabaseAdmin.auth.admin.updateUserById(linkData.user.id, { email_confirm: true });
       }
 
       return new Response(
         JSON.stringify({
           success: true,
           verified: true,
-          access_token: accessToken,
-          refresh_token: refreshToken,
+          token_hash: linkData.properties.hashed_token,
+          email: normalizedEmail,
           message: 'התחברות בוצעה בהצלחה',
         }),
-        {
-          status: 200,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        }
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
     if (type === 'reset') {
-      // Generate recovery session
+      // Recovery token_hash — client calls verifyOtp({ type:'recovery', token_hash })
+      // to obtain a recovery session that can call supabase.auth.updateUser({password}).
       const { data: recoveryData, error: recoveryError } = await supabaseAdmin.auth.admin.generateLink({
         type: 'recovery',
         email: normalizedEmail,
       });
 
-      if (recoveryError) {
+      if (recoveryError || !recoveryData?.properties?.hashed_token) {
         console.error('Error generating recovery link:', recoveryError);
         return new Response(
           JSON.stringify({
             verified: true,
             error: 'אימות הצליח אך נכשל ביצירת קישור איפוס. אנא נסה שוב.',
           }),
-          {
-            status: 500,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          }
-        );
-      }
-
-      const accessToken = recoveryData?.properties?.access_token;
-      const refreshToken = recoveryData?.properties?.refresh_token;
-
-      if (!accessToken || !refreshToken) {
-        console.error('generateLink did not return tokens for password reset');
-        return new Response(
-          JSON.stringify({
-            verified: true,
-            error: 'אימות הצליח אך נכשל ביצירת הפעלה. אנא נסה שוב.',
-          }),
-          {
-            status: 500,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          }
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
 
@@ -280,14 +238,11 @@ serve(async (req) => {
         JSON.stringify({
           success: true,
           verified: true,
-          access_token: accessToken,
-          refresh_token: refreshToken,
+          token_hash: recoveryData.properties.hashed_token,
+          email: normalizedEmail,
           message: 'ניתן כעת לאפס את הסיסמה',
         }),
-        {
-          status: 200,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        }
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 

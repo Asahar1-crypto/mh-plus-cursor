@@ -64,7 +64,23 @@ const OtpVerification: React.FC<OtpVerificationProps> = ({
       setShowCelebration(true);
     } catch (error: any) {
       console.error('OTP verification failed:', error);
-      setError('קוד שגוי או פג תוקף. נסה שנית.');
+      // Surface the actual server message instead of always claiming the code is wrong:
+      // wrong-code, expired, rate-limit, session-failure and network errors all look
+      // different to the user.
+      const raw = error?.context?.body || error?.message || '';
+      let friendly = 'שגיאה לא צפויה באימות. נסה שוב או בקש קוד חדש.';
+      if (typeof raw === 'string') {
+        if (raw.includes('Invalid or expired') || raw.includes('פג תוקף') || raw.includes('שגוי')) {
+          friendly = 'קוד שגוי או פג תוקף. נסה שנית.';
+        } else if (raw.includes('Too many') || raw.includes('יותר מדי')) {
+          friendly = 'יותר מדי ניסיונות שגויים. אנא בקש קוד חדש.';
+        } else if (raw.includes('Failed to create session') || raw.includes('No verification token') || raw.includes('Failed to establish')) {
+          friendly = 'אימות הצליח אך נכשלה יצירת ההפעלה. נסה שוב או צור קשר.';
+        } else if (raw) {
+          friendly = raw;
+        }
+      }
+      setError(friendly);
       setOtpValue('');
     } finally {
       setIsVerifying(false);

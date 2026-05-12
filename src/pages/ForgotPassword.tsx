@@ -100,17 +100,29 @@ const ForgotPassword = () => {
       });
 
       if (error || !data?.verified) {
-        setOtpError('קוד שגוי או פג תוקף. נסה שנית.');
+        setOtpError(data?.error || 'קוד שגוי או פג תוקף. נסה שנית.');
         setOtpValue('');
         return;
       }
 
-      // If we received session tokens, set the session
-      if (data.access_token && data.refresh_token) {
-        await supabase.auth.setSession({
-          access_token: data.access_token,
-          refresh_token: data.refresh_token
-        });
+      // Consume the recovery token_hash via verifyOtp to create a recovery
+      // session that allows supabase.auth.updateUser({ password }) to succeed.
+      if (!data.token_hash) {
+        setOtpError('אימות הצליח אך לא התקבל אסימון. נסה שוב.');
+        setOtpValue('');
+        return;
+      }
+
+      const { error: verifyOtpError } = await supabase.auth.verifyOtp({
+        token_hash: data.token_hash,
+        type: 'recovery',
+      });
+
+      if (verifyOtpError) {
+        console.error('verifyOtp recovery failed:', verifyOtpError);
+        setOtpError(verifyOtpError.message || 'שגיאה ביצירת הפעלה. נסה שוב.');
+        setOtpValue('');
+        return;
       }
 
       setStep('newPassword');
