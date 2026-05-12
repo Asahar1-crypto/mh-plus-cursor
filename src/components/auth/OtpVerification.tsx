@@ -1,8 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { ArrowRight, Smartphone, Shield, Clock, RefreshCw, CheckCircle2 } from 'lucide-react';
-import { InputOTP, InputOTPGroup, InputOTPSlot, InputOTPSeparator } from '@/components/ui/input-otp';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { ArrowRight, RefreshCw, CheckCircle2 } from 'lucide-react';
+import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
 import { useAuth } from '@/contexts/auth';
 import { useNavigate } from 'react-router-dom';
 import { useConfetti } from '@/components/ui/confetti';
@@ -11,6 +10,12 @@ import { REGEXP_ONLY_DIGITS } from 'input-otp';
 
 // Web OTP API typings (not in lib.dom.d.ts yet)
 type OTPCredential = Credential & { code: string };
+
+// OTP screen timing — keep in sync with phone-login edge function (10 min server TTL).
+const OTP_TTL_SECONDS = 600;
+const RESEND_COOLDOWN_SECONDS = 30;
+const URGENT_THRESHOLD_SECONDS = 15;
+const RESEND_UNLOCK_AT = OTP_TTL_SECONDS - RESEND_COOLDOWN_SECONDS;
 
 interface OtpVerificationProps {
   phoneNumber: string;
@@ -32,7 +37,7 @@ const OtpVerification: React.FC<OtpVerificationProps> = ({
   const [otpValue, setOtpValue] = useState('');
   const [isVerifying, setIsVerifying] = useState(false);
   const [isResending, setIsResending] = useState(false);
-  const [countdown, setCountdown] = useState(120);
+  const [countdown, setCountdown] = useState(OTP_TTL_SECONDS);
   const [error, setError] = useState('');
   const [showCelebration, setShowCelebration] = useState(false);
   const [resendSuccess, setResendSuccess] = useState(false);
@@ -71,14 +76,14 @@ const OtpVerification: React.FC<OtpVerificationProps> = ({
     } catch (error: any) {
       console.error('OTP verification failed:', error);
       const raw = error?.context?.body || error?.message || '';
-      let friendly = 'שגיאה לא צפויה באימות. נסה שוב או בקש קוד חדש.';
+      let friendly = 'משהו השתבש. נסו שוב או בקשו קוד חדש.';
       if (typeof raw === 'string') {
         if (raw.includes('Invalid or expired') || raw.includes('פג תוקף') || raw.includes('שגוי')) {
-          friendly = 'קוד שגוי או פג תוקף. נסה שנית.';
+          friendly = 'הקוד שגוי, נסו שוב.';
         } else if (raw.includes('Too many') || raw.includes('יותר מדי')) {
-          friendly = 'יותר מדי ניסיונות שגויים. אנא בקש קוד חדש.';
+          friendly = 'יותר מדי ניסיונות. בקשו קוד חדש.';
         } else if (raw.includes('Failed to create session') || raw.includes('No verification token') || raw.includes('Failed to establish')) {
-          friendly = 'אימות הצליח אך נכשלה יצירת ההפעלה. נסה שוב או צור קשר.';
+          friendly = 'התחברנו, אבל משהו השתבש בהפעלה. נסו שוב.';
         } else if (raw) {
           friendly = raw;
         }
@@ -134,8 +139,9 @@ const OtpVerification: React.FC<OtpVerificationProps> = ({
     
     try {
       await sendPhoneOtp(phoneNumber);
-      setCountdown(120);
+      setCountdown(OTP_TTL_SECONDS);
       setOtpValue('');
+      lastAttemptedCode.current = '';
       setResendSuccess(true);
       setTimeout(() => setResendSuccess(false), 3000);
     } catch (error) {
@@ -152,44 +158,45 @@ const OtpVerification: React.FC<OtpVerificationProps> = ({
     navigate('/dashboard');
   };
 
-  // Timer progress for visual indicator
-  const timerProgress = (countdown / 120) * 100;
+  const timerProgress = (countdown / OTP_TTL_SECONDS) * 100;
+  const isUrgent = countdown > 0 && countdown <= URGENT_THRESHOLD_SECONDS;
+  const canResend = countdown <= RESEND_UNLOCK_AT;
+  const resendCountdown = Math.max(0, countdown - RESEND_UNLOCK_AT);
 
   return (
     <>
-      <Card className="border-border shadow-lg animate-fade-in glass overflow-hidden">
-        {/* Progress bar for timer */}
+      <Card className="relative border-border shadow-lg animate-fade-in glass overflow-hidden">
+        {/* Progress bar for timer — calm primary→secondary gradient */}
         <div className="h-1 w-full bg-muted/30">
-          <div 
-            className="h-full bg-gradient-to-r from-primary to-primary-glow transition-all duration-1000 ease-linear"
+          <div
+            className="h-full bg-gradient-to-r from-primary to-secondary transition-all duration-1000 ease-linear"
             style={{ width: `${timerProgress}%` }}
           />
         </div>
 
-        <CardHeader className="text-center pb-4">
-          <div className="flex items-center justify-center gap-2 mb-2">
-            <Shield className="w-6 h-6 text-primary" aria-hidden="true" />
-            <CardTitle className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
-              אימות קוד
-            </CardTitle>
-          </div>
-          <CardDescription className="text-sm sm:text-base">
-            <span>נשלח קוד אימות למספר</span>
-            <br />
-            <span className="font-mono text-base sm:text-lg font-semibold text-foreground tracking-wider" dir="ltr">
-              {displayNumber}
-            </span>
-            {userInfo.userName && (
-              <>
-                <br />
-                <span className="text-primary font-medium">שלום {userInfo.userName}!</span>
-              </>
-            )}
-          </CardDescription>
+        {/* Back-to-phone as an icon button in the corner — tertiary action,
+            doesn't compete with the input for attention. */}
+        <button
+          type="button"
+          onClick={onBack}
+          aria-label="שינוי מספר טלפון"
+          className="absolute top-3 right-3 z-10 inline-flex h-9 w-9 items-center justify-center rounded-full text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        >
+          <ArrowRight className="w-5 h-5" aria-hidden="true" />
+        </button>
+
+        <CardHeader className="text-center pt-8 pb-3 px-6">
+          <CardTitle className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent mb-1.5">
+            אימות
+          </CardTitle>
+          <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">
+            {userInfo.userName ? `שלום ${userInfo.userName}, ` : ''}שלחנו קוד בן 6 ספרות אל{' '}
+            <bdi className="font-mono font-semibold text-foreground" dir="ltr">{displayNumber}</bdi>
+          </p>
         </CardHeader>
-        
-        <CardContent className="space-y-5 px-4 sm:px-6">
-          {/* OTP Input - using input-otp library */}
+
+        <CardContent className="space-y-5 px-4 sm:px-6 pb-6">
+          {/* OTP Input */}
           <div className="space-y-3">
             <div className="flex justify-center" dir="ltr">
               <InputOTP
@@ -199,94 +206,76 @@ const OtpVerification: React.FC<OtpVerificationProps> = ({
                 disabled={isVerifying || countdown === 0}
                 pattern={REGEXP_ONLY_DIGITS}
                 autoFocus
-                containerClassName="gap-1 sm:gap-2 justify-center"
+                aria-label="קוד אימות בן 6 ספרות"
+                containerClassName="gap-2 sm:gap-3 justify-center"
               >
-                <InputOTPGroup className="gap-1 sm:gap-1.5">
+                <InputOTPGroup className="gap-1.5">
                   <InputOTPSlot index={0} className={error ? 'border-destructive' : ''} />
                   <InputOTPSlot index={1} className={error ? 'border-destructive' : ''} />
                   <InputOTPSlot index={2} className={error ? 'border-destructive' : ''} />
                 </InputOTPGroup>
-                <InputOTPSeparator />
-                <InputOTPGroup className="gap-1 sm:gap-1.5">
+                <InputOTPGroup className="gap-1.5">
                   <InputOTPSlot index={3} className={error ? 'border-destructive' : ''} />
                   <InputOTPSlot index={4} className={error ? 'border-destructive' : ''} />
                   <InputOTPSlot index={5} className={error ? 'border-destructive' : ''} />
                 </InputOTPGroup>
               </InputOTP>
             </div>
-            
-            {/* Error message */}
+
             {error && (
               <p className="text-center text-sm text-destructive animate-fade-in font-medium" role="alert">{error}</p>
             )}
 
-            {/* Resend success message */}
             {resendSuccess && (
               <div className="flex items-center justify-center gap-2 text-primary animate-fade-in" role="status">
                 <CheckCircle2 className="w-4 h-4" aria-hidden="true" />
-                <p className="text-sm font-medium">קוד חדש נשלח בהצלחה!</p>
+                <p className="text-sm font-medium">נשלח קוד חדש</p>
               </div>
             )}
           </div>
 
-          {/* Timer */}
-          <div className="flex items-center justify-center gap-2">
-            <Clock className={`w-4 h-4 ${countdown <= 30 ? 'text-destructive animate-pulse' : 'text-muted-foreground'}`} />
-            <span className={`text-sm font-medium ${countdown <= 30 ? 'text-destructive' : 'text-muted-foreground'}`}>
-              {countdown > 0 ? `הקוד יפוג בעוד ${formatTime(countdown)}` : 'הקוד פג תוקף'}
+          {/* Timer — calm by default, urgent styling only in the last 15s.
+              Framed as "valid for X more" rather than "expires in X". */}
+          <div className="text-center" aria-live="off">
+            <span className={`text-xs sm:text-sm font-medium ${isUrgent ? 'text-destructive animate-pulse' : 'text-muted-foreground'}`}>
+              {countdown > 0
+                ? (isUrgent ? `פוקע בעוד ${formatTime(countdown)}` : `תקף ל-${formatTime(countdown)} נוספות`)
+                : 'הקוד פג תוקף'}
             </span>
           </div>
 
-          {/* Auto-verify indicator */}
+          {/* Auto-verify spinner */}
           {isVerifying && (
-            <div className="flex items-center justify-center gap-2 py-2 animate-fade-in">
-              <span className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-r-transparent" />
-              <span className="text-sm font-medium text-primary">מאמת את הקוד...</span>
+            <div className="flex items-center justify-center gap-2 py-1 animate-fade-in" role="status">
+              <span className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-r-transparent" />
+              <span className="text-sm font-medium text-primary">מאמת...</span>
             </div>
           )}
 
-          {/* Action Buttons — verify happens automatically when the 6th digit
-              lands, so there's no manual verify button here. Only the recovery
-              actions: resend the code, or change number. */}
-          <div className="space-y-3 pt-1">
-            <Button
-              variant="outline"
-              onClick={handleResendOtp}
-              disabled={isResending || countdown > 60}
-              className="w-full h-11 sm:h-12 rounded-xl text-sm sm:text-base"
-            >
-              {isResending ? (
-                <span className="flex items-center gap-2">
-                  <RefreshCw className="h-4 w-4 animate-spin" aria-hidden="true" />
-                  שולח שוב...
-                </span>
-              ) : countdown > 60 ? (
-                <span className="flex items-center gap-2">
-                  <Clock className="w-4 h-4" aria-hidden="true" />
-                  {`שלח שוב בעוד ${formatTime(countdown - 60)}`}
-                </span>
-              ) : (
-                <span className="flex items-center gap-2">
-                  <Smartphone className="w-4 h-4" aria-hidden="true" />
-                  שלח קוד שוב
-                </span>
-              )}
-            </Button>
-
-            <Button
-              variant="ghost"
-              onClick={onBack}
-              className="w-full flex items-center gap-2 hover:bg-muted/50 transition-colors h-10 sm:h-11 text-sm sm:text-base"
-            >
-              <ArrowRight className="w-4 h-4" aria-hidden="true" />
-              חזור להזנת מספר
-            </Button>
-          </div>
-
-          {/* Security Notice */}
-          <div className="text-center text-xs text-muted-foreground bg-muted/20 p-3 rounded-xl space-y-1">
-            <p>הקוד מוזן אוטומטית עם ההקלדה - פשוט הקלד 6 ספרות</p>
-            <p>ניתן גם להדביק קוד שהועתק מה-SMS</p>
+          {/* Resend — inline text link, not a button. Becomes a clickable link
+              once the 30-second cooldown ends. */}
+          <div className="text-center text-sm pt-1">
+            {isResending ? (
+              <span className="inline-flex items-center gap-1.5 text-muted-foreground">
+                <RefreshCw className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
+                שולחים קוד חדש...
+              </span>
+            ) : canResend ? (
+              <span className="text-muted-foreground">
+                לא קיבלת?{' '}
+                <button
+                  type="button"
+                  onClick={handleResendOtp}
+                  className="font-semibold text-primary hover:text-primary-glow hover:underline underline-offset-4 transition-colors focus-visible:outline-none focus-visible:underline"
+                >
+                  שלחו שוב
+                </button>
+              </span>
+            ) : (
+              <span className="text-muted-foreground/70">
+                אפשר לשלוח שוב בעוד {formatTime(resendCountdown)}
+              </span>
+            )}
           </div>
         </CardContent>
       </Card>
@@ -297,8 +286,8 @@ const OtpVerification: React.FC<OtpVerificationProps> = ({
       {/* Success Celebration Modal */}
       <CelebrationModal
         isOpen={showCelebration}
-        title="התחברת בהצלחה!"
-        message="ברוכים הבאים! אתה מועבר עכשיו לדשבורד"
+        title="התחברנו בהצלחה"
+        message="מעבירים אותך לדשבורד"
         onClose={handleCelebrationClose}
       />
     </>
