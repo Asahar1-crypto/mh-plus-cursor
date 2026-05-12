@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ArrowRight, Smartphone, Shield, Clock, RefreshCw, CheckCircle2 } from 'lucide-react';
@@ -8,6 +8,9 @@ import { useNavigate } from 'react-router-dom';
 import { useConfetti } from '@/components/ui/confetti';
 import { CelebrationModal } from '@/components/ui/celebration-modal';
 import { REGEXP_ONLY_DIGITS } from 'input-otp';
+
+// Web OTP API typings (not in lib.dom.d.ts yet)
+type OTPCredential = Credential & { code: string };
 
 interface OtpVerificationProps {
   phoneNumber: string;
@@ -34,6 +37,8 @@ const OtpVerification: React.FC<OtpVerificationProps> = ({
   const [showCelebration, setShowCelebration] = useState(false);
   const [resendSuccess, setResendSuccess] = useState(false);
   const { fire: fireConfetti, ConfettiComponent } = useConfetti();
+  // Tracks the last code we tried so we don't auto-resubmit the same wrong digits.
+  const lastAttemptedCode = useRef<string>('');
 
   // Countdown timer
   useEffect(() => {
@@ -57,6 +62,7 @@ const OtpVerification: React.FC<OtpVerificationProps> = ({
 
     setIsVerifying(true);
     setError('');
+    lastAttemptedCode.current = code;
 
     try {
       await loginWithPhone(phoneNumber, code);
@@ -64,9 +70,6 @@ const OtpVerification: React.FC<OtpVerificationProps> = ({
       setShowCelebration(true);
     } catch (error: any) {
       console.error('OTP verification failed:', error);
-      // Surface the actual server message instead of always claiming the code is wrong:
-      // wrong-code, expired, rate-limit, session-failure and network errors all look
-      // different to the user.
       const raw = error?.context?.body || error?.message || '';
       let friendly = 'שגיאה לא צפויה באימות. נסה שוב או בקש קוד חדש.';
       if (typeof raw === 'string') {
@@ -81,21 +84,48 @@ const OtpVerification: React.FC<OtpVerificationProps> = ({
         }
       }
       setError(friendly);
-      setOtpValue('');
+      // Keep the digits so the user can fix one slot instead of retyping all six.
     } finally {
       setIsVerifying(false);
     }
   }, [phoneNumber, loginWithPhone, fireConfetti]);
 
-  // Auto-verify when all 6 digits are entered
+  // Auto-verify when all 6 digits are entered. We skip re-firing on a value
+  // identical to the last failed attempt (otherwise the user could be stuck
+  // in an infinite verify loop if they edit then re-paste the same wrong code).
   const handleOtpChange = useCallback((value: string) => {
     setError('');
     setOtpValue(value);
-    
-    if (value.length === 6) {
+
+    if (value.length === 6 && value !== lastAttemptedCode.current) {
       handleVerifyOtp(value);
     }
   }, [handleVerifyOtp]);
+
+  // Web OTP API — Chrome on Android can read the incoming SMS directly when
+  // the SMS body ends with `@<origin> #<code>`. iOS Safari uses the
+  // autocomplete="one-time-code" path inside input-otp, no JS needed there.
+  useEffect(() => {
+    if (typeof window === 'undefined' || !('OTPCredential' in window)) return;
+    if (countdown === 0 || isVerifying) return;
+
+    const ac = new AbortController();
+    (navigator.credentials as Credentials & {
+      get: (o: { otp: { transport: string[] }; signal: AbortSignal }) => Promise<OTPCredential | null>;
+    })
+      .get({ otp: { transport: ['sms'] }, signal: ac.signal })
+      .then((cred) => {
+        if (cred?.code && /^\d{6}$/.test(cred.code)) {
+          handleOtpChange(cred.code);
+        }
+      })
+      .catch((err) => {
+        // AbortError is expected on unmount / new SMS — ignore.
+        if (err?.name !== 'AbortError') console.debug('WebOTP unavailable:', err);
+      });
+
+    return () => ac.abort();
+  }, [countdown, isVerifying, handleOtpChange]);
 
   const handleResendOtp = async () => {
     setIsResending(true);
@@ -138,8 +168,8 @@ const OtpVerification: React.FC<OtpVerificationProps> = ({
 
         <CardHeader className="text-center pb-4">
           <div className="flex items-center justify-center gap-2 mb-2">
-            <Shield className="w-6 h-6 text-green-500" />
-            <CardTitle className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-transparent">
+            <Shield className="w-6 h-6 text-primary" aria-hidden="true" />
+            <CardTitle className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
               אימות קוד
             </CardTitle>
           </div>
@@ -187,13 +217,13 @@ const OtpVerification: React.FC<OtpVerificationProps> = ({
             
             {/* Error message */}
             {error && (
-              <p className="text-center text-sm text-destructive animate-fade-in font-medium">{error}</p>
+              <p className="text-center text-sm text-destructive animate-fade-in font-medium" role="alert">{error}</p>
             )}
 
             {/* Resend success message */}
             {resendSuccess && (
-              <div className="flex items-center justify-center gap-2 text-green-600 animate-fade-in">
-                <CheckCircle2 className="w-4 h-4" />
+              <div className="flex items-center justify-center gap-2 text-primary animate-fade-in" role="status">
+                <CheckCircle2 className="w-4 h-4" aria-hidden="true" />
                 <p className="text-sm font-medium">קוד חדש נשלח בהצלחה!</p>
               </div>
             )}
@@ -215,27 +245,10 @@ const OtpVerification: React.FC<OtpVerificationProps> = ({
             </div>
           )}
 
-          {/* Action Buttons */}
+          {/* Action Buttons — verify happens automatically when the 6th digit
+              lands, so there's no manual verify button here. Only the recovery
+              actions: resend the code, or change number. */}
           <div className="space-y-3 pt-1">
-            {/* Manual verify button - shown when auto-verify didn't trigger */}
-            <Button 
-              onClick={() => handleVerifyOtp(otpValue)}
-              disabled={isVerifying || otpValue.length !== 6 || countdown === 0}
-              className="w-full bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white font-semibold py-3 h-12 sm:h-14 text-base sm:text-lg shadow-lg transform transition-all duration-200 hover:scale-[1.02] disabled:transform-none rounded-xl"
-            >
-              {isVerifying ? (
-                <span className="flex items-center gap-2">
-                  <span className="h-5 w-5 animate-spin rounded-full border-2 border-current border-r-transparent" />
-                  מאמת...
-                </span>
-              ) : (
-                <span className="flex items-center gap-2">
-                  <Shield className="w-5 h-5" />
-                  אמת והיכנס
-                </span>
-              )}
-            </Button>
-
             <Button
               variant="outline"
               onClick={handleResendOtp}
@@ -244,17 +257,17 @@ const OtpVerification: React.FC<OtpVerificationProps> = ({
             >
               {isResending ? (
                 <span className="flex items-center gap-2">
-                  <RefreshCw className="h-4 w-4 animate-spin" />
+                  <RefreshCw className="h-4 w-4 animate-spin" aria-hidden="true" />
                   שולח שוב...
                 </span>
               ) : countdown > 60 ? (
                 <span className="flex items-center gap-2">
-                  <Clock className="w-4 h-4" />
+                  <Clock className="w-4 h-4" aria-hidden="true" />
                   {`שלח שוב בעוד ${formatTime(countdown - 60)}`}
                 </span>
               ) : (
                 <span className="flex items-center gap-2">
-                  <Smartphone className="w-4 h-4" />
+                  <Smartphone className="w-4 h-4" aria-hidden="true" />
                   שלח קוד שוב
                 </span>
               )}
@@ -265,7 +278,7 @@ const OtpVerification: React.FC<OtpVerificationProps> = ({
               onClick={onBack}
               className="w-full flex items-center gap-2 hover:bg-muted/50 transition-colors h-10 sm:h-11 text-sm sm:text-base"
             >
-              <ArrowRight className="w-4 h-4" />
+              <ArrowRight className="w-4 h-4" aria-hidden="true" />
               חזור להזנת מספר
             </Button>
           </div>

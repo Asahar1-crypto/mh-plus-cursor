@@ -202,7 +202,11 @@ serve(async (req) => {
       );
     }
 
-    const message = `קוד הכניסה שלך: ${otpCode}\nתוקף: 10 דקות\nלא תשתף את הקוד עם אחרים`;
+    // Last line must follow the WICG sms-one-time-codes spec
+    // (`@<origin> #<code>`) so Chrome on Android can auto-fill via the
+    // Web OTP API, and iOS QuickType picks up the OTP from the body.
+    const webOtpOrigin = Deno.env.get('WEB_OTP_ORIGIN') || 'mhplus.online';
+    const message = `קוד הכניסה שלך: ${otpCode}\nתוקף: 10 דקות\nלא תשתף את הקוד עם אחרים\n\n@${webOtpOrigin} #${otpCode}`;
 
     // Remove '+' from phone number for Vonage
     const cleanPhoneNumber = normalizedPhone.replace(/^\+/, '');
