@@ -17,6 +17,10 @@ const RESEND_COOLDOWN_SECONDS = 30;
 const URGENT_THRESHOLD_SECONDS = 15;
 const RESEND_UNLOCK_AT = OTP_TTL_SECONDS - RESEND_COOLDOWN_SECONDS;
 
+// Stored once after the user's first successful login on this device, so we
+// don't fire confetti + celebration modal on every return login.
+const SEEN_CELEBRATION_KEY = 'mh_seen_login_celebration';
+
 interface OtpVerificationProps {
   phoneNumber: string;
   displayNumber: string;
@@ -71,8 +75,17 @@ const OtpVerification: React.FC<OtpVerificationProps> = ({
 
     try {
       await loginWithPhone(phoneNumber, code);
-      fireConfetti();
-      setShowCelebration(true);
+      // Celebrate the first successful login on this device only — every
+      // return login skips the confetti/modal and goes straight to dashboard.
+      const isFirstTime = typeof window !== 'undefined' && !localStorage.getItem(SEEN_CELEBRATION_KEY);
+      if (isFirstTime) {
+        try { localStorage.setItem(SEEN_CELEBRATION_KEY, '1'); } catch { /* private mode: ignore */ }
+        fireConfetti();
+        setShowCelebration(true);
+      } else {
+        onSuccess();
+        navigate('/dashboard');
+      }
     } catch (error: any) {
       console.error('OTP verification failed:', error);
       const raw = error?.context?.body || error?.message || '';
@@ -89,6 +102,8 @@ const OtpVerification: React.FC<OtpVerificationProps> = ({
         }
       }
       setError(friendly);
+      // Soft haptic on Android — Safari ignores this silently. Defensive call.
+      try { navigator.vibrate?.(50); } catch { /* ignore */ }
       // Keep the digits so the user can fix one slot instead of retyping all six.
     } finally {
       setIsVerifying(false);
@@ -160,14 +175,15 @@ const OtpVerification: React.FC<OtpVerificationProps> = ({
 
   const timerProgress = (countdown / OTP_TTL_SECONDS) * 100;
   const isUrgent = countdown > 0 && countdown <= URGENT_THRESHOLD_SECONDS;
+  const isExpired = countdown === 0;
   const canResend = countdown <= RESEND_UNLOCK_AT;
   const resendCountdown = Math.max(0, countdown - RESEND_UNLOCK_AT);
 
   return (
     <>
       <Card className="relative border-border shadow-lg animate-fade-in glass overflow-hidden">
-        {/* Progress bar for timer — calm primary→secondary gradient */}
-        <div className="h-1 w-full bg-muted/30">
+        {/* Progress bar for timer — ambient signal only, not announced to AT. */}
+        <div className="h-1 w-full bg-muted/30" aria-hidden="true">
           <div
             className="h-full bg-gradient-to-r from-primary to-secondary transition-all duration-1000 ease-linear"
             style={{ width: `${timerProgress}%` }}
@@ -196,87 +212,117 @@ const OtpVerification: React.FC<OtpVerificationProps> = ({
         </CardHeader>
 
         <CardContent className="space-y-5 px-4 sm:px-6 pb-6">
-          {/* OTP Input */}
-          <div className="space-y-3">
-            <div className="flex justify-center" dir="ltr">
-              <InputOTP
-                maxLength={6}
-                value={otpValue}
-                onChange={handleOtpChange}
-                disabled={isVerifying || countdown === 0}
-                pattern={REGEXP_ONLY_DIGITS}
-                autoFocus
-                aria-label="קוד אימות בן 6 ספרות"
-                containerClassName="gap-2 sm:gap-3 justify-center"
+          {isExpired ? (
+            /* Expired state — the input is dead, so replace the whole digit-
+               entry area with a single prominent recovery CTA. */
+            <div className="space-y-4 py-2 animate-fade-in">
+              <p className="text-center text-sm sm:text-base text-muted-foreground">
+                הקוד פג תוקף.
+                <br />
+                בקשו קוד חדש כדי להמשיך.
+              </p>
+              <button
+                type="button"
+                onClick={handleResendOtp}
+                disabled={isResending}
+                className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-primary to-secondary text-primary-foreground font-semibold h-12 sm:h-14 text-base sm:text-lg shadow-lg transition-transform duration-200 hover:scale-[1.02] disabled:opacity-70 disabled:transform-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               >
-                <InputOTPGroup className="gap-1.5">
-                  <InputOTPSlot index={0} className={error ? 'border-destructive' : ''} />
-                  <InputOTPSlot index={1} className={error ? 'border-destructive' : ''} />
-                  <InputOTPSlot index={2} className={error ? 'border-destructive' : ''} />
-                </InputOTPGroup>
-                <InputOTPGroup className="gap-1.5">
-                  <InputOTPSlot index={3} className={error ? 'border-destructive' : ''} />
-                  <InputOTPSlot index={4} className={error ? 'border-destructive' : ''} />
-                  <InputOTPSlot index={5} className={error ? 'border-destructive' : ''} />
-                </InputOTPGroup>
-              </InputOTP>
+                {isResending ? (
+                  <>
+                    <RefreshCw className="h-4 w-4 animate-spin" aria-hidden="true" />
+                    שולחים...
+                  </>
+                ) : (
+                  <>
+                    <RefreshCw className="h-5 w-5" aria-hidden="true" />
+                    שלחו לי קוד חדש
+                  </>
+                )}
+              </button>
             </div>
+          ) : (
+            <>
+              {/* OTP Input */}
+              <div className="space-y-3">
+                <div className="flex justify-center" dir="ltr">
+                  <InputOTP
+                    maxLength={6}
+                    value={otpValue}
+                    onChange={handleOtpChange}
+                    disabled={isVerifying}
+                    pattern={REGEXP_ONLY_DIGITS}
+                    autoFocus
+                    aria-label="קוד אימות בן 6 ספרות"
+                    containerClassName="gap-2 sm:gap-3 justify-center"
+                  >
+                    <InputOTPGroup className="gap-1.5">
+                      <InputOTPSlot index={0} className={error ? 'border-destructive' : ''} />
+                      <InputOTPSlot index={1} className={error ? 'border-destructive' : ''} />
+                      <InputOTPSlot index={2} className={error ? 'border-destructive' : ''} />
+                    </InputOTPGroup>
+                    <InputOTPGroup className="gap-1.5">
+                      <InputOTPSlot index={3} className={error ? 'border-destructive' : ''} />
+                      <InputOTPSlot index={4} className={error ? 'border-destructive' : ''} />
+                      <InputOTPSlot index={5} className={error ? 'border-destructive' : ''} />
+                    </InputOTPGroup>
+                  </InputOTP>
+                </div>
 
-            {error && (
-              <p className="text-center text-sm text-destructive animate-fade-in font-medium" role="alert">{error}</p>
-            )}
+                {error && (
+                  <p className="text-center text-sm text-destructive animate-fade-in font-medium" role="alert">{error}</p>
+                )}
 
-            {resendSuccess && (
-              <div className="flex items-center justify-center gap-2 text-primary animate-fade-in" role="status">
-                <CheckCircle2 className="w-4 h-4" aria-hidden="true" />
-                <p className="text-sm font-medium">נשלח קוד חדש</p>
+                {resendSuccess && (
+                  <div className="flex items-center justify-center gap-2 text-primary animate-fade-in" role="status">
+                    <CheckCircle2 className="w-4 h-4" aria-hidden="true" />
+                    <p className="text-sm font-medium">נשלח קוד חדש</p>
+                  </div>
+                )}
               </div>
-            )}
-          </div>
 
-          {/* Timer — calm by default, urgent styling only in the last 15s.
-              Framed as "valid for X more" rather than "expires in X". */}
-          <div className="text-center" aria-live="off">
-            <span className={`text-xs sm:text-sm font-medium ${isUrgent ? 'text-destructive animate-pulse' : 'text-muted-foreground'}`}>
-              {countdown > 0
-                ? (isUrgent ? `פוקע בעוד ${formatTime(countdown)}` : `תקף ל-${formatTime(countdown)} נוספות`)
-                : 'הקוד פג תוקף'}
-            </span>
-          </div>
+              {/* Timer — calm by default, urgent styling only in the last 15s.
+                  Framed as "valid for X more" rather than "expires in X". */}
+              <div className="text-center" aria-live="off">
+                <span className={`text-xs sm:text-sm font-medium ${isUrgent ? 'text-destructive animate-pulse' : 'text-muted-foreground'}`}>
+                  {isUrgent ? `פוקע בעוד ${formatTime(countdown)}` : `תקף ל-${formatTime(countdown)} נוספות`}
+                </span>
+              </div>
 
-          {/* Auto-verify spinner */}
-          {isVerifying && (
-            <div className="flex items-center justify-center gap-2 py-1 animate-fade-in" role="status">
-              <span className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-r-transparent" />
-              <span className="text-sm font-medium text-primary">מאמת...</span>
-            </div>
+              {/* Auto-verify spinner */}
+              {isVerifying && (
+                <div className="flex items-center justify-center gap-2 py-1 animate-fade-in" role="status">
+                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-r-transparent" />
+                  <span className="text-sm font-medium text-primary">מאמת...</span>
+                </div>
+              )}
+
+              {/* Resend — inline text link, not a button. Becomes a clickable
+                  link once the 30-second cooldown ends. */}
+              <div className="text-center text-sm pt-1">
+                {isResending ? (
+                  <span className="inline-flex items-center gap-1.5 text-muted-foreground">
+                    <RefreshCw className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
+                    שולחים קוד חדש...
+                  </span>
+                ) : canResend ? (
+                  <span className="text-muted-foreground">
+                    לא קיבלת?{' '}
+                    <button
+                      type="button"
+                      onClick={handleResendOtp}
+                      className="font-semibold text-primary hover:text-primary-glow hover:underline underline-offset-4 transition-colors focus-visible:outline-none focus-visible:underline"
+                    >
+                      שלחו שוב
+                    </button>
+                  </span>
+                ) : (
+                  <span className="text-muted-foreground/70">
+                    אפשר לשלוח שוב בעוד {formatTime(resendCountdown)}
+                  </span>
+                )}
+              </div>
+            </>
           )}
-
-          {/* Resend — inline text link, not a button. Becomes a clickable link
-              once the 30-second cooldown ends. */}
-          <div className="text-center text-sm pt-1">
-            {isResending ? (
-              <span className="inline-flex items-center gap-1.5 text-muted-foreground">
-                <RefreshCw className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
-                שולחים קוד חדש...
-              </span>
-            ) : canResend ? (
-              <span className="text-muted-foreground">
-                לא קיבלת?{' '}
-                <button
-                  type="button"
-                  onClick={handleResendOtp}
-                  className="font-semibold text-primary hover:text-primary-glow hover:underline underline-offset-4 transition-colors focus-visible:outline-none focus-visible:underline"
-                >
-                  שלחו שוב
-                </button>
-              </span>
-            ) : (
-              <span className="text-muted-foreground/70">
-                אפשר לשלוח שוב בעוד {formatTime(resendCountdown)}
-              </span>
-            )}
-          </div>
         </CardContent>
       </Card>
 
