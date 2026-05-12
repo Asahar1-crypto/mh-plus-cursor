@@ -118,6 +118,7 @@ const PhoneLogin: React.FC<PhoneLoginProps> = ({ onBack, hideHeader = false }) =
     sessionStorage.removeItem('phoneLogin_userInfo');
     sessionStorage.removeItem('phoneLogin_phoneNumber');
     sessionStorage.removeItem('phoneLogin_country');
+    sessionStorage.removeItem('phoneLogin_otpIssuedAt');
     sessionStorage.removeItem('phoneLoginInProgress');
   };
 

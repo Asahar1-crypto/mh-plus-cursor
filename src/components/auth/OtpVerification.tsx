@@ -21,6 +21,21 @@ const RESEND_UNLOCK_AT = OTP_TTL_SECONDS - RESEND_COOLDOWN_SECONDS;
 // don't fire confetti + celebration modal on every return login.
 const SEEN_CELEBRATION_KEY = 'mh_seen_login_celebration';
 
+// sessionStorage key holding the unix-ms timestamp of the most recent OTP send.
+// Written by AuthProvider.sendPhoneOtp; read here so the countdown survives
+// page refresh and navigation away/back.
+const OTP_ISSUED_AT_KEY = 'phoneLogin_otpIssuedAt';
+
+const getRemainingSecondsFromStorage = (): number => {
+  if (typeof window === 'undefined') return OTP_TTL_SECONDS;
+  const raw = sessionStorage.getItem(OTP_ISSUED_AT_KEY);
+  if (!raw) return OTP_TTL_SECONDS;
+  const issuedAt = Number(raw);
+  if (!Number.isFinite(issuedAt) || issuedAt <= 0) return OTP_TTL_SECONDS;
+  const elapsed = Math.floor((Date.now() - issuedAt) / 1000);
+  return Math.max(0, OTP_TTL_SECONDS - elapsed);
+};
+
 interface OtpVerificationProps {
   phoneNumber: string;
   displayNumber: string;
@@ -41,7 +56,7 @@ const OtpVerification: React.FC<OtpVerificationProps> = ({
   const [otpValue, setOtpValue] = useState('');
   const [isVerifying, setIsVerifying] = useState(false);
   const [isResending, setIsResending] = useState(false);
-  const [countdown, setCountdown] = useState(OTP_TTL_SECONDS);
+  const [countdown, setCountdown] = useState<number>(getRemainingSecondsFromStorage);
   const [error, setError] = useState('');
   const [showCelebration, setShowCelebration] = useState(false);
   const [resendSuccess, setResendSuccess] = useState(false);
@@ -49,13 +64,14 @@ const OtpVerification: React.FC<OtpVerificationProps> = ({
   // Tracks the last code we tried so we don't auto-resubmit the same wrong digits.
   const lastAttemptedCode = useRef<string>('');
 
-  // Countdown timer
+  // Countdown timer — single source of truth is the sessionStorage timestamp,
+  // so refresh / navigate-away / background tabs all stay accurate.
   useEffect(() => {
-    if (countdown > 0) {
-      const timer = setTimeout(() => setCountdown(countdown - 1), 1000);
-      return () => clearTimeout(timer);
-    }
-  }, [countdown]);
+    const id = setInterval(() => {
+      setCountdown(getRemainingSecondsFromStorage());
+    }, 1000);
+    return () => clearInterval(id);
+  }, []);
 
   const formatTime = (seconds: number): string => {
     const mins = Math.floor(seconds / 60);

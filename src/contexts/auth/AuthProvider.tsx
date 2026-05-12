@@ -89,6 +89,9 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     setIsLoading(true);
     try {
       const result = await phoneAuthService.sendPhoneLoginOtp(phoneNumber);
+      // Persist the moment the OTP was issued so the verification screen's
+      // countdown survives refresh / navigation away and back.
+      sessionStorage.setItem('phoneLogin_otpIssuedAt', String(Date.now()));
       return result;
     } catch (error) {
       throw error;
@@ -103,14 +106,15 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       const result = await phoneAuthService.phoneLogin(phoneNumber, otp);
       // After successful phone login, check and set user data
       await checkAndSetUserData();
-      
+
       // Clear all phone login related sessionStorage after successful login
       sessionStorage.removeItem('phoneLogin_showOtp');
       sessionStorage.removeItem('phoneLogin_userInfo');
       sessionStorage.removeItem('phoneLogin_phoneNumber');
+      sessionStorage.removeItem('phoneLogin_otpIssuedAt');
       sessionStorage.removeItem('phoneLoginInProgress');
       sessionStorage.removeItem('login_authMethod');
-      
+
     } catch (error) {
       throw error;
     } finally {
