@@ -2,7 +2,7 @@
 import React from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
-import { Home, CreditCard, Settings, Users, BarChart3, X, Shield, UserCog, Calculator, ChevronRight, ChevronLeft, Tag, Mail, MessageSquare, DollarSign, Activity, Crown, CalendarDays, PartyPopper } from 'lucide-react';
+import { Home, CreditCard, Settings, Users, BarChart3, X, Shield, UserCog, Calculator, ChevronRight, ChevronLeft, Tag, Mail, MessageSquare, DollarSign, Activity, Crown, CalendarDays, PartyPopper, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useAuth } from '@/contexts/auth';
@@ -143,6 +143,7 @@ const AppSidebar: React.FC<AppSidebarProps> = ({
     { icon: Mail, label: 'הגדרות מייל', path: '/admin/email-settings' },
     { icon: Mail, label: 'ניהול מיילים', path: '/admin/email-management' },
     { icon: MessageSquare, label: 'יומני SMS', path: '/admin/sms-logs' },
+    { icon: AlertTriangle, label: 'שגיאות מערכת', path: '/admin/system-errors' },
     { icon: Activity, label: 'בריאות מערכת', path: '/admin/system-health' },
   ];
 
@@ -174,9 +175,11 @@ const AppSidebar: React.FC<AppSidebarProps> = ({
           <div className="p-4 border-b border-border bg-card">
             <div className="flex items-center justify-between">
               <Link to="/dashboard" className="flex items-center gap-2" onClick={onClose}>
-                <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-primary to-secondary flex items-center justify-center shadow-sm">
-                  <span className="font-bold text-white text-sm">מ+</span>
-                </div>
+                <img
+                  src="/logo-icon.svg"
+                  alt="מחציות פלוס"
+                  className="h-8 w-8 flex-shrink-0 object-contain"
+                />
                 <span className="text-lg font-bold text-foreground">מחציות פלוס</span>
               </Link>
               <Button
@@ -202,12 +205,14 @@ const AppSidebar: React.FC<AppSidebarProps> = ({
                 "flex items-center gap-2 hover:opacity-80 transition-opacity",
                 collapsed && "justify-center"
               )}>
-                <div className={cn(
-                  "rounded-lg bg-gradient-to-br from-primary to-secondary flex items-center justify-center shadow-sm flex-shrink-0",
-                  collapsed ? "h-8 w-8" : "h-9 w-9"
-                )}>
-                  <span className={cn("font-bold text-white", collapsed ? "text-xs" : "text-sm")}>מ+</span>
-                </div>
+                <img
+                  src="/logo-icon.svg"
+                  alt="מחציות פלוס"
+                  className={cn(
+                    "flex-shrink-0 object-contain",
+                    collapsed ? "h-8 w-8" : "h-9 w-9"
+                  )}
+                />
                 {!collapsed && (
                   <div className="flex flex-col">
                     <span className="text-base font-bold text-foreground leading-tight">מחציות פלוס</span>

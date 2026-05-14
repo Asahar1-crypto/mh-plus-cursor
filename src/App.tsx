@@ -9,6 +9,7 @@ import { AuthProvider } from "@/contexts/auth";
 import { ExpenseProvider } from "@/contexts/ExpenseContext";
 import { NotificationProvider } from "@/contexts/NotificationContext";
 import { NotificationPermissionPrompt } from "@/components/notifications";
+import { AddExpenseModalProvider } from "@/hooks/useAddExpenseModal";
 
 // Eagerly loaded pages (landing/auth for fast first paint)
 import Home from "./pages/Home";
@@ -27,7 +28,6 @@ const FamilyInvitation = React.lazy(() => import("./pages/FamilyInvitation"));
 const FamilyPhoneRegister = React.lazy(() => import("./pages/FamilyPhoneRegister"));
 const FamilyOtp = React.lazy(() => import("./pages/FamilyOtp"));
 const NotFound = React.lazy(() => import("./pages/NotFound"));
-const AddExpense = React.lazy(() => import("./pages/AddExpense"));
 const Children = React.lazy(() => import("./pages/Children"));
 const Expenses = React.lazy(() => import("./pages/Expenses"));
 const Reports = React.lazy(() => import("./pages/Reports"));
@@ -51,16 +51,20 @@ const AdminEmailManagement = React.lazy(() => import("./pages/admin/AdminEmailMa
 const AdminCoupons = React.lazy(() => import("./pages/admin/AdminCoupons"));
 const AdminSuperAdmins = React.lazy(() => import("./pages/admin/AdminSuperAdmins"));
 const AdminSystemHealth = React.lazy(() => import("./pages/admin/AdminSystemHealth"));
+const AdminSystemErrors = React.lazy(() => import("./pages/admin/AdminSystemErrors"));
+const AdminSchoolCalendar = React.lazy(() => import("./pages/admin/AdminSchoolCalendar"));
+const AdminSchoolCalendarYear = React.lazy(() => import("./pages/admin/AdminSchoolCalendarYear"));
 
 // Static imports (non-page components)
 import AuthLayout from "./components/AuthLayout";
 import AppLayout from "./components/AppLayout";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { AuthAwareThemeProvider } from "./components/AuthAwareThemeProvider";
+import { BrandedLoader } from "./components/ui/branded-loader";
 
 const LoadingSpinner = () => (
   <div className="flex items-center justify-center min-h-screen">
-    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+    <BrandedLoader size="lg" text="טוען..." />
   </div>
 );
 
@@ -73,6 +77,7 @@ const App = () => (
         <AuthAwareThemeProvider>
         <NotificationProvider>
           <ExpenseProvider>
+            <AddExpenseModalProvider>
             <Toaster />
             <Sonner position="top-center" closeButton />
             <NotificationPermissionPrompt />
@@ -117,7 +122,6 @@ const App = () => (
                 <Route path="/dashboard" element={<Dashboard />} />
                 <Route path="/account-settings" element={<AccountSettings />} />
                 <Route path="/account-management" element={<AccountManagement />} />
-                <Route path="/add-expense" element={<AddExpense />} />
                 <Route path="/children" element={<Children />} />
                 <Route path="/custody-calendar" element={<CustodyCalendar />} />
                 <Route path="/expenses" element={<Expenses />} />
@@ -138,6 +142,9 @@ const App = () => (
                 <Route path="/admin/coupons" element={<AdminCoupons />} />
                 <Route path="/admin/super-admins" element={<AdminSuperAdmins />} />
                 <Route path="/admin/system-health" element={<AdminSystemHealth />} />
+                <Route path="/admin/system-errors" element={<AdminSystemErrors />} />
+                <Route path="/admin/school-calendar" element={<AdminSchoolCalendar />} />
+                <Route path="/admin/school-calendar/:year" element={<AdminSchoolCalendarYear />} />
               </Route>
               
               {/* Special routes - wrapped in AuthLayout for proper auth context */}
@@ -151,6 +158,7 @@ const App = () => (
             </Routes>
             </Suspense>
             </AppRouter>
+            </AddExpenseModalProvider>
           </ExpenseProvider>
         </NotificationProvider>
         </AuthAwareThemeProvider>

@@ -212,9 +212,21 @@ export const ReceiptUpload: React.FC<ReceiptUploadProps> = ({ onScanComplete, on
       });
 
       if (error) {
-        const errMsg = data?.error || error.message || 'שגיאה בסריקת החשבונית';
-        const errDetails = data?.details ? ` (${String(data.details).slice(0, 100)})` : '';
-        throw new Error(errMsg + errDetails);
+        // Server returns only a friendly user_message; technical details are
+        // logged to system_errors and visible to super admins. Read the body
+        // off FunctionsHttpError when supabase-js sets data=null on non-2xx.
+        let serverMessage: string | undefined = data?.error;
+        if (!serverMessage) {
+          try {
+            const resp = (error as { context?: { response?: Response } })?.context?.response;
+            if (resp) {
+              const cloned = resp.clone();
+              const body = await cloned.json().catch(() => null);
+              serverMessage = body?.error;
+            }
+          } catch { /* fall through to generic */ }
+        }
+        throw new Error(serverMessage || 'שגיאה בסריקת החשבונית. נסו שוב.');
       }
 
       if (!data?.success) {
