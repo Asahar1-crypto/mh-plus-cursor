@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Check, AlertTriangle } from 'lucide-react';
+import { Check, AlertTriangle, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -33,6 +33,9 @@ interface ScanResult {
   currency?: string;
   confidence_score?: number;
   receipt_id?: string;
+  invoice_number?: string | null;
+  suggested_category_id?: string | null;
+  category_confidence?: number;
   items: {
     name: string;
     price: number;
@@ -40,6 +43,10 @@ interface ScanResult {
     category: string;
   }[];
 }
+
+// Threshold above which the AI's suggested category auto-fills the dropdown.
+// Below this we leave the dropdown at its default and the user picks manually.
+const CATEGORY_AUTOFILL_THRESHOLD = 70;
 
 interface ReceiptValidationProps {
   scanResult: ScanResult;
@@ -69,6 +76,10 @@ export const ReceiptValidation: React.FC<ReceiptValidationProps> = ({
   const [editedVendor, setEditedVendor] = useState(scanResult.vendor);
   const [editedTotal, setEditedTotal] = useState(scanResult.total);
   const [selectedCategory, setSelectedCategory] = useState('מזון');
+  // Tracks whether `selectedCategory` was filled in by the AI suggestion vs.
+  // chosen / changed by the user. The "✨ הוצע אוטומטית" badge only shows
+  // while this is true; any manual change clears it.
+  const [categoryAutoFilled, setCategoryAutoFilled] = useState(false);
   const [selectedChild, setSelectedChild] = useState<string>('');
   const [paymentType, setPaymentType] = useState('i_paid_shared');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -96,20 +107,37 @@ export const ReceiptValidation: React.FC<ReceiptValidationProps> = ({
   const otherUserName = accountMembers?.find(m => m.user_id !== user?.id)?.user_name || 'השותף/ה';
   const otherUserId = accountMembers?.find(m => m.user_id !== user?.id)?.user_id || '';
 
-  // Determine most common category from items
+  // Apply the AI-suggested category when it landed with high enough confidence.
+  // The dropdown stays editable — the user can pick anything else.
   useEffect(() => {
+    const suggestedId = scanResult.suggested_category_id;
+    const confidence = scanResult.category_confidence ?? 0;
+    if (suggestedId && confidence >= CATEGORY_AUTOFILL_THRESHOLD && categoriesList.length > 0) {
+      const match = categoriesList.find((c) => c.id === suggestedId);
+      if (match) {
+        setSelectedCategory(match.name);
+        setCategoryAutoFilled(true);
+        return;
+      }
+    }
+    // Legacy items-based heuristic kept as a last-resort fallback for older
+    // scans that don't carry the new fields.
     if (scanResult.items.length > 0) {
       const categoryCounts: Record<string, number> = {};
-      scanResult.items.forEach(item => {
+      scanResult.items.forEach((item) => {
         const hebrewCategory = CATEGORY_MAPPING[item.category.toLowerCase()] || 'אחר';
         categoryCounts[hebrewCategory] = (categoryCounts[hebrewCategory] || 0) + 1;
       });
       const mostCommon = Object.entries(categoryCounts).sort((a, b) => b[1] - a[1])[0];
-      if (mostCommon) {
-        setSelectedCategory(mostCommon[0]);
-      }
+      if (mostCommon) setSelectedCategory(mostCommon[0]);
     }
-  }, [scanResult.items]);
+  }, [scanResult.suggested_category_id, scanResult.category_confidence, scanResult.items, categoriesList]);
+
+  // Clear the "auto-filled" badge the moment the user changes the category.
+  const handleCategoryChange = (value: string) => {
+    setSelectedCategory(value);
+    setCategoryAutoFilled(false);
+  };
 
   const confidenceScore = scanResult.confidence_score || 0;
   const isLowConfidence = confidenceScore < 60;
@@ -182,7 +210,8 @@ export const ReceiptValidation: React.FC<ReceiptValidationProps> = ({
         includeInMonthlyBalance: true,
         splitEqually: splitEqually,
         isRecurring: false,
-        receiptId: scanResult.receipt_id
+        receiptId: scanResult.receipt_id,
+        invoiceNumber: scanResult.invoice_number ?? undefined,
       };
 
       if (account?.id) {
@@ -214,10 +243,13 @@ export const ReceiptValidation: React.FC<ReceiptValidationProps> = ({
 
     } catch (error) {
       console.error('Error creating expense:', error);
+      const isDupInvoice = (error as { isDuplicateInvoice?: boolean })?.isDuplicateInvoice;
       toast({
-        variant: "destructive",
-        title: "שגיאה ביצירת הוצאה",
-        description: "אירעה שגיאה בעת יצירת ההוצאה"
+        variant: 'destructive',
+        title: isDupInvoice ? 'חשבונית כפולה' : 'שגיאה ביצירת הוצאה',
+        description: isDupInvoice
+          ? (error as Error).message
+          : 'אירעה שגיאה בעת יצירת ההוצאה',
       });
     } finally {
       setIsSubmitting(false);
@@ -237,10 +269,13 @@ export const ReceiptValidation: React.FC<ReceiptValidationProps> = ({
       onApprove();
     } catch (error) {
       console.error('Error creating expense:', error);
+      const isDupInvoice = (error as { isDuplicateInvoice?: boolean })?.isDuplicateInvoice;
       toast({
-        variant: "destructive",
-        title: "שגיאה ביצירת הוצאה",
-        description: "אירעה שגיאה בעת יצירת ההוצאה"
+        variant: 'destructive',
+        title: isDupInvoice ? 'חשבונית כפולה' : 'שגיאה ביצירת הוצאה',
+        description: isDupInvoice
+          ? (error as Error).message
+          : 'אירעה שגיאה בעת יצירת ההוצאה',
       });
     } finally {
       setIsSubmitting(false);
@@ -315,10 +350,18 @@ export const ReceiptValidation: React.FC<ReceiptValidationProps> = ({
 
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4">
             <div>
-              <Label className="text-xs sm:text-sm">קטגוריה</Label>
+              <div className="flex items-center gap-2 mb-1">
+                <Label className="text-xs sm:text-sm">קטגוריה</Label>
+                {categoryAutoFilled && (
+                  <Badge variant="secondary" className="text-[10px] sm:text-xs gap-1 px-1.5 py-0">
+                    <Sparkles className="w-3 h-3" />
+                    הוצע אוטומטית
+                  </Badge>
+                )}
+              </div>
               <CategoryDropdown
                 value={selectedCategory}
-                onValueChange={setSelectedCategory}
+                onValueChange={handleCategoryChange}
                 categories={categories}
               />
             </div>

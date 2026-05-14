@@ -145,9 +145,10 @@ export const expenseService = {
       split_equally: expense.splitEqually,
       is_recurring: expense.isRecurring || false,
       frequency: expense.frequency || null,
-      receipt_id: expense.receiptId || null
+      receipt_id: expense.receiptId || null,
+      invoice_number: expense.invoiceNumber?.trim() || null,
     };
-    
+
     const { data: newExpense, error } = await supabase
       .from('expenses')
       .insert(expenseData)
@@ -155,6 +156,20 @@ export const expenseService = {
       .single();
 
     if (error) {
+      // Friendly error for the partial-unique-index violation on
+      // (account_id, invoice_number). Surfaces as Postgres error code 23505.
+      const isInvoiceDuplicate =
+        (error as { code?: string }).code === '23505' &&
+        (error as { message?: string }).message?.includes('idx_expenses_account_invoice_unique');
+      if (isInvoiceDuplicate && expense.invoiceNumber) {
+        const dupErr = new Error(
+          `חשבונית עם המספר "${expense.invoiceNumber}" כבר קיימת בחשבון. ההוצאה לא נוספה.`,
+        ) as Error & { code: string; isDuplicateInvoice: true; invoiceNumber: string };
+        dupErr.code = 'duplicate_invoice_number';
+        dupErr.isDuplicateInvoice = true;
+        dupErr.invoiceNumber = expense.invoiceNumber;
+        throw dupErr;
+      }
       console.error('Error adding expense:', error);
       throw error;
     }

@@ -18,6 +18,7 @@ export interface Expense {
   approvedAt?: string;
   receipt?: string;
   receiptId?: string;
+  invoiceNumber?: string;
   isRecurring: boolean;
   frequency?: ExpenseFrequency;
   hasEndDate?: boolean;

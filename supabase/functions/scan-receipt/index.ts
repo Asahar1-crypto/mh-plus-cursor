@@ -210,17 +210,29 @@ serve(async (req) => {
       });
     }
 
-    const systemPrompt = `אתה מומחה בקריאת חשבוניות וקבלות בעברית ובאנגלית.
-המשימה שלך פשוטה: חלץ 3 נתונים בלבד מהחשבונית:
-1. סה"כ לתשלום (המספר הסופי שהלקוח שילם)
-2. שם העסק/ספק
-3. תאריך העסקה
+    // Fetch the user's category list so the AI can suggest one. If the fetch
+    // fails we proceed anyway — the suggestion is enrichment, not critical.
+    const { data: categoryRows } = await adminClient
+      .from('categories')
+      .select('id, name')
+      .eq('account_id', account_id)
+      .order('sort_order', { ascending: true });
+    const categories = (categoryRows ?? []) as Array<{ id: string; name: string }>;
+    const categoriesJson = JSON.stringify(categories.map((c) => ({ id: c.id, name: c.name })));
 
-חפש את המילים: "סה"כ", "לתשלום", "total", "סכום כולל", "grand total".
-אם יש מע"מ, קח את הסכום הסופי כולל מע"מ.
-אם לא מצאת תאריך, השתמש בתאריך היום.
+    const systemPrompt = `אתה מומחה בקריאת חשבוניות וקבלות בעברית ובאנגלית.
+חלץ את הנתונים הבאים מהחשבונית:
+1. סה"כ לתשלום (המספר הסופי שהלקוח שילם, כולל מע"מ)
+2. שם העסק/ספק
+3. תאריך העסקה (פורמט YYYY-MM-DD; אם לא נמצא — תאריך היום)
+4. מספר חשבונית — חפש "מס' חשבונית", "אסמכתא", "מס' עסקה", "invoice no", "transaction id". החזר null אם לא נמצא.
+5. קטגוריה — בחר את ה-id המתאים מתוך הרשימה הבאה. החזר null ו-category_confidence נמוך אם אינך בטוח. אל תמציא id שלא ברשימה.
+
+קטגוריות זמינות:
+${categoriesJson}
+
 היה מדויק - עדיף לא לנחש.`;
-    const userPrompt = `קרא את החשבונית הזו והחזר את הסה"כ, שם העסק והתאריך.`;
+    const userPrompt = `קרא את החשבונית הזו והחזר סה"כ, שם עסק, תאריך, מספר חשבונית וקטגוריה מתאימה.`;
 
     const openaiBody = {
       model: 'gpt-4o',
@@ -245,9 +257,12 @@ serve(async (req) => {
               total: { type: 'number', description: 'סה"כ לתשלום בשקלים' },
               vendor: { type: 'string', description: 'שם העסק או הספק' },
               date: { type: 'string', description: 'תאריך העסקה בפורמט YYYY-MM-DD' },
-              confidence_score: { type: 'number', description: 'רמת הביטחון (0-100)' },
+              confidence_score: { type: 'number', description: 'רמת הביטחון הכוללת (0-100)' },
+              invoice_number: { type: ['string', 'null'], description: 'מספר חשבונית/אסמכתא אם נמצא, אחרת null' },
+              suggested_category_id: { type: ['string', 'null'], description: 'id של קטגוריה מהרשימה שהוצגה, או null אם לא בטוח' },
+              category_confidence: { type: 'number', description: 'רמת הביטחון בקטגוריה (0-100)' },
             },
-            required: ['total', 'vendor', 'date', 'confidence_score'],
+            required: ['total', 'vendor', 'date', 'confidence_score', 'category_confidence'],
             additionalProperties: false,
           },
         },
@@ -289,7 +304,15 @@ serve(async (req) => {
       });
     }
 
-    let scanResult: { total?: number; vendor?: string; date?: string; confidence_score?: number };
+    let scanResult: {
+      total?: number;
+      vendor?: string;
+      date?: string;
+      confidence_score?: number;
+      invoice_number?: string | null;
+      suggested_category_id?: string | null;
+      category_confidence?: number;
+    };
     try {
       scanResult = JSON.parse(toolCall.function.arguments);
     } catch (parseError) {
@@ -315,9 +338,30 @@ serve(async (req) => {
       });
     }
 
-    if (!scanResult.confidence_score) scanResult.confidence_score = 75;
+    // OpenAI sometimes returns confidence as a 0-1 fraction even when the
+    // schema asks for 0-100. Normalize: anything <= 1.0 is treated as a
+    // fraction and scaled. Final value is an integer 0-100.
+    const normalizeConfidence = (raw: unknown): number => {
+      const n = typeof raw === 'number' ? raw : Number(raw);
+      if (!Number.isFinite(n) || n < 0) return 0;
+      const scaled = n <= 1 ? n * 100 : n;
+      return Math.max(0, Math.min(100, Math.round(scaled)));
+    };
+    scanResult.confidence_score = normalizeConfidence(scanResult.confidence_score ?? 75);
+    scanResult.category_confidence = normalizeConfidence(scanResult.category_confidence ?? 0);
     if (!scanResult.vendor) scanResult.vendor = 'עסק לא מזוהה';
     if (!scanResult.date) scanResult.date = new Date().toISOString().split('T')[0];
+
+    // Sanity-check the AI returned a real category id from the list we gave
+    // it (it sometimes hallucinates an id when uncertain).
+    const validCategoryIds = new Set(categories.map((c) => c.id));
+    const suggestedId = scanResult.suggested_category_id ?? null;
+    const safeSuggestedId =
+      suggestedId && validCategoryIds.has(suggestedId) ? suggestedId : null;
+    const safeInvoiceNumber =
+      typeof scanResult.invoice_number === 'string' && scanResult.invoice_number.trim().length > 0
+        ? scanResult.invoice_number.trim()
+        : null;
 
     const formattedResult = {
       total: scanResult.total,
@@ -326,6 +370,9 @@ serve(async (req) => {
       confidence_score: scanResult.confidence_score,
       currency: 'ILS',
       items: [],
+      invoice_number: safeInvoiceNumber,
+      suggested_category_id: safeSuggestedId,
+      category_confidence: scanResult.category_confidence,
     };
 
     const { data: scannedReceipt, error: saveError } = await adminClient
@@ -340,6 +387,7 @@ serve(async (req) => {
         gpt_response: formattedResult,
         confidence_score: formattedResult.confidence_score,
         processed_at: new Date().toISOString(),
+        invoice_number: safeInvoiceNumber,
       })
       .select()
       .single();
