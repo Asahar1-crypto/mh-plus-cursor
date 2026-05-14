@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useRef } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { Upload, FileImage, FileText, Camera, X, Loader2, Smartphone } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -11,9 +11,16 @@ import { Capacitor } from '@capacitor/core';
 interface ReceiptUploadProps {
   onScanComplete: (scanResult: any) => void;
   onCancel: () => void;
+  /**
+   * Fired whenever there is unsaved work that should block modal dismissal.
+   * Currently signals the active OCR scan call (non-abortable network roundtrip);
+   * a locally-selected file is intentionally NOT considered "work at risk" since
+   * it can be trivially re-picked.
+   */
+  onWorkInProgressChange?: (busy: boolean) => void;
 }
 
-export const ReceiptUpload: React.FC<ReceiptUploadProps> = ({ onScanComplete, onCancel }) => {
+export const ReceiptUpload: React.FC<ReceiptUploadProps> = ({ onScanComplete, onCancel, onWorkInProgressChange }) => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -29,6 +36,13 @@ export const ReceiptUpload: React.FC<ReceiptUploadProps> = ({ onScanComplete, on
   };
 
   const maxFileSize = 5 * 1024 * 1024; // 5MB
+
+  // Surface the scan-in-progress flag to the parent so it can tighten
+  // shouldPreventClose only when there's actually a non-abortable OCR call
+  // in flight (not just because a file was picked).
+  useEffect(() => {
+    onWorkInProgressChange?.(isScanning);
+  }, [isScanning, onWorkInProgressChange]);
 
   const handleFileSelect = useCallback((file: File) => {
     try {
