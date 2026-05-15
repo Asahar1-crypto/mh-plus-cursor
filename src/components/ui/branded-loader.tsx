@@ -1,5 +1,6 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
+import { BRAND_LOGO_PATH } from '@/lib/brand';
 
 interface BrandedLoaderProps {
   size?: 'sm' | 'md' | 'lg';
@@ -43,7 +44,7 @@ export const BrandedLoader: React.FC<BrandedLoaderProps> = ({
         {/* Inner branded logo */}
         <div className="absolute inset-0 flex items-center justify-center">
           <img
-            src="/logo-icon.svg"
+            src={BRAND_LOGO_PATH}
             alt="מחציות פלוס"
             className={cn('object-contain animate-pulse', innerIconClasses[size])}
           />

@@ -24,9 +24,9 @@
       "purpose": "maskable"
     },
     {
-      "src": "/logo-icon.png",
+      "src": "/illustrations/family3.webp",
       "sizes": "256x256",
-      "type": "image/png",
+      "type": "image/webp",
       "purpose": "any"
     },
     {

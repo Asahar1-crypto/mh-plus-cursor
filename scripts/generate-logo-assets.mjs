@@ -1,28 +1,24 @@
-// One-shot logo asset generator. Takes the re-tinted SVGs in /public
-// and emits the raster assets that the app, PWA manifest, and favicon need.
-//
+// Generates raster logo assets from the brand illustration (family3.webp).
 // Run: node scripts/generate-logo-assets.mjs
 import sharp from 'sharp';
-import { readFileSync, writeFileSync } from 'fs';
 import { resolve, dirname } from 'path';
 import { fileURLToPath } from 'url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const pub = resolve(__dirname, '..', 'public');
-
-const iconSvg = readFileSync(resolve(pub, 'logo-icon.svg'));
+const brandSrc = resolve(pub, 'illustrations', 'family3.webp');
 
 async function png(size, name) {
-  await sharp(iconSvg, { density: 384 })
-    .resize(size, size)
+  await sharp(brandSrc)
+    .resize(size, size, { fit: 'contain', background: { r: 255, g: 255, b: 255, alpha: 0 } })
     .png()
     .toFile(resolve(pub, name));
   console.log('wrote', name);
 }
 
 async function webp(size, name) {
-  await sharp(iconSvg, { density: 384 })
-    .resize(size, size)
+  await sharp(brandSrc)
+    .resize(size, size, { fit: 'contain', background: { r: 255, g: 255, b: 255, alpha: 0 } })
     .webp({ quality: 92 })
     .toFile(resolve(pub, name));
   console.log('wrote', name);
@@ -33,6 +29,4 @@ await png(192, 'icon-192.png');
 await png(256, 'logo-icon.png');
 await webp(512, 'logo.webp');
 
-// Favicon (multi-size ICO requires png-to-ico; fall back to 32x32 PNG renamed,
-// most browsers accept a PNG-encoded .ico. Keep existing favicon.ico if present.)
 console.log('done');

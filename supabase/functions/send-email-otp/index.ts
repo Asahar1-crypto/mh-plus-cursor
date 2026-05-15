@@ -21,8 +21,8 @@ function getEmailHtml(type: string, code: string): { subject: string; html: stri
 <table width="460" cellpadding="0" cellspacing="0" style="max-width:460px;width:100%;">
 
   <!-- Header with gradient -->
-  <tr><td style="background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);border-radius:16px 16px 0 0;padding:32px 24px;text-align:center;">
-    <img src="https://mhplus.online/logo.png" alt="מחציות +" width="80" height="auto" style="display:block;margin:0 auto 12px auto;border-radius:8px;" />
+  <tr><td style="background:linear-gradient(135deg,#00B7E8 0%,#00D1FF 100%);border-radius:16px 16px 0 0;padding:32px 24px;text-align:center;">
+    <img src="https://mhplus.online/illustrations/family3.webp" alt="מחציות +" width="80" height="auto" style="display:block;margin:0 auto 12px auto;border-radius:8px;" />
     <div style="font-size:28px;font-weight:700;color:#ffffff;letter-spacing:1px;">מחציות +</div>
     <div style="font-size:14px;color:rgba(255,255,255,0.8);margin-top:6px;">ניהול הוצאות משפחתי</div>
   </td></tr>
@@ -78,8 +78,8 @@ function getEmailHtml(type: string, code: string): { subject: string; html: stri
 <table width="460" cellpadding="0" cellspacing="0" style="max-width:460px;width:100%;">
 
   <!-- Header with gradient -->
-  <tr><td style="background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);border-radius:16px 16px 0 0;padding:32px 24px;text-align:center;">
-    <img src="https://mhplus.online/logo.png" alt="מחציות +" width="80" height="auto" style="display:block;margin:0 auto 12px auto;border-radius:8px;" />
+  <tr><td style="background:linear-gradient(135deg,#00B7E8 0%,#00D1FF 100%);border-radius:16px 16px 0 0;padding:32px 24px;text-align:center;">
+    <img src="https://mhplus.online/illustrations/family3.webp" alt="מחציות +" width="80" height="auto" style="display:block;margin:0 auto 12px auto;border-radius:8px;" />
     <div style="font-size:28px;font-weight:700;color:#ffffff;letter-spacing:1px;">מחציות +</div>
     <div style="font-size:14px;color:rgba(255,255,255,0.8);margin-top:6px;">ניהול הוצאות משפחתי</div>
   </td></tr>
@@ -135,8 +135,8 @@ function getEmailHtml(type: string, code: string): { subject: string; html: stri
 <table width="460" cellpadding="0" cellspacing="0" style="max-width:460px;width:100%;">
 
   <!-- Header with gradient -->
-  <tr><td style="background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);border-radius:16px 16px 0 0;padding:32px 24px;text-align:center;">
-    <img src="https://mhplus.online/logo.png" alt="מחציות +" width="80" height="auto" style="display:block;margin:0 auto 12px auto;border-radius:8px;" />
+  <tr><td style="background:linear-gradient(135deg,#00B7E8 0%,#00D1FF 100%);border-radius:16px 16px 0 0;padding:32px 24px;text-align:center;">
+    <img src="https://mhplus.online/illustrations/family3.webp" alt="מחציות +" width="80" height="auto" style="display:block;margin:0 auto 12px auto;border-radius:8px;" />
     <div style="font-size:28px;font-weight:700;color:#ffffff;letter-spacing:1px;">מחציות +</div>
     <div style="font-size:14px;color:rgba(255,255,255,0.8);margin-top:6px;">ניהול הוצאות משפחתי</div>
   </td></tr>

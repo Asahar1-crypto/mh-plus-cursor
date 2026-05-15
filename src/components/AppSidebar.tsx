@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useAuth } from '@/contexts/auth';
 import { useExpense } from '@/contexts/ExpenseContext';
+import { BRAND_LOGO_PATH } from '@/lib/brand';
 
 interface SidebarItemProps {
   icon: React.ElementType;
@@ -176,7 +177,7 @@ const AppSidebar: React.FC<AppSidebarProps> = ({
             <div className="flex items-center justify-between">
               <Link to="/dashboard" className="flex items-center gap-2" onClick={onClose}>
                 <img
-                  src="/logo-icon.svg"
+                  src={BRAND_LOGO_PATH}
                   alt="מחציות פלוס"
                   className="h-8 w-8 flex-shrink-0 object-contain"
                 />
@@ -206,7 +207,7 @@ const AppSidebar: React.FC<AppSidebarProps> = ({
                 collapsed && "justify-center"
               )}>
                 <img
-                  src="/logo-icon.svg"
+                  src={BRAND_LOGO_PATH}
                   alt="מחציות פלוס"
                   className={cn(
                     "flex-shrink-0 object-contain",

@@ -57,11 +57,11 @@ function buildBatchedEmailHtml(
 
 <!-- Header with gradient -->
 <tr>
-<td style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 32px 40px; text-align: center;">
+<td style="background: linear-gradient(135deg, #00B7E8 0%, #00D1FF 100%); padding: 32px 40px; text-align: center;">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
 <tr>
 <td align="center">
-<img src="https://mhplus.online/logo.png" alt="מחציות פלוס" width="48" height="48" style="display: block; margin: 0 auto 12px; border-radius: 12px;" />
+<img src="https://mhplus.online/illustrations/family3.webp" alt="מחציות פלוס" width="48" height="48" style="display: block; margin: 0 auto 12px; border-radius: 12px;" />
 <p style="margin: 0; font-size: 22px; font-weight: 700; color: #ffffff; font-family: 'Heebo', Arial, sans-serif;">מחציות פלוס</p>
 </td>
 </tr>
@@ -112,7 +112,7 @@ ${expenseRowsHtml}
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
 <tr>
 <td align="center" style="padding-bottom: 8px;">
-<a href="${appUrl}" target="_blank" style="display: inline-block; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: #ffffff; font-size: 17px; font-weight: 700; text-decoration: none; padding: 16px 48px; border-radius: 50px; font-family: 'Heebo', Arial, sans-serif;">&#x2192; לאישור ההוצאות</a>
+<a href="${appUrl}" target="_blank" style="display: inline-block; background: linear-gradient(135deg, #00B7E8 0%, #00D1FF 100%); color: #ffffff; font-size: 17px; font-weight: 700; text-decoration: none; padding: 16px 48px; border-radius: 50px; font-family: 'Heebo', Arial, sans-serif;">&#x2192; לאישור ההוצאות</a>
 </td>
 </tr>
 </table>
@@ -126,13 +126,13 @@ ${expenseRowsHtml}
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
 <tr>
 <td align="center">
-<img src="https://mhplus.online/logo.png" alt="מחציות פלוס" width="32" height="32" style="display: block; margin: 0 auto 8px; border-radius: 8px; opacity: 0.7;" />
+<img src="https://mhplus.online/illustrations/family3.webp" alt="מחציות פלוס" width="32" height="32" style="display: block; margin: 0 auto 8px; border-radius: 8px; opacity: 0.7;" />
 <p style="margin: 0 0 4px; font-size: 14px; font-weight: 600; color: #4a5568; font-family: 'Heebo', Arial, sans-serif;">מחציות פלוס</p>
 <p style="margin: 0 0 16px; font-size: 12px; color: #a0aec0; font-family: 'Heebo', Arial, sans-serif;">ניהול הוצאות משותפות בין הורים</p>
 <p style="margin: 0; font-size: 12px; color: #a0aec0; font-family: 'Heebo', Arial, sans-serif;">
-<a href="${appUrl}/account-settings" style="color: #667eea; text-decoration: none;">הגדרות התראות</a>
+<a href="${appUrl}/account-settings" style="color: #00B7E8; text-decoration: none;">הגדרות התראות</a>
 <span style="color: #cbd5e0; margin: 0 8px;">|</span>
-<a href="${appUrl}/account-settings" style="color: #667eea; text-decoration: none;">ביטול הרשמה</a>
+<a href="${appUrl}/account-settings" style="color: #00B7E8; text-decoration: none;">ביטול הרשמה</a>
 </p>
 </td>
 </tr>
