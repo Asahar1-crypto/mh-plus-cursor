@@ -12,8 +12,27 @@
  * this card can render in dashboard, settlement, or onboarding previews.
  */
 import { useMemo } from 'react';
+import { ArrowLeft, CheckCircle } from 'lucide-react';
 import { MascotImage, type MascotPose } from '@/components/mascot/MascotImage';
 import { cn } from '@/lib/utils';
+
+/**
+ * One member's outstanding balance in the current period.
+ * balance > 0 → they owe (חייב)
+ * balance < 0 → they are owed (זכאי)
+ * balance ≈ 0 → settled (מאוזן)
+ */
+export interface PaymentSplitMember {
+  userId: string;
+  userName: string;
+  balance: number;
+}
+
+export interface PaymentSplit {
+  members: PaymentSplitMember[];
+  /** Render a "two members required" note when length < 2 */
+  insufficientMembers?: boolean;
+}
 
 interface HeroBalanceCardProps {
   /** Big number — currently approved + paid for the period */
@@ -31,6 +50,13 @@ interface HeroBalanceCardProps {
    */
   baselineAverage?: number;
   /**
+   * Optional outstanding-payment breakdown per member. When present, the
+   * card renders a divider + per-member chips + a net settlement banner
+   * below the hero amount. Use this to fold the old MonthlyFoodPaymentCard
+   * into the hero — the card stays single, the data stays denormalized.
+   */
+  paymentSplit?: PaymentSplit;
+  /**
    * Override the mascot pose. Defaults to 'happy' for healthy budgets,
    * 'checking' when over budget. Callers can force 'success' for
    * month-end celebrations.
@@ -39,6 +65,41 @@ interface HeroBalanceCardProps {
   /** ISO currency suffix, defaults to "₪" */
   currencySymbol?: string;
   className?: string;
+}
+
+/**
+ * Per-status visual config for the payment-split chips. Tuned for both
+ * the deep navy background AND the warm amber overspending state — light
+ * 200-series fills/borders read on both because the chip itself has its
+ * own translucent backdrop.
+ */
+const SPLIT_STATUS = {
+  owes: {
+    label: 'חייב',
+    text: 'text-amber-200',
+    border: 'border-amber-300/40',
+    dot: 'bg-amber-300',
+    bg: 'rgba(245, 168, 35, 0.12)',
+  },
+  owed: {
+    label: 'זכאי',
+    text: 'text-emerald-200',
+    border: 'border-emerald-300/40',
+    dot: 'bg-emerald-300',
+    bg: 'rgba(34, 197, 94, 0.14)',
+  },
+  balanced: {
+    label: 'מאוזן',
+    text: 'text-cyan-200',
+    border: 'border-cyan-300/40',
+    dot: 'bg-cyan-300',
+    bg: 'rgba(0, 209, 255, 0.12)',
+  },
+} as const;
+
+function getSplitStatus(balance: number) {
+  if (Math.abs(balance) < 1) return SPLIT_STATUS.balanced;
+  return balance > 0 ? SPLIT_STATUS.owes : SPLIT_STATUS.owed;
 }
 
 const formatThousands = (n: number): string =>
@@ -55,6 +116,7 @@ export function HeroBalanceCard({
   budget,
   previousAmount,
   baselineAverage,
+  paymentSplit,
   mascotPose,
   currencySymbol = '₪',
   className,
@@ -153,6 +215,98 @@ export function HeroBalanceCard({
           className="-mt-2 -mb-4 -me-2 rotate-[-4deg] drop-shadow-2xl"
         />
       </div>
+
+      {/* Optional payment-split section — folded in from the old
+          MonthlyFoodPaymentCard so the dashboard has a single hero. */}
+      {paymentSplit && paymentSplit.members.length > 0 && (
+        <div className="relative z-10 mt-6">
+          {/* Subtle divider */}
+          <div aria-hidden="true" className="h-px w-full bg-white/15 mb-4" />
+
+          <p className="type-label uppercase tracking-[0.1em] text-white/70 mb-3">
+            חלוקת תשלומים פתוחה
+          </p>
+
+          {/* Per-member chips */}
+          <div className="grid grid-cols-2 gap-2.5 sm:gap-3">
+            {paymentSplit.members.map((member) => {
+              const status = getSplitStatus(member.balance);
+              const amount = Math.round(Math.abs(member.balance));
+              return (
+                <div
+                  key={member.userId}
+                  className={cn(
+                    'rounded-xl p-3 sm:p-3.5 border backdrop-blur-sm',
+                    status.border,
+                  )}
+                  style={{ background: status.bg }}
+                >
+                  <div className="flex items-center gap-2 mb-1.5">
+                    <div className={cn('w-2 h-2 rounded-full', status.dot)} aria-hidden="true" />
+                    <span className="text-[11px] font-semibold text-white/85 truncate">
+                      {member.userName}
+                    </span>
+                  </div>
+                  <div className={cn('text-lg sm:text-xl font-extrabold tabular-nums leading-tight', status.text)}>
+                    {currencySymbol}{amount.toLocaleString('he-IL')}
+                  </div>
+                  <div className={cn('text-[10px] font-medium opacity-90 mt-0.5', status.text)}>
+                    {status.label}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Net settlement banner — who owes whom */}
+          {paymentSplit.members.length >= 2 && (() => {
+            const userA = paymentSplit.members[0];
+            const userB = paymentSplit.members[1];
+            const net = userA.balance - userB.balance;
+            const settled = Math.abs(net) < 1;
+            const debtor = net > 0 ? userA.userName : userB.userName;
+            const creditor = net > 0 ? userB.userName : userA.userName;
+            return (
+              <div
+                className={cn(
+                  'mt-3 rounded-xl border px-3 py-2.5 backdrop-blur-sm',
+                  settled
+                    ? 'border-emerald-300/40'
+                    : 'border-white/20',
+                )}
+                style={{
+                  background: settled
+                    ? 'rgba(34, 197, 94, 0.14)'
+                    : 'rgba(255, 255, 255, 0.06)',
+                }}
+              >
+                {settled ? (
+                  <div className="flex items-center justify-center gap-2 text-emerald-200">
+                    <CheckCircle className="h-4 w-4" />
+                    <span className="text-sm font-bold">החשבון מאוזן</span>
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-center gap-2 flex-wrap text-white">
+                    <span className="text-sm font-bold">{debtor}</span>
+                    <ArrowLeft className="h-3.5 w-3.5 text-white/70 shrink-0" aria-hidden="true" />
+                    <span className="text-sm font-extrabold tabular-nums text-cyan-200">
+                      {currencySymbol}{Math.round(Math.abs(net)).toLocaleString('he-IL')}
+                    </span>
+                    <ArrowLeft className="h-3.5 w-3.5 text-white/70 shrink-0" aria-hidden="true" />
+                    <span className="text-sm font-bold">{creditor}</span>
+                  </div>
+                )}
+              </div>
+            );
+          })()}
+
+          {paymentSplit.insufficientMembers && paymentSplit.members.length < 2 && (
+            <p className="mt-2 text-center text-[11px] text-white/55">
+              נדרשים שני חברי חשבון לחישוב נטו
+            </p>
+          )}
+        </div>
+      )}
 
       {/* Optional budget progress */}
       {progressPct !== null && budget !== undefined && (

@@ -7,8 +7,8 @@ import { MonthEndCallout } from '@/components/dashboard/MonthEndCallout';
 import { ExpensesSummary } from '@/components/dashboard/ExpensesSummary';
 import { PaymentSuccessModal } from '@/components/payment/PaymentSuccessModal';
 import { MascotImage } from '@/components/mascot/MascotImage';
+import { usePaymentBreakdown } from '@/hooks/usePaymentBreakdown';
 import { ExpensesTabs } from '@/components/dashboard/ExpensesTabs';
-import { MonthlyFoodPaymentCard } from '@/components/dashboard/MonthlyFoodPaymentCard';
 import PendingInvitationAlert from '@/components/invitation/PendingInvitationAlert';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent } from '@/components/ui/card';
@@ -154,6 +154,11 @@ const Dashboard = () => {
     return totals.reduce((a, b) => a + b, 0) / totals.length;
   }, [expenses, selectedMonth, billingDay]);
 
+  // Per-member outstanding-balance breakdown, folded into the hero card.
+  // Replaces the standalone MonthlyFoodPaymentCard; shares the same hook
+  // so the math stays in exactly one place.
+  const paymentBreakdown = usePaymentBreakdown(selectedMonth, billingDay);
+
   // Payment-success modal state — the celebration moment now lives in a
   // dedicated component (PaymentSuccessModal) which handles confetti,
   // mascot, gradient amount, and auto-dismiss.
@@ -241,6 +246,14 @@ const Dashboard = () => {
               monthOptions.find((o) => o.value === selectedMonth)?.label ?? ''
             }`}
             mascotPose={paidTotal > 0 && pendingTotal === 0 ? 'success' : undefined}
+            paymentSplit={
+              paymentBreakdown.breakdown.length > 0
+                ? {
+                    members: paymentBreakdown.breakdown,
+                    insufficientMembers: !paymentBreakdown.hasNetCalc,
+                  }
+                : undefined
+            }
           />
         </div>
 
@@ -274,10 +287,6 @@ const Dashboard = () => {
               </div>
             </CardContent>
           </Card>
-        </div>
-
-        <div className="animate-fade-in [animation-delay:200ms]">
-          <MonthlyFoodPaymentCard selectedMonth={selectedMonth} billingDay={billingDay} />
         </div>
 
         <div className="animate-fade-in [animation-delay:300ms]">
