@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { useAuth } from '@/contexts/auth';
 import { useExpense } from '@/contexts/ExpenseContext';
 import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
+import { HeroBalanceCard } from '@/components/dashboard/HeroBalanceCard';
 import { ExpensesSummary } from '@/components/dashboard/ExpensesSummary';
 import { ExpensesTabs } from '@/components/dashboard/ExpensesTabs';
 import { MonthlyFoodPaymentCard } from '@/components/dashboard/MonthlyFoodPaymentCard';
@@ -192,6 +193,17 @@ const Dashboard = () => {
 
         <div className="animate-fade-in">
           <DashboardHeader userName={user?.name} />
+        </div>
+
+        {/* Hero balance — total spent this period */}
+        <div className="animate-fade-in [animation-delay:50ms]">
+          <HeroBalanceCard
+            currentAmount={approvedTotal + paidTotal}
+            label={`ההוצאות · ${
+              monthOptions.find((o) => o.value === selectedMonth)?.label ?? ''
+            }`}
+            mascotPose={paidTotal > 0 && pendingTotal === 0 ? 'success' : 'happy'}
+          />
         </div>
 
         {/* Month Filter - Liquid Glass */}
