@@ -5,6 +5,7 @@ import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
 import { HeroBalanceCard } from '@/components/dashboard/HeroBalanceCard';
 import { ExpensesSummary } from '@/components/dashboard/ExpensesSummary';
 import { PaymentSuccessModal } from '@/components/payment/PaymentSuccessModal';
+import { MascotImage } from '@/components/mascot/MascotImage';
 import { ExpensesTabs } from '@/components/dashboard/ExpensesTabs';
 import { MonthlyFoodPaymentCard } from '@/components/dashboard/MonthlyFoodPaymentCard';
 import PendingInvitationAlert from '@/components/invitation/PendingInvitationAlert';
@@ -108,6 +109,23 @@ const Dashboard = () => {
     return expenses.filter(exp => exp.status === 'approved');
   }, [expenses]);
 
+  // Previous billing period total — drives the HeroBalanceCard delta.
+  // We back up one calendar month from the currently selected one and reuse
+  // the same isDateInCycle helper so the comparison respects billingDay.
+  const previousPeriodTotal = useMemo(() => {
+    if (!selectedMonth) return undefined;
+    const [year, month] = selectedMonth.split('-').map(Number);
+    const prevDate = new Date(year, month - 2, 1); // month is 1-12, JS Date is 0-11
+    const prevYear = prevDate.getFullYear();
+    const prevMonth = prevDate.getMonth() + 1;
+    const prev = expenses.filter(
+      (e) =>
+        (e.status === 'approved' || e.status === 'paid') &&
+        isDateInCycle(e.date, billingDay, prevMonth, prevYear),
+    );
+    return prev.reduce((sum, e) => sum + e.amount, 0);
+  }, [expenses, selectedMonth, billingDay]);
+
   // Payment-success modal state — the celebration moment now lives in a
   // dedicated component (PaymentSuccessModal) which handles confetti,
   // mascot, gradient amount, and auto-dismiss.
@@ -183,6 +201,7 @@ const Dashboard = () => {
         <div className="animate-fade-in [animation-delay:50ms]">
           <HeroBalanceCard
             currentAmount={approvedTotal + paidTotal}
+            previousAmount={previousPeriodTotal}
             label={`ההוצאות · ${
               monthOptions.find((o) => o.value === selectedMonth)?.label ?? ''
             }`}
@@ -240,9 +259,26 @@ const Dashboard = () => {
         <div className="animate-fade-in [animation-delay:400ms]">
           {filteredExpenses.length === 0 ? (
             <Card className="liquid-glass-subtle border-border/30 overflow-hidden">
-              <CardContent className="flex flex-col items-center justify-center py-12 sm:py-16 text-center space-y-4">
-                <div className="p-4 rounded-full bg-primary/10">
-                  <PlusCircle className="h-10 w-10 sm:h-12 sm:w-12 text-primary" />
+              <CardContent className="flex flex-col items-center justify-center py-12 sm:py-16 text-center space-y-5">
+                {/* Mascot with cyan glow — replaces the PlusCircle icon */}
+                <div className="relative">
+                  <div
+                    aria-hidden="true"
+                    className="absolute inset-0 pointer-events-none"
+                    style={{
+                      background:
+                        'radial-gradient(circle at 50% 60%, rgba(0,209,255,0.32) 0%, transparent 65%)',
+                      transform: 'scale(2)',
+                    }}
+                  />
+                  <MascotImage
+                    kind="blue"
+                    pose="thinking"
+                    size="lg"
+                    animate="idle"
+                    priority
+                    className="relative drop-shadow-2xl"
+                  />
                 </div>
                 <div className="space-y-2">
                   <h3 className="text-lg sm:text-xl font-bold text-foreground">
