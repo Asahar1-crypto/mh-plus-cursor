@@ -6,9 +6,9 @@
 @layer base {
   :root {
     /* ============================================================
-       Palette: Deep Teal + Amber
-       Primary — deep teal (hsl 185 80% 32%, ≈ #0F8F95)
-       Secondary — warm amber (hsl 38 92% 55%, ≈ #F5A623)
+       Palette: Brand Cyan + Amber (2026-05-15 mascot system)
+       Primary — cyan        (hsl 195 100% 49%, ≈ #00B7E8)
+       Secondary — warm amber (hsl  38 92% 55%, ≈ #F5A623)
        Status quartet (amber/green/blue/red) stays per design spec.
        ============================================================ */
     --background: 200 60% 99%;
@@ -17,9 +17,9 @@
     --card-foreground: 190 60% 8%;
     --popover: 0 0% 100%;
     --popover-foreground: 190 60% 8%;
-    --primary: 185 80% 32%;           /* deep teal */
+    --primary: 195 100% 49%;          /* brand cyan #00B7E8 */
     --primary-foreground: 0 0% 100%;
-    --primary-glow: 185 65% 50%;      /* lighter teal halo */
+    --primary-glow: 192 84% 62%;      /* lighter cyan halo #4FCDF0 */
     --secondary: 38 92% 55%;          /* amber */
     --secondary-foreground: 30 50% 12%;
     --muted: 185 10% 92%;
@@ -30,13 +30,13 @@
     --destructive-foreground: 0 0% 100%;
     --border: 185 20% 85%;
     --input: 185 20% 85%;
-    --ring: 185 80% 32%;
+    --ring: 195 100% 49%;
     --radius: 1rem;
 
     /* Decorative gradients — accent is the brand signature (teal→amber) */
-    --gradient-primary: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    --gradient-primary: linear-gradient(135deg, #00B7E8 0%, #00D1FF 100%);
     --gradient-secondary: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-    --gradient-accent: linear-gradient(135deg, hsl(185 80% 32%) 0%, hsl(38 92% 55%) 100%);
+    --gradient-accent: linear-gradient(135deg, hsl(195 100% 49%) 0%, hsl(38 92% 55%) 100%);
     --gradient-background: linear-gradient(135deg, hsl(200 60% 99%), hsl(185 40% 97%));
     --gradient-glass: linear-gradient(135deg, rgba(255,255,255,0.25), rgba(255,255,255,0.1));
 
@@ -44,8 +44,8 @@
     --shadow-soft: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
     --shadow-medium: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
     --shadow-large: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
-    --shadow-glow: 0 0 40px hsl(185 80% 32% / 0.3);
-    --shadow-card: 0 8px 32px rgba(15, 143, 149, 0.10);
+    --shadow-glow: 0 0 40px hsl(195 100% 49% / 0.3);
+    --shadow-card: 0 8px 32px rgba(0, 150, 194, 0.10);
 
     /* Glass */
     --glass-bg: rgba(255, 255, 255, 0.1);
@@ -61,12 +61,12 @@
     /* Sidebar */
     --sidebar-background: 200 60% 99%;
     --sidebar-foreground: 185 40% 30%;
-    --sidebar-primary: 185 80% 32%;
+    --sidebar-primary: 195 100% 49%;
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 185 30% 95%;
     --sidebar-accent-foreground: 185 70% 15%;
     --sidebar-border: 185 20% 90%;
-    --sidebar-ring: 185 80% 32%;
+    --sidebar-ring: 195 100% 49%;
 
     /* ============================================================
        Design-system explicit tokens (from colors_and_type.css)
@@ -119,6 +119,34 @@
     --radius-xl:   1.25rem;                    /* 20px — modern-button lg */
     --radius-2xl:  1.5rem;                     /* 24px — hero cards */
     --radius-full: 9999px;                     /* pills, status chips */
+
+    /* ============================================================
+       Mascot system tokens (from design handoff, 2026-05-15)
+       Additive — does not replace any existing token. Use these for
+       mascot illustrations, success/empty/onboarding/family moments.
+       ============================================================ */
+
+    /* Deep ink hierarchy — replaces ad-hoc grays for text on light bg */
+    --ink-soft: 215 49% 24%;        /* #1F3A5C — body text on light */
+    --ink-mute: 215 19% 45%;        /* #5C6F86 — metadata, disabled */
+
+    /* Mascot body colors (illustration only — NEVER use for UI chrome) */
+    --mascot-blue:      200 73% 51%;   /* #29A2DC */
+    --mascot-blue-dark: 202 78% 41%;   /* #1880BC */
+    --mascot-orange:    22 73% 56%;    /* #E27A3F */
+    --mascot-teal:      178 38% 52%;   /* #4FB9B5 */
+    --mascot-pink:        0 80% 80%;   /* #F4A4A4 */
+
+    /* Brand gradients (additive, parallel to existing --gradient-*) */
+    --gradient-deep:        linear-gradient(135deg, hsl(213 68% 16%) 0%, hsl(215 49% 24%) 100%);
+    --gradient-success-brand: linear-gradient(135deg, hsl(142 71% 45%) 0%, hsl(142 76% 36%) 100%);
+    --gradient-warm-brand:  linear-gradient(135deg, hsl(22 73% 56%) 0%, hsl(38 92% 55%) 100%);
+    --gradient-canvas:      linear-gradient(165deg, hsl(210 33% 97%) 0%, hsl(195 67% 95%) 100%);
+
+    /* Mascot shadows */
+    --shadow-mascot:      0 30px 50px -20px rgba(0,150,194,.45), 0 12px 20px -8px rgba(13,40,69,.20);
+    --shadow-mascot-glow: 0 0 60px rgba(0,209,255,.35);
+    --shadow-inset-hi:    inset 0 1px 0 rgba(255,255,255,.9);
   }
 
   .dark {
@@ -128,9 +156,9 @@
     --card-foreground: 185 10% 90%;
     --popover: 190 45% 7%;
     --popover-foreground: 185 10% 90%;
-    --primary: 185 75% 42%;            /* slightly brighter teal on dark */
+    --primary: 195 100% 55%;            /* brighter cyan on dark */
     --primary-foreground: 0 0% 100%;
-    --primary-glow: 185 70% 58%;
+    --primary-glow: 192 88% 70%;
     --secondary: 38 85% 55%;           /* amber stays warm in dark */
     --secondary-foreground: 30 60% 10%;
     --muted: 185 25% 15%;
@@ -141,13 +169,13 @@
     --destructive-foreground: 0 0% 100%;
     --border: 185 20% 25%;
     --input: 185 20% 25%;
-    --ring: 185 75% 42%;
+    --ring: 195 100% 55%;
 
     --gradient-background: linear-gradient(135deg, hsl(190 45% 5%), hsl(185 35% 8%));
-    --gradient-accent: linear-gradient(135deg, hsl(185 75% 42%) 0%, hsl(38 85% 55%) 100%);
+    --gradient-accent: linear-gradient(135deg, hsl(195 100% 55%) 0%, hsl(38 85% 55%) 100%);
     --glass-bg: rgba(255, 255, 255, 0.05);
     --glass-border: rgba(255, 255, 255, 0.1);
-    --shadow-glow: 0 0 40px hsl(185 75% 42% / 0.2);
+    --shadow-glow: 0 0 40px hsl(195 100% 55% / 0.2);
 
     /* Liquid Glass dark */
     --liquid-glass-bg: rgba(255, 255, 255, 0.06);
@@ -157,12 +185,20 @@
 
     --sidebar-background: 190 45% 7%;
     --sidebar-foreground: 185 10% 80%;
-    --sidebar-primary: 185 75% 42%;
+    --sidebar-primary: 195 100% 55%;
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 185 25% 15%;
     --sidebar-accent-foreground: 185 10% 90%;
     --sidebar-border: 185 25% 15%;
-    --sidebar-ring: 185 75% 42%;
+    --sidebar-ring: 195 100% 55%;
+
+    /* Dark-mode overrides for mascot system tokens */
+    --ink-soft: 210 33% 88%;        /* light on dark */
+    --ink-mute: 215 14% 60%;
+    --gradient-canvas: linear-gradient(165deg, hsl(210 60% 5%) 0%, hsl(213 68% 16%) 100%);
+    --shadow-mascot:      0 30px 50px -20px rgba(0,150,194,.30), 0 12px 20px -8px rgba(0,0,0,.50);
+    --shadow-mascot-glow: 0 0 60px rgba(0,209,255,.25);
+    --shadow-inset-hi:    inset 0 1px 0 rgba(255,255,255,.10);
   }
 }
 
