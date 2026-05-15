@@ -9,7 +9,6 @@ import AppSidebar from './AppSidebar';
 import TrialStatusBanner from './TrialStatusBanner';
 import NoAccountScreen from './NoAccountScreen';
 import BottomNavBar from './BottomNavBar';
-import FloatingAddButton from './FloatingAddButton';
 import { BrandedLoader } from '@/components/ui/branded-loader';
 import PageTransition from './PageTransition';
 import { AddExpenseModal } from './expenses/AddExpenseModal';
@@ -117,10 +116,7 @@ const AppLayout = () => {
           </main>
         </div>
         {isMobile && (
-          <>
-            <FloatingAddButton />
-            <BottomNavBar onMoreClick={() => setIsMobileSidebarOpen(true)} />
-          </>
+          <BottomNavBar />
         )}
         <AddExpenseModal />
         <VirtualPartnerConsentWall />
