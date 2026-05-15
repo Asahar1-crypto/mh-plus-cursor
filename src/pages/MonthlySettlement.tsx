@@ -21,6 +21,7 @@ import { Calendar as CalendarIcon, Calculator, CheckCircle, Clock, TrendingUp, R
 import { activityService } from '@/integrations/supabase/activityService';
 import { isDateInCycle, getCycleRangeISO, getCycleLabelHebrew } from '@/utils/billingCycleUtils';
 import { ErrorState } from '@/components/ui/state-views';
+import { MascotImage } from '@/components/mascot/MascotImage';
 
 interface SettlementPayment {
   id: string;
@@ -647,9 +648,25 @@ const MonthlySettlement = () => {
         <div className="mb-6 sm:mb-8 animate-fade-in">
           <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4 sm:gap-6">
             <div className="space-y-1 sm:space-y-2">
-              <div className="flex items-center gap-2 sm:gap-3">
-                <div className="p-2 sm:p-3 bg-gradient-to-br from-primary/20 to-primary/10 rounded-xl border border-primary/20">
-                  <Calculator className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
+              <div className="flex items-center gap-3 sm:gap-4">
+                <div className="relative shrink-0">
+                  <div
+                    aria-hidden="true"
+                    className="absolute inset-0 pointer-events-none"
+                    style={{
+                      background:
+                        'radial-gradient(circle at 50% 60%, rgba(0,209,255,0.30) 0%, transparent 65%)',
+                      transform: 'scale(1.8)',
+                    }}
+                  />
+                  <MascotImage
+                    kind="blue"
+                    pose={isMonthLocked ? 'success' : 'checking'}
+                    size="sm"
+                    animate="idle"
+                    priority
+                    className="relative"
+                  />
                 </div>
                 <div>
                   <h1 className="text-xl sm:text-2xl lg:text-3xl xl:text-4xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent flex items-center gap-2">
