@@ -1,4 +1,5 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3'
+import { shouldSuppressForQuietHours } from '../_shared/notification-utils.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -298,12 +299,15 @@ Deno.serve(async (req) => {
         // Get recipient's notification preferences
         const { data: recipientPrefs } = await supabase
           .from('notification_preferences')
-          .select('email_enabled, preferences')
+          .select('email_enabled, preferences, quiet_hours_enabled, quiet_hours_start, quiet_hours_end')
           .eq('user_id', recipientUserId)
           .eq('account_id', accountId)
           .maybeSingle()
 
         const perTypePrefs = (recipientPrefs?.preferences as Record<string, { push: boolean; email: boolean }> | null)?.['recurring_expense_created']
+
+        // Quiet hours suppression for non-urgent types (urgent list lives in _shared).
+        const suppressForQuietHours = shouldSuppressForQuietHours(recipientPrefs, 'recurring_expense_created')
 
         // ── PUSH NOTIFICATION ──────────────────────────────────────
         let pushSuccess = false
@@ -352,11 +356,12 @@ Deno.serve(async (req) => {
         // ── EMAIL NOTIFICATION ─────────────────────────────────────
         const emailMasterEnabled = recipientPrefs?.email_enabled ?? true
         const perTypeEmailEnabled = perTypePrefs?.email ?? true
-        const shouldSendEmail = emailMasterEnabled && perTypeEmailEnabled
+        const shouldSendEmail = emailMasterEnabled && perTypeEmailEnabled && !suppressForQuietHours
         let emailSuccess = false
 
         if (!shouldSendEmail) {
-          console.log(`  📧 Email skipped for ${recipientUserId} (disabled)`)
+          const reason = suppressForQuietHours ? 'quiet_hours' : 'disabled'
+          console.log(`  📧 Email skipped for ${recipientUserId} (${reason})`)
         } else {
           // Get recipient info for email
           const { data: recipientProfile } = await supabase

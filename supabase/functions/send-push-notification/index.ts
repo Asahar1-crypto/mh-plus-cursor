@@ -1,5 +1,6 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.4';
+import { shouldSuppressForQuietHours, URGENT_NOTIFICATION_TYPES } from '../_shared/notification-utils.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -107,13 +108,6 @@ async function getAccessToken(sa: ServiceAccount): Promise<string> {
   return tokenData.access_token;
 }
 
-function isInQuietHours(current: string, start: string, end: string): boolean {
-  if (start < end) {
-    return current >= start && current < end;
-  }
-  return current >= start || current < end;
-}
-
 function buildFCMPayload(
   token: string,
   platform: string,
@@ -121,6 +115,17 @@ function buildFCMPayload(
   data: Record<string, string>,
   actionUrl?: string
 ) {
+  const type = data.type || 'default';
+  const isUrgent = (URGENT_NOTIFICATION_TYPES as readonly string[]).includes(type);
+
+  // Pre-compute a unique tag so identical-type alerts stack instead of
+  // collapsing onto each other in the notification tray. Falls back to the
+  // bare type for cases where no entity id is present.
+  const uniqueTag = data.tag
+    || (data.expenseId ? `${type}_${data.expenseId}` : null)
+    || (data.id ? `${type}_${data.id}` : null)
+    || type;
+
   const base: Record<string, unknown> = {
     token,
     notification: {
@@ -128,7 +133,13 @@ function buildFCMPayload(
       body: notification.body,
       ...(notification.imageUrl && { image: notification.imageUrl }),
     },
-    data,
+    data: {
+      ...data,
+      // Surface the resolved tag to the SW so its own buildNotificationOptions
+      // stays consistent with what the backend planned.
+      tag: uniqueTag,
+      ...(isUrgent ? { requireInteraction: 'true' } : {}),
+    },
   };
 
   if (platform === 'android') {
@@ -137,25 +148,40 @@ function buildFCMPayload(
       notification: {
         channel_id: 'family-finance',
         sound: 'default',
+        tag: uniqueTag,
       },
     };
   } else if (platform === 'ios') {
     base.apns = {
+      headers: {
+        'apns-priority': '10',
+        'apns-push-type': 'alert',
+      },
       payload: {
         aps: {
+          alert: {
+            title: notification.title,
+            body: notification.body,
+          },
           badge: 1,
           sound: 'default',
-          'content-available': 1,
+          'mutable-content': 1,
         },
       },
     };
   } else {
     base.webpush = {
+      // High urgency bypasses browser/OS Doze-style throttling; routine pushes
+      // stay normal-urgency so they don't override Do Not Disturb.
+      headers: {
+        Urgency: isUrgent ? 'high' : 'normal',
+      },
       notification: {
         icon: '/icon-192.png',
-        badge: '/badge-72.png',
+        badge: '/icon-192.png',
         vibrate: [200, 100, 200],
-        require_interaction: false,
+        require_interaction: isUrgent,
+        tag: uniqueTag,
       },
       fcm_options: {
         link: actionUrl || '/',
@@ -168,7 +194,12 @@ function buildFCMPayload(
 
 // ---- Retry Logic ----
 
-const NON_RETRYABLE_ERRORS = ['UNREGISTERED', 'INVALID_ARGUMENT', 'NOT_FOUND', 'PERMISSION_DENIED'];
+const NON_RETRYABLE_ERRORS = ['UNREGISTERED', 'INVALID_ARGUMENT', 'NOT_FOUND', 'PERMISSION_DENIED', 'SENDER_ID_MISMATCH'];
+
+// FCM error codes that mean the token itself is dead and should be deactivated.
+// PERMISSION_DENIED is intentionally NOT in this list — it usually means a
+// server-side credential/config problem, not a bad token.
+const TOKEN_INVALID_ERRORS = ['UNREGISTERED', 'INVALID_ARGUMENT', 'NOT_FOUND', 'SENDER_ID_MISMATCH'];
 
 interface SendResult {
   success: boolean;
@@ -273,6 +304,45 @@ serve(async (req) => {
 
     console.log(`📩 Push notification request: type=${payload.type}, userId=${payload.userId}`);
 
+    // 0a. Ownership validation — the caller is using a service-role key (verified
+    // above), but we still check that userId is actually a member of accountId.
+    // Defense in depth: a buggy caller can't push to users in arbitrary accounts.
+    const { data: isMember, error: memberError } = await supabase.rpc(
+      'is_account_member',
+      { user_uuid: payload.userId, account_uuid: payload.accountId },
+    );
+    if (memberError || !isMember) {
+      console.error('❌ Recipient is not a member of the target account', {
+        userId: payload.userId,
+        accountId: payload.accountId,
+        memberError: memberError?.message,
+      });
+      return new Response(
+        JSON.stringify({ success: false, reason: 'recipient_not_in_account' }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // 0b. Per-user rate limit — caps abuse where a caller knows a userId.
+    // Counts notification_logs rows in the last 15 minutes; threshold is well
+    // above legitimate burst (e.g., creating several expenses in a row) but
+    // catches sustained spam patterns.
+    const fifteenMinAgo = new Date(Date.now() - 15 * 60 * 1000).toISOString();
+    const { count: recentCount } = await supabase
+      .from('notification_logs')
+      .select('id', { count: 'exact', head: true })
+      .eq('user_id', payload.userId)
+      .eq('channel', 'push')
+      .gt('created_at', fifteenMinAgo);
+    const PER_USER_PUSH_LIMIT_15M = 30;
+    if (recentCount !== null && recentCount >= PER_USER_PUSH_LIMIT_15M) {
+      console.warn(`⚠️ Per-user push rate limit hit for ${payload.userId}: ${recentCount}/15m`);
+      return new Response(
+        JSON.stringify({ success: false, reason: 'rate_limited' }),
+        { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     // 1. Get user preferences
     const { data: prefs } = await supabase
       .from('notification_preferences')
@@ -301,28 +371,13 @@ serve(async (req) => {
       }
     }
 
-    // 2. Check quiet hours (skip for urgent notification types)
-    const urgentTypes = ['expense_pending_approval', 'invitation_received', 'budget_exceeded'];
-    const isUrgent = urgentTypes.includes(payload.type);
-
-    if (prefs?.quiet_hours_enabled && !isUrgent) {
-      // Use Asia/Jerusalem timezone to correctly handle DST (UTC+2 winter, UTC+3 summer)
-      const currentTime = new Intl.DateTimeFormat('he-IL', {
-        timeZone: 'Asia/Jerusalem',
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: false,
-      }).format(new Date());
-
-      if (isInQuietHours(currentTime, prefs.quiet_hours_start, prefs.quiet_hours_end)) {
-        console.log(`Quiet hours active (${currentTime}), skipping non-urgent push`);
-        return new Response(
-          JSON.stringify({ success: false, reason: 'Quiet hours active' }),
-          { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
-    } else if (isUrgent) {
-      console.log(`📩 Urgent notification type "${payload.type}" - bypassing quiet hours`);
+    // 2. Check quiet hours (urgent notification types bypass — see URGENT_NOTIFICATION_TYPES in _shared)
+    if (shouldSuppressForQuietHours(prefs, payload.type)) {
+      console.log(`Quiet hours active, skipping non-urgent push (type=${payload.type})`);
+      return new Response(
+        JSON.stringify({ success: false, reason: 'Quiet hours active' }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
     // 3. Get active device tokens
@@ -340,10 +395,13 @@ serve(async (req) => {
       );
     }
 
-    // 4. Idempotency check: skip if an identical notification was already sent recently
+    // 4. Idempotency check: skip if an identical notification was already sent in
+    //    the last hour. The key is content-only; the time window is enforced by the
+    //    `created_at > now - 1h` filter below. Previously the key embedded the UTC
+    //    hour, which broke dedup around bucket boundaries (14:59 and 15:01 had
+    //    different keys yet semantically were duplicates).
     const now = new Date();
-    const dateKey = `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, '0')}-${String(now.getUTCDate()).padStart(2, '0')}-${String(now.getUTCHours()).padStart(2, '0')}`;
-    const idempotencyKey = `${payload.userId}_${payload.type}_${JSON.stringify(payload.data || {})}_${dateKey}`;
+    const idempotencyKey = `${payload.userId}_${payload.type}_${JSON.stringify(payload.data || {})}`;
 
     const { data: existingLog } = await supabase
       .from('notification_logs')
@@ -383,6 +441,10 @@ serve(async (req) => {
           {
             type: payload.type,
             accountId: payload.accountId,
+            // notificationId travels in the FCM data payload so the SW can
+            // pass it back to the client on click, and the client calls
+            // mark_notification_clicked() to update notification_logs.
+            notificationId: idempotencyKey,
             ...(payload.actionUrl && { actionUrl: payload.actionUrl }),
             ...(payload.data || {}),
           },
@@ -395,9 +457,9 @@ serve(async (req) => {
           results.push({ token: deviceToken.token, success: true, messageId: sendResult.messageId, platform: deviceToken.platform, deviceTokenId: deviceToken.id, retried: sendResult.retried });
           console.log(`✅ Sent to ${deviceToken.platform} device: ${sendResult.messageId}${sendResult.retried ? ' (on retry)' : ''}`);
         } else {
-          // Deactivate invalid tokens
-          if (['UNREGISTERED', 'INVALID_ARGUMENT', 'NOT_FOUND'].includes(sendResult.errorCode!)) {
-            console.log(`Deactivating invalid token: ${deviceToken.id}`);
+          // Deactivate invalid tokens — see TOKEN_INVALID_ERRORS for the canonical list.
+          if (TOKEN_INVALID_ERRORS.includes(sendResult.errorCode!)) {
+            console.log(`Deactivating invalid token (${sendResult.errorCode}): ${deviceToken.id}`);
             await supabase
               .from('device_tokens')
               .update({ is_active: false })
@@ -437,8 +499,19 @@ serve(async (req) => {
       error_message: successCount > 0 ? null : (allErrors || 'All delivery attempts failed'),
     });
 
+    // When every token attempt failed, signal the caller to fall back to SMS.
+    // Without this, callers only fell back when zero tokens existed — users with
+    // stale/invalid tokens silently missed every notification.
+    const allFailed = results.length > 0 && successCount === 0;
+
     return new Response(
-      JSON.stringify({ success: true, results, successCount, totalCount: results.length }),
+      JSON.stringify({
+        success: true,
+        results,
+        successCount,
+        totalCount: results.length,
+        ...(allFailed ? { fallback: 'sms' } : {}),
+      }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (error) {

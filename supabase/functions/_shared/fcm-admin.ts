@@ -227,7 +227,7 @@ export function buildFCMMessage(
       webpush: {
         notification: {
           icon: '/icon-192.png',
-          badge: '/badge-72.png',
+          badge: '/icon-192.png',
           vibrate: [200, 100, 200],
           require_interaction: false,
         },

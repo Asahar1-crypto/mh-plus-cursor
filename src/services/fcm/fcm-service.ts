@@ -106,6 +106,10 @@ export async function isPushSupported(): Promise<boolean> {
   const fcmWeb = await loadFcmWeb();
   return fcmWeb.isPushSupported();
 }
+export async function getPushSupportStatus() {
+  const fcmWeb = await loadFcmWeb();
+  return fcmWeb.getPushSupportStatus();
+}
 export async function getPermissionStatus(): Promise<string> {
   const fcmWeb = await loadFcmWeb();
   return fcmWeb.getPermissionStatus();

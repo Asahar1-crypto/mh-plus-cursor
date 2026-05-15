@@ -4,6 +4,7 @@
  */
 import { toast } from 'sonner';
 import { NotificationType } from './types';
+import { supabase } from '@/integrations/supabase/client';
 
 interface NotificationData {
   type: string;
@@ -11,6 +12,7 @@ interface NotificationData {
   body?: string;
   accountId?: string;
   actionUrl?: string;
+  notificationId?: string;
   [key: string]: string | undefined;
 }
 
@@ -30,7 +32,9 @@ function isSafeRelativeUrl(url: string): boolean {
 
 /**
  * Handle a foreground push notification
- * Shows a toast and dispatches appropriate events
+ * Shows a toast when the tab is focused; falls back to a system notification
+ * when the tab is hidden/blurred so the user actually sees the alert even
+ * with another tab on top.
  */
 export function handleForegroundNotification(payload: {
   notification?: { title?: string; body?: string };
@@ -41,21 +45,49 @@ export function handleForegroundNotification(payload: {
   const type = payload.data?.type;
   const actionUrl = payload.data?.actionUrl;
 
-  // Show toast notification
-  toast.info(title, {
-    description: body,
-    duration: 6000,
-    action: actionUrl && isSafeRelativeUrl(actionUrl)
-      ? {
-          label: 'פתח',
-          onClick: () => {
-            window.location.href = actionUrl;
-          },
-        }
-      : undefined,
-  });
+  const isFocused =
+    typeof document !== 'undefined' &&
+    document.visibilityState === 'visible' &&
+    document.hasFocus();
 
-  // Dispatch type-specific events for UI updates
+  if (isFocused) {
+    // User is actively in the tab — toast is enough and avoids double-alert.
+    toast.info(title, {
+      description: body,
+      duration: 6000,
+      action: actionUrl && isSafeRelativeUrl(actionUrl)
+        ? {
+            label: 'פתח',
+            onClick: () => {
+              window.location.href = actionUrl;
+            },
+          }
+        : undefined,
+    });
+  } else {
+    // Tab is hidden/blurred — surface a system notification via the SW so the
+    // user actually sees the alert. The SW's own onBackgroundMessage doesn't
+    // fire for foreground messages, so we ask it explicitly.
+    if (typeof navigator !== 'undefined' && 'serviceWorker' in navigator) {
+      navigator.serviceWorker.ready
+        .then((registration) => {
+          registration.showNotification(title, {
+            body,
+            icon: '/icon-192.png',
+            badge: '/icon-192.png',
+            data: payload.data || {},
+            dir: 'rtl',
+            lang: 'he',
+            tag: payload.data?.tag || (type ? `${type}_${payload.data?.expenseId || payload.data?.id || Date.now()}` : 'default'),
+          });
+        })
+        .catch((err) => {
+          console.error('[Notifications] Foreground showNotification failed:', err);
+        });
+    }
+  }
+
+  // Dispatch type-specific events for UI updates regardless of display path
   if (type) {
     dispatchNotificationEvent(type);
   }
@@ -101,10 +133,24 @@ function dispatchNotificationEvent(type: string): void {
 }
 
 /**
- * Handle notification click from service worker
- * Called when user taps a background notification
+ * Handle notification click from service worker.
+ * Called when user taps a background notification. Marks the row in
+ * notification_logs as `clicked` so engagement metrics are visible, then
+ * navigates and refreshes data.
  */
 export function handleNotificationClick(data: NotificationData): void {
+  // Fire-and-forget click logging. RPC is scoped to auth.uid() so it cannot
+  // be abused to poison another user's logs even if notificationId leaks.
+  if (data.notificationId) {
+    supabase
+      .rpc('mark_notification_clicked', { p_notification_id: data.notificationId })
+      .then(({ error }) => {
+        if (error) {
+          console.warn('[Notifications] mark_notification_clicked failed:', error.message);
+        }
+      });
+  }
+
   if (data.actionUrl && isSafeRelativeUrl(data.actionUrl)) {
     window.location.href = data.actionUrl;
   }

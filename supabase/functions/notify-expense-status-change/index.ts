@@ -1,5 +1,6 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.4';
+import { shouldSuppressForQuietHours } from '../_shared/notification-utils.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -422,12 +423,15 @@ serve(async (req) => {
       // Get recipient's notification preferences
       const { data: recipientPrefs } = await supabase
         .from('notification_preferences')
-        .select('sms_enabled, email_enabled, preferences')
+        .select('sms_enabled, email_enabled, preferences, quiet_hours_enabled, quiet_hours_start, quiet_hours_end')
         .eq('user_id', recipientUserId)
         .eq('account_id', account_id)
         .maybeSingle();
 
       const perTypePrefs = (recipientPrefs?.preferences as Record<string, { push: boolean; sms: boolean; email: boolean }> | null)?.[config.notification_type];
+
+      // Quiet hours suppression applies to non-urgent types only (urgent list lives in _shared).
+      const suppressForQuietHours = shouldSuppressForQuietHours(recipientPrefs, config.notification_type);
 
       // ============================================================
       // 1. PUSH NOTIFICATION
@@ -474,10 +478,20 @@ serve(async (req) => {
         const noActiveTokens = pushResult?.fallback === 'sms';
         const pushGloballyDisabled = pushResult?.success === false && pushResult?.reason === 'Push notifications disabled';
         const pushException = pushResult?.success === false && pushResult?.reason === 'exception';
-        const shouldAttemptSms = (noActiveTokens || pushGloballyDisabled || pushException) && shouldSendSMS && perTypeSmsEnabled;
+        const shouldAttemptSms =
+          (noActiveTokens || pushGloballyDisabled || pushException) &&
+          shouldSendSMS &&
+          perTypeSmsEnabled &&
+          !suppressForQuietHours;
 
         if (!shouldAttemptSms) {
-          const skipReason = !shouldSendSMS ? 'sms_disabled_by_user' : !perTypeSmsEnabled ? 'sms_disabled_for_type' : 'push_delivered';
+          const skipReason = suppressForQuietHours
+            ? 'quiet_hours'
+            : !shouldSendSMS
+              ? 'sms_disabled_by_user'
+              : !perTypeSmsEnabled
+                ? 'sms_disabled_for_type'
+                : 'push_delivered';
           console.log(`SMS skipped (${skipReason})`);
           smsResult = { success: false, reason: skipReason };
         } else {
@@ -548,13 +562,18 @@ serve(async (req) => {
       // ============================================================
       const emailMasterEnabled = recipientPrefs?.email_enabled ?? true;
       const perTypeEmailEnabled = perTypePrefs?.email ?? true;
-      const shouldSendEmail = emailMasterEnabled && perTypeEmailEnabled;
+      const shouldSendEmail = emailMasterEnabled && perTypeEmailEnabled && !suppressForQuietHours;
 
       let emailResult: { success: boolean; error?: string; reason?: string } = { success: false, reason: 'not_attempted' };
 
       if (!shouldSendEmail) {
-        console.log('Email skipped (disabled by user)');
-        emailResult = { success: false, reason: 'email_disabled_by_user' };
+        const reason = suppressForQuietHours
+          ? 'quiet_hours'
+          : !emailMasterEnabled || !perTypeEmailEnabled
+            ? 'email_disabled_by_user'
+            : 'unknown';
+        console.log(`Email skipped (${reason})`);
+        emailResult = { success: false, reason };
       } else {
         // Get recipient email address from auth
         const { data: authUserData, error: authUserError } = await supabase.auth.admin.getUserById(recipientUserId);

@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { generateOTPCode, hashOtpCode } from '../_shared/otp-utils.ts';
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -8,11 +9,6 @@ const corsHeaders = {
 
 interface PasswordResetRequest {
   email: string;
-}
-
-// Generate 6-digit OTP code
-function generateOTPCode(): string {
-  return Math.floor(100000 + Math.random() * 900000).toString();
 }
 
 const handler = async (req: Request): Promise<Response> => {
@@ -64,35 +60,43 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    // Check for existing valid code first
+    // If a valid reset code is already active, return success without
+    // resending — the user already has it. We no longer keep plaintext.
     const { data: existingCode } = await supabaseAdmin
       .from('sms_verification_codes')
-      .select('code, expires_at')
+      .select('id, expires_at')
       .eq('phone_number', email)
       .eq('verification_type', 'reset')
       .eq('verified', false)
       .gte('expires_at', new Date().toISOString())
       .order('created_at', { ascending: false })
       .limit(1)
-      .single();
-
-    let otpCode: string;
+      .maybeSingle();
 
     if (existingCode) {
-      // Reuse existing valid code
-      otpCode = existingCode.code;
-      console.log(`Using existing code for ${email}`);
-    } else {
-      // Generate new code
-      otpCode = generateOTPCode();
-      const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString(); // 10 minutes
+      console.log(`Reset: active code already exists for ${email}, no new email`);
+      return new Response(
+        JSON.stringify({
+          success: true,
+          message: 'קוד איפוס פעיל כבר נשלח. בדוק את תיבת המייל שלך.',
+          expiresAt: existingCode.expires_at,
+          reused: true,
+        }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
-      // Store in sms_verification_codes table
+    // Generate a fresh code, hash it for storage, email the plaintext.
+    const otpCode = generateOTPCode();
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString(); // 10 minutes
+    const codeHash = await hashOtpCode(otpCode, email);
+
+    {
       const { error: insertError } = await supabaseAdmin
         .from('sms_verification_codes')
         .insert({
           phone_number: email,
-          code: otpCode,
+          code: codeHash,
           verification_type: 'reset',
           expires_at: expiresAt,
           verified: false,

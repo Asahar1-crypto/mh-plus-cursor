@@ -10,6 +10,7 @@ import {
   onForegroundMessage,
   detectPlatform,
   getPermissionStatus,
+  getPushSupportStatus,
   type PushPlatform,
 } from '@/services/fcm';
 import { handleForegroundNotification, handleNotificationClick } from '@/services/notifications';
@@ -23,6 +24,8 @@ interface NotificationContextType {
   platform: PushPlatform;
   /** Whether push is supported on this platform */
   isSupported: boolean;
+  /** True when the user is on iOS Safari and needs to add the app to home screen for push to work. */
+  iosNeedsInstall: boolean;
   /** Request notification permission from the user */
   requestPermission: () => Promise<boolean>;
   /** User's notification preferences */
@@ -45,6 +48,7 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
   const { user, account } = useAuth();
   const [hasPermission, setHasPermission] = useState(false);
   const [platform, setPlatform] = useState<PushPlatform>('unsupported');
+  const [iosNeedsInstall, setIosNeedsInstall] = useState(false);
   const [preferences, setPreferences] = useState<NotificationPreferences | null>(null);
   const [unreadCount, setUnreadCount] = useState(() => {
     const stored = sessionStorage.getItem('notification_unread_count');
@@ -54,15 +58,22 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
 
   const unsubscribeRef = useRef<(() => void) | null>(null);
   const initializedRef = useRef(false);
+  const lastTokenRefreshRef = useRef<number>(0);
 
   // Sync unreadCount to sessionStorage
   useEffect(() => {
     sessionStorage.setItem('notification_unread_count', String(unreadCount));
   }, [unreadCount]);
 
-  // Detect platform on mount
+  // Detect platform on mount + flag iOS-Safari-not-installed so UI can prompt
+  // "Add to Home Screen" instead of pretending push works.
   useEffect(() => {
     detectPlatform().then((p) => setPlatform(p));
+    getPushSupportStatus()
+      .then((status) => {
+        setIosNeedsInstall(!status.supported && status.reason === 'ios-not-installed');
+      })
+      .catch(() => setIosNeedsInstall(false));
   }, []);
 
   // Initialize notifications when user and account are available
@@ -109,6 +120,7 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
     };
 
     init();
+    lastTokenRefreshRef.current = Date.now();
 
     // Listen for notification clicks from service worker
     const handleSWMessage = (event: MessageEvent) => {
@@ -121,6 +133,24 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
       navigator.serviceWorker.addEventListener('message', handleSWMessage);
     }
 
+    // Refresh FCM token when the tab regains visibility after a long absence.
+    // FCM web tokens can be invalidated/rotated server-side; iOS is especially
+    // aggressive about expiring push subscriptions. Re-registering on focus
+    // keeps the active token in sync with what Firebase actually has.
+    const TOKEN_REFRESH_INTERVAL_MS = 60 * 60 * 1000; // 1 hour
+    const handleVisibilityChange = () => {
+      if (document.visibilityState !== 'visible') return;
+      if (!account?.id) return;
+      const elapsed = Date.now() - lastTokenRefreshRef.current;
+      if (elapsed < TOKEN_REFRESH_INTERVAL_MS) return;
+      lastTokenRefreshRef.current = Date.now();
+      // Fire-and-forget: errors are non-fatal, surfaced via existing logging.
+      initializePush(account.id).catch((err) =>
+        console.error('[Notifications] Token refresh on visibility failed:', err),
+      );
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
     return () => {
       if (unsubscribeRef.current) {
         unsubscribeRef.current();
@@ -129,6 +159,7 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
       if ('serviceWorker' in navigator) {
         navigator.serviceWorker.removeEventListener('message', handleSWMessage);
       }
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
       initializedRef.current = false;
     };
   }, [user?.id, account?.id]);
@@ -288,6 +319,7 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
         hasPermission,
         platform,
         isSupported,
+        iosNeedsInstall,
         requestPermission,
         preferences,
         updatePreferences,

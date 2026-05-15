@@ -75,3 +75,7 @@ update_phone_*.mjs
 check-ariels-account.mjs
 dump_db.*
 copy_files.js
+
+# Design imports (workspace-only, not source-controlled)
+*.zip
+design-import/

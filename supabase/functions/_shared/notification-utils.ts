@@ -2,32 +2,86 @@
  * Notification utility functions shared across edge functions
  */
 
+const ISRAEL_TZ = 'Asia/Jerusalem';
+
 /**
- * Check if a given time (HH:MM) is within quiet hours
+ * Notification types that bypass quiet hours (always delivered immediately).
+ * Keep this list narrow — every type here can wake the user at 3am.
+ */
+export const URGENT_NOTIFICATION_TYPES = [
+  'expense_pending_approval',
+  'invitation_received',
+  'budget_exceeded',
+] as const;
+
+export type NotificationType = string;
+
+export interface QuietHoursPrefs {
+  quiet_hours_enabled?: boolean | null;
+  quiet_hours_start?: string | null;
+  quiet_hours_end?: string | null;
+}
+
+/**
+ * Parse "HH:MM" or "HH:MM:SS" into minutes-since-midnight.
+ * Returns NaN for unparseable input — caller treats NaN as "not in quiet hours" (fail-open).
+ */
+function timeToMinutes(timeStr: string): number {
+  const [h, m] = timeStr.split(':').map(Number);
+  if (Number.isNaN(h) || Number.isNaN(m)) return NaN;
+  return h * 60 + m;
+}
+
+/**
+ * Returns true when `current` falls inside the [start, end) quiet-hours window.
+ * Handles same-day (09:00–17:00) and cross-midnight (22:00–07:00) windows.
+ * Accepts both "HH:MM" and "HH:MM:SS" — seconds are ignored.
  */
 export function isInQuietHours(
   current: string,
   start: string,
-  end: string
+  end: string,
 ): boolean {
-  if (start < end) {
-    // Same day (e.g., 09:00 - 17:00)
-    return current >= start && current < end;
-  } else {
-    // Overnight (e.g., 22:00 - 07:00)
-    return current >= start || current < end;
-  }
+  const cur = timeToMinutes(current);
+  const s = timeToMinutes(start);
+  const e = timeToMinutes(end);
+  if (Number.isNaN(cur) || Number.isNaN(s) || Number.isNaN(e)) return false;
+  if (s === e) return false; // zero-length window
+  if (s < e) return cur >= s && cur < e;
+  return cur >= s || cur < e;
 }
 
 /**
- * Get current time in HH:MM format for a given timezone offset
+ * Current local time in Israel as "HH:MM". DST-aware via Intl.
  */
-export function getCurrentTimeHHMM(timezoneOffset = 2): string {
-  // Default offset 2 = Israel Standard Time (UTC+2)
-  const now = new Date();
-  const utc = now.getTime() + now.getTimezoneOffset() * 60000;
-  const local = new Date(utc + timezoneOffset * 3600000);
-  return local.toTimeString().slice(0, 5);
+export function getCurrentIsraelTimeHHMM(): string {
+  return new Intl.DateTimeFormat('he-IL', {
+    timeZone: ISRAEL_TZ,
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  }).format(new Date());
+}
+
+/**
+ * Single source of truth for "should this notification be suppressed for quiet hours?".
+ * Returns true => caller should skip delivery for this channel.
+ * Urgent types and disabled quiet-hours both yield false.
+ */
+export function shouldSuppressForQuietHours(
+  prefs: QuietHoursPrefs | null | undefined,
+  notificationType: NotificationType,
+): boolean {
+  if (!prefs?.quiet_hours_enabled) return false;
+  if ((URGENT_NOTIFICATION_TYPES as readonly string[]).includes(notificationType)) {
+    return false;
+  }
+  if (!prefs.quiet_hours_start || !prefs.quiet_hours_end) return false;
+  return isInQuietHours(
+    getCurrentIsraelTimeHHMM(),
+    prefs.quiet_hours_start,
+    prefs.quiet_hours_end,
+  );
 }
 
 /**

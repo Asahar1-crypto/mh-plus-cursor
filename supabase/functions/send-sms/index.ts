@@ -1,6 +1,7 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.4';
 import { parsePhoneNumber } from 'https://esm.sh/libphonenumber-js@1.10.51';
+import { generateOTPCode, hashOtpCode } from '../_shared/otp-utils.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -111,48 +112,35 @@ serve(async (req) => {
 
     // Note: supabase client already initialized above for phone check
 
-    // If no code provided, find the latest verification code for this phone number
+    // If no code provided, always generate a fresh one. We previously tried to
+    // reuse an existing active code, but with HMAC hashing at rest we no longer
+    // have the plaintext to resend. Generating fresh keeps the SMS deliverable;
+    // verify-sms-code picks the latest unverified row so older codes simply
+    // become irrelevant once a new one is created.
     let verificationCode = code;
     if (!verificationCode && type === 'verification') {
-      // First try to find existing valid code
-      const { data: codeData } = await supabase
+      const newCode = generateOTPCode();
+      const codeHash = await hashOtpCode(newCode, normalizedPhone);
+      const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes from now
+
+      const { error: insertError } = await supabase
         .from('sms_verification_codes')
-        .select('code')
-        .eq('phone_number', normalizedPhone)
-        .eq('verification_type', verificationType)
-        .eq('verified', false)
-        .gte('expires_at', new Date().toISOString())
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .single();
-      
-      if (codeData?.code) {
-        verificationCode = codeData.code;
-        console.log('Found existing verification code:', verificationCode);
-      } else {
-        // No valid code found, create a new one
-        const newCode = Math.floor(100000 + Math.random() * 900000).toString();
-        const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes from now
-        
-        const { error: insertError } = await supabase
-          .from('sms_verification_codes')
-          .insert({
-            phone_number: normalizedPhone,
-            code: newCode,
-            verification_type: verificationType,
-            expires_at: expiresAt.toISOString(),
-            verified: false,
-            attempts: 0
-          });
-        
-        if (insertError) {
-          console.error('Error creating verification code:', insertError);
-          throw new Error('Failed to create verification code');
-        }
-        
-        verificationCode = newCode;
-        console.log('Created new verification code:', verificationCode);
+        .insert({
+          phone_number: normalizedPhone,
+          code: codeHash,
+          verification_type: verificationType,
+          expires_at: expiresAt.toISOString(),
+          verified: false,
+          attempts: 0
+        });
+
+      if (insertError) {
+        console.error('Error creating verification code:', insertError);
+        throw new Error('Failed to create verification code');
       }
+
+      verificationCode = newCode;
+      console.log('Created new verification code for', normalizedPhone);
     }
 
     // Prepare SMS message

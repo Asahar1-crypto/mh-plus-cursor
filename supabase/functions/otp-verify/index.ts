@@ -1,5 +1,6 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.4';
+import { hashOtpCode } from '../_shared/otp-utils.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -44,39 +45,61 @@ serve(async (req) => {
     // Initialize Supabase client
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Find the verification code
-    const { data: verificationRecord, error: fetchError } = await supabase
+    // 1. Look up the latest active (unverified, unexpired) code for this phone+type.
+    //    We deliberately do NOT filter by `code` here — we need the row even when
+    //    the submitted code is wrong so we can count failed attempts.
+    const { data: activeCode, error: fetchError } = await supabase
       .from('sms_verification_codes')
-      .select('*')
+      .select('id, code, user_id, attempts')
       .eq('phone_number', phoneNumber)
-      .eq('code', code)
       .eq('verification_type', type)
       .eq('verified', false)
       .gte('expires_at', new Date().toISOString())
       .order('created_at', { ascending: false })
       .limit(1)
-      .single();
+      .maybeSingle();
 
-    if (fetchError || !verificationRecord) {
-      console.log(`OTP Verify: Code not found or expired for ${phoneNumber}`);
+    if (fetchError || !activeCode) {
+      console.log(`OTP Verify: no active code for ${phoneNumber}`);
       return new Response(
-        JSON.stringify({ 
-          verified: false,
-          error: 'קוד אימות שגוי או פג תוקף' 
-        }),
-        { 
-          status: 400, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
+        JSON.stringify({ verified: false, error: 'קוד אימות שגוי או פג תוקף' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    // Mark as verified
+    // 2. Brute-force protection: 5 wrong attempts per code, then force a re-send.
+    const MAX_ATTEMPTS = 5;
+    if ((activeCode.attempts ?? 0) >= MAX_ATTEMPTS) {
+      console.warn(`OTP Verify: brute-force lockout for ${phoneNumber} (attempts=${activeCode.attempts})`);
+      return new Response(
+        JSON.stringify({ verified: false, error: 'יותר מדי ניסיונות שגויים. אנא בקש קוד חדש.' }),
+        { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // 3. Compare submitted code against stored HMAC hash. On mismatch, atomically
+    //    increment the attempt counter (rpc to avoid the read-then-write race).
+    const submittedHash = await hashOtpCode(code, phoneNumber);
+    if (activeCode.code !== submittedHash) {
+      const { data: newAttempts } = await supabase.rpc('increment_otp_attempts', {
+        p_id: activeCode.id,
+      });
+      const remaining = Math.max(0, MAX_ATTEMPTS - (newAttempts ?? (activeCode.attempts ?? 0) + 1));
+      console.warn(`OTP Verify: wrong code for ${phoneNumber}, attempts=${newAttempts}`);
+      return new Response(
+        JSON.stringify({ verified: false, error: `קוד שגוי. נותרו ${remaining} ניסיונות.` }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const verificationRecord = activeCode;
+
+    // 4. Mark as verified.
     const { error: updateError } = await supabase
       .from('sms_verification_codes')
-      .update({ 
-        verified: true, 
-        verified_at: new Date().toISOString() 
+      .update({
+        verified: true,
+        verified_at: new Date().toISOString()
       })
       .eq('id', verificationRecord.id);
 

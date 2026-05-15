@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.4';
 import { parsePhoneNumber } from 'https://esm.sh/libphonenumber-js@1.10.51';
+import { generateOTPCode, hashOtpCode } from '../_shared/otp-utils.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -157,15 +158,16 @@ serve(async (req) => {
       );
     }
 
-    // Generate 6-digit OTP
-    const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+    // Generate 6-digit OTP (CSPRNG) and store its HMAC hash. Plaintext is
+    // only ever transmitted via SMS; the DB only sees the hash.
+    const otpCode = generateOTPCode();
+    const codeHash = await hashOtpCode(otpCode, normalizedPhone);
 
-    // Store OTP in database
     const { error: storeError } = await supabase
       .from('sms_verification_codes')
       .insert({
         phone_number: normalizedPhone,
-        code: otpCode,
+        code: codeHash,
         verification_type: 'login',
         user_id: profile.id,
         verified: false,

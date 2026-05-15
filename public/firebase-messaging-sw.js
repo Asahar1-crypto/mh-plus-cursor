@@ -14,6 +14,44 @@ importScripts('https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging-comp
 let firebaseConfig = null;
 let isInitialized = false;
 
+// Notification types that should stay visible until the user acts on them.
+// Mirrors URGENT_NOTIFICATION_TYPES in supabase/functions/_shared/notification-utils.ts
+const URGENT_TYPES = ['expense_pending_approval', 'invitation_received', 'budget_exceeded'];
+
+/**
+ * Build showNotification options from an FCM payload, honoring backend hints
+ * for tag (de-dup vs stack), requireInteraction (sticky for urgent types),
+ * and falling back to a per-type tag when no explicit one is provided.
+ */
+function buildNotificationOptions(payload) {
+  const data = payload.data || {};
+  const type = data.type || 'default';
+
+  // Unique tag prevents notifications of the same type from collapsing onto
+  // each other. Backend may set `data.tag` explicitly; otherwise fall back
+  // to a per-entity tag (expenseId, etc.) or random for true uniqueness.
+  const tag =
+    data.tag ||
+    (data.expenseId ? `${type}_${data.expenseId}` : null) ||
+    (data.id ? `${type}_${data.id}` : null) ||
+    type;
+
+  // Urgent types stick around (no auto-dismiss); routine types fade.
+  const requireInteraction = URGENT_TYPES.includes(type) || data.requireInteraction === 'true';
+
+  return {
+    body: payload.notification?.body || '',
+    icon: '/icon-192.png',
+    badge: '/icon-192.png',
+    data: data,
+    vibrate: [200, 100, 200],
+    tag,
+    requireInteraction,
+    dir: 'rtl',
+    lang: 'he',
+  };
+}
+
 // Receive config from main app via postMessage
 self.addEventListener('message', (event) => {
   if (event.data?.type === 'FIREBASE_CONFIG') {
@@ -29,18 +67,7 @@ self.addEventListener('message', (event) => {
           console.log('[SW] Background message received:', payload);
 
           const notificationTitle = payload.notification?.title || '\u05D4\u05EA\u05E8\u05D0\u05D4 \u05D7\u05D3\u05E9\u05D4';
-          const notificationOptions = {
-            body: payload.notification?.body || '',
-            icon: '/icon-192.png',
-            badge: '/badge-72.png',
-            data: payload.data || {},
-            vibrate: [200, 100, 200],
-            tag: payload.data?.type || 'default',
-            requireInteraction: false,
-            dir: 'rtl',
-            lang: 'he',
-          };
-
+          const notificationOptions = buildNotificationOptions(payload);
           return self.registration.showNotification(notificationTitle, notificationOptions);
         });
 
@@ -68,14 +95,10 @@ self.addEventListener('push', (event) => {
 
   if (data?.notification) {
     event.waitUntil(
-      self.registration.showNotification(data.notification.title || '\u05D4\u05EA\u05E8\u05D0\u05D4 \u05D7\u05D3\u05E9\u05D4', {
-        body: data.notification.body || '',
-        icon: '/icon-192.png',
-        badge: '/badge-72.png',
-        data: data.data || {},
-        dir: 'rtl',
-        lang: 'he',
-      })
+      self.registration.showNotification(
+        data.notification.title || '\u05D4\u05EA\u05E8\u05D0\u05D4 \u05D7\u05D3\u05E9\u05D4',
+        buildNotificationOptions(data),
+      )
     );
   }
 });
@@ -109,6 +132,9 @@ self.addEventListener('notificationclick', (event) => {
         for (const client of clientList) {
           if ('focus' in client) {
             client.focus();
+            // Client picks this up and POSTs to log-notification-click so we
+            // can track click-through rate without granting the SW direct
+            // database access.
             client.postMessage({
               type: 'NOTIFICATION_CLICK',
               data: event.notification.data,
@@ -117,9 +143,17 @@ self.addEventListener('notificationclick', (event) => {
             return;
           }
         }
-        // Open a new window if none exists
+        // No open window: queue the click so the client logs it once it boots.
+        // The same NOTIFICATION_CLICK message will be replayed via session storage
+        // on app start; here we just open the URL and rely on the actionUrl
+        // query string to carry the notification id.
+        const data = event.notification.data || {};
+        const sep = actionUrl.includes('?') ? '&' : '?';
+        const urlWithClick = data.notificationId
+          ? `${actionUrl}${sep}notif=${encodeURIComponent(data.notificationId)}`
+          : actionUrl;
         if (clients.openWindow) {
-          return clients.openWindow(actionUrl);
+          return clients.openWindow(urlWithClick);
         }
       })
   );

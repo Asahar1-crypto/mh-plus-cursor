@@ -18,6 +18,70 @@ const firebaseConfig = {
 let messaging: Messaging | null = null;
 
 /**
+ * Is the user on an iOS browser (Safari on iPhone/iPad)?
+ * iPadOS 13+ masquerades as macOS, so we also check `maxTouchPoints` on MacIntel.
+ */
+export function isIOSBrowser(): boolean {
+  if (typeof navigator === 'undefined') return false;
+  if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) return true;
+  const nav = navigator as Navigator & { maxTouchPoints?: number };
+  return nav.platform === 'MacIntel' && (nav.maxTouchPoints ?? 0) > 1;
+}
+
+/**
+ * Is the app running as an installed PWA (Add to Home Screen)?
+ * iOS Web Push requires this — Safari tab will silently fail to deliver.
+ */
+export function isStandalonePWA(): boolean {
+  if (typeof window === 'undefined') return false;
+  if (window.matchMedia?.('(display-mode: standalone)').matches) return true;
+  const nav = window.navigator as Navigator & { standalone?: boolean };
+  return nav.standalone === true;
+}
+
+/**
+ * Granular push-support status. Used by callers to show the right UX.
+ * - "no-notification-api": ancient browser
+ * - "no-service-worker": SW not available (private mode, etc.)
+ * - "no-push-manager": browser lacks Web Push (older iOS, etc.)
+ * - "no-firebase-config": env var missing
+ * - "ios-not-installed": iOS Safari but PWA not added to home screen
+ *   → notifications will NOT arrive even if permission granted
+ */
+export type PushSupportStatus =
+  | { supported: true }
+  | {
+      supported: false;
+      reason:
+        | 'no-notification-api'
+        | 'no-service-worker'
+        | 'no-push-manager'
+        | 'no-firebase-config'
+        | 'ios-not-installed';
+    };
+
+export function getPushSupportStatus(): PushSupportStatus {
+  if (typeof window === 'undefined' || !('Notification' in window)) {
+    return { supported: false, reason: 'no-notification-api' };
+  }
+  if (!('serviceWorker' in navigator)) {
+    return { supported: false, reason: 'no-service-worker' };
+  }
+  if (!('PushManager' in window)) {
+    return { supported: false, reason: 'no-push-manager' };
+  }
+  if (!firebaseConfig.apiKey) {
+    return { supported: false, reason: 'no-firebase-config' };
+  }
+  if (isIOSBrowser() && !isStandalonePWA()) {
+    // iOS 16.4+ Web Push only works for installed PWAs. Registering a token in
+    // plain Safari succeeds silently but no notification ever arrives.
+    return { supported: false, reason: 'ios-not-installed' };
+  }
+  return { supported: true };
+}
+
+/**
  * Initialize Firebase only when needed and only if supported
  */
 function getFirebaseMessaging(): Messaging | null {
@@ -44,15 +108,12 @@ function getFirebaseMessaging(): Messaging | null {
 }
 
 /**
- * Check if push notifications are supported in the current browser
+ * Check if push notifications are supported in the current browser.
+ * Returns false on iOS Safari unless the app is installed to the home screen —
+ * registering a token in regular Safari succeeds but delivery silently fails.
  */
 export function isPushSupported(): boolean {
-  return (
-    'Notification' in window &&
-    'serviceWorker' in navigator &&
-    'PushManager' in window &&
-    !!firebaseConfig.apiKey
-  );
+  return getPushSupportStatus().supported;
 }
 
 /**
@@ -84,8 +145,17 @@ export function getPermissionStatus(): NotificationPermission | 'unsupported' {
  * Register service worker and get FCM token, then save to backend
  */
 export async function getFCMToken(accountId: string): Promise<string | null> {
-  // Get FCM token for account
-  
+  // Fail closed for iOS-not-installed: registering a token here would succeed
+  // silently but FCM/APNs never delivers, so the user appears to have working
+  // push when they don't. Surface this as no token so callers show the install UX.
+  const status = getPushSupportStatus();
+  if (!status.supported) {
+    if (status.reason === 'ios-not-installed') {
+      console.warn('[FCM] iOS Safari detected outside PWA — Web Push requires Add to Home Screen');
+    }
+    return null;
+  }
+
   const msg = getFirebaseMessaging();
   if (!msg) {
     return null;

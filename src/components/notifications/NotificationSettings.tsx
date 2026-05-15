@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Bell, Moon, Smartphone, Mail, MessageSquare, AlertCircle } from 'lucide-react';
+import { Bell, Moon, Smartphone, Mail, MessageSquare, AlertCircle, Share } from 'lucide-react';
 import { NOTIFICATION_TYPE_LABELS, DEFAULT_PREFERENCES } from '@/services/notifications/types';
 import type { ChannelPreference } from '@/services/notifications/types';
 
@@ -19,6 +19,7 @@ export function NotificationSettings() {
     updatePreferences,
     hasPermission,
     isSupported,
+    iosNeedsInstall,
     requestPermission,
     platform,
   } = useNotifications();
@@ -55,6 +56,31 @@ export function NotificationSettings() {
 
   return (
     <div className="space-y-6" dir="rtl">
+      {/* iOS needs Add-to-Home-Screen for Web Push to work (Safari tab silently drops push). */}
+      {iosNeedsInstall && (
+        <Card className="border-sky-200 bg-sky-50 dark:bg-sky-950/20 dark:border-sky-800">
+          <CardContent className="p-4">
+            <div className="flex items-start gap-3">
+              <Share className="h-5 w-5 text-sky-600 mt-0.5 flex-shrink-0" />
+              <div className="flex-1">
+                <p className="text-sm font-medium text-sky-800 dark:text-sky-200 mb-2">
+                  כדי לקבל התראות באייפון, יש להתקין את האפליקציה למסך הבית
+                </p>
+                <ol className="text-xs text-sky-700 dark:text-sky-300 mb-1 list-decimal list-inside space-y-1">
+                  <li>פתח את התפריט "שתף" בסאפארי (האייקון של ריבוע עם חץ)</li>
+                  <li>בחר "הוסף למסך הבית" (Add to Home Screen)</li>
+                  <li>פתח את האפליקציה מהאייקון במסך הבית</li>
+                  <li>חזור להגדרות ההתראות ואפשר אותן</li>
+                </ol>
+                <p className="text-[11px] text-sky-600 dark:text-sky-400 mt-2">
+                  דורש iOS 16.4 ומעלה. ההתראות עובדות רק כשהאפליקציה מותקנת.
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Permission status */}
       {isSupported && !hasPermission && (
         <Card className="border-amber-200 bg-amber-50 dark:bg-amber-950/20 dark:border-amber-800">

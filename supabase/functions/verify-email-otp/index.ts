@@ -1,5 +1,6 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.4';
+import { hashOtpCode } from '../_shared/otp-utils.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -112,15 +113,16 @@ serve(async (req) => {
       );
     }
 
-    // Verify code value - on mismatch, increment attempts and reject
-    if (activeCode.code !== code) {
-      await supabaseAdmin
-        .from('sms_verification_codes')
-        .update({ attempts: currentAttempts + 1 })
-        .eq('id', activeCode.id);
+    // Verify code value – on mismatch, atomically increment attempts and reject.
+    // The stored value is an HMAC hash, so hash the submitted code first.
+    const submittedHash = await hashOtpCode(code, normalizedEmail);
+    if (activeCode.code !== submittedHash) {
+      const { data: newAttempts } = await supabaseAdmin.rpc('increment_otp_attempts', {
+        p_id: activeCode.id,
+      });
 
-      const remaining = 4 - currentAttempts;
-      console.warn(`Email OTP Verify: Wrong code for ${normalizedEmail}. Attempt ${currentAttempts + 1}/5`);
+      const remaining = Math.max(0, 5 - (newAttempts ?? currentAttempts + 1));
+      console.warn(`Email OTP Verify: Wrong code for ${normalizedEmail}. Attempts=${newAttempts ?? '?'}/5`);
       return new Response(
         JSON.stringify({
           verified: false,

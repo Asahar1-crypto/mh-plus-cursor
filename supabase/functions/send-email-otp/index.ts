@@ -1,15 +1,11 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.4';
+import { generateOTPCode, hashOtpCode } from '../_shared/otp-utils.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
-
-// Generate 6-digit OTP code
-function generateOTPCode(): string {
-  return Math.floor(100000 + Math.random() * 900000).toString();
-}
 
 // Email templates per type (inlined from docs/email-templates/)
 function getEmailHtml(type: string, code: string): { subject: string; html: string } {
@@ -251,38 +247,44 @@ serve(async (req) => {
       );
     }
 
-    // Check for existing valid code first
+    // If a valid code is still active, return success without sending another
+    // email — we no longer keep the plaintext (HMAC-hashed at rest).
     const { data: existingCode } = await supabaseAdmin
       .from('sms_verification_codes')
-      .select('code, expires_at')
+      .select('id, expires_at')
       .eq('phone_number', normalizedEmail)
       .eq('verification_type', type)
       .eq('verified', false)
       .gte('expires_at', new Date().toISOString())
       .order('created_at', { ascending: false })
       .limit(1)
-      .single();
-
-    let otpCode: string;
-    let expiresAt: string;
+      .maybeSingle();
 
     if (existingCode) {
-      // Use existing valid code
-      otpCode = existingCode.code;
-      expiresAt = existingCode.expires_at;
-      console.log(`Email OTP Send: Using existing code for ${normalizedEmail}`);
-    } else {
-      // Generate new code
-      otpCode = generateOTPCode();
-      const expiration = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
-      expiresAt = expiration.toISOString();
+      console.log(`Email OTP Send: active code already exists for ${normalizedEmail}, no new email`);
+      return new Response(
+        JSON.stringify({
+          success: true,
+          message: 'קוד אימות פעיל כבר נשלח. בדוק את תיבת המייל שלך.',
+          expiresAt: existingCode.expires_at,
+          reused: true,
+        }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
-      // Store in database (reuse sms_verification_codes table, phone_number column holds email)
+    // Generate a fresh code, hash it for storage, email the plaintext.
+    const otpCode = generateOTPCode();
+    const expiration = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+    const expiresAt = expiration.toISOString();
+    const codeHash = await hashOtpCode(otpCode, normalizedEmail);
+
+    {
       const { error: insertError } = await supabaseAdmin
         .from('sms_verification_codes')
         .insert({
           phone_number: normalizedEmail,
-          code: otpCode,
+          code: codeHash,
           verification_type: type,
           expires_at: expiresAt,
           verified: false,

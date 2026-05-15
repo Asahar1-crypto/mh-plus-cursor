@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { parsePhoneNumber } from 'https://esm.sh/libphonenumber-js@1.10.51'
+import { hashOtpCode } from '../_shared/otp-utils.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -136,15 +137,17 @@ serve(async (req) => {
       )
     }
 
-    // 3. Verify code value – on mismatch, increment attempts and reject
-    if (activeCode.code !== code) {
-      await supabase
-        .from('sms_verification_codes')
-        .update({ attempts: currentAttempts + 1 })
-        .eq('id', activeCode.id)
-
-      const remaining = 4 - currentAttempts
-      console.warn(`Wrong code for ${normalizedPhone}. Attempt ${currentAttempts + 1}/5`)
+    // 3. Verify code value – on mismatch, atomically increment attempts and reject.
+    //    Using RPC (`UPDATE ... SET attempts = attempts + 1 RETURNING attempts`)
+    //    prevents two concurrent wrong-code submissions from racing the counter.
+    //    The stored value is an HMAC hash, so we hash the submitted code first.
+    const submittedHash = await hashOtpCode(code, normalizedPhone)
+    if (activeCode.code !== submittedHash) {
+      const { data: newAttempts } = await supabase.rpc('increment_otp_attempts', {
+        p_id: activeCode.id,
+      })
+      const remaining = Math.max(0, 5 - (newAttempts ?? currentAttempts + 1))
+      console.warn(`Wrong code for ${normalizedPhone}. Attempts=${newAttempts ?? '?'}/5`)
       return new Response(
         JSON.stringify({ verified: false, error: `קוד שגוי. נותרו ${remaining} ניסיונות.` }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 },

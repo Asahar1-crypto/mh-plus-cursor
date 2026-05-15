@@ -221,8 +221,9 @@ const AdminSmsLogs: React.FC = () => {
                       <span className="truncate max-w-[100px] sm:max-w-none">{log.phone_number}</span>
                     </div>
                   </TableCell>
-                  <TableCell className="font-mono font-bold text-sm sm:text-lg">
-                    {log.code}
+                  <TableCell className="font-mono font-bold text-sm sm:text-lg text-muted-foreground">
+                    {/* Codes are HMAC-hashed at rest — plaintext exists only on the user's device. */}
+                    ••••••
                   </TableCell>
                   <TableCell className="hidden sm:table-cell">
                     {getVerificationTypeBadge(log.verification_type)}
