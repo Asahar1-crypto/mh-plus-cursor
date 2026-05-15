@@ -513,12 +513,15 @@ const MonthlySettlement = () => {
 
       // Query DB directly for all approved expenses in this billing cycle
       // (avoids stale React state — the approvals above are already committed to DB)
+      // Exclude recurring templates: they are not real expenses and a DB trigger
+      // (enforce_expense_rules) will reject any attempt to mark them as paid.
       const { startISO, endISO } = getCycleRangeISO(billingDay, selectedMonth + 1, selectedYear);
       const { data: freshApproved } = await supabase
         .from('expenses')
         .select('id')
         .eq('account_id', account!.id)
         .eq('status', 'approved')
+        .eq('is_recurring', false)
         .gte('date', startISO)
         .lte('date', endISO);
 

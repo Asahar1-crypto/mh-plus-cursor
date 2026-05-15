@@ -12,6 +12,8 @@ import BottomNavBar from './BottomNavBar';
 import FloatingAddButton from './FloatingAddButton';
 import { BrandedLoader } from '@/components/ui/branded-loader';
 import PageTransition from './PageTransition';
+import { AddExpenseModal } from './expenses/AddExpenseModal';
+import { VirtualPartnerConsentWall } from './custody/virtual/VirtualPartnerConsentWall';
 
 const AppLayout = () => {
   const { isAuthenticated, isLoading, account, user } = useAuth();
@@ -120,6 +122,8 @@ const AppLayout = () => {
             <BottomNavBar onMoreClick={() => setIsMobileSidebarOpen(true)} />
           </>
         )}
+        <AddExpenseModal />
+        <VirtualPartnerConsentWall />
       </div>
     </TooltipProvider>
   );

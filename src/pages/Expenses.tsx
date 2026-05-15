@@ -1,17 +1,17 @@
 
-import React, { useEffect, useRef } from 'react';
-import { useLocation } from 'react-router-dom';
+import React, { useEffect } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useExpense } from '@/contexts/ExpenseContext';
 import { Expense } from '@/contexts/expense/types';
 import { useExpenseFilters } from '@/hooks/useExpenseFilters';
 import { ExpenseFilters } from '@/components/expenses/ExpenseFilters';
 import { ExpensesTable } from '@/components/expenses/ExpensesTable';
-import { AddExpenseModal } from '@/components/expenses/AddExpenseModal';
 import { RecurringExpensesTable } from '@/components/expenses/RecurringExpensesTable';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { RefreshCw, Plus, TrendingUp, CreditCard, Clock, Download } from 'lucide-react';
+import { RefreshCw, Plus, PlusCircle, TrendingUp, CreditCard, Clock, Download } from 'lucide-react';
+import { useAddExpenseModal } from '@/hooks/useAddExpenseModal';
 import { toast } from 'sonner';
 import { exportExpensesToCSV, exportExpensesToPDF } from '@/utils/exportUtils';
 import { useAuth } from '@/contexts/auth';
@@ -24,7 +24,8 @@ import { ExpensesPageSkeleton } from '@/components/expenses/ExpensesPageSkeleton
 
 const ExpensesPage = () => {
   const location = useLocation();
-  const modalRef = useRef<any>(null);
+  const navigate = useNavigate();
+  const { openModal, setOnSubmitSuccess } = useAddExpenseModal();
   const { user, account, profile } = useAuth();
   const isPersonalPlan = account?.plan_slug === 'personal';
 
@@ -116,17 +117,20 @@ const ExpensesPage = () => {
     }
   };
 
-  // Check if we should auto-open the modal
+  // Register refreshData as the submit-success callback for the global modal
+  // while this page is mounted.
+  useEffect(() => {
+    setOnSubmitSuccess(() => refreshData);
+    return () => setOnSubmitSuccess(undefined);
+  }, [refreshData, setOnSubmitSuccess]);
+
+  // Auto-open modal when navigated here with state.openModal (backwards-compat).
   useEffect(() => {
     if (location.state?.openModal) {
-      setTimeout(() => {
-        const modalButton = document.querySelector('[data-modal-trigger="add-expense"]');
-        if (modalButton) {
-          (modalButton as HTMLElement).click();
-        }
-      }, 100);
+      openModal();
+      navigate(location.pathname, { replace: true, state: {} });
     }
-  }, [location.state]);
+  }, [location.state, location.pathname, navigate, openModal]);
 
   // Loading state
   if (isLoading) {
@@ -211,7 +215,12 @@ const ExpensesPage = () => {
               </Button>
               <BudgetModal isAdmin={isAdmin || false} />
               <div className="flex-none shrink-0">
-                <AddExpenseModal onSubmitSuccess={refreshData} />
+                <Button
+                  onClick={openModal}
+                  className="min-h-[44px] whitespace-nowrap shrink-0"
+                >
+                  <PlusCircle className="mr-2 h-4 w-4" /> הוצאה חדשה
+                </Button>
               </div>
             </div>
           </div>

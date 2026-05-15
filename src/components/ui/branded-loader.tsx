@@ -24,10 +24,10 @@ export const BrandedLoader: React.FC<BrandedLoaderProps> = ({
     lg: 'text-base',
   };
 
-  const logoSizeClasses = {
-    sm: 'text-xs',
-    md: 'text-sm',
-    lg: 'text-lg',
+  const innerIconClasses = {
+    sm: 'h-5 w-5',
+    md: 'h-7 w-7',
+    lg: 'h-10 w-10',
   };
 
   return (
@@ -42,14 +42,11 @@ export const BrandedLoader: React.FC<BrandedLoaderProps> = ({
         />
         {/* Inner branded logo */}
         <div className="absolute inset-0 flex items-center justify-center">
-          <div className={cn(
-            'rounded-md bg-gradient-to-br from-primary to-secondary flex items-center justify-center animate-pulse',
-            size === 'sm' ? 'h-4 w-4' : size === 'md' ? 'h-6 w-6' : 'h-8 w-8'
-          )}>
-            <span className={cn('font-bold text-white', logoSizeClasses[size])}>
-              מ+
-            </span>
-          </div>
+          <img
+            src="/logo-icon.svg"
+            alt="מחציות פלוס"
+            className={cn('object-contain animate-pulse', innerIconClasses[size])}
+          />
         </div>
       </div>
       {text && (

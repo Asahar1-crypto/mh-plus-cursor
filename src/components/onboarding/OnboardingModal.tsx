@@ -9,6 +9,7 @@ import { RecurringExpensesStep } from './steps/RecurringExpensesStep';
 import { VirtualPartnerStep } from './steps/VirtualPartnerStep';
 import { InviteUserStep } from './steps/InviteUserStep';
 import { SuccessStep } from './steps/SuccessStep';
+import { CustodyStep } from '@/components/custody/onboarding/CustodyStep';
 import { useAuth } from '@/contexts/auth';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -20,6 +21,7 @@ const STEP_TITLES = [
   'ילדים',
   'מחזור חיוב',
   'הוצאות קבועות',
+  'הלו"ז שלי',
   'ניהול משותף',
   'הזמנת משתמש',
   'סיום',
@@ -29,7 +31,10 @@ const STEP_TITLES = [
 const STEP_CHILDREN = 1;
 const STEP_BILLING = 2;
 const STEP_RECURRING = 3;
-const STEP_INVITE = 5;
+const STEP_CUSTODY = 4;
+const STEP_VIRTUAL_PARTNER = 5;
+const STEP_INVITE = 6;
+const STEP_SUCCESS = 7;
 
 const SESSION_DISMISSED_KEY = 'onboarding_dismissed';
 const SESSION_STEP_KEY = 'onboarding_current_step';
@@ -97,8 +102,8 @@ export const OnboardingModal: React.FC = () => {
     if (currentStep > 0) {
       // When going back from SuccessStep and invite was skipped,
       // go back to VirtualPartnerStep (skip InviteUserStep)
-      if (skipInviteStep && currentStep === 6) {
-        setCurrentStep(4); // VirtualPartnerStep
+      if (skipInviteStep && currentStep === STEP_SUCCESS) {
+        setCurrentStep(STEP_VIRTUAL_PARTNER);
         return;
       }
       setCurrentStep((prev) => prev - 1);
@@ -119,8 +124,8 @@ export const OnboardingModal: React.FC = () => {
     setCompletedSteps((prev) => new Set(prev).add(currentStep));
     // Mark InviteUserStep as skipped since we're jumping over it
     setSkippedSteps((prev) => new Set(prev).add(STEP_INVITE));
-    // Jump from VirtualPartnerStep (4) directly to SuccessStep (6), skipping InviteUserStep (5)
-    setCurrentStep(6);
+    // Jump from VirtualPartnerStep directly to SuccessStep, skipping InviteUserStep
+    setCurrentStep(STEP_SUCCESS);
   };
 
   const handleClose = () => {
@@ -165,22 +170,24 @@ export const OnboardingModal: React.FC = () => {
     switch (currentStep) {
       case 0:
         return <WelcomeStep {...stepProps} />;
-      case 1:
+      case STEP_CHILDREN:
         return <ChildrenStep {...stepProps} />;
-      case 2:
+      case STEP_BILLING:
         return <BillingCycleStep {...stepProps} />;
-      case 3:
+      case STEP_RECURRING:
         return <RecurringExpensesStep {...stepProps} />;
-      case 4:
+      case STEP_CUSTODY:
+        return <CustodyStep {...stepProps} />;
+      case STEP_VIRTUAL_PARTNER:
         return (
           <VirtualPartnerStep
             {...stepProps}
             onChooseSolo={handleChooseSolo}
           />
         );
-      case 5:
+      case STEP_INVITE:
         return <InviteUserStep {...stepProps} />;
-      case 6:
+      case STEP_SUCCESS:
         return (
           <SuccessStep
             {...stepProps}

@@ -219,6 +219,13 @@ const AdminDashboard: React.FC = () => {
       path: '/admin/system-health',
       color: 'from-emerald-500/20 to-emerald-600/10 text-emerald-700 dark:text-emerald-300',
     },
+    {
+      icon: Calendar,
+      label: 'לוח חופשות בית-ספר',
+      description: 'ייבוא ואימות חגים וחופשות',
+      path: '/admin/school-calendar',
+      color: 'from-indigo-500/20 to-indigo-600/10 text-indigo-700 dark:text-indigo-300',
+    },
   ];
 
   if (loading) {

@@ -10,8 +10,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { CalendarIcon, PlusCircle } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
 import { OnboardingModal } from '@/components/onboarding/OnboardingModal';
+import { useAddExpenseModal } from '@/hooks/useAddExpenseModal';
 import { DashboardSkeleton } from '@/components/dashboard/DashboardSkeleton';
 import { ErrorState } from '@/components/ui/state-views';
 import { ActivityLog } from '@/components/ActivityLog';
@@ -20,7 +20,7 @@ import { usePromotionNotice } from '@/hooks/usePromotionNotice';
 import { isDateInCycle, getCycleLabelHebrew } from '@/utils/billingCycleUtils';
 
 const Dashboard = () => {
-  const navigate = useNavigate();
+  const { openModal } = useAddExpenseModal();
   const { user, account } = useAuth();
 
   const billingDay = account?.billing_cycle_start_day ?? 1;
@@ -259,7 +259,7 @@ const Dashboard = () => {
                 <Button
                   size="lg"
                   className="mt-2 gap-2 text-base"
-                  onClick={() => navigate('/add-expense')}
+                  onClick={openModal}
                 >
                   <PlusCircle className="h-5 w-5" />
                   הוסף הוצאה חדשה

@@ -12,6 +12,7 @@ import { OnboardingStepProps } from '../types';
 import { useAuth } from '@/contexts/auth';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { EducationLevelsSubStep } from './EducationLevelsSubStep';
 
 interface Child {
   id?: string;
@@ -19,10 +20,14 @@ interface Child {
   birthDate: Date | undefined;
 }
 
+type SubStep = 'details' | 'education';
+
 export const ChildrenStep: React.FC<OnboardingStepProps> = ({ onNext, onBack }) => {
   const { account, user } = useAuth();
   const [children, setChildren] = useState<Child[]>([{ name: '', birthDate: undefined }]);
   const [isLoading, setIsLoading] = useState(false);
+  const [subStep, setSubStep] = useState<SubStep>('details');
+  const [insertedChildIds, setInsertedChildIds] = useState<string[]>([]);
 
   const addChild = () => {
     setChildren([...children, { name: '', birthDate: undefined }]);
@@ -77,24 +82,26 @@ export const ChildrenStep: React.FC<OnboardingStepProps> = ({ onNext, onBack }) 
         birth_date: format(c.birthDate!, 'yyyy-MM-dd'),
       }));
 
-      const { error } = await supabase
+      const { data: inserted, error } = await supabase
         .from('children')
-        .insert(childrenToInsert);
+        .insert(childrenToInsert)
+        .select('id');
 
       if (error) {
         console.error('Insert error:', error);
-        
+
         // Handle specific RLS error
         if (error.code === '42501') {
           toast.error('אין הרשאות להוסיף ילדים. אנא פנה לתמיכה.');
           return;
         }
-        
+
         throw error;
       }
 
       toast.success(`נוספו ${validChildren.length} ילדים בהצלחה!`);
-      onNext();
+      setInsertedChildIds((inserted ?? []).map((r: { id: string }) => r.id));
+      setSubStep('education');
     } catch (error) {
       console.error('Error adding children:', error);
       toast.error('שגיאה בהוספת ילדים. אנא נסה שוב או פנה לתמיכה.');
@@ -102,6 +109,16 @@ export const ChildrenStep: React.FC<OnboardingStepProps> = ({ onNext, onBack }) 
       setIsLoading(false);
     }
   };
+
+  if (subStep === 'education') {
+    return (
+      <EducationLevelsSubStep
+        childIds={insertedChildIds}
+        onDone={onNext}
+        onBack={() => setSubStep('details')}
+      />
+    );
+  }
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-right duration-500">

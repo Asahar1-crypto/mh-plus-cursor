@@ -1,20 +1,21 @@
 import React from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import { Plus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { hapticImpact } from '@/lib/haptics';
+import { useAddExpenseModal } from '@/hooks/useAddExpenseModal';
 
 const FAB_PAGES = ['/dashboard', '/expenses'];
 
 const FloatingAddButton: React.FC = () => {
-  const navigate = useNavigate();
   const location = useLocation();
+  const { openModal } = useAddExpenseModal();
 
   if (!FAB_PAGES.includes(location.pathname)) return null;
 
   return (
     <button
-      onClick={() => { hapticImpact('Light'); navigate('/add-expense'); }}
+      onClick={() => { hapticImpact('Light'); openModal(); }}
       className={cn(
         'fixed z-30 flex items-center justify-center',
         'h-14 w-14 rounded-full',

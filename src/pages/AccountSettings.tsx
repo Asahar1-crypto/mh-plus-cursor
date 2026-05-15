@@ -12,6 +12,7 @@ import SentInvitationsCard from '@/components/account/SentInvitationsCard';
 import UserProfileCard from '@/components/account/UserProfileCard';
 import ChangePasswordCard from '@/components/account/ChangePasswordCard';
 import BillingCycleCard from '@/components/account/BillingCycleCard';
+import { CustodyScheduleCard } from '@/components/account/CustodyScheduleCard';
 import AvatarSetCard from '@/components/account/AvatarSetCard';
 import SubscriptionCard from '@/components/account/SubscriptionCard';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
@@ -189,11 +190,12 @@ const AccountSettings = () => {
               <div className="max-w-2xl mx-auto space-y-4 sm:space-y-6 animate-fade-in">
                 <SubscriptionCard account={account} />
                 <AccountDetailsCard account={account} />
-                <BillingCycleCard 
+                <BillingCycleCard
                   accountId={account?.id}
                   currentBillingDay={account?.billing_cycle_start_day}
                   isAdmin={isAdmin || false}
                 />
+                <CustodyScheduleCard />
                 <AvatarSetCard
                   accountId={account?.id}
                   currentAvatarSet={account?.avatar_set}

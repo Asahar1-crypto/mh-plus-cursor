@@ -1,22 +1,20 @@
 import React from 'react';
-import { useExpense } from '@/contexts/ExpenseContext';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Sparkles, TrendingUp, Plus } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useAddExpenseModal } from '@/hooks/useAddExpenseModal';
 
 interface DashboardHeaderProps {
   userName: string | undefined;
 }
 
 export const DashboardHeader: React.FC<DashboardHeaderProps> = ({ userName }) => {
-  const { refreshData } = useExpense();
-  const navigate = useNavigate();
-  
+  const { openModal } = useAddExpenseModal();
+
   const greeting = "היי 👋";
 
   const handleAddExpense = () => {
-    navigate('/expenses', { state: { openModal: true } });
+    openModal();
   };
 
   return (
