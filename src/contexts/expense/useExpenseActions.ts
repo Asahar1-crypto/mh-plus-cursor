@@ -1,5 +1,8 @@
 import { useState } from 'react';
-import { toast } from 'sonner';
+// Mascot-aware toasts — every success here is a "moment" (added an
+// expense, edited it, added a kid) and benefits from the wallet mascot
+// over sonner's plain check icon. Errors get the error-pose mascot.
+import { mascotToast as toast } from '@/lib/mascotToast';
 import { Expense, Child } from './types';
 import { User } from '@/contexts/AuthContext';
 import { Account } from '@/contexts/auth/types';
