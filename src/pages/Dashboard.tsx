@@ -4,6 +4,7 @@ import { useExpense } from '@/contexts/ExpenseContext';
 import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
 import { HeroBalanceCard } from '@/components/dashboard/HeroBalanceCard';
 import { ExpensesSummary } from '@/components/dashboard/ExpensesSummary';
+import { PaymentSuccessModal } from '@/components/payment/PaymentSuccessModal';
 import { ExpensesTabs } from '@/components/dashboard/ExpensesTabs';
 import { MonthlyFoodPaymentCard } from '@/components/dashboard/MonthlyFoodPaymentCard';
 import PendingInvitationAlert from '@/components/invitation/PendingInvitationAlert';
@@ -107,42 +108,25 @@ const Dashboard = () => {
     return expenses.filter(exp => exp.status === 'approved');
   }, [expenses]);
 
-  // Wrapper for markAsPaid with confetti animation
+  // Payment-success modal state — the celebration moment now lives in a
+  // dedicated component (PaymentSuccessModal) which handles confetti,
+  // mascot, gradient amount, and auto-dismiss.
+  const [paidCelebration, setPaidCelebration] = useState<{
+    open: boolean;
+    amount: number;
+    description?: string;
+  }>({ open: false, amount: 0 });
+
   const handleMarkAsPaidWithCelebration = async (id: string) => {
     try {
+      // Capture the expense before status flips so we can show its details.
+      const expense = expenses.find((e) => e.id === id);
       await markAsPaid(id);
-      
-      // Celebration confetti with gold colors
-      const confetti = (await import('canvas-confetti')).default;
-      const duration = 2500;
-      const animationEnd = Date.now() + duration;
-      const colors = ['#F59E0B', '#FBBF24', '#FCD34D'];
-
-      const interval = setInterval(() => {
-        const timeLeft = animationEnd - Date.now();
-        if (timeLeft <= 0) {
-          clearInterval(interval);
-          return;
-        }
-
-        confetti({
-          particleCount: 7,
-          angle: 60,
-          spread: 60,
-          origin: { x: 0, y: 0.5 },
-          colors: colors,
-          ticks: 200,
-        });
-        confetti({
-          particleCount: 7,
-          angle: 120,
-          spread: 60,
-          origin: { x: 1, y: 0.5 },
-          colors: colors,
-          ticks: 200,
-        });
-      }, 40);
-      
+      setPaidCelebration({
+        open: true,
+        amount: expense?.amount ?? 0,
+        description: expense?.description,
+      });
     } catch (error) {
       toast({
         title: "שגיאה",
@@ -296,6 +280,13 @@ const Dashboard = () => {
         </div>
 
       </div>
+
+      <PaymentSuccessModal
+        open={paidCelebration.open}
+        onClose={() => setPaidCelebration((s) => ({ ...s, open: false }))}
+        amount={paidCelebration.amount}
+        description={paidCelebration.description}
+      />
     </div>
   );
 };
