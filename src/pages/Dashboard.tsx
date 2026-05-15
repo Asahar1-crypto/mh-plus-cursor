@@ -3,6 +3,7 @@ import { useAuth } from '@/contexts/auth';
 import { useExpense } from '@/contexts/ExpenseContext';
 import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
 import { HeroBalanceCard } from '@/components/dashboard/HeroBalanceCard';
+import { MonthEndCallout } from '@/components/dashboard/MonthEndCallout';
 import { ExpensesSummary } from '@/components/dashboard/ExpensesSummary';
 import { PaymentSuccessModal } from '@/components/payment/PaymentSuccessModal';
 import { MascotImage } from '@/components/mascot/MascotImage';
@@ -195,6 +196,11 @@ const Dashboard = () => {
 
         <div className="animate-fade-in">
           <DashboardHeader userName={user?.name} />
+        </div>
+
+        {/* Month-end callout — only renders in the last 3 days of the cycle */}
+        <div className="animate-fade-in [animation-delay:25ms]">
+          <MonthEndCallout billingDay={billingDay} selectedMonth={selectedMonth} />
         </div>
 
         {/* Hero balance — total spent this period */}
