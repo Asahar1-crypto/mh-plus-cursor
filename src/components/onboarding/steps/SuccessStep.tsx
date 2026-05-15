@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { CheckCircle2, Sparkles, TrendingUp, Users, Calendar, SkipForward } from 'lucide-react';
 import { OnboardingStepProps } from '../types';
+import { MascotImage } from '@/components/mascot/MascotImage';
 
 // Step indices matching OnboardingModal
 const STEP_CHILDREN = 1;
@@ -39,14 +40,14 @@ export const SuccessStep: React.FC<SuccessStepProps> = ({ onNext, completedSteps
           angle: 60,
           spread: 55,
           origin: { x: 0 },
-          colors: ['#8B5CF6', '#EC4899', '#10B981'],
+          colors: ['#22C55E', '#00B7E8', '#F5A823', '#FBBF24'],
         });
         confetti({
           particleCount: 3,
           angle: 120,
           spread: 55,
           origin: { x: 1 },
-          colors: ['#8B5CF6', '#EC4899', '#10B981'],
+          colors: ['#22C55E', '#00B7E8', '#F5A823', '#FBBF24'],
         });
       }, 50);
     })();
@@ -63,15 +64,26 @@ export const SuccessStep: React.FC<SuccessStepProps> = ({ onNext, completedSteps
         show ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
       }`}
     >
-      {/* Success Icon */}
+      {/* Success Icon — blue mascot in 'success' pose with green glow halo */}
       <div className="flex justify-center">
-        <div className="relative">
-          <div className="absolute inset-0 animate-ping">
-            <div className="w-32 h-32 rounded-full bg-primary/20" />
-          </div>
-          <div className="relative w-32 h-32 rounded-full bg-gradient-to-br from-primary via-primary/80 to-primary/60 flex items-center justify-center animate-in zoom-in duration-700">
-            <CheckCircle2 className="w-16 h-16 text-primary-foreground animate-in zoom-in duration-1000 delay-300" />
-          </div>
+        <div className="relative animate-in zoom-in duration-700">
+          <div
+            aria-hidden="true"
+            className="absolute inset-0 pointer-events-none"
+            style={{
+              background:
+                'radial-gradient(circle at 50% 60%, rgba(34,197,94,0.32) 0%, transparent 60%)',
+              transform: 'scale(2.2)',
+            }}
+          />
+          <MascotImage
+            kind="blue"
+            pose="success"
+            size="xl"
+            animate="success-glow"
+            priority
+            className="relative drop-shadow-2xl"
+          />
         </div>
       </div>
 

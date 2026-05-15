@@ -2,14 +2,31 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Sparkles, TrendingUp, Users, Calendar } from 'lucide-react';
 import { OnboardingStepProps } from '../types';
+import { MascotImage } from '@/components/mascot/MascotImage';
 
 export const WelcomeStep: React.FC<OnboardingStepProps> = ({ onNext }) => {
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
-      {/* Hero Section */}
+      {/* Hero Section — blue mascot with cyan glow halo (handoff spec) */}
       <div className="text-center space-y-4">
-        <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-gradient-to-br from-primary via-primary/80 to-primary/60 mb-4 animate-in zoom-in duration-500 delay-100">
-          <Sparkles className="w-10 h-10 text-primary-foreground animate-pulse" />
+        <div className="relative mx-auto mb-4 inline-flex items-center justify-center animate-in zoom-in duration-500 delay-100">
+          <div
+            aria-hidden="true"
+            className="absolute inset-0 pointer-events-none"
+            style={{
+              background:
+                'radial-gradient(circle at 50% 55%, rgba(0,209,255,0.35) 0%, transparent 60%)',
+              transform: 'scale(2.5)',
+            }}
+          />
+          <MascotImage
+            kind="blue"
+            pose="happy"
+            size="xl"
+            animate="idle"
+            priority
+            className="relative drop-shadow-2xl"
+          />
         </div>
         <h1 className="text-4xl font-bold bg-gradient-to-r from-primary via-primary/80 to-primary/60 bg-clip-text text-transparent animate-in slide-in-from-top duration-500 delay-200">
           ברוכים הבאים למערכת!
