@@ -214,6 +214,26 @@ const AccountSettings = () => {
             {/* Tab 3: Family Members */}
             <TabsContent value="family" className="mt-4 sm:mt-6">
               <div className="max-w-2xl mx-auto space-y-4 sm:space-y-6 animate-fade-in">
+                {/* Family hero — group mascot illustration with warm gradient */}
+                <div className="relative overflow-hidden rounded-2xl shadow-mascot">
+                  <div
+                    aria-hidden="true"
+                    className="absolute inset-0"
+                    style={{ background: 'var(--gradient-warm-brand)' }}
+                  />
+                  <img
+                    src="/mascots/family.webp"
+                    alt=""
+                    aria-hidden="true"
+                    className="relative w-full h-32 sm:h-40 object-contain object-center select-none pointer-events-none drop-shadow-xl"
+                    draggable={false}
+                  />
+                  <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/55 via-black/20 to-transparent px-4 py-3 text-white">
+                    <h3 className="text-base sm:text-lg font-extrabold">המשפחה שלך</h3>
+                    <p className="text-xs sm:text-sm opacity-90">ניהול חברים, הזמנות וקישורים</p>
+                  </div>
+                </div>
+
                 <VirtualPartnerCard account={account} isAdmin={isAdmin || false} />
                 <PendingInvitationsCard />
                 <UsersListCard 
