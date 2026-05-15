@@ -127,6 +127,33 @@ const Dashboard = () => {
     return prev.reduce((sum, e) => sum + e.amount, 0);
   }, [expenses, selectedMonth, billingDay]);
 
+  // Rolling baseline — average of the previous 3 *complete* billing cycles.
+  // Used by HeroBalanceCard to flag overspending (current > 1.2x baseline).
+  // We deliberately skip the currently-selected cycle from the average so
+  // mid-cycle data doesn't dilute the comparison.
+  const baselineAverage = useMemo(() => {
+    if (!selectedMonth) return undefined;
+    const [year, month] = selectedMonth.split('-').map(Number);
+    const totals: number[] = [];
+    for (let i = 1; i <= 3; i++) {
+      const ref = new Date(year, month - 1 - i, 1);
+      const refMonth = ref.getMonth() + 1;
+      const refYear = ref.getFullYear();
+      const periodTotal = expenses
+        .filter(
+          (e) =>
+            (e.status === 'approved' || e.status === 'paid') &&
+            isDateInCycle(e.date, billingDay, refMonth, refYear),
+        )
+        .reduce((sum, e) => sum + e.amount, 0);
+      // Only include periods that actually had spend — fresh accounts with
+      // empty history shouldn't trigger a "warning" on their first month.
+      if (periodTotal > 0) totals.push(periodTotal);
+    }
+    if (totals.length === 0) return undefined;
+    return totals.reduce((a, b) => a + b, 0) / totals.length;
+  }, [expenses, selectedMonth, billingDay]);
+
   // Payment-success modal state — the celebration moment now lives in a
   // dedicated component (PaymentSuccessModal) which handles confetti,
   // mascot, gradient amount, and auto-dismiss.
@@ -208,10 +235,11 @@ const Dashboard = () => {
           <HeroBalanceCard
             currentAmount={approvedTotal + paidTotal}
             previousAmount={previousPeriodTotal}
+            baselineAverage={baselineAverage}
             label={`ההוצאות · ${
               monthOptions.find((o) => o.value === selectedMonth)?.label ?? ''
             }`}
-            mascotPose={paidTotal > 0 && pendingTotal === 0 ? 'success' : 'happy'}
+            mascotPose={paidTotal > 0 && pendingTotal === 0 ? 'success' : undefined}
           />
         </div>
 

@@ -25,6 +25,12 @@ interface HeroBalanceCardProps {
   /** Optional previous-period amount for the delta indicator */
   previousAmount?: number;
   /**
+   * Optional rolling baseline (e.g. avg of last 3 cycles). When the current
+   * amount exceeds 1.2× this baseline the card switches to a warm/amber
+   * gradient and the mascot pose to 'checking' to flag overspending.
+   */
+  baselineAverage?: number;
+  /**
    * Override the mascot pose. Defaults to 'happy' for healthy budgets,
    * 'checking' when over budget. Callers can force 'success' for
    * month-end celebrations.
@@ -48,15 +54,24 @@ export function HeroBalanceCard({
   label,
   budget,
   previousAmount,
+  baselineAverage,
   mascotPose,
   currencySymbol = '₪',
   className,
 }: HeroBalanceCardProps) {
   const overBudget = budget !== undefined && currentAmount > budget;
+  // "Warning" state — overspending vs the user's historical baseline.
+  // Threshold matches the handoff spec (1.2x average). When triggered we
+  // switch the card from deep navy to a warm amber gradient and flag the
+  // mascot as 'checking'.
+  const overspending =
+    baselineAverage !== undefined &&
+    baselineAverage > 0 &&
+    currentAmount > baselineAverage * 1.2;
 
   // Auto-pick mascot pose if caller didn't override
   const pose: MascotPose =
-    mascotPose ?? (overBudget ? 'checking' : 'happy');
+    mascotPose ?? (overBudget || overspending ? 'checking' : 'happy');
 
   // Delta vs previous period — colour green for "less spent", amber for "more"
   const delta = useMemo(() => {
@@ -80,12 +95,14 @@ export function HeroBalanceCard({
   return (
     <div
       className={cn(
-        // Deep navy gradient + brand shadow from the new token system
+        // Deep navy by default; warm amber when overspending vs baseline.
         'relative overflow-hidden rounded-[22px] p-6 sm:p-8 mb-4 sm:mb-6',
-        'bg-gradient-deep text-white shadow-mascot',
+        'text-white shadow-mascot',
         className,
       )}
-      style={{ background: 'var(--gradient-deep)' }}
+      style={{
+        background: overspending ? 'var(--gradient-warm-brand)' : 'var(--gradient-deep)',
+      }}
     >
       {/* Decorative radial blobs — top-start + bottom-end, cyan glow */}
       <div
