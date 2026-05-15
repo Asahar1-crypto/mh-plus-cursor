@@ -1,8 +1,9 @@
 import React from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Sparkles, TrendingUp, Plus } from 'lucide-react';
+import { TrendingUp, Plus } from 'lucide-react';
 import { useAddExpenseModal } from '@/hooks/useAddExpenseModal';
+import { MascotImage } from '@/components/mascot/MascotImage';
 
 interface DashboardHeaderProps {
   userName: string | undefined;
@@ -21,17 +22,24 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({ userName }) =>
     <Card className="bg-card border border-border/50 shadow-md hover:shadow-lg transition-shadow duration-300 overflow-hidden mb-4 sm:mb-6">
       <div className="p-4 sm:p-6 md:p-8">
         <div className="flex flex-col md:flex-row items-start justify-between gap-4 sm:gap-6">
-          <div className="space-y-2 sm:space-y-3">
-            <div className="flex items-center gap-2 sm:gap-3">
+          <div className="flex items-start gap-3 sm:gap-4 space-y-2 sm:space-y-3">
+            <MascotImage
+              kind="blue"
+              pose="happy"
+              size="sm"
+              animate="idle"
+              priority
+              className="shrink-0 -mt-1"
+            />
+            <div className="space-y-2 sm:space-y-3">
               <h2 className="type-h1 md:text-4xl type-gradient">
                 {greeting}, {userName || 'משתמש'}!
               </h2>
-              <Sparkles className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
+              <p className="text-muted-foreground flex items-center gap-2 text-sm sm:text-base">
+                <TrendingUp className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
+                בואו נראה איך התקציב שלכם מתנהל היום
+              </p>
             </div>
-            <p className="text-muted-foreground flex items-center gap-2 text-sm sm:text-base">
-              <TrendingUp className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
-              בואו נראה איך התקציב שלכם מתנהל היום
-            </p>
           </div>
 
           <div className="flex flex-col md:flex-row items-start md:items-center gap-3 sm:gap-4 w-full md:w-auto">

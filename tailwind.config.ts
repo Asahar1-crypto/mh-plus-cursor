@@ -74,6 +74,31 @@ export default {
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
 				},
+				// Mascot system (additive, from design handoff 2026-05-15)
+				ink: {
+					DEFAULT: 'hsl(var(--foreground))',
+					soft: 'hsl(var(--ink-soft))',
+					mute: 'hsl(var(--ink-mute))',
+				},
+				mascot: {
+					blue: 'hsl(var(--mascot-blue))',
+					'blue-dark': 'hsl(var(--mascot-blue-dark))',
+					orange: 'hsl(var(--mascot-orange))',
+					teal: 'hsl(var(--mascot-teal))',
+					pink: 'hsl(var(--mascot-pink))',
+				},
+			},
+			backgroundImage: {
+				'gradient-primary-brand': 'var(--gradient-primary)',
+				'gradient-deep': 'var(--gradient-deep)',
+				'gradient-success-brand': 'var(--gradient-success-brand)',
+				'gradient-warm-brand': 'var(--gradient-warm-brand)',
+				'gradient-canvas': 'var(--gradient-canvas)',
+			},
+			boxShadow: {
+				'mascot': 'var(--shadow-mascot)',
+				'mascot-glow': 'var(--shadow-mascot-glow)',
+				'inset-hi': 'var(--shadow-inset-hi)',
 			},
 			borderRadius: {
 				lg: 'var(--radius)',
