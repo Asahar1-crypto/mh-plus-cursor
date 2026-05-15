@@ -23,6 +23,7 @@ import { supabase } from '@/integrations/supabase/client';
 import NotificationsCard from '@/components/account/NotificationsCard';
 import { CategoriesCard } from '@/components/account/CategoriesCard';
 import { IndexLinkingSettingsCard } from '@/components/account/IndexLinkingSettingsCard';
+import { MonthlyBudgetCard } from '@/components/account/MonthlyBudgetCard';
 import VirtualPartnerCard from '@/components/account/VirtualPartnerCard';
 
 const AppearanceCard = () => {
@@ -193,6 +194,11 @@ const AccountSettings = () => {
                 <BillingCycleCard
                   accountId={account?.id}
                   currentBillingDay={account?.billing_cycle_start_day}
+                  isAdmin={isAdmin || false}
+                />
+                <MonthlyBudgetCard
+                  accountId={account?.id}
+                  currentBudget={account?.monthly_budget}
                   isAdmin={isAdmin || false}
                 />
                 <CustodyScheduleCard />

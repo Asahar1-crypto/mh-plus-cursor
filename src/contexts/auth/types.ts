@@ -27,6 +27,7 @@ export interface Account {
   plan_slug?: string | null;
   billing_period?: string | null;
   billing_cycle_start_day?: number | null;
+  monthly_budget?: number | null;
   avatar_set?: string | null;
   index_linking_enabled?: boolean | null;
   virtual_partner_name?: string | null;

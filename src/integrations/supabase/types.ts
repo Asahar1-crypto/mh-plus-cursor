@@ -10,10 +10,58 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "12.2.3 (519615d)"
+    PostgrestVersion: "14.4"
   }
   public: {
     Tables: {
+      account_activity_logs: {
+        Row: {
+          account_id: string
+          action: string
+          created_at: string | null
+          description: string
+          id: string
+          metadata: Json | null
+          user_id: string | null
+          user_name: string
+        }
+        Insert: {
+          account_id: string
+          action: string
+          created_at?: string | null
+          description: string
+          id?: string
+          metadata?: Json | null
+          user_id?: string | null
+          user_name: string
+        }
+        Update: {
+          account_id?: string
+          action?: string
+          created_at?: string | null
+          description?: string
+          id?: string
+          metadata?: Json | null
+          user_id?: string | null
+          user_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "account_activity_logs_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "account_activity_logs_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       account_members: {
         Row: {
           account_id: string
@@ -64,12 +112,14 @@ export type Database = {
           avatar_set: string | null
           billing_cycle_end_day: number | null
           billing_cycle_start_day: number | null
-          index_linking_enabled: boolean | null
           billing_cycle_type: string | null
           billing_period: string | null
           created_at: string
           id: string
+          index_linking_enabled: boolean | null
           invitation_id: string | null
+          last_grade_advance_year: number | null
+          monthly_budget: number | null
           name: string
           owner_id: string
           plan_slug: string | null
@@ -79,6 +129,8 @@ export type Database = {
           subscription_status: string | null
           trial_ends_at: string | null
           updated_at: string
+          virtual_partner_id: string | null
+          virtual_partner_name: string | null
         }
         Insert: {
           avatar_set?: string | null
@@ -88,7 +140,10 @@ export type Database = {
           billing_period?: string | null
           created_at?: string
           id?: string
+          index_linking_enabled?: boolean | null
           invitation_id?: string | null
+          last_grade_advance_year?: number | null
+          monthly_budget?: number | null
           name: string
           owner_id: string
           plan_slug?: string | null
@@ -98,17 +153,21 @@ export type Database = {
           subscription_status?: string | null
           trial_ends_at?: string | null
           updated_at?: string
+          virtual_partner_id?: string | null
+          virtual_partner_name?: string | null
         }
         Update: {
           avatar_set?: string | null
           billing_cycle_end_day?: number | null
           billing_cycle_start_day?: number | null
-          index_linking_enabled?: boolean | null
           billing_cycle_type?: string | null
           billing_period?: string | null
           created_at?: string
           id?: string
+          index_linking_enabled?: boolean | null
           invitation_id?: string | null
+          last_grade_advance_year?: number | null
+          monthly_budget?: number | null
           name?: string
           owner_id?: string
           plan_slug?: string | null
@@ -118,6 +177,8 @@ export type Database = {
           subscription_status?: string | null
           trial_ends_at?: string | null
           updated_at?: string
+          virtual_partner_id?: string | null
+          virtual_partner_name?: string | null
         }
         Relationships: [
           {
@@ -132,153 +193,6 @@ export type Database = {
             columns: ["shared_with_id"]
             isOneToOne: false
             referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      pricing_plans: {
-        Row: {
-          id: string
-          slug: string
-          name: string
-          description: string | null
-          monthly_price: number
-          yearly_price: number
-          max_members: number
-          features: Json
-          is_active: boolean
-          sort_order: number
-          created_at: string
-          updated_at: string
-        }
-        Insert: {
-          id?: string
-          slug: string
-          name: string
-          description?: string | null
-          monthly_price: number
-          yearly_price: number
-          max_members?: number
-          features?: Json
-          is_active?: boolean
-          sort_order?: number
-          created_at?: string
-          updated_at?: string
-        }
-        Update: {
-          id?: string
-          slug?: string
-          name?: string
-          description?: string | null
-          monthly_price?: number
-          yearly_price?: number
-          max_members?: number
-          features?: Json
-          is_active?: boolean
-          sort_order?: number
-          created_at?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      coupons: {
-        Row: {
-          id: string
-          code: string
-          description: string | null
-          discount_type: string
-          discount_value: number
-          applicable_plans: string
-          applicable_billing: string
-          max_redemptions: number | null
-          current_redemptions: number
-          valid_from: string
-          valid_until: string | null
-          is_active: boolean
-          created_by: string | null
-          created_at: string
-          updated_at: string
-        }
-        Insert: {
-          id?: string
-          code: string
-          description?: string | null
-          discount_type: string
-          discount_value: number
-          applicable_plans?: string
-          applicable_billing?: string
-          max_redemptions?: number | null
-          current_redemptions?: number
-          valid_from?: string
-          valid_until?: string | null
-          is_active?: boolean
-          created_by?: string | null
-          created_at?: string
-          updated_at?: string
-        }
-        Update: {
-          id?: string
-          code?: string
-          description?: string | null
-          discount_type?: string
-          discount_value?: number
-          applicable_plans?: string
-          applicable_billing?: string
-          max_redemptions?: number | null
-          current_redemptions?: number
-          valid_from?: string
-          valid_until?: string | null
-          is_active?: boolean
-          created_by?: string | null
-          created_at?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      coupon_redemptions: {
-        Row: {
-          id: string
-          coupon_id: string
-          account_id: string
-          redeemed_by: string
-          plan_slug: string
-          billing_period: string
-          discount_applied: number
-          created_at: string
-        }
-        Insert: {
-          id?: string
-          coupon_id: string
-          account_id: string
-          redeemed_by: string
-          plan_slug: string
-          billing_period: string
-          discount_applied: number
-          created_at?: string
-        }
-        Update: {
-          id?: string
-          coupon_id?: string
-          account_id?: string
-          redeemed_by?: string
-          plan_slug?: string
-          billing_period?: string
-          discount_applied?: number
-          created_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "coupon_redemptions_coupon_id_fkey"
-            columns: ["coupon_id"]
-            isOneToOne: false
-            referencedRelation: "coupons"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "coupon_redemptions_account_id_fkey"
-            columns: ["account_id"]
-            isOneToOne: false
-            referencedRelation: "accounts"
             referencedColumns: ["id"]
           },
         ]
@@ -322,36 +236,307 @@ export type Database = {
         }
         Relationships: []
       }
-      budgets: {
+      birthday_projects: {
         Row: {
           account_id: string
-          category: string
+          birthday_date: string
+          budget_confirmed_a: boolean
+          budget_confirmed_b: boolean
+          budget_locked_at: string | null
+          child_age_at_event: number | null
+          child_id: string | null
+          child_name: string
           created_at: string
           id: string
-          month: number
-          monthly_amount: number
+          initiated_by: string | null
+          settled_at: string | null
+          split_ratio_a: number | null
+          status: string
+          total_budget: number | null
+          total_spent: number | null
+          transfer_amount: number | null
+          transfer_payer_id: string | null
+          trigger_notification_sent: boolean
           updated_at: string
-          year: number
         }
         Insert: {
           account_id: string
-          category: string
+          birthday_date: string
+          budget_confirmed_a?: boolean
+          budget_confirmed_b?: boolean
+          budget_locked_at?: string | null
+          child_age_at_event?: number | null
+          child_id?: string | null
+          child_name: string
           created_at?: string
           id?: string
-          month: number
-          monthly_amount: number
+          initiated_by?: string | null
+          settled_at?: string | null
+          split_ratio_a?: number | null
+          status?: string
+          total_budget?: number | null
+          total_spent?: number | null
+          transfer_amount?: number | null
+          transfer_payer_id?: string | null
+          trigger_notification_sent?: boolean
           updated_at?: string
-          year: number
         }
         Update: {
           account_id?: string
-          category?: string
+          birthday_date?: string
+          budget_confirmed_a?: boolean
+          budget_confirmed_b?: boolean
+          budget_locked_at?: string | null
+          child_age_at_event?: number | null
+          child_id?: string | null
+          child_name?: string
           created_at?: string
           id?: string
-          month?: number
-          monthly_amount?: number
+          initiated_by?: string | null
+          settled_at?: string | null
+          split_ratio_a?: number | null
+          status?: string
+          total_budget?: number | null
+          total_spent?: number | null
+          transfer_amount?: number | null
+          transfer_payer_id?: string | null
+          trigger_notification_sent?: boolean
           updated_at?: string
-          year?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "birthday_projects_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "birthday_projects_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "children"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      birthday_task_templates: {
+        Row: {
+          age_max: number
+          age_min: number
+          category: string
+          description: string | null
+          estimated_max: number | null
+          estimated_min: number | null
+          id: string
+          is_must: boolean
+          sort_order: number
+          title: string
+        }
+        Insert: {
+          age_max?: number
+          age_min?: number
+          category?: string
+          description?: string | null
+          estimated_max?: number | null
+          estimated_min?: number | null
+          id?: string
+          is_must?: boolean
+          sort_order?: number
+          title: string
+        }
+        Update: {
+          age_max?: number
+          age_min?: number
+          category?: string
+          description?: string | null
+          estimated_max?: number | null
+          estimated_min?: number | null
+          id?: string
+          is_must?: boolean
+          sort_order?: number
+          title?: string
+        }
+        Relationships: []
+      }
+      birthday_tasks: {
+        Row: {
+          account_id: string
+          actual_amount: number | null
+          category: string
+          claimed_at: string | null
+          claimed_by: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          estimated_amount: number | null
+          id: string
+          is_suggested: boolean
+          paid_at: string | null
+          paid_by: string | null
+          project_id: string
+          receipt_url: string | null
+          status: string
+          template_id: string | null
+          title: string
+          updated_at: string
+          verified_at: string | null
+          verified_by: string | null
+        }
+        Insert: {
+          account_id: string
+          actual_amount?: number | null
+          category?: string
+          claimed_at?: string | null
+          claimed_by?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          estimated_amount?: number | null
+          id?: string
+          is_suggested?: boolean
+          paid_at?: string | null
+          paid_by?: string | null
+          project_id: string
+          receipt_url?: string | null
+          status?: string
+          template_id?: string | null
+          title: string
+          updated_at?: string
+          verified_at?: string | null
+          verified_by?: string | null
+        }
+        Update: {
+          account_id?: string
+          actual_amount?: number | null
+          category?: string
+          claimed_at?: string | null
+          claimed_by?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          estimated_amount?: number | null
+          id?: string
+          is_suggested?: boolean
+          paid_at?: string | null
+          paid_by?: string | null
+          project_id?: string
+          receipt_url?: string | null
+          status?: string
+          template_id?: string | null
+          title?: string
+          updated_at?: string
+          verified_at?: string | null
+          verified_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "birthday_tasks_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "birthday_tasks_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "birthday_projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      birthday_triggers_log: {
+        Row: {
+          account_id: string
+          birthday_year: number
+          child_id: string
+          id: string
+          project_id: string | null
+          triggered_at: string
+        }
+        Insert: {
+          account_id: string
+          birthday_year: number
+          child_id: string
+          id?: string
+          project_id?: string | null
+          triggered_at?: string
+        }
+        Update: {
+          account_id?: string
+          birthday_year?: number
+          child_id?: string
+          id?: string
+          project_id?: string | null
+          triggered_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "birthday_triggers_log_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "birthday_triggers_log_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "children"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "birthday_triggers_log_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "birthday_projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      budgets: {
+        Row: {
+          account_id: string
+          budget_type: string | null
+          categories: string[] | null
+          category: string | null
+          created_at: string
+          end_date: string | null
+          id: string
+          month: number | null
+          monthly_amount: number
+          start_date: string | null
+          updated_at: string
+          year: number | null
+        }
+        Insert: {
+          account_id: string
+          budget_type?: string | null
+          categories?: string[] | null
+          category?: string | null
+          created_at?: string
+          end_date?: string | null
+          id?: string
+          month?: number | null
+          monthly_amount: number
+          start_date?: string | null
+          updated_at?: string
+          year?: number | null
+        }
+        Update: {
+          account_id?: string
+          budget_type?: string | null
+          categories?: string[] | null
+          category?: string | null
+          created_at?: string
+          end_date?: string | null
+          id?: string
+          month?: number | null
+          monthly_amount?: number
+          start_date?: string | null
+          updated_at?: string
+          year?: number | null
         }
         Relationships: [
           {
@@ -363,11 +548,50 @@ export type Database = {
           },
         ]
       }
+      categories: {
+        Row: {
+          account_id: string
+          color: string | null
+          created_at: string | null
+          id: string
+          name: string
+          sort_order: number | null
+        }
+        Insert: {
+          account_id: string
+          color?: string | null
+          created_at?: string | null
+          id?: string
+          name: string
+          sort_order?: number | null
+        }
+        Update: {
+          account_id?: string
+          color?: string | null
+          created_at?: string | null
+          id?: string
+          name?: string
+          sort_order?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "categories_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       children: {
         Row: {
           account_id: string
           birth_date: string | null
+          budget_limit: number | null
           created_at: string
+          current_grade: number | null
+          education_auto: boolean
+          education_level: string | null
           gender: string | null
           id: string
           name: string
@@ -376,7 +600,11 @@ export type Database = {
         Insert: {
           account_id: string
           birth_date?: string | null
+          budget_limit?: number | null
           created_at?: string
+          current_grade?: number | null
+          education_auto?: boolean
+          education_level?: string | null
           gender?: string | null
           id?: string
           name: string
@@ -385,7 +613,11 @@ export type Database = {
         Update: {
           account_id?: string
           birth_date?: string | null
+          budget_limit?: number | null
           created_at?: string
+          current_grade?: number | null
+          education_auto?: boolean
+          education_level?: string | null
           gender?: string | null
           id?: string
           name?: string
@@ -397,6 +629,457 @@ export type Database = {
             columns: ["account_id"]
             isOneToOne: false
             referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      coupon_redemptions: {
+        Row: {
+          account_id: string
+          billing_period: string
+          coupon_id: string
+          created_at: string
+          discount_applied: number
+          id: string
+          plan_slug: string
+          redeemed_by: string
+        }
+        Insert: {
+          account_id: string
+          billing_period: string
+          coupon_id: string
+          created_at?: string
+          discount_applied: number
+          id?: string
+          plan_slug: string
+          redeemed_by: string
+        }
+        Update: {
+          account_id?: string
+          billing_period?: string
+          coupon_id?: string
+          created_at?: string
+          discount_applied?: number
+          id?: string
+          plan_slug?: string
+          redeemed_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coupon_redemptions_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "coupon_redemptions_coupon_id_fkey"
+            columns: ["coupon_id"]
+            isOneToOne: false
+            referencedRelation: "coupons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      coupons: {
+        Row: {
+          applicable_billing: string
+          applicable_plans: string
+          code: string
+          created_at: string
+          created_by: string | null
+          current_redemptions: number
+          description: string | null
+          discount_type: string
+          discount_value: number
+          id: string
+          is_active: boolean
+          max_redemptions: number | null
+          updated_at: string
+          valid_from: string
+          valid_until: string | null
+        }
+        Insert: {
+          applicable_billing?: string
+          applicable_plans?: string
+          code: string
+          created_at?: string
+          created_by?: string | null
+          current_redemptions?: number
+          description?: string | null
+          discount_type: string
+          discount_value: number
+          id?: string
+          is_active?: boolean
+          max_redemptions?: number | null
+          updated_at?: string
+          valid_from?: string
+          valid_until?: string | null
+        }
+        Update: {
+          applicable_billing?: string
+          applicable_plans?: string
+          code?: string
+          created_at?: string
+          created_by?: string | null
+          current_redemptions?: number
+          description?: string | null
+          discount_type?: string
+          discount_value?: number
+          id?: string
+          is_active?: boolean
+          max_redemptions?: number | null
+          updated_at?: string
+          valid_from?: string
+          valid_until?: string | null
+        }
+        Relationships: []
+      }
+      cpi_history: {
+        Row: {
+          fetched_at: string | null
+          index_value: number
+          period: string
+        }
+        Insert: {
+          fetched_at?: string | null
+          index_value: number
+          period: string
+        }
+        Update: {
+          fetched_at?: string | null
+          index_value?: number
+          period?: string
+        }
+        Relationships: []
+      }
+      custody_agreements: {
+        Row: {
+          account_id: string
+          confirmed_by: string[]
+          created_at: string
+          id: string
+          last_proposal_at: string | null
+          last_proposal_by: string | null
+          last_proposal_payload: Json | null
+          updated_at: string
+          version: number
+        }
+        Insert: {
+          account_id: string
+          confirmed_by?: string[]
+          created_at?: string
+          id?: string
+          last_proposal_at?: string | null
+          last_proposal_by?: string | null
+          last_proposal_payload?: Json | null
+          updated_at?: string
+          version?: number
+        }
+        Update: {
+          account_id?: string
+          confirmed_by?: string[]
+          created_at?: string
+          id?: string
+          last_proposal_at?: string | null
+          last_proposal_by?: string | null
+          last_proposal_payload?: Json | null
+          updated_at?: string
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "custody_agreements_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: true
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "custody_agreements_last_proposal_by_fkey"
+            columns: ["last_proposal_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      custody_audit: {
+        Row: {
+          account_id: string
+          action: string
+          actor_id: string | null
+          created_at: string
+          diff: Json
+          event_date: string | null
+          id: number
+          target: string
+          target_id: string
+        }
+        Insert: {
+          account_id: string
+          action: string
+          actor_id?: string | null
+          created_at?: string
+          diff: Json
+          event_date?: string | null
+          id?: number
+          target: string
+          target_id: string
+        }
+        Update: {
+          account_id?: string
+          action?: string
+          actor_id?: string | null
+          created_at?: string
+          diff?: Json
+          event_date?: string | null
+          id?: number
+          target?: string
+          target_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "custody_audit_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "custody_audit_actor_id_fkey"
+            columns: ["actor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      custody_exceptions: {
+        Row: {
+          account_id: string
+          claimed_by: string | null
+          created_at: string
+          created_by: string
+          education_level: string | null
+          end_date: string
+          end_time: string | null
+          event_name: string | null
+          id: string
+          kind: string
+          notes: string | null
+          parent_event: string | null
+          source_event_id: string | null
+          start_date: string
+          start_time: string | null
+          updated_at: string
+        }
+        Insert: {
+          account_id: string
+          claimed_by?: string | null
+          created_at?: string
+          created_by: string
+          education_level?: string | null
+          end_date: string
+          end_time?: string | null
+          event_name?: string | null
+          id?: string
+          kind: string
+          notes?: string | null
+          parent_event?: string | null
+          source_event_id?: string | null
+          start_date: string
+          start_time?: string | null
+          updated_at?: string
+        }
+        Update: {
+          account_id?: string
+          claimed_by?: string | null
+          created_at?: string
+          created_by?: string
+          education_level?: string | null
+          end_date?: string
+          end_time?: string | null
+          event_name?: string | null
+          id?: string
+          kind?: string
+          notes?: string | null
+          parent_event?: string | null
+          source_event_id?: string | null
+          start_date?: string
+          start_time?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "custody_exceptions_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "custody_exceptions_claimed_by_fkey"
+            columns: ["claimed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "custody_exceptions_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      custody_patterns: {
+        Row: {
+          account_id: string
+          acts_as: string | null
+          created_at: string
+          dtstart: string
+          handoff_time: string
+          id: string
+          label: string | null
+          owner_user_id: string
+          preset_key: string
+          until_date: string | null
+          updated_at: string
+          weekday_mask_week1: number
+          weekday_mask_week2: number | null
+          weekend_handoff_time: string | null
+        }
+        Insert: {
+          account_id: string
+          acts_as?: string | null
+          created_at?: string
+          dtstart: string
+          handoff_time?: string
+          id?: string
+          label?: string | null
+          owner_user_id: string
+          preset_key: string
+          until_date?: string | null
+          updated_at?: string
+          weekday_mask_week1: number
+          weekday_mask_week2?: number | null
+          weekend_handoff_time?: string | null
+        }
+        Update: {
+          account_id?: string
+          acts_as?: string | null
+          created_at?: string
+          dtstart?: string
+          handoff_time?: string
+          id?: string
+          label?: string | null
+          owner_user_id?: string
+          preset_key?: string
+          until_date?: string | null
+          updated_at?: string
+          weekday_mask_week1?: number
+          weekday_mask_week2?: number | null
+          weekend_handoff_time?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "custody_patterns_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "custody_patterns_acts_as_fkey"
+            columns: ["acts_as"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "custody_patterns_owner_user_id_fkey"
+            columns: ["owner_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      custody_proposals: {
+        Row: {
+          account_id: string
+          created_at: string
+          decided_at: string | null
+          decided_by: string | null
+          expires_at: string
+          id: string
+          kind: string
+          note: string | null
+          payload: Json
+          proposer_id: string
+          recipient_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          account_id: string
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          expires_at?: string
+          id?: string
+          kind: string
+          note?: string | null
+          payload: Json
+          proposer_id: string
+          recipient_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          account_id?: string
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          expires_at?: string
+          id?: string
+          kind?: string
+          note?: string | null
+          payload?: Json
+          proposer_id?: string
+          recipient_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "custody_proposals_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "custody_proposals_decided_by_fkey"
+            columns: ["decided_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "custody_proposals_proposer_id_fkey"
+            columns: ["proposer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "custody_proposals_recipient_id_fkey"
+            columns: ["recipient_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -438,6 +1121,53 @@ export type Database = {
             columns: ["deleted_by"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      device_tokens: {
+        Row: {
+          account_id: string | null
+          created_at: string | null
+          device_info: Json | null
+          id: string
+          is_active: boolean | null
+          last_used_at: string | null
+          platform: string
+          token: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          account_id?: string | null
+          created_at?: string | null
+          device_info?: Json | null
+          id?: string
+          is_active?: boolean | null
+          last_used_at?: string | null
+          platform: string
+          token: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          account_id?: string | null
+          created_at?: string | null
+          device_info?: Json | null
+          id?: string
+          is_active?: boolean | null
+          last_used_at?: string | null
+          platform?: string
+          token?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "device_tokens_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
             referencedColumns: ["id"]
           },
         ]
@@ -605,21 +1335,24 @@ export type Database = {
           created_by_id: string | null
           date: string
           description: string
+          edited_by_id: string | null
           end_date: string | null
           floor_enabled: boolean | null
           frequency: string | null
           has_end_date: boolean | null
           id: string
           index_update_frequency: string | null
+          invoice_number: string | null
           is_index_linked: boolean | null
           is_recurring: boolean | null
           last_calculated_amount: number | null
           paid_by_id: string
+          pending_changes: Json | null
           receipt_id: string | null
           receipt_url: string | null
+          recurring_active: boolean | null
           recurring_approved_by: string | null
           recurring_auto_approved: boolean | null
-          recurring_active: boolean | null
           recurring_parent_id: string | null
           split_equally: boolean
           status: string
@@ -637,21 +1370,24 @@ export type Database = {
           created_by_id?: string | null
           date?: string
           description: string
+          edited_by_id?: string | null
           end_date?: string | null
           floor_enabled?: boolean | null
           frequency?: string | null
           has_end_date?: boolean | null
           id?: string
           index_update_frequency?: string | null
+          invoice_number?: string | null
           is_index_linked?: boolean | null
           is_recurring?: boolean | null
           last_calculated_amount?: number | null
           paid_by_id: string
+          pending_changes?: Json | null
           receipt_id?: string | null
           receipt_url?: string | null
+          recurring_active?: boolean | null
           recurring_approved_by?: string | null
           recurring_auto_approved?: boolean | null
-          recurring_active?: boolean | null
           recurring_parent_id?: string | null
           split_equally?: boolean
           status?: string
@@ -669,21 +1405,24 @@ export type Database = {
           created_by_id?: string | null
           date?: string
           description?: string
+          edited_by_id?: string | null
           end_date?: string | null
           floor_enabled?: boolean | null
           frequency?: string | null
           has_end_date?: boolean | null
           id?: string
           index_update_frequency?: string | null
+          invoice_number?: string | null
           is_index_linked?: boolean | null
           is_recurring?: boolean | null
           last_calculated_amount?: number | null
           paid_by_id?: string
+          pending_changes?: Json | null
           receipt_id?: string | null
           receipt_url?: string | null
+          recurring_active?: boolean | null
           recurring_approved_by?: string | null
           recurring_auto_approved?: boolean | null
-          recurring_active?: boolean | null
           recurring_parent_id?: string | null
           split_equally?: boolean
           status?: string
@@ -775,6 +1514,134 @@ export type Database = {
           },
         ]
       }
+      notification_logs: {
+        Row: {
+          account_id: string | null
+          body: string | null
+          channel: string
+          clicked_at: string | null
+          created_at: string | null
+          data: Json | null
+          delivered_at: string | null
+          device_token_id: string | null
+          error_message: string | null
+          fcm_message_id: string | null
+          id: string
+          notification_type: string
+          platform: string | null
+          sent_at: string | null
+          status: string
+          title: string | null
+          user_id: string | null
+        }
+        Insert: {
+          account_id?: string | null
+          body?: string | null
+          channel: string
+          clicked_at?: string | null
+          created_at?: string | null
+          data?: Json | null
+          delivered_at?: string | null
+          device_token_id?: string | null
+          error_message?: string | null
+          fcm_message_id?: string | null
+          id?: string
+          notification_type: string
+          platform?: string | null
+          sent_at?: string | null
+          status: string
+          title?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          account_id?: string | null
+          body?: string | null
+          channel?: string
+          clicked_at?: string | null
+          created_at?: string | null
+          data?: Json | null
+          delivered_at?: string | null
+          device_token_id?: string | null
+          error_message?: string | null
+          fcm_message_id?: string | null
+          id?: string
+          notification_type?: string
+          platform?: string | null
+          sent_at?: string | null
+          status?: string
+          title?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notification_logs_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notification_logs_device_token_id_fkey"
+            columns: ["device_token_id"]
+            isOneToOne: false
+            referencedRelation: "device_tokens"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notification_preferences: {
+        Row: {
+          account_id: string | null
+          created_at: string | null
+          email_enabled: boolean | null
+          id: string
+          preferences: Json | null
+          push_enabled: boolean | null
+          quiet_hours_enabled: boolean | null
+          quiet_hours_end: string | null
+          quiet_hours_start: string | null
+          sms_enabled: boolean | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          account_id?: string | null
+          created_at?: string | null
+          email_enabled?: boolean | null
+          id?: string
+          preferences?: Json | null
+          push_enabled?: boolean | null
+          quiet_hours_enabled?: boolean | null
+          quiet_hours_end?: string | null
+          quiet_hours_start?: string | null
+          sms_enabled?: boolean | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          account_id?: string | null
+          created_at?: string | null
+          email_enabled?: boolean | null
+          id?: string
+          preferences?: Json | null
+          push_enabled?: boolean | null
+          quiet_hours_enabled?: boolean | null
+          quiet_hours_end?: string | null
+          quiet_hours_start?: string | null
+          sms_enabled?: boolean | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notification_preferences_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       password_reset_attempts: {
         Row: {
           attempted_at: string
@@ -802,9 +1669,55 @@ export type Database = {
         }
         Relationships: []
       }
+      pricing_plans: {
+        Row: {
+          created_at: string
+          description: string | null
+          features: Json
+          id: string
+          is_active: boolean
+          max_members: number
+          monthly_price: number
+          name: string
+          slug: string
+          sort_order: number
+          updated_at: string
+          yearly_price: number
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          features?: Json
+          id?: string
+          is_active?: boolean
+          max_members?: number
+          monthly_price: number
+          name: string
+          slug: string
+          sort_order?: number
+          updated_at?: string
+          yearly_price: number
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          features?: Json
+          id?: string
+          is_active?: boolean
+          max_members?: number
+          monthly_price?: number
+          name?: string
+          slug?: string
+          sort_order?: number
+          updated_at?: string
+          yearly_price?: number
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
+          email_verified: boolean
           family_role: string | null
           id: string
           is_super_admin: boolean | null
@@ -823,6 +1736,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          email_verified?: boolean
           family_role?: string | null
           id: string
           is_super_admin?: boolean | null
@@ -841,6 +1755,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          email_verified?: boolean
           family_role?: string | null
           id?: string
           is_super_admin?: boolean | null
@@ -870,6 +1785,7 @@ export type Database = {
           file_url: string
           gpt_response: Json | null
           id: string
+          invoice_number: string | null
           processed_at: string | null
           updated_at: string
           user_id: string
@@ -884,6 +1800,7 @@ export type Database = {
           file_url: string
           gpt_response?: Json | null
           id?: string
+          invoice_number?: string | null
           processed_at?: string | null
           updated_at?: string
           user_id: string
@@ -898,11 +1815,180 @@ export type Database = {
           file_url?: string
           gpt_response?: Json | null
           id?: string
+          invoice_number?: string | null
           processed_at?: string | null
           updated_at?: string
           user_id?: string
         }
         Relationships: []
+      }
+      school_calendar_events: {
+        Row: {
+          applies_to: string[]
+          created_at: string
+          end_date: string
+          event_key: string
+          id: string
+          kind: string
+          name_he: string
+          parent_event_key: string | null
+          school_year: string
+          source: string
+          source_ref: string | null
+          start_date: string
+          stream: string
+          updated_at: string
+          verified_at: string | null
+          verified_by: string | null
+        }
+        Insert: {
+          applies_to: string[]
+          created_at?: string
+          end_date: string
+          event_key: string
+          id?: string
+          kind: string
+          name_he: string
+          parent_event_key?: string | null
+          school_year: string
+          source: string
+          source_ref?: string | null
+          start_date: string
+          stream?: string
+          updated_at?: string
+          verified_at?: string | null
+          verified_by?: string | null
+        }
+        Update: {
+          applies_to?: string[]
+          created_at?: string
+          end_date?: string
+          event_key?: string
+          id?: string
+          kind?: string
+          name_he?: string
+          parent_event_key?: string | null
+          school_year?: string
+          source?: string
+          source_ref?: string | null
+          start_date?: string
+          stream?: string
+          updated_at?: string
+          verified_at?: string | null
+          verified_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "school_calendar_events_verified_by_fkey"
+            columns: ["verified_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      settlement_locks: {
+        Row: {
+          account_id: string
+          id: string
+          locked_at: string
+          locked_by: string | null
+          month: number
+          year: number
+        }
+        Insert: {
+          account_id: string
+          id?: string
+          locked_at?: string
+          locked_by?: string | null
+          month: number
+          year: number
+        }
+        Update: {
+          account_id?: string
+          id?: string
+          locked_at?: string
+          locked_by?: string | null
+          month?: number
+          year?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "settlement_locks_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      settlement_payments: {
+        Row: {
+          account_id: string
+          amount: number
+          created_at: string | null
+          created_by: string
+          from_user_id: string
+          id: string
+          notes: string | null
+          payment_date: string
+          payment_method: string
+          to_user_id: string
+        }
+        Insert: {
+          account_id: string
+          amount: number
+          created_at?: string | null
+          created_by: string
+          from_user_id: string
+          id?: string
+          notes?: string | null
+          payment_date?: string
+          payment_method?: string
+          to_user_id: string
+        }
+        Update: {
+          account_id?: string
+          amount?: number
+          created_at?: string | null
+          created_by?: string
+          from_user_id?: string
+          id?: string
+          notes?: string | null
+          payment_date?: string
+          payment_method?: string
+          to_user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "settlement_payments_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "settlement_payments_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "settlement_payments_from_user_id_fkey"
+            columns: ["from_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "settlement_payments_to_user_id_fkey"
+            columns: ["to_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       sms_verification_codes: {
         Row: {
@@ -911,6 +1997,7 @@ export type Database = {
           created_at: string
           expires_at: string
           id: string
+          ip_address: unknown
           phone_number: string
           user_id: string | null
           verification_type: string | null
@@ -923,6 +2010,7 @@ export type Database = {
           created_at?: string
           expires_at?: string
           id?: string
+          ip_address?: unknown
           phone_number: string
           user_id?: string | null
           verification_type?: string | null
@@ -935,6 +2023,7 @@ export type Database = {
           created_at?: string
           expires_at?: string
           id?: string
+          ip_address?: unknown
           phone_number?: string
           user_id?: string | null
           verification_type?: string | null
@@ -945,11 +2034,18 @@ export type Database = {
       }
       subscriptions: {
         Row: {
+          activated_by: string | null
+          amount_paid: number | null
+          billing_period: string | null
           canceled_at: string | null
+          coupon_id: string | null
           created_at: string
           current_period_end: string | null
           current_period_start: string | null
           id: string
+          payment_provider: string | null
+          plan_id: string | null
+          plan_slug: string | null
           status: string
           stripe_customer_id: string | null
           stripe_subscription_id: string | null
@@ -959,11 +2055,18 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          activated_by?: string | null
+          amount_paid?: number | null
+          billing_period?: string | null
           canceled_at?: string | null
+          coupon_id?: string | null
           created_at?: string
           current_period_end?: string | null
           current_period_start?: string | null
           id?: string
+          payment_provider?: string | null
+          plan_id?: string | null
+          plan_slug?: string | null
           status?: string
           stripe_customer_id?: string | null
           stripe_subscription_id?: string | null
@@ -973,11 +2076,18 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          activated_by?: string | null
+          amount_paid?: number | null
+          billing_period?: string | null
           canceled_at?: string | null
+          coupon_id?: string | null
           created_at?: string
           current_period_end?: string | null
           current_period_start?: string | null
           id?: string
+          payment_provider?: string | null
+          plan_id?: string | null
+          plan_slug?: string | null
           status?: string
           stripe_customer_id?: string | null
           stripe_subscription_id?: string | null
@@ -988,10 +2098,97 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "subscriptions_coupon_id_fkey"
+            columns: ["coupon_id"]
+            isOneToOne: false
+            referencedRelation: "coupons"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "subscriptions_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "pricing_plans"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "subscriptions_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: true
             referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      system_errors: {
+        Row: {
+          account_id: string | null
+          created_at: string
+          error_category: string
+          error_code: string | null
+          function_name: string
+          http_status: number | null
+          id: string
+          raw_details: Json
+          request_metadata: Json | null
+          resolution_note: string | null
+          resolved_at: string | null
+          resolved_by: string | null
+          user_id: string | null
+          user_message: string
+        }
+        Insert: {
+          account_id?: string | null
+          created_at?: string
+          error_category: string
+          error_code?: string | null
+          function_name: string
+          http_status?: number | null
+          id?: string
+          raw_details?: Json
+          request_metadata?: Json | null
+          resolution_note?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          user_id?: string | null
+          user_message: string
+        }
+        Update: {
+          account_id?: string | null
+          created_at?: string
+          error_category?: string
+          error_code?: string | null
+          function_name?: string
+          http_status?: number | null
+          id?: string
+          raw_details?: Json
+          request_metadata?: Json | null
+          resolution_note?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          user_id?: string | null
+          user_message?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "system_errors_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "system_errors_resolved_by_fkey"
+            columns: ["resolved_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "system_errors_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -1028,7 +2225,76 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      custody_assignments: {
+        Row: {
+          account_id: string | null
+          assigned_parent_id: string | null
+          created_at: string | null
+          created_by: string | null
+          education_level: string | null
+          end_date: string | null
+          event_name: string | null
+          event_type: string | null
+          id: string | null
+          notes: string | null
+          parent_event: string | null
+          start_date: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          account_id?: string | null
+          assigned_parent_id?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          education_level?: string | null
+          end_date?: string | null
+          event_name?: string | null
+          event_type?: string | null
+          id?: string | null
+          notes?: string | null
+          parent_event?: string | null
+          start_date?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          account_id?: string | null
+          assigned_parent_id?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          education_level?: string | null
+          end_date?: string | null
+          event_name?: string | null
+          event_type?: string | null
+          id?: string | null
+          notes?: string | null
+          parent_event?: string | null
+          start_date?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "custody_exceptions_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "custody_exceptions_claimed_by_fkey"
+            columns: ["assigned_parent_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "custody_exceptions_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       accept_invitation_and_add_member: {
@@ -1043,10 +2309,20 @@ export type Database = {
         }
         Returns: boolean
       }
+      advance_children_grades: {
+        Args: { p_target_year?: number }
+        Returns: number
+      }
+      can_add_member: { Args: { p_account_id: string }; Returns: boolean }
       check_reset_attempt_limit: {
         Args: { user_email: string }
         Returns: boolean
       }
+      claim_birthday_task: {
+        Args: { p_task_id: string; p_user_id: string }
+        Returns: undefined
+      }
+      cleanup_inactive_tokens: { Args: never; Returns: undefined }
       cleanup_old_reset_attempts: { Args: never; Returns: undefined }
       create_account_if_not_exists: {
         Args: { account_name: string; user_id: string }
@@ -1063,7 +2339,15 @@ export type Database = {
           name: string
         }[]
       }
-      generate_recurring_expenses: { Args: never; Returns: undefined }
+      education_level_for_grade: { Args: { p_grade: number }; Returns: string }
+      generate_recurring_expenses: {
+        Args: { p_month?: number; p_year?: number }
+        Returns: {
+          errors: number
+          generated: number
+          skipped: number
+        }[]
+      }
       get_account_invitations: {
         Args: { account_uuid: string }
         Returns: {
@@ -1134,6 +2418,7 @@ export type Database = {
           raw_user_meta_data: Json
         }[]
       }
+      get_plan_max_members: { Args: { p_plan_slug: string }; Returns: number }
       get_public_invitation_details: {
         Args: { p_invitation_id: string }
         Returns: {
@@ -1159,10 +2444,19 @@ export type Database = {
         }[]
       }
       get_user_account_ids: { Args: { user_uuid: string }; Returns: string[] }
+      get_virtual_partner_for_account: {
+        Args: { p_account_id: string }
+        Returns: {
+          role: string
+          user_id: string
+          user_name: string
+        }[]
+      }
       has_active_subscription: {
         Args: { account_uuid: string }
         Returns: boolean
       }
+      increment_otp_attempts: { Args: { p_id: string }; Returns: number }
       is_account_admin: {
         Args: { account_uuid: string; user_uuid: string }
         Returns: boolean
@@ -1188,35 +2482,20 @@ export type Database = {
         }
         Returns: undefined
       }
+      mark_notification_clicked: {
+        Args: { p_notification_id: string }
+        Returns: undefined
+      }
       normalize_il_phone: { Args: { phone_text: string }; Returns: string }
+      promote_virtual_partner: {
+        Args: { p_account_id: string; p_real_user_id: string }
+        Returns: Json
+      }
       remove_account_member: {
         Args: { account_uuid: string; user_uuid: string }
         Returns: boolean
       }
       update_expired_trials: { Args: never; Returns: undefined }
-      validate_coupon: {
-        Args: {
-          p_code: string
-          p_plan_slug: string
-          p_billing_period: string
-          p_account_id: string
-        }
-        Returns: {
-          is_valid: boolean
-          coupon_id: string | null
-          discount_type: string | null
-          discount_value: number | null
-          error_message: string | null
-        }[]
-      }
-      can_add_member: {
-        Args: { p_account_id: string }
-        Returns: boolean
-      }
-      get_plan_max_members: {
-        Args: { p_plan_slug: string }
-        Returns: number
-      }
       upsert_subscription_secure: {
         Args: {
           p_canceled_at?: string
@@ -1230,6 +2509,21 @@ export type Database = {
           p_trial_ends_at?: string
         }
         Returns: string
+      }
+      validate_coupon: {
+        Args: {
+          p_account_id: string
+          p_billing_period: string
+          p_code: string
+          p_plan_slug: string
+        }
+        Returns: {
+          coupon_id: string
+          discount_type: string
+          discount_value: number
+          error_message: string
+          is_valid: boolean
+        }[]
       }
       validate_invitation_access: {
         Args: { invitation_uuid: string }
@@ -1369,3 +2663,4 @@ export const Constants = {
     },
   },
 } as const
+<claude-code-hint v="1" type="plugin" value="supabase@claude-plugins-official" />

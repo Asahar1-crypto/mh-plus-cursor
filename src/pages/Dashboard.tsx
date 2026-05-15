@@ -236,6 +236,7 @@ const Dashboard = () => {
             currentAmount={approvedTotal + paidTotal}
             previousAmount={previousPeriodTotal}
             baselineAverage={baselineAverage}
+            budget={account?.monthly_budget ?? undefined}
             label={`ההוצאות · ${
               monthOptions.find((o) => o.value === selectedMonth)?.label ?? ''
             }`}
