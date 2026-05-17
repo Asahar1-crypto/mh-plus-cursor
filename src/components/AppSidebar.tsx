@@ -8,6 +8,8 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { useAuth } from '@/contexts/auth';
 import { useExpense } from '@/contexts/ExpenseContext';
 import { BRAND_LOGO_PATH } from '@/lib/brand';
+import AccountSwitcher from './account/AccountSwitcher';
+import { ThemeToggle } from '@/components/ThemeToggle';
 
 interface SidebarItemProps {
   icon: React.ElementType;
@@ -296,6 +298,22 @@ const AppSidebar: React.FC<AppSidebarProps> = ({
           </nav>
         </div>
         
+        {/* Mobile-only chrome that lives behind the hamburger drawer. On
+            desktop these controls live in AppHeader, so we don't duplicate
+            them here when !isMobile. */}
+        {isMobile && (
+          <div className="px-4 pt-3 pb-2 border-t border-border space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold text-muted-foreground">חשבון</span>
+              <AccountSwitcher />
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold text-muted-foreground">מצב תצוגה</span>
+              <ThemeToggle />
+            </div>
+          </div>
+        )}
+
         {(!collapsed || isMobile) && (
           <div className="p-4 border-t border-border text-sm text-muted-foreground text-center">
             <p>מחציות פלוס &copy; 2026</p>
