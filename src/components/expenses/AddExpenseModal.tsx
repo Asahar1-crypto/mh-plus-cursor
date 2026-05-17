@@ -186,11 +186,23 @@ export const AddExpenseModal: React.FC = () => {
     return (
       <Drawer open={isOpen} onOpenChange={handleOpenChange} dismissible={!shouldPreventClose}>
         <DrawerContent className="max-h-[92vh] z-[9999]">
-          <DrawerHeader className="text-right px-4 pb-2 pt-2">
+          <DrawerHeader className="text-right px-4 pb-2 pt-2 flex-shrink-0">
             <DrawerTitle className="text-base">{titleFor(currentStep)}</DrawerTitle>
             <DrawerDescription className="text-xs">{descriptionFor(currentStep)}</DrawerDescription>
           </DrawerHeader>
-          <ScrollArea className="flex-1 px-3 pb-4">{content}</ScrollArea>
+          {/* Native overflow-y-auto instead of Radix ScrollArea — vaul's
+              drag detection walks up from the touch target looking for an
+              element whose computed style has overflow auto/scroll. Radix
+              ScrollArea wraps content in a Root with overflow:hidden plus
+              a nested Viewport whose overflow is async-toggled, which can
+              cause vaul to preventDefault every touchmove until the
+              observer settles — leaving the form unscrollable. Native
+              overflow is detected immediately. overscroll-contain blocks
+              the scroll chain from bubbling out and triggering a
+              drawer-dismiss when the user reaches the form's bottom. */}
+          <div className="flex-1 overflow-y-auto overscroll-contain px-3 pb-4">
+            {content}
+          </div>
         </DrawerContent>
       </Drawer>
     );
