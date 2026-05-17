@@ -4,6 +4,7 @@ import { useExpense } from '@/contexts/ExpenseContext';
 import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
 import { HeroBalanceCard } from '@/components/dashboard/HeroBalanceCard';
 import { MonthEndCallout } from '@/components/dashboard/MonthEndCallout';
+import { QuickActionsRow } from '@/components/dashboard/QuickActionsRow';
 import { ExpensesSummary } from '@/components/dashboard/ExpensesSummary';
 import { PaymentSuccessModal } from '@/components/payment/PaymentSuccessModal';
 import { MascotImage } from '@/components/mascot/MascotImage';
@@ -255,6 +256,12 @@ const Dashboard = () => {
                 : undefined
             }
           />
+        </div>
+
+        {/* Quick Actions row — 4 primary affordances under the hero,
+            mirrors the handoff mockup's "first scroll" hierarchy. */}
+        <div className="animate-fade-in [animation-delay:75ms]">
+          <QuickActionsRow />
         </div>
 
         {/* Month Filter - Liquid Glass */}
