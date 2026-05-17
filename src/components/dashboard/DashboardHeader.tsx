@@ -1,8 +1,6 @@
 import React from 'react';
 import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { TrendingUp, Plus } from 'lucide-react';
-import { useAddExpenseModal } from '@/hooks/useAddExpenseModal';
+import { TrendingUp } from 'lucide-react';
 import { MascotImage } from '@/components/mascot/MascotImage';
 
 interface DashboardHeaderProps {
@@ -10,13 +8,7 @@ interface DashboardHeaderProps {
 }
 
 export const DashboardHeader: React.FC<DashboardHeaderProps> = ({ userName }) => {
-  const { openModal } = useAddExpenseModal();
-
   const greeting = "היי 👋";
-
-  const handleAddExpense = () => {
-    openModal();
-  };
 
   return (
     <Card className="bg-card border border-border/50 shadow-md hover:shadow-lg transition-shadow duration-300 overflow-hidden mb-4 sm:mb-6">
@@ -42,25 +34,19 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({ userName }) =>
             </div>
           </div>
 
-          <div className="flex flex-col md:flex-row items-start md:items-center gap-3 sm:gap-4 w-full md:w-auto">
-            <div className="hidden md:flex flex-col items-end space-y-1 p-3 rounded-lg bg-muted/30 border border-border/30">
-              <div className="text-sm font-medium text-muted-foreground">
-                {new Date().toLocaleDateString('he-IL', {
-                  weekday: 'long',
-                  year: 'numeric',
-                  month: 'long',
-                  day: 'numeric'
-                })}
-              </div>
+          {/* Date box (desktop only). The "הוצאה חדשה" CTA that lived here
+              was removed — the same action is now exposed three times
+              elsewhere on the page (QuickActionsRow + BottomNav FAB +
+              empty-state CTA), so this slot was redundant. */}
+          <div className="hidden md:flex flex-col items-end space-y-1 p-3 rounded-lg bg-muted/30 border border-border/30">
+            <div className="text-sm font-medium text-muted-foreground">
+              {new Date().toLocaleDateString('he-IL', {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+              })}
             </div>
-            <Button
-              onClick={handleAddExpense}
-              className="w-full md:w-auto shadow-md hover:shadow-lg transition-shadow duration-300 h-11 sm:h-12"
-              size="lg"
-            >
-              <Plus className="ml-2 h-4 w-4 sm:h-5 sm:w-5" />
-              הוצאה חדשה
-            </Button>
           </div>
         </div>
       </div>
