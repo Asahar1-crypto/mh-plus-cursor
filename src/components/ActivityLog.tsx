@@ -6,8 +6,7 @@ import { activityService, ActivityLog as ActivityLogEntry } from '@/integrations
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Badge } from '@/components/ui/badge';
-import { ChevronDown, ChevronUp } from 'lucide-react';
-import { MascotImage } from '@/components/mascot/MascotImage';
+import { ChevronDown, ChevronUp, History } from 'lucide-react';
 
 /**
  * Per-action visual config. Colors lean on the brand status quartet
@@ -69,13 +68,15 @@ export const ActivityLog: React.FC<{ limit?: number }> = ({ limit = 30 }) => {
           <CardHeader className="cursor-pointer pb-2 hover:bg-muted/20 transition-colors rounded-t-lg">
             <div className="flex items-center justify-between">
               <CardTitle className="flex items-center gap-3 text-base sm:text-lg">
-                <MascotImage
-                  kind="blue"
-                  pose="checking"
-                  size="sm"
-                  animate="idle"
-                  className="!h-10 !w-10"
-                />
+                {/* Neutral History icon in a tinted square — mirrors the
+                    previous mascot footprint so the header rhythm stays the
+                    same but the mascot count on the dashboard drops to 2. */}
+                <span
+                  aria-hidden="true"
+                  className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary"
+                >
+                  <History className="h-5 w-5" />
+                </span>
                 יומן פעילות
                 {logs.length > 0 && (
                   <Badge variant="secondary" className="text-xs">{logs.length}</Badge>
