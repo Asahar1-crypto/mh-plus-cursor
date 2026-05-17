@@ -15,19 +15,17 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({ userName }) =>
       <div className="p-4 sm:p-6 md:p-8">
         <div className="flex flex-col md:flex-row items-start justify-between gap-4 sm:gap-6">
           <div className="flex items-start gap-3 sm:gap-4 space-y-2 sm:space-y-3">
-            {/* The blue-happy asset looks slightly to the left by default.
-                In our RTL flex-row, the mascot lands on the right side of
-                the row and the greeting text on its left — so the natural
-                (unflipped) orientation has her gazing toward the user's
-                name. Don't add scale-x-[-1] here; it makes her face the
-                wall, away from the text. */}
+            {/* Mirror the mascot so she faces the greeting text. In our
+                RTL flex-row the mascot lands on the right side and the
+                greeting on the left — without scale-x-[-1] she gazes
+                toward the wall, not toward the user's name. */}
             <MascotImage
               kind="blue"
               pose="happy"
               size="sm"
               animate="idle"
               priority
-              className="shrink-0 -mt-1"
+              className="shrink-0 -mt-1 scale-x-[-1]"
             />
             <div className="space-y-2 sm:space-y-3">
               <h2 className="type-h1 md:text-4xl type-gradient">
