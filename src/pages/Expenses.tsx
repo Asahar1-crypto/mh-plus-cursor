@@ -216,7 +216,7 @@ const ExpensesPage = () => {
               <BudgetModal isAdmin={isAdmin || false} />
               <div className="flex-none shrink-0">
                 <Button
-                  onClick={openModal}
+                  onClick={() => openModal()}
                   className="min-h-[44px] whitespace-nowrap shrink-0"
                 >
                   <PlusCircle className="mr-2 h-4 w-4" /> הוצאה חדשה

@@ -246,7 +246,6 @@ const Dashboard = () => {
             label={`ההוצאות · ${
               monthOptions.find((o) => o.value === selectedMonth)?.label ?? ''
             }`}
-            mascotPose={paidTotal > 0 && pendingTotal === 0 ? 'success' : undefined}
             paymentSplit={
               paymentBreakdown.breakdown.length > 0
                 ? {
@@ -342,7 +341,7 @@ const Dashboard = () => {
                 <Button
                   size="lg"
                   className="mt-2 gap-2 text-base"
-                  onClick={openModal}
+                  onClick={() => openModal()}
                 >
                   <PlusCircle className="h-5 w-5" />
                   הוסף הוצאה חדשה

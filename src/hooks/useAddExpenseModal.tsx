@@ -1,8 +1,11 @@
 import React, { createContext, useCallback, useContext, useMemo, useState } from 'react';
 
+export type AddExpenseInitialMode = 'manual' | 'scan';
+
 interface AddExpenseModalContextValue {
   isOpen: boolean;
-  openModal: () => void;
+  initialMode: AddExpenseInitialMode;
+  openModal: (mode?: AddExpenseInitialMode) => void;
   closeModal: () => void;
   onSubmitSuccess?: () => void;
   setOnSubmitSuccess: (cb: (() => void) | undefined) => void;
@@ -12,14 +15,18 @@ const AddExpenseModalContext = createContext<AddExpenseModalContextValue | null>
 
 export const AddExpenseModalProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [isOpen, setIsOpen] = useState(false);
+  const [initialMode, setInitialMode] = useState<AddExpenseInitialMode>('manual');
   const [onSubmitSuccess, setOnSubmitSuccess] = useState<(() => void) | undefined>(undefined);
 
-  const openModal = useCallback(() => setIsOpen(true), []);
+  const openModal = useCallback((mode: AddExpenseInitialMode = 'manual') => {
+    setInitialMode(mode);
+    setIsOpen(true);
+  }, []);
   const closeModal = useCallback(() => setIsOpen(false), []);
 
   const value = useMemo<AddExpenseModalContextValue>(
-    () => ({ isOpen, openModal, closeModal, onSubmitSuccess, setOnSubmitSuccess }),
-    [isOpen, openModal, closeModal, onSubmitSuccess],
+    () => ({ isOpen, initialMode, openModal, closeModal, onSubmitSuccess, setOnSubmitSuccess }),
+    [isOpen, initialMode, openModal, closeModal, onSubmitSuccess],
   );
 
   return <AddExpenseModalContext.Provider value={value}>{children}</AddExpenseModalContext.Provider>;

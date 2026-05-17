@@ -105,17 +105,14 @@ export function QuickActionsRow() {
         icon={Plus}
         label="הוצאה חדשה"
         tint="cyan"
-        onClick={openModal}
+        onClick={() => openModal()}
         ariaLabel="הוסף הוצאה חדשה"
       />
       <QuickActionCard
         icon={ScanLine}
         label="סריקת קבלה"
         tint="emerald"
-        // v1 opens the same AddExpenseModal — the user picks the scan tab.
-        // Future iteration: extend useAddExpenseModal with an initialMode
-        // prop so this jumps straight to ReceiptUpload.
-        onClick={openModal}
+        onClick={() => openModal('scan')}
         ariaLabel="סרוק קבלה לזיהוי אוטומטי"
       />
       <QuickActionCard

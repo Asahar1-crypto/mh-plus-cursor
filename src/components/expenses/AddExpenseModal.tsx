@@ -37,7 +37,7 @@ const descriptionFor = (step: Step) =>
 
 export const AddExpenseModal: React.FC = () => {
   const isMobile = useIsMobile();
-  const { isOpen, closeModal, onSubmitSuccess } = useAddExpenseModal();
+  const { isOpen, initialMode, closeModal, onSubmitSuccess } = useAddExpenseModal();
 
   const [isManualForm, setIsManualForm] = useState(true);
   const [scanResult, setScanResult] = useState<any>(null);
@@ -65,6 +65,15 @@ export const AddExpenseModal: React.FC = () => {
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = 'hidden';
+      // Honour the initialMode requested by the caller: scan jumps straight
+      // to the upload step, manual lands on the select/form view.
+      if (initialMode === 'scan') {
+        setIsManualForm(false);
+        setCurrentStep('upload');
+      } else {
+        setIsManualForm(true);
+        setCurrentStep('select');
+      }
     } else {
       document.body.style.overflow = 'unset';
       setCurrentStep('select');
@@ -75,7 +84,7 @@ export const AddExpenseModal: React.FC = () => {
     return () => {
       document.body.style.overflow = 'unset';
     };
-  }, [isOpen]);
+  }, [isOpen, initialMode]);
 
   useEffect(() => {
     if (!shouldPreventClose) return;
