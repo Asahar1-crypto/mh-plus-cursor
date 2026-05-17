@@ -6,15 +6,16 @@
  *   - Large tabular amount with cents shown smaller
  *   - Optional month-over-month delta (auto-colored green/amber)
  *   - Optional budget progress bar
- *   - A small blue mascot mini tilted -4° in the bottom corner
+ *   - Budget illustration tilted -4° in the corner
  *
  * Self-contained (no data fetching); callers pass everything as props so
  * this card can render in dashboard, settlement, or onboarding previews.
  */
 import { useMemo } from 'react';
 import { ArrowLeft, CheckCircle } from 'lucide-react';
-import { MascotImage, type MascotPose } from '@/components/mascot/MascotImage';
 import { cn } from '@/lib/utils';
+
+const HERO_ILLUSTRATION = '/illustrations/budget.webp';
 
 /**
  * One member's outstanding balance in the current period.
@@ -46,7 +47,7 @@ interface HeroBalanceCardProps {
   /**
    * Optional rolling baseline (e.g. avg of last 3 cycles). When the current
    * amount exceeds 1.2× this baseline the card switches to a warm/amber
-   * gradient and the mascot pose to 'checking' to flag overspending.
+   * gradient to flag overspending.
    */
   baselineAverage?: number;
   /**
@@ -56,12 +57,6 @@ interface HeroBalanceCardProps {
    * into the hero — the card stays single, the data stays denormalized.
    */
   paymentSplit?: PaymentSplit;
-  /**
-   * Override the mascot pose. Defaults to 'happy' for healthy budgets,
-   * 'checking' when over budget. Callers can force 'success' for
-   * month-end celebrations.
-   */
-  mascotPose?: MascotPose;
   /** ISO currency suffix, defaults to "₪" */
   currencySymbol?: string;
   className?: string;
@@ -103,12 +98,7 @@ function getSplitStatus(balance: number) {
 }
 
 const formatThousands = (n: number): string =>
-  Math.floor(Math.abs(n)).toLocaleString('he-IL');
-
-const formatCents = (n: number): string => {
-  const cents = Math.round((Math.abs(n) - Math.floor(Math.abs(n))) * 100);
-  return cents.toString().padStart(2, '0');
-};
+  Math.round(Math.abs(n)).toLocaleString('he-IL');
 
 export function HeroBalanceCard({
   currentAmount,
@@ -117,23 +107,16 @@ export function HeroBalanceCard({
   previousAmount,
   baselineAverage,
   paymentSplit,
-  mascotPose,
   currencySymbol = '₪',
   className,
 }: HeroBalanceCardProps) {
-  const overBudget = budget !== undefined && currentAmount > budget;
   // "Warning" state — overspending vs the user's historical baseline.
   // Threshold matches the handoff spec (1.2x average). When triggered we
-  // switch the card from deep navy to a warm amber gradient and flag the
-  // mascot as 'checking'.
+  // switch the card from deep navy to a warm amber gradient.
   const overspending =
     baselineAverage !== undefined &&
     baselineAverage > 0 &&
     currentAmount > baselineAverage * 1.2;
-
-  // Auto-pick mascot pose if caller didn't override
-  const pose: MascotPose =
-    mascotPose ?? (overBudget || overspending ? 'checking' : 'happy');
 
   // Delta vs previous period — colour green for "less spent", amber for "more"
   const delta = useMemo(() => {
@@ -179,20 +162,18 @@ export function HeroBalanceCard({
       />
 
       {/* Card content (over the blobs) */}
-      <div className="relative z-10 flex items-start justify-between gap-4">
-        <div className="flex-1 min-w-0">
+      <div className="relative z-10 flex items-end justify-between gap-3 sm:gap-4">
+        <div className="flex-1 min-w-0 pe-1 sm:pe-2">
           {/* Kicker label */}
           <p className="type-label uppercase tracking-[0.1em] text-white/70 mb-2">
             {label}
           </p>
 
-          {/* Amount with smaller cents */}
-          <div className="flex items-baseline gap-1 tabular-nums">
+          {/* Whole-shekel amount only — cents are noise at this size and
+              the rest of the dashboard rounds to whole shekels too. */}
+          <div className="tabular-nums">
             <span className="text-4xl sm:text-5xl font-black leading-none">
               {currencySymbol}{formatThousands(currentAmount)}
-            </span>
-            <span className="text-xl sm:text-2xl font-bold leading-none text-white/70">
-              .{formatCents(currentAmount)}
             </span>
           </div>
 
@@ -205,15 +186,18 @@ export function HeroBalanceCard({
           )}
         </div>
 
-        {/* Mascot mini — tilted -4° per the spec, bottom-aligned */}
-        <MascotImage
-          kind="blue"
-          pose={pose}
-          size="sm"
-          animate="idle"
-          priority
-          className="-mt-2 -mb-4 -me-2 rotate-[-4deg] drop-shadow-2xl"
-        />
+        <div
+          className="relative shrink-0 w-32 sm:w-40 h-24 sm:h-28 -mb-5 sm:-mb-6 -me-1 sm:-me-2 pointer-events-none"
+          aria-hidden="true"
+        >
+          <img
+            src={HERO_ILLUSTRATION}
+            alt=""
+            width={160}
+            height={160}
+            className="absolute bottom-0 inset-inline-end-0 h-32 w-32 sm:h-40 sm:w-40 object-contain object-bottom scale-x-[-1] rotate-[-4deg] drop-shadow-2xl animate-float"
+          />
+        </div>
       </div>
 
       {/* Optional payment-split section — folded in from the old
