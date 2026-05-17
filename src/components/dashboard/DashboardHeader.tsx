@@ -15,17 +15,17 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({ userName }) =>
       <div className="p-4 sm:p-6 md:p-8">
         <div className="flex flex-col md:flex-row items-start justify-between gap-4 sm:gap-6">
           <div className="flex items-start gap-3 sm:gap-4 space-y-2 sm:space-y-3">
-            {/* Mirror the mascot so she faces the greeting text. In our
-                RTL flex-row the mascot lands on the right side and the
-                greeting on the left — without scale-x-[-1] she gazes
-                toward the wall, not toward the user's name. */}
+            {/* The mascot asset naturally gazes leftward. In our RTL
+                flex-row she lands on the right side of the greeting, so
+                her natural gaze already points at the text — no mirror
+                needed. (Verified visually 2026-05-17.) */}
             <MascotImage
               kind="blue"
               pose="happy"
               size="sm"
               animate="idle"
               priority
-              className="shrink-0 -mt-1 scale-x-[-1]"
+              className="shrink-0 -mt-1"
             />
             <div className="space-y-2 sm:space-y-3">
               <h2 className="type-h1 md:text-4xl type-gradient">
