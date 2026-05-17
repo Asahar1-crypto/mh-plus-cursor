@@ -197,6 +197,20 @@ const AppSidebar: React.FC<AppSidebarProps> = ({
           </div>
         )}
 
+        {/* Mobile account switcher — placed directly below the logo header
+            so the user's first cue when opening the drawer is identity
+            ("which family am I in?"). Mirrors Slack/Gmail/Linear which all
+            anchor account context at the top of the nav. Desktop keeps
+            this control in AppHeader. */}
+        {isMobile && (
+          <div className="px-4 py-3 border-b border-border bg-card/50">
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-xs font-semibold text-muted-foreground shrink-0">חשבון</span>
+              <AccountSwitcher />
+            </div>
+          </div>
+        )}
+
         {/* Desktop header with logo + collapse toggle */}
         {!isMobile && (
           <div className="border-b border-border bg-card/50">
@@ -298,15 +312,11 @@ const AppSidebar: React.FC<AppSidebarProps> = ({
           </nav>
         </div>
         
-        {/* Mobile-only chrome that lives behind the hamburger drawer. On
-            desktop these controls live in AppHeader, so we don't duplicate
-            them here when !isMobile. */}
+        {/* Theme toggle — a true preference, separated from identity.
+            Stays in the footer area near the copyright. AccountSwitcher
+            moved to the top of the drawer (see above). */}
         {isMobile && (
-          <div className="px-4 pt-3 pb-2 border-t border-border space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-muted-foreground">חשבון</span>
-              <AccountSwitcher />
-            </div>
+          <div className="px-4 pt-3 pb-2 border-t border-border">
             <div className="flex items-center justify-between">
               <span className="text-xs font-semibold text-muted-foreground">מצב תצוגה</span>
               <ThemeToggle />
